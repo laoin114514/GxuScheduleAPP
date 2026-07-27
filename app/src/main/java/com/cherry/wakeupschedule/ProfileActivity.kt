@@ -4,6 +4,7 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
@@ -11,12 +12,14 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.gxu.jwxt.model.StudentProfile
 import kotlinx.coroutines.launch
 
 class ProfileActivity : AppCompatActivity() {
 
+    private lateinit var btnRefresh: Button
     private lateinit var pbLoading: ProgressBar
     private lateinit var scrollProfile: ScrollView
     private lateinit var layoutProfile: LinearLayout
@@ -26,18 +29,33 @@ class ProfileActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
+        btnRefresh = findViewById(R.id.btn_refresh)
         pbLoading = findViewById(R.id.pb_loading)
         scrollProfile = findViewById(R.id.scroll_profile)
         layoutProfile = findViewById(R.id.layout_profile)
         tvError = findViewById(R.id.tv_error)
 
-        loadProfile()
+        // 优先显示缓存
+        val cached = JwxtAccountManager.getCachedProfile()
+        if (cached != null) {
+            displayProfile(cached)
+            scrollProfile.visibility = View.VISIBLE
+            // 后台静默刷新
+            fetchProfile(showLoading = false)
+        } else {
+            fetchProfile(showLoading = true)
+        }
+
+        btnRefresh.setOnClickListener {
+            fetchProfile(showLoading = true)
+        }
     }
 
-    private fun loadProfile() {
-        pbLoading.visibility = View.VISIBLE
-        scrollProfile.visibility = View.GONE
-        tvError.visibility = View.GONE
+    private fun fetchProfile(showLoading: Boolean) {
+        if (showLoading) {
+            pbLoading.visibility = View.VISIBLE
+            tvError.visibility = View.GONE
+        }
 
         lifecycleScope.launch {
             val result = JwxtAuthManager.doWithAuth { client ->
@@ -47,11 +65,19 @@ class ProfileActivity : AppCompatActivity() {
             pbLoading.visibility = View.GONE
 
             result.onSuccess { profile ->
+                JwxtAccountManager.saveProfileCache(profile)
                 displayProfile(profile)
                 scrollProfile.visibility = View.VISIBLE
             }.onFailure { e ->
-                tvError.text = "获取失败: ${e.message}"
-                tvError.visibility = View.VISIBLE
+                val cached = JwxtAccountManager.getCachedProfile()
+                if (cached != null) {
+                    // 有缓存就不报错
+                    Toast.makeText(this@ProfileActivity,
+                        "刷新失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                } else {
+                    tvError.text = "获取失败: ${e.message}"
+                    tvError.visibility = View.VISIBLE
+                }
             }
         }
     }
@@ -59,7 +85,6 @@ class ProfileActivity : AppCompatActivity() {
     private fun displayProfile(p: StudentProfile) {
         layoutProfile.removeAllViews()
 
-        // 姓名 + 学号
         addHeader("${p.name ?: "未知"}", "${p.studentId ?: ""}")
 
         addSection("基本信息")

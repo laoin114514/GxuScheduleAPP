@@ -149,7 +149,8 @@ class MainActivity : AppCompatActivity() {
         val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
         val week = (diffDays / 7) + 1
         
-        return week.coerceIn(1, 20)
+        val totalWeeks = settingsManager.getTotalWeeks()
+        return week.coerceIn(1, totalWeeks)
     }
 
     /**
@@ -234,7 +235,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun switchToNextWeek() {
-        if (displayWeek < 20) {
+        if (displayWeek < settingsManager.getTotalWeeks()) {
             animateWeekSwitch(isNext = true) {
                 displayWeek++
                 updateWeekDisplay()
@@ -652,9 +653,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.tvDate.setTextColor(textColor)
         binding.tvWeekInfo.setTextColor(subTextColor)
-        binding.btnAdd.setColorFilter(textColor)
-        binding.btnImport.setColorFilter(textColor)
-        binding.btnExport.setColorFilter(textColor)
+        binding.btnRefresh.setColorFilter(textColor)
 
         val weekdayViews = listOf(
             binding.tvWeekday1, binding.tvWeekday2, binding.tvWeekday3,
@@ -677,9 +676,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.tvDate.setTextColor(textColor)
         binding.tvWeekInfo.setTextColor(subTextColor)
-        binding.btnAdd.setColorFilter(textColor)
-        binding.btnImport.setColorFilter(textColor)
-        binding.btnExport.setColorFilter(textColor)
+        binding.btnRefresh.setColorFilter(textColor)
 
         val weekdayViews = listOf(
             binding.tvWeekday1, binding.tvWeekday2, binding.tvWeekday3,
@@ -703,9 +700,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.tvDate.setTextColor(textColor)
         binding.tvWeekInfo.setTextColor(subTextColor)
-        binding.btnAdd.setColorFilter(textColor)
-        binding.btnImport.setColorFilter(textColor)
-        binding.btnExport.setColorFilter(textColor)
+        binding.btnRefresh.setColorFilter(textColor)
 
         // 设置星期表头颜色
         val weekdayViews = listOf(
@@ -746,9 +741,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.tvDate.setTextColor(whiteColor)
         binding.tvWeekInfo.setTextColor(whiteColor)
-        binding.btnAdd.setColorFilter(whiteColor)
-        binding.btnImport.setColorFilter(whiteColor)
-        binding.btnExport.setColorFilter(whiteColor)
+        binding.btnRefresh.setColorFilter(whiteColor)
 
         // 设置星期表头颜色
         val weekdayViews = listOf(
@@ -774,19 +767,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        // 添加按钮
-        binding.btnAdd.setOnClickListener {
-            showAddCourseDialog()
-        }
-
-        // 导入按钮
-        binding.btnImport.setOnClickListener {
-            showImportDialog()
-        }
-
-        // 导出按钮
-        binding.btnExport.setOnClickListener {
-            showExportDialog()
+        // 刷新按钮
+        binding.btnRefresh.setOnClickListener {
+            refreshScheduleFromJwxt(showError = true)
         }
 
         // 周次显示点击 - 快速跳转到当前周
@@ -1696,6 +1679,8 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // 用户手动打开应用时，取消自动关闭定时器
         com.cherry.wakeupschedule.service.AutoStartReceiver.cancelShutdown(this)
+        // 自动从教务系统刷新课表（失败不提示）
+        refreshScheduleFromJwxt(showError = false)
         // 从课程总览返回时，确保显示正确的视图
         // 如果之前是在day视图，返回后显示"今"，下次点击回到"周"
         // 为了更好的用户体验，我们恢复到之前的状态，悬浮球文字也要对应显示
@@ -1969,6 +1954,55 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Toast.makeText(this, "解析失败: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * 从教务系统刷新课表。
+     * @param showError 失败时是否弹 Toast 提示用户
+     */
+    private fun refreshScheduleFromJwxt(showError: Boolean = false) {
+        if (!com.cherry.wakeupschedule.service.JwxtAuthManager.isBound()) return
+
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            val result = com.cherry.wakeupschedule.service.JwxtAuthManager.doWithAuth { client ->
+                val (year, termCode) = com.cherry.wakeupschedule.service.JwxtImportService.getCurrentYearTerm()
+                val term = com.gxu.jwxt.model.Term.fromCode(termCode)
+                    ?: com.gxu.jwxt.model.Term.SPRING
+                client.schedule().personal(year, term)
+            }
+
+            result.onSuccess { response ->
+                val (courses, semesterStart) =
+                    com.cherry.wakeupschedule.service.JwxtImportService.convertScheduleResponse(response)
+
+                if (semesterStart != null && semesterStart > 0
+                    && settingsManager.getSemesterStartDate() == 0L) {
+                    settingsManager.setSemesterStartDate(semesterStart)
+                }
+
+                com.cherry.wakeupschedule.service.CourseDataManager.getInstance(this@MainActivity)
+                    .replaceAllCourses(courses)
+
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    currentWeek = calculateCurrentWeek()
+                    displayWeek = currentWeek
+                    allCourses = courses
+                    viewModel.loadCoursesForWeek(displayWeek)
+                    updateWeekDisplay()
+                    updateDateDisplay()
+                    updateWidget()
+                    (application as App).registerAllCourseNotifications()
+                }
+            }.onFailure { e ->
+                if (showError) {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        Toast.makeText(
+                            this@MainActivity, "刷新失败: ${e.message}", Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
         }
     }
 

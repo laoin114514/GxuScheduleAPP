@@ -197,6 +197,19 @@ class CourseDataManager private constructor(context: Context) {
     }
 
     /**
+     * 替换所有课程（清空 + 批量添加）
+     */
+    fun replaceAllCourses(courses: List<com.cherry.wakeupschedule.model.Course>) {
+        synchronized(this) {
+            // 重新生成 ID
+            var nextId = System.currentTimeMillis()
+            val newCourses = courses.map { it.copy(id = nextId++) }
+            _coursesFlow.value = newCourses
+            saveCoursesToPrefs(newCourses, synchronous = true)
+        }
+    }
+
+    /**
      * 刷新课程数据
      */
     fun refreshCourses() {

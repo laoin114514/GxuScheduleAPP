@@ -30,6 +30,7 @@ class SettingsManager(context: Context) {
         private const val KEY_FONT_SIZE = "font_size"                          // 字体大小
         private const val KEY_ALARM_ENABLED = "alarm_enabled"                  // 闹钟是否启用
         private const val KEY_SEMESTER_START_DATE = "semester_start_date"      // 学期开始日期
+        private const val KEY_TOTAL_WEEKS = "total_weeks"                     // 学期总周数
         private const val KEY_CUSTOM_BACKGROUND_PATH = "custom_background_path"// 自定义背景图片路径
         private const val KEY_SOLID_BACKGROUND_COLOR = "solid_background_color"// 纯色背景颜色
         private const val KEY_COURSE_CARD_ALPHA = "course_card_alpha"         // 课程卡片透明度
@@ -324,6 +325,14 @@ class SettingsManager(context: Context) {
      */
     fun setSemesterStartDate(dateMillis: Long) {
         sharedPreferences.edit().putLong(KEY_SEMESTER_START_DATE, dateMillis).apply()
+    }
+
+    /** 获取学期总周数 */
+    fun getTotalWeeks(): Int = sharedPreferences.getInt(KEY_TOTAL_WEEKS, 20)
+
+    /** 设置学期总周数 */
+    fun setTotalWeeks(weeks: Int) {
+        sharedPreferences.edit().putInt(KEY_TOTAL_WEEKS, weeks).apply()
     }
 
     // ==================== 自定义学期列表相关 ====================

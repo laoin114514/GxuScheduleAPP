@@ -23,7 +23,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.service.ImportService
+import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
+import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
@@ -31,6 +33,7 @@ import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -51,6 +54,9 @@ class SettingsFragment : Fragment() {
     private lateinit var btnModifySemester: TextView
     private lateinit var btnModifyWeek: TextView
     private lateinit var btnModifyAlarm: TextView
+    private lateinit var tvSemesterDateRange: TextView
+    private lateinit var tvTotalWeeks: TextView
+    private lateinit var btnFetchSemesterInfo: TextView
     private lateinit var btnSchoolImport: TextView
     private lateinit var btnBackgroundSettings: TextView
     private lateinit var btnClearBackground: TextView
@@ -119,6 +125,9 @@ class SettingsFragment : Fragment() {
         btnModifySemester = view.findViewById(R.id.btn_modify_semester)
         btnModifyWeek = view.findViewById(R.id.btn_modify_week)
         btnModifyAlarm = view.findViewById(R.id.btn_modify_alarm)
+        tvSemesterDateRange = view.findViewById(R.id.tv_semester_date_range)
+        tvTotalWeeks = view.findViewById(R.id.tv_total_weeks)
+        btnFetchSemesterInfo = view.findViewById(R.id.btn_fetch_semester_info)
         btnSchoolImport = view.findViewById(R.id.btn_school_import)
         btnBackgroundSettings = view.findViewById(R.id.btn_background_settings)
         btnClearBackground = view.findViewById(R.id.btn_clear_background)
@@ -216,6 +225,8 @@ class SettingsFragment : Fragment() {
             }
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
         }
+
+        btnFetchSemesterInfo.setOnClickListener { fetchSemesterInfo() }
     }
 
     // ─── Dialog methods (same as SettingsActivity, using requireContext()) ───
@@ -815,6 +826,67 @@ class SettingsFragment : Fragment() {
         switchUpdateRemind.isChecked = settingsManager.isUpdateRemindEnabled()
         switchHideHolidayCourses.isChecked = settingsManager.isHideHolidayCourses()
         isUpdatingSwitchState = false
+
+        // 学期信息
+        val startMs = settingsManager.getSemesterStartDate()
+        val totalWeeks = settingsManager.getTotalWeeks()
+        if (startMs > 0) {
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            val endCal = java.util.Calendar.getInstance().apply {
+                timeInMillis = startMs
+                add(java.util.Calendar.DAY_OF_YEAR, totalWeeks * 7 - 1)
+            }
+            tvSemesterDateRange.text = "${sdf.format(startMs)} ~ ${sdf.format(endCal.time)}"
+            tvTotalWeeks.text = "${totalWeeks}周"
+        } else {
+            tvSemesterDateRange.text = "未获取"
+            tvTotalWeeks.text = "20周"
+        }
+    }
+
+    private fun fetchSemesterInfo() {
+        if (!JwxtAuthManager.isBound()) {
+            Toast.makeText(requireContext(), "请先绑定教务账号", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val cached = JwxtAccountManager.getCachedProfile()
+        val classId = cached?.className ?: ""
+        val gradeCode = cached?.grade ?: ""
+        val majorCode = cached?.major ?: ""
+        if (classId.isEmpty() || gradeCode.isEmpty()) {
+            Toast.makeText(requireContext(), "请先获取个人信息以获取班级信息", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        btnFetchSemesterInfo.isEnabled = false
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            val result = JwxtAuthManager.doWithAuth { client ->
+                val (year, termCode) = JwxtImportService.getCurrentYearTerm()
+                val term = com.gxu.jwxt.model.Term.fromCode(termCode)
+                    ?: com.gxu.jwxt.model.Term.SPRING
+                client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
+            }
+
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                btnFetchSemesterInfo.isEnabled = true
+                result.onSuccess { resp ->
+                    val startStr = resp.semesterStartDate
+                    val weeks = resp.weeks?.size ?: 0
+                    if (startStr != null && weeks > 0) {
+                        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                        val startMs = sdf.parse(startStr)?.time ?: 0
+                        settingsManager.setSemesterStartDate(startMs)
+                        settingsManager.setTotalWeeks(weeks)
+                        updateSettingsDisplay()
+                        Toast.makeText(requireContext(), "已获取：$startStr，共${weeks}周", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "获取失败：数据不完整", Toast.LENGTH_SHORT).show()
+                    }
+                }.onFailure { e ->
+                    Toast.makeText(requireContext(), "获取失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun deleteCoursesForSemester(semester: String) {

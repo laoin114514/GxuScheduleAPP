@@ -194,12 +194,13 @@ class CourseViewModel(application: Application) : AndroidViewModel(application) 
 
     // 计算当前周数
     private fun calculateCurrentWeek(): Int {
+        val totalWeeks = settingsManager.getTotalWeeks()
         val semesterStartDate = settingsManager.getSemesterStartDate()
         if (semesterStartDate <= 0L) {
-            return settingsManager.getDefaultWeek().coerceIn(1, 20)
+            return settingsManager.getDefaultWeek().coerceIn(1, totalWeeks)
         }
         val diffMillis = System.currentTimeMillis() - semesterStartDate
         val diffDays = (diffMillis / (24 * 60 * 60 * 1000L)).toInt()
-        return ((diffDays / 7) + 1).coerceIn(1, 20)
+        return ((diffDays / 7) + 1).coerceIn(1, totalWeeks)
     }
 }

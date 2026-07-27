@@ -170,7 +170,8 @@ class AlarmService(private val context: Context) {
         alarmManager.cancel(pendingIntent)
 
         // 同时取消整学期所有周次的预设闹钟（requestCode = course.id * 100 + week）
-        for (week in 1..20) {
+        val totalWeeks = settingsManager.getTotalWeeks()
+        for (week in 1..totalWeeks) {
             val weekIntent = Intent(context, AlarmReceiver::class.java)
             val weekPendingIntent = PendingIntent.getBroadcast(
                 context,
@@ -656,7 +657,7 @@ class AlarmService(private val context: Context) {
         val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
         val week = (diffDays / 7) + 1
 
-        return week.coerceIn(1, 20)
+        return week.coerceIn(1, settingsManager.getTotalWeeks())
     }
 
     /**

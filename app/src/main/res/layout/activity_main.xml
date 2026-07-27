@@ -94,18 +94,7 @@
                 android:orientation="horizontal">
 
                 <ImageButton
-                    android:id="@+id/btn_add"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_add"
-                    android:scaleType="centerInside"
-                    android:padding="6dp"
-                    app:tint="@android:color/white"
-                    android:contentDescription="添加" />
-
-                <ImageButton
-                    android:id="@+id/btn_import"
+                    android:id="@+id/btn_refresh"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
@@ -113,18 +102,7 @@
                     android:scaleType="centerInside"
                     android:padding="6dp"
                     app:tint="@android:color/white"
-                    android:contentDescription="导入" />
-
-                <ImageButton
-                    android:id="@+id/btn_export"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_share"
-                    android:scaleType="centerInside"
-                    android:padding="6dp"
-                    app:tint="@android:color/white"
-                    android:contentDescription="导出" />
+                    android:contentDescription="刷新课表" />
 
             </LinearLayout>
 

@@ -522,7 +522,7 @@ class MinimalWidgetProvider : AppWidgetProvider() {
         val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
         val week = (diffDays / 7) + 1
 
-        return week.coerceIn(1, 20)
+        return week.coerceIn(1, settingsManager.getTotalWeeks())
     }
 
     /**

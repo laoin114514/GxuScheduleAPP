@@ -225,7 +225,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
     private fun calculateCurrentWeek(settingsManager: SettingsManager): Int {
         val startDate = settingsManager.getSemesterStartDate()
         if (startDate == 0L) return settingsManager.getDefaultWeek()
-        return (((System.currentTimeMillis() - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, 20)
+        return (((System.currentTimeMillis() - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
     }
 
     private fun isCourseInCurrentWeekType(course: com.cherry.wakeupschedule.model.Course, week: Int): Boolean = when (course.weekType) { 0 -> true; 1 -> week % 2 == 1; 2 -> week % 2 == 0; else -> true }

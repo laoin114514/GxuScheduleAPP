@@ -231,7 +231,7 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
         if (startDate == 0L) {
             return settingsManager.getDefaultWeek()
         }
-        return (((System.currentTimeMillis() - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, 20)
+        return (((System.currentTimeMillis() - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
     }
 
     private fun calculateWeekForDay(settingsManager: SettingsManager, calendar: Calendar): Int {
@@ -239,7 +239,7 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
         if (startDate == 0L) {
             return settingsManager.getDefaultWeek()
         }
-        return (((calendar.timeInMillis - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, 20)
+        return (((calendar.timeInMillis - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
     }
 
     private fun isCourseInCurrentWeekType(course: Course, week: Int): Boolean {
