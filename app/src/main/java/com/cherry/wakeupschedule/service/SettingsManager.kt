@@ -312,11 +312,20 @@ class SettingsManager(context: Context) {
     // ==================== 学期日期相关 ====================
 
     /**
+     * 获取当前学期间对应的学期开始日期 key。
+     * 不同学期独立存储各自的开始日期。
+     */
+    private fun getSemesterStartDateKey(): String {
+        val semester = getCurrentSemester()
+        return "${KEY_SEMESTER_START_DATE}_$semester"
+    }
+
+    /**
      * 获取学期开始日期
      * @return 学期开始日期的毫秒时间戳，0表示未设置
      */
     fun getSemesterStartDate(): Long {
-        return sharedPreferences.getLong(KEY_SEMESTER_START_DATE, 0L)
+        return sharedPreferences.getLong(getSemesterStartDateKey(), 0L)
     }
 
     /**
@@ -324,15 +333,23 @@ class SettingsManager(context: Context) {
      * @param dateMillis 学期开始日期的毫秒时间戳
      */
     fun setSemesterStartDate(dateMillis: Long) {
-        sharedPreferences.edit().putLong(KEY_SEMESTER_START_DATE, dateMillis).apply()
+        sharedPreferences.edit().putLong(getSemesterStartDateKey(), dateMillis).apply()
+    }
+
+    /**
+     * 获取当前学期间对应的总周数 key。
+     */
+    private fun getTotalWeeksKey(): String {
+        val semester = getCurrentSemester()
+        return "${KEY_TOTAL_WEEKS}_$semester"
     }
 
     /** 获取学期总周数 */
-    fun getTotalWeeks(): Int = sharedPreferences.getInt(KEY_TOTAL_WEEKS, 20)
+    fun getTotalWeeks(): Int = sharedPreferences.getInt(getTotalWeeksKey(), 20)
 
     /** 设置学期总周数 */
     fun setTotalWeeks(weeks: Int) {
-        sharedPreferences.edit().putInt(KEY_TOTAL_WEEKS, weeks).apply()
+        sharedPreferences.edit().putInt(getTotalWeeksKey(), weeks).apply()
     }
 
     // ==================== 自定义学期列表相关 ====================
@@ -357,7 +374,7 @@ class SettingsManager(context: Context) {
 
     /**
      * 获取默认学期列表
-     * 根据当前日期自动生成合适的学期选项
+     * 生成最近 10 个学年的全部学期（每年第一/第二学期共 20 个选项）
      * @return 学期名称列表
      */
     private fun getDefaultSemesters(): List<String> {
@@ -365,28 +382,17 @@ class SettingsManager(context: Context) {
         val year = calendar.get(Calendar.YEAR)
         val month = calendar.get(Calendar.MONTH) + 1
 
+        // 当前学年起始年：9 月后属于新学年
+        val currentAcademicStart = if (month >= 9) year else year - 1
+
         val semesters = mutableListOf<String>()
-
-        // 根据当前月份确定显示哪些学期
-        when {
-            month >= 8 -> {  // 8月以后显示秋季学期
-                semesters.add("${year}-${year + 1}学年 第一学期")
-                semesters.add("${year}-${year + 1}学年 第二学期")
-                semesters.add("${year + 1}-${year + 2}学年 第一学期")
-            }
-            month >= 2 && month <= 7 -> {  // 2-7月显示春季学期
-                semesters.add("${year - 1}-${year}学年 第二学期")
-                semesters.add("${year}-${year + 1}学年 第一学期")
-                semesters.add("${year}-${year + 1}学年 第二学期")
-            }
-            else -> {  // 1月显示冬季学期
-                semesters.add("${year - 1}-${year}学年 第一学期")
-                semesters.add("${year - 1}-${year}学年 第二学期")
-                semesters.add("${year}-${year + 1}学年 第一学期")
-            }
+        // 最近 10 个学年（含下一年，方便选未来学期）
+        for (offset in -1 until 9) {
+            val start = currentAcademicStart - offset
+            semesters.add("${start}-${start + 1}学年 第一学期")
+            semesters.add("${start}-${start + 1}学年 第二学期")
         }
-
-        return semesters.distinct()
+        return semesters
     }
 
     /**

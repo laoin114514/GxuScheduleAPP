@@ -1966,7 +1966,9 @@ class MainActivity : AppCompatActivity() {
 
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             val result = com.cherry.wakeupschedule.service.JwxtAuthManager.doWithAuth { client ->
-                val (year, termCode) = com.cherry.wakeupschedule.service.JwxtImportService.getCurrentYearTerm()
+                val selectedSemester = settingsManager.getCurrentSemester()
+                val (year, termCode) =
+                    com.cherry.wakeupschedule.service.JwxtImportService.getYearTermForSemester(selectedSemester)
                 val term = com.gxu.jwxt.model.Term.fromCode(termCode)
                     ?: com.gxu.jwxt.model.Term.SPRING
                 client.schedule().personal(year, term)

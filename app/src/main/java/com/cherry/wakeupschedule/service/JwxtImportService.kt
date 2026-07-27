@@ -119,9 +119,31 @@ object JwxtImportService {
         return clone.timeInMillis
     }
 
-    /** 获取当前的学年和学期编码 */
+    /** 获取当前的学年和学期编码（基于当前日期） */
     fun getCurrentYearTerm(): Pair<String, String> {
         val sem = Semester.current()
         return Pair(sem.year, sem.termCode)
+    }
+
+    /**
+     * 根据用户选择的学期名称解析对应的学年和学期编码。
+     * 例如 "2024-2025学年 第一学期" → ("2024", "3")，即 AUTUMN
+     * "2024-2025学年 第二学期" → ("2024", "12")，即 SPRING
+     *
+     * 解析失败时回退到 [getCurrentYearTerm]。
+     */
+    fun getYearTermForSemester(semesterName: String): Pair<String, String> {
+        val yearRegex = Regex("""(\d{4})-\d{4}学年""")
+        val year = yearRegex.find(semesterName)?.groupValues?.getOrNull(1)
+        val termCode = when {
+            semesterName.contains("第一学期") -> "3"   // AUTUMN
+            semesterName.contains("第二学期") -> "12"  // SPRING
+            else -> null
+        }
+        if (year != null && termCode != null) {
+            return Pair(year, termCode)
+        }
+        // 回退到基于当前日期的学期检测
+        return getCurrentYearTerm()
     }
 }

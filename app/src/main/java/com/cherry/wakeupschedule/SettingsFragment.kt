@@ -232,17 +232,40 @@ class SettingsFragment : Fragment() {
     // ─── Dialog methods (same as SettingsActivity, using requireContext()) ───
 
     private fun showSemesterDialog() {
-        val semesters = settingsManager.getCustomSemesters().toMutableList()
+        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+        // 当前学年：若在 9 月之后，学年起始年为 currentYear，否则为 currentYear-1
+        val currentAcademicStart = if (currentMonth >= 9) currentYear else currentYear - 1
+
+        // 最近 10 个学年（含下一年，方便选未来学期）
+        val academicYears = (-1 until 9).map { offset ->
+            val start = currentAcademicStart - offset
+            "${start}-${start + 1}学年"
+        }.toTypedArray()
+
         AlertDialog.Builder(requireContext())
-            .setTitle("选择学期")
-            .setItems(semesters.toTypedArray()) { _, which ->
-                settingsManager.setCurrentSemester(semesters[which])
-                updateSettingsDisplay()
-                Toast.makeText(requireContext(), "学期设置已更新", Toast.LENGTH_SHORT).show()
+            .setTitle("选择学年")
+            .setItems(academicYears) { _, which ->
+                val selectedAcademicYear = academicYears[which]
+                showTermPicker(selectedAcademicYear)
             }
-            .setPositiveButton("新增学期") { _, _ -> showAddSemesterDialog() }
-            .setNeutralButton("管理学期") { _, _ -> showManageSemestersDialog() }
             .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showTermPicker(academicYear: String) {
+        val terms = arrayOf("第一学期", "第二学期")
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择学期 — $academicYear")
+            .setItems(terms) { _, which ->
+                val semester = "$academicYear ${terms[which]}"
+                settingsManager.setCurrentSemester(semester)
+                // 确保该学期在自定义列表中
+                settingsManager.addCustomSemester(semester)
+                updateSettingsDisplay()
+                Toast.makeText(requireContext(), "已切换至: $semester", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("返回", null)
             .show()
     }
 
@@ -861,7 +884,8 @@ class SettingsFragment : Fragment() {
         btnFetchSemesterInfo.isEnabled = false
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             val result = JwxtAuthManager.doWithAuth { client ->
-                val (year, termCode) = JwxtImportService.getCurrentYearTerm()
+                val selectedSemester = settingsManager.getCurrentSemester()
+                val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
                 val term = com.gxu.jwxt.model.Term.fromCode(termCode)
                     ?: com.gxu.jwxt.model.Term.SPRING
                 client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
