@@ -326,6 +326,49 @@
 
             </LinearLayout>
 
+            <!-- 账号管理卡片 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_transparent"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="账号管理"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:id="@+id/btn_bind_jwxt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="绑定教务"
+                    android:textSize="15sp"
+                    android:textColor="@android:color/white"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_button_primary"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/btn_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="个人信息"
+                    android:textSize="15sp"
+                    android:textColor="@android:color/white"
+                    android:padding="12dp"
+                    android:background="@drawable/bg_button_outline"
+                    android:gravity="start|center_vertical" />
+
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

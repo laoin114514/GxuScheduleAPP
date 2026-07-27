@@ -55,6 +55,8 @@
         <activity android:name=".AboutActivity" />
         <activity android:name=".CourseOverviewActivity" />
         <activity android:name=".ColorThemePickerActivity" />
+        <activity android:name=".BindJwxtActivity" />
+        <activity android:name=".ProfileActivity" />
 
         <!-- 闹钟接收器 -->
         <receiver

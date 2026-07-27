@@ -23,6 +23,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.service.ImportService
+import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
@@ -63,6 +64,8 @@ class SettingsFragment : Fragment() {
     private lateinit var btnFeedback: TextView
     private lateinit var switchUpdateRemind: Switch
     private lateinit var switchHideHolidayCourses: Switch
+    private lateinit var btnBindJwxt: TextView
+    private lateinit var btnProfile: TextView
     private lateinit var timeTableManager: TimeTableManager
     private lateinit var updateService: com.cherry.wakeupschedule.service.UpdateService
     private var isUpdatingSwitchState = false
@@ -129,6 +132,8 @@ class SettingsFragment : Fragment() {
         btnFeedback = view.findViewById(R.id.btn_feedback)
         switchUpdateRemind = view.findViewById<Switch>(R.id.switch_update_remind)
         switchHideHolidayCourses = view.findViewById<Switch>(R.id.switch_hide_holiday_courses)
+        btnBindJwxt = view.findViewById(R.id.btn_bind_jwxt)
+        btnProfile = view.findViewById(R.id.btn_profile)
 
         updateService = com.cherry.wakeupschedule.service.UpdateService(requireContext())
     }
@@ -198,6 +203,18 @@ class SettingsFragment : Fragment() {
         btnFeedback.setOnClickListener { showFeedbackDialog() }
         btnTimeTableSettings.setOnClickListener {
             startActivity(Intent(requireContext(), TimeTableEditActivity::class.java))
+        }
+
+        btnBindJwxt.setOnClickListener {
+            startActivity(Intent(requireContext(), BindJwxtActivity::class.java))
+        }
+
+        btnProfile.setOnClickListener {
+            if (!JwxtAuthManager.isBound()) {
+                Toast.makeText(requireContext(), "请先绑定教务账号", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            startActivity(Intent(requireContext(), ProfileActivity::class.java))
         }
     }
 

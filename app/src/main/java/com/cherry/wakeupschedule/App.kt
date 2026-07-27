@@ -37,6 +37,9 @@ class App : Application() {
         // 初始化调试日志（在 Application 层，确保所有组件都能使用）
         DebugLogger.init(this)
 
+        // 初始化教务账号管理器
+        com.cherry.wakeupschedule.service.JwxtAccountManager.init(this)
+
         try {
             NotificationHelper(this).createNotificationChannels()
             android.util.Log.d("App", "Notification channels created")
