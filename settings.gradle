@@ -19,3 +19,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "WakeupSchedule"
 include ':app'
+include ':gxuJwxtJavaClient'

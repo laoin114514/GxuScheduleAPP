@@ -134,7 +134,10 @@ dependencies {
     
     // Calendar
     implementation 'org.mnode.ical4j:ical4j:3.2.9'
-    
+
+    // GXU JWXT Client (本地源码模块)
+    implementation project(':gxuJwxtJavaClient')
+
     // JavaMail API for sending emails
     implementation 'com.sun.mail:android-mail:1.6.7'
     implementation 'com.sun.mail:android-activation:1.6.7'
