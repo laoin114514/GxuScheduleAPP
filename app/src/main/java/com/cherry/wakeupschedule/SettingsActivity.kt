@@ -100,7 +100,7 @@ class SettingsActivity : AppCompatActivity() {
         setupClickListeners()
         updateSettingsDisplay()
     }
-    
+
     private fun initViews() {
         tvCurrentSemester = findViewById(R.id.tv_current_semester)
         tvDefaultWeek = findViewById(R.id.tv_default_week)

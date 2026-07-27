@@ -403,6 +403,42 @@ class MainActivity : AppCompatActivity() {
         setupDragListener()
         restoreViewMode()
         restoreFloatButtonPosition()
+        setupBottomNav()
+    }
+
+    private fun setupBottomNav() {
+        binding.bottomNav.selectedItemId = R.id.nav_schedule
+        binding.bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_schedule -> {
+                    showScheduleContent()
+                    true
+                }
+                R.id.nav_settings -> {
+                    showSettingsFragment()
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun showScheduleContent() {
+        binding.contentMain.visibility = View.VISIBLE
+        binding.btnViewToggleParent.visibility = View.VISIBLE
+        binding.fragmentSettingsContainer.visibility = View.GONE
+    }
+
+    private fun showSettingsFragment() {
+        binding.contentMain.visibility = View.GONE
+        binding.btnViewToggleParent.visibility = View.GONE
+        binding.fragmentSettingsContainer.visibility = View.VISIBLE
+
+        if (supportFragmentManager.findFragmentById(R.id.fragment_settings_container) == null) {
+            supportFragmentManager.beginTransaction()
+                .add(R.id.fragment_settings_container, SettingsFragment())
+                .commit()
+        }
     }
 
     private fun toggleViewMode() {
@@ -619,7 +655,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnAdd.setColorFilter(textColor)
         binding.btnImport.setColorFilter(textColor)
         binding.btnExport.setColorFilter(textColor)
-        binding.btnMore.setColorFilter(textColor)
 
         val weekdayViews = listOf(
             binding.tvWeekday1, binding.tvWeekday2, binding.tvWeekday3,
@@ -645,7 +680,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnAdd.setColorFilter(textColor)
         binding.btnImport.setColorFilter(textColor)
         binding.btnExport.setColorFilter(textColor)
-        binding.btnMore.setColorFilter(textColor)
 
         val weekdayViews = listOf(
             binding.tvWeekday1, binding.tvWeekday2, binding.tvWeekday3,
@@ -672,7 +706,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnAdd.setColorFilter(textColor)
         binding.btnImport.setColorFilter(textColor)
         binding.btnExport.setColorFilter(textColor)
-        binding.btnMore.setColorFilter(textColor)
 
         // 设置星期表头颜色
         val weekdayViews = listOf(
@@ -716,7 +749,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnAdd.setColorFilter(whiteColor)
         binding.btnImport.setColorFilter(whiteColor)
         binding.btnExport.setColorFilter(whiteColor)
-        binding.btnMore.setColorFilter(whiteColor)
 
         // 设置星期表头颜色
         val weekdayViews = listOf(
@@ -755,12 +787,6 @@ class MainActivity : AppCompatActivity() {
         // 导出按钮
         binding.btnExport.setOnClickListener {
             showExportDialog()
-        }
-
-        // 更多按钮 - 直接进入设置
-        binding.btnMore.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
         }
 
         // 周次显示点击 - 快速跳转到当前周
