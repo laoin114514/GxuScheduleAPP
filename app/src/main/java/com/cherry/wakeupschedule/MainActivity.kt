@@ -602,7 +602,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyBackgroundSettings() {
+    fun applyBackgroundSettings() {
         when (settingsManager.getBackgroundMode()) {
             SettingsManager.BackgroundType.IMAGE -> {
                 val customBgPath = settingsManager.getCustomBackgroundPath()

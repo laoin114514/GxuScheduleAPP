@@ -52,6 +52,7 @@ class SettingsFragment : Fragment() {
     private lateinit var btnModifyAlarm: TextView
     private lateinit var btnSchoolImport: TextView
     private lateinit var btnBackgroundSettings: TextView
+    private lateinit var btnClearBackground: TextView
     private lateinit var btnAlarmSettings: TextView
     private lateinit var btnAbout: TextView
     private lateinit var btnTimeTableSettings: TextView
@@ -117,6 +118,7 @@ class SettingsFragment : Fragment() {
         btnModifyAlarm = view.findViewById(R.id.btn_modify_alarm)
         btnSchoolImport = view.findViewById(R.id.btn_school_import)
         btnBackgroundSettings = view.findViewById(R.id.btn_background_settings)
+        btnClearBackground = view.findViewById(R.id.btn_clear_background)
         btnAlarmSettings = view.findViewById(R.id.btn_alarm_settings)
         btnAbout = view.findViewById(R.id.btn_about)
         btnTimeTableSettings = view.findViewById(R.id.btn_time_table_settings)
@@ -180,6 +182,7 @@ class SettingsFragment : Fragment() {
         btnModifyWeek.setOnClickListener { showWeekDialog() }
         btnModifyAlarm.setOnClickListener { showAlarmDialog() }
         btnBackgroundSettings.setOnClickListener { showBackgroundDialog() }
+        btnClearBackground.setOnClickListener { clearImageBackground() }
         btnAlarmSettings.setOnClickListener { showAlarmSettingsDialog() }
         btnAppearanceSettings.setOnClickListener { showAppearanceSettingsDialog() }
         btnColorTheme.setOnClickListener {
@@ -376,6 +379,26 @@ class SettingsFragment : Fragment() {
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    private fun clearImageBackground() {
+        val currentMode = settingsManager.getBackgroundMode()
+        if (currentMode != SettingsManager.BackgroundType.IMAGE) {
+            Toast.makeText(requireContext(), "当前不是图片背景，无需清空", Toast.LENGTH_SHORT).show()
+            return
+        }
+        // 删除图片文件
+        val customPath = settingsManager.getCustomBackgroundPath()
+        if (customPath.isNotEmpty()) {
+            File(customPath).delete()
+        }
+        // 重置为默认背景
+        settingsManager.setCustomBackgroundPath("")
+        settingsManager.setBackgroundThemeIndex(0)
+        // 立即刷新主界面背景
+        (requireActivity() as? MainActivity)?.applyBackgroundSettings()
+        updateSettingsDisplay()
+        Toast.makeText(requireContext(), "图片背景已清空，已恢复默认背景", Toast.LENGTH_SHORT).show()
     }
 
     private fun showBackgroundThemePicker() {

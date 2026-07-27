@@ -157,6 +157,18 @@
                     android:gravity="start|center_vertical" />
 
                 <TextView
+                    android:id="@+id/btn_clear_background"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="清空图片背景"
+                    android:textSize="15sp"
+                    android:textColor="#FF6B6B"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_button_outline_red"
+                    android:gravity="start|center_vertical" />
+
+                <TextView
                     android:id="@+id/btn_appearance_settings"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
