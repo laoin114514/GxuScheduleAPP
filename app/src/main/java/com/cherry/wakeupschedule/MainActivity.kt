@@ -21,10 +21,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize theme manager and apply current palette overlay
+        // MUST be called before setContentView() so all ?attr/ references resolve correctly
+        ThemeManager.init(this)
+        ThemeManager.applyToTheme(this)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        ThemeManager.init(this)
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment

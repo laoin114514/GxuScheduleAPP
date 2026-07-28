@@ -1,9 +1,11 @@
 package com.cherry.wakeupschedule.ui.theme
 
+import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
 import androidx.annotation.ColorInt
+import com.cherry.wakeupschedule.R
 import kotlin.math.*
 
 object ThemeManager {
@@ -21,10 +23,31 @@ object ThemeManager {
     @Volatile
     private var _courseColors: IntArray = sampleCourseColors(currentLight)
 
+    /** Map palette index to theme overlay style resource ID */
+    private val OVERLAY_STYLES = intArrayOf(
+        R.style.ThemeOverlay_WakeupSchedule_Palette0,
+        R.style.ThemeOverlay_WakeupSchedule_Palette1,
+        R.style.ThemeOverlay_WakeupSchedule_Palette2,
+        R.style.ThemeOverlay_WakeupSchedule_Palette3,
+        R.style.ThemeOverlay_WakeupSchedule_Palette4
+    )
+
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val index = prefs.getInt(KEY_PALETTE_INDEX, 0).coerceIn(0, 4)
         setPaletteIndex(index)
+    }
+
+    /**
+     * Apply the current palette overlay to the activity theme.
+     * Must be called BEFORE setContentView().
+     * The correct overlay (light/dark) is resolved automatically
+     * via the values/values-night resource qualifier system.
+     */
+    fun applyToTheme(activity: Activity) {
+        val index = getPaletteIndex(activity)
+        val overlayResId = OVERLAY_STYLES[index.coerceIn(0, 4)]
+        activity.theme.applyStyle(overlayResId, true)
     }
 
     fun getPaletteIndex(context: Context): Int {
