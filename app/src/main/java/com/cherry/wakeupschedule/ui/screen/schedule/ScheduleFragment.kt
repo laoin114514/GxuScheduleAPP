@@ -38,9 +38,14 @@ class ScheduleFragment : Fragment() {
     private lateinit var settingsManager: SettingsManager
     private lateinit var adapter: WeekPagerAdapter
 
+    companion object {
+        private const val KEY_DISPLAY_WEEK = "display_week"
+    }
+
     private var currentWeek = 1
     private var displayWeek = 1
     private var allCourses: List<Course> = emptyList()
+    private var isFirstInit = true
 
     private val dateFormat = SimpleDateFormat("yyyy/M/d", Locale.getDefault())
     private val countdownHandler = Handler(Looper.getMainLooper())
@@ -57,13 +62,21 @@ class ScheduleFragment : Fragment() {
         settingsManager = SettingsManager(requireContext())
 
         initViews(view)
-        setupViewPager()
+        setupViewPager(savedInstanceState)
         setupObservers()
         updateDateTimeHeader()
         startCountdown()
 
         // 自动从教务刷新（静默）
-        refreshScheduleFromJwxt(showError = false)
+        if (isFirstInit) {
+            isFirstInit = false
+            refreshScheduleFromJwxt(showError = false)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_DISPLAY_WEEK, displayWeek)
     }
 
     override fun onResume() {
@@ -82,14 +95,26 @@ class ScheduleFragment : Fragment() {
         }
     }
 
-    private fun setupViewPager() {
+    private fun setupViewPager(savedInstanceState: Bundle?) {
         currentWeek = calculateCurrentWeek()
-        displayWeek = currentWeek
+
+        // 恢复上次浏览的周次（切换tab后再切回时保持位置）
+        val savedWeek = savedInstanceState?.getInt(KEY_DISPLAY_WEEK)
+        displayWeek = savedWeek?.coerceIn(1, settingsManager.getTotalWeeks())
+            ?: currentWeek
+
         val totalWeeks = settingsManager.getTotalWeeks()
 
         adapter = WeekPagerAdapter(this, totalWeeks)
         viewPager.adapter = adapter
-        viewPager.setCurrentItem(currentWeek - 1, false)
+        // 预加载相邻两页，减少快速滑动卡顿
+        viewPager.offscreenPageLimit = 2
+
+        // 用 post 延迟设置初始页，避免 ViewPager2 首帧先渲染第0页
+        // 再跳转到目标页导致的视觉闪烁
+        viewPager.post {
+            viewPager.setCurrentItem(displayWeek - 1, false)
+        }
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -144,7 +169,7 @@ class ScheduleFragment : Fragment() {
         val monthLabel = root.findViewById<TextView>(R.id.tv_month_value)
         monthLabel?.text = "${cal.get(Calendar.MONTH) + 1}"
 
-        dateViewIds.forEachIndexed { index, id ->
+        dateViewIds.forEachIndexed { _, id ->
             val tv = root.findViewById<TextView>(id)
             tv.text = fmt.format(cal.time)
 
@@ -182,10 +207,15 @@ class ScheduleFragment : Fragment() {
 
                     CourseDataManager.getInstance(requireContext()).replaceAllCourses(courses)
 
-                    currentWeek = calculateCurrentWeek()
-                    displayWeek = currentWeek
+                    // 手动刷新时跳回当前周，自动刷新时保持用户浏览的周次
+                    if (showError) {
+                        currentWeek = calculateCurrentWeek()
+                        displayWeek = currentWeek
+                        viewPager.setCurrentItem(currentWeek - 1, false)
+                    } else {
+                        currentWeek = calculateCurrentWeek()
+                    }
                     allCourses = courses
-                    viewPager.setCurrentItem(currentWeek - 1, false)
                     updateDateTimeHeader()
 
                     (requireActivity().application as App).registerAllCourseNotifications()

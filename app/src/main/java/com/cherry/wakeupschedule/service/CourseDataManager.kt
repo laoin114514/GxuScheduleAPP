@@ -49,6 +49,21 @@ class CourseDataManager private constructor(context: Context) {
                 _coursesFlow.value = courses
             }
         }
+        // 为已有但未分配颜色的课程补分配颜色（一次性的迁移）
+        scope.launch {
+            val courses = dao.getAllCourses()
+            if (courses.isNotEmpty() && courses.any { it.color == 0 }) {
+                val updated = courses.map {
+                    if (it.color == 0) it.copy(color = assignColorIndex(it.name, it.teacher))
+                    else it
+                }
+                dao.insertCourses(updated)
+                android.util.Log.d(
+                    "CourseDataManager",
+                    "Assigned colors to ${updated.count { it.color > 0 }} existing courses"
+                )
+            }
+        }
     }
 
     /**
@@ -136,13 +151,18 @@ class CourseDataManager private constructor(context: Context) {
     // ── 写操作（Executor + Future，避免 runBlocking） ──
 
     fun addCourse(course: Course): Course {
-        val courseToInsert = course.copy(id = 0)
+        val colorIndex = assignColorIndex(course.name, course.teacher)
+        val courseToInsert = course.copy(id = 0, color = colorIndex)
         val newId = executeDb { dao.insertCourse(courseToInsert) }
-        return course.copy(id = newId)
+        return courseToInsert.copy(id = newId)
     }
 
     fun addCourses(courses: List<Course>) {
-        executeDb { dao.insertCourses(courses.map { it.copy(id = 0) }) }
+        executeDb {
+            dao.insertCourses(courses.map {
+                it.copy(id = 0, color = assignColorIndex(it.name, it.teacher))
+            })
+        }
     }
 
     fun updateCourse(course: Course) {
@@ -160,7 +180,9 @@ class CourseDataManager private constructor(context: Context) {
     fun replaceAllCourses(courses: List<Course>) {
         executeDb {
             dao.deleteAllCourses()
-            dao.insertCourses(courses.map { it.copy(id = 0) })
+            dao.insertCourses(courses.map {
+                it.copy(id = 0, color = assignColorIndex(it.name, it.teacher))
+            })
         }
     }
 
@@ -187,12 +209,24 @@ class CourseDataManager private constructor(context: Context) {
         @Volatile
         private var instance: CourseDataManager? = null
 
+        /** 课程颜色数量，与 ThemeManager.sampleCourseColors 对齐 */
+        const val COURSE_COLOR_COUNT = 16
+
         fun getInstance(context: Context): CourseDataManager {
             return instance ?: synchronized(this) {
                 instance ?: CourseDataManager(context.applicationContext).also {
                     instance = it
                 }
             }
+        }
+
+        /**
+         * 为课程分配稳定的颜色索引 (1..COURSE_COLOR_COUNT)。
+         * 同一「课程名+教师」组合始终返回同一颜色索引，保证跨页面一致。
+         */
+        fun assignColorIndex(name: String, teacher: String): Int {
+            val key = "$name|$teacher"
+            return (Math.abs(key.hashCode()) % COURSE_COLOR_COUNT) + 1
         }
     }
 }

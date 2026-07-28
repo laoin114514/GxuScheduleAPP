@@ -117,8 +117,11 @@ class WeekPageFragment : Fragment() {
         emptyView.visibility = View.GONE
 
         val palette = ThemeManager.currentPalette(requireContext())
-        weekCourses.forEachIndexed { index, course ->
-            val color = courseColors[index % courseColors.size]
+
+        weekCourses.forEach { course ->
+            // 使用课程持久化的颜色索引，同一课程在所有周页保持相同颜色
+            val colorIndex = if (course.color > 0) (course.color - 1) % courseColors.size else 0
+            val color = courseColors[colorIndex]
             val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
             val cardHeight = cellHeight * span
             val cardView = CardView(requireContext()).apply {
