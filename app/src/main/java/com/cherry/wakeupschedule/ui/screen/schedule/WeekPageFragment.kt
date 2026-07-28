@@ -110,12 +110,14 @@ class WeekPageFragment : Fragment() {
         val palette = ThemeManager.currentPalette(requireContext())
         weekCourses.forEachIndexed { index, course ->
             val color = courseColors[index % courseColors.size]
+            val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
+            val cardHeight = cellHeight * span
             val cardView = CardView(requireContext()).apply {
                 layoutParams = GridLayout.LayoutParams().apply {
-                    rowSpec = GridLayout.spec(course.startTime - 1,
-                        (course.endTime - course.startTime + 1).coerceAtLeast(1), 1f)
+                    rowSpec = GridLayout.spec(course.startTime - 1, span, 1f)
                     columnSpec = GridLayout.spec(course.dayOfWeek - 1, 1f)
-                    width = 0; height = 0
+                    width = 0
+                    height = cardHeight
                     setMargins(2, 2, 2, 2)
                 }
                 setCardBackgroundColor(color)
