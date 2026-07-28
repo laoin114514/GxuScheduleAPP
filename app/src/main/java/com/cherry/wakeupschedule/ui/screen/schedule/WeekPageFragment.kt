@@ -71,7 +71,16 @@ class WeekPageFragment : Fragment() {
 
         // Read courses directly from CourseDataManager (always current)
         val allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
-        val weekCourses = allCourses.filter { weekNumber in it.startWeek..it.endWeek }
+        val weekCourses = allCourses.filter { course ->
+            val isInWeekRange = weekNumber in course.startWeek..course.endWeek
+            val isWeekTypeMatch = when (course.weekType) {
+                0 -> true           // 每周
+                1 -> weekNumber % 2 == 1  // 单周
+                2 -> weekNumber % 2 == 0  // 双周
+                else -> true
+            }
+            isInWeekRange && isWeekTypeMatch
+        }
 
         // Build time axis
         for (node in 1..maxNodes) {

@@ -1,11 +1,19 @@
 package com.cherry.wakeupschedule
 
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
+import com.cherry.wakeupschedule.service.ImportService
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,5 +31,43 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
 
         binding.bottomNav.setupWithNavController(navController)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        handlePendingImport()
+    }
+
+    /**
+     * 处理从 WebViewActivity 下载后保存到 pending_imports 的待导入文件。
+     * 作为 WebViewActivity 直接导入失败时的兜底机制。
+     */
+    private fun handlePendingImport() {
+        val prefs = getSharedPreferences("pending_imports", Context.MODE_PRIVATE)
+        val pendingFile = prefs.getString("pending_file", null) ?: return
+        // 清除记录，避免重复导入
+        prefs.edit().remove("pending_file").apply()
+
+        lifecycleScope.launch {
+            try {
+                val uri = try {
+                    Uri.parse(pendingFile)
+                } catch (e: Exception) {
+                    Log.w("MainActivity", "无法解析 pending_file URI: $pendingFile", e)
+                    return@launch
+                }
+                val importService = ImportService(this@MainActivity)
+                val success = withContext(Dispatchers.IO) {
+                    importService.importFromFile(uri)
+                }
+                if (success) {
+                    Log.d("MainActivity", "pending_imports 兜底导入成功: $pendingFile")
+                } else {
+                    Log.w("MainActivity", "pending_imports 兜底导入失败: $pendingFile")
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "pending_imports 兜底导入异常", e)
+            }
+        }
     }
 }

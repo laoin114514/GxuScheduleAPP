@@ -2,6 +2,7 @@ package com.cherry.wakeupschedule.service
 
 import android.content.Context
 import com.cherry.wakeupschedule.model.Course
+import com.gxu.jwxt.model.ClassScheduleResponse
 import com.gxu.jwxt.model.CourseEntry
 import com.gxu.jwxt.model.ScheduleResponse
 import com.gxu.jwxt.model.Semester
@@ -16,6 +17,17 @@ object JwxtImportService {
      * 将教务课表转换为本地 Course 列表，并计算学期开始日期。
      */
     fun convertScheduleResponse(response: ScheduleResponse): Pair<List<Course>, Long?> {
+        val allEntries = response.allCourses ?: emptyList()
+        val courses = allEntries.mapNotNull { convertEntry(it) }
+        val semesterStart = calculateSemesterStart(courses)
+        return Pair(courses, semesterStart)
+    }
+
+    /**
+     * 将班级课表响应（ClassScheduleResponse）转换为本地 Course 列表。
+     * 班级课表接口返回的课程条目结构与通用课表相同。
+     */
+    fun convertClassScheduleResponse(response: ClassScheduleResponse): Pair<List<Course>, Long?> {
         val allEntries = response.allCourses ?: emptyList()
         val courses = allEntries.mapNotNull { convertEntry(it) }
         val semesterStart = calculateSemesterStart(courses)

@@ -10,16 +10,19 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.cherry.wakeupschedule.AboutActivity
+import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.SchoolImportActivity
 import com.cherry.wakeupschedule.TimeTableEditActivity
+import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.gxu.jwxt.model.Term
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -331,29 +334,39 @@ class ProfileFragment : Fragment() {
         val btn = view?.findViewById<View>(R.id.btn_fetch_semester_info)
         btn?.isEnabled = false
 
-        val cached = JwxtAccountManager.getCachedProfile()
-        val classId = cached?.className ?: ""
-        val gradeCode = cached?.grade ?: ""
-        val majorCode = cached?.major ?: ""
-
-        if (classId.isEmpty() || gradeCode.isEmpty()) {
-            Toast.makeText(requireContext(), "请先获取个人信息以获取班级信息", Toast.LENGTH_SHORT).show()
-            btn?.isEnabled = true
-            return
-        }
+        val appCtx = requireContext().applicationContext
 
         CoroutineScope(Dispatchers.IO).launch {
             val selectedSemester = settingsManager.getCurrentSemester()
             val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
             val term = Term.fromCode(termCode) ?: Term.SPRING
 
-            val result = JwxtAuthManager.doWithAuth { client ->
-                client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
+            // ── 1. personal() API：获取个人课表（最可靠，只需学年+学期） ──
+            val personalResult = JwxtAuthManager.doWithAuth { client ->
+                client.schedule().personal(year, term)
             }
 
-            withContext(Dispatchers.Main) {
-                btn?.isEnabled = true
-                result.onSuccess { resp ->
+            var courseCount = 0
+            personalResult.onSuccess { scheduleResp ->
+                val (courses, _) = JwxtImportService.convertScheduleResponse(scheduleResp)
+                if (courses.isNotEmpty()) {
+                    CourseDataManager.getInstance(appCtx).replaceAllCourses(courses)
+                    courseCount = courses.size
+                }
+            }
+
+            // ── 2. classDetail() API：获取学期日期（需班级信息，可选） ──
+            val cached = JwxtAccountManager.getCachedProfile()
+            val classId = cached?.className ?: ""
+            val gradeCode = cached?.grade ?: ""
+            val majorCode = cached?.major ?: ""
+
+            var semesterUpdated = false
+            if (classId.isNotEmpty() && gradeCode.isNotEmpty()) {
+                val classResult = JwxtAuthManager.doWithAuth { client ->
+                    client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
+                }
+                classResult.onSuccess { resp ->
                     val startStr = resp.semesterStartDate
                     val weeks = resp.weeks?.size ?: 0
                     if (startStr != null && weeks > 0) {
@@ -361,13 +374,34 @@ class ProfileFragment : Fragment() {
                         val startMs = sdf.parse(startStr)?.time ?: 0
                         settingsManager.setSemesterStartDate(startMs)
                         settingsManager.setTotalWeeks(weeks)
-                        updateDisplay()
-                        Toast.makeText(requireContext(), "已获取：${startStr}，共${weeks}周", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), "获取失败：数据不完整", Toast.LENGTH_SHORT).show()
+                        semesterUpdated = true
                     }
-                }.onFailure { e ->
-                    Toast.makeText(requireContext(), "获取失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            // ── 3. 注册闹钟 + 更新 UI ──
+            if (courseCount > 0) {
+                App.instance.registerAllCourseNotifications()
+            }
+
+            withContext(Dispatchers.Main) {
+                btn?.isEnabled = true
+                updateDisplay()
+                ScheduleWidgetUpdateService.triggerUpdate(requireContext())
+
+                when {
+                    courseCount > 0 && semesterUpdated ->
+                        Toast.makeText(requireContext(),
+                            "已导入 ${courseCount} 门课程，学期信息已更新", Toast.LENGTH_SHORT).show()
+                    courseCount > 0 ->
+                        Toast.makeText(requireContext(),
+                            "已导入 ${courseCount} 门课程（请手动设置学期开始日期）", Toast.LENGTH_SHORT).show()
+                    personalResult.isFailure ->
+                        Toast.makeText(requireContext(),
+                            "获取失败: ${personalResult.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                    else ->
+                        Toast.makeText(requireContext(),
+                            "未获取到课程数据，请检查学期设置是否正确", Toast.LENGTH_SHORT).show()
                 }
             }
         }

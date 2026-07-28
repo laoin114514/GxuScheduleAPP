@@ -158,22 +158,41 @@ class WebViewActivity : AppCompatActivity() {
                         return
                     }
 
-                    // 保存文件路径到SharedPreferences，让MainActivity知道有新文件
-                    val prefs = getSharedPreferences("pending_imports", Context.MODE_PRIVATE)
-                    if (filePath != null) {
-                        prefs.edit().putString("pending_file", filePath).apply()
+                    // 直接导入下载的文件
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val success = importService.importFromFile(sourceUri!!)
+                            withContext(Dispatchers.Main) {
+                                if (success) {
+                                    Toast.makeText(
+                                        this@WebViewActivity,
+                                        "课程表已下载并导入成功 ✓",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(
+                                        this@WebViewActivity,
+                                        "导入失败，请检查文件格式",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                                finish()
+                            }
+                        } catch (e: Exception) {
+                            Log.e("WebViewActivity", "导入下载文件失败", e)
+                            withContext(Dispatchers.Main) {
+                                // 导入失败时保存到 pending_imports 作为兜底
+                                val prefs = getSharedPreferences("pending_imports", Context.MODE_PRIVATE)
+                                prefs.edit().putString("pending_file", sourceUri.toString()).apply()
+                                Toast.makeText(
+                                    this@WebViewActivity,
+                                    "下载完成，返回首页自动导入",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                finish()
+                            }
+                        }
                     }
-
-                    Toast.makeText(
-                        this@WebViewActivity,
-                        "课程表已下载到手机下载目录，返回首页自动导入",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    // 延迟后自动返回
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        finish()
-                    }, 1500)
 
                 } else {
                     // 下载失败
@@ -646,16 +665,30 @@ class WebViewActivity : AppCompatActivity() {
                     destFile.delete()
                     return@launch
                 }
-                
-                // 保存文件路径
-                val prefs = getSharedPreferences("pending_imports", Context.MODE_PRIVATE)
-                prefs.edit().putString("pending_file", destFile.absolutePath).apply()
-                
+
+                // 直接导入下载的文件
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@WebViewActivity, "课程表已下载，返回首页自动导入", Toast.LENGTH_LONG).show()
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        finish()
-                    }, 1500)
+                    try {
+                        val fileUri = androidx.core.content.FileProvider.getUriForFile(
+                            this@WebViewActivity,
+                            "${packageName}.fileprovider",
+                            destFile
+                        )
+                        val importService = ImportService(this@WebViewActivity)
+                        val success = importService.importFromFile(fileUri)
+                        if (success) {
+                            Toast.makeText(this@WebViewActivity, "课程表已下载并导入成功 ✓", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(this@WebViewActivity, "导入失败，请检查文件格式", Toast.LENGTH_LONG).show()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("WebViewActivity", "导入下载文件失败", e)
+                        // 导入失败时保存到 pending_imports 作为兜底
+                        val prefs = getSharedPreferences("pending_imports", Context.MODE_PRIVATE)
+                        prefs.edit().putString("pending_file", destFile.absolutePath).apply()
+                        Toast.makeText(this@WebViewActivity, "下载完成，返回首页自动导入", Toast.LENGTH_LONG).show()
+                    }
+                    finish()
                 }
                 
             } catch (e: Exception) {
