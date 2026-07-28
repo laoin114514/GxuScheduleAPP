@@ -30,24 +30,21 @@ class TimeTableManager private constructor(context: Context) {
             }
         }
 
-        // 默认的课程时间段（16节课）
+        // 默认的课程时间段（广西大学 13 节，2022年2月14日起执行）
         val defaultTimeSlots = listOf(
             TimeSlot(1, "08:00", "08:45"),
             TimeSlot(2, "08:55", "09:40"),
             TimeSlot(3, "10:00", "10:45"),
             TimeSlot(4, "10:55", "11:40"),
             TimeSlot(5, "14:30", "15:15"),
-            TimeSlot(6, "15:25", "16:10"),
-            TimeSlot(7, "16:30", "17:15"),
-            TimeSlot(8, "17:25", "18:10"),
-            TimeSlot(9, "19:00", "19:45"),
-            TimeSlot(10, "19:55", "20:40"),
-            TimeSlot(11, "20:50", "21:35"),
-            TimeSlot(12, "21:45", "22:30"),
-            TimeSlot(13, "22:40", "23:25"),
-            TimeSlot(14, "23:35", "00:20"),
-            TimeSlot(15, "00:30", "01:15"),
-            TimeSlot(16, "01:25", "02:10")
+            TimeSlot(6, "15:20", "16:05"),
+            TimeSlot(7, "16:25", "17:10"),
+            TimeSlot(8, "17:15", "18:00"),
+            TimeSlot(9, "", ""),
+            TimeSlot(10, "", ""),
+            TimeSlot(11, "19:40", "20:25"),
+            TimeSlot(12, "20:30", "21:15"),
+            TimeSlot(13, "21:20", "22:05")
         )
 
         fun getTimeSlot(startNode: Int): TimeSlot? {
@@ -101,7 +98,7 @@ class TimeTableManager private constructor(context: Context) {
      * 获取最大节次数
      */
     fun getMaxNodes(): Int {
-        return prefs.getInt(KEY_MAX_NODES, 12)
+        return prefs.getInt(KEY_MAX_NODES, 13)
     }
 
     /**
@@ -117,7 +114,7 @@ class TimeTableManager private constructor(context: Context) {
     fun resetToDefault() {
         prefs.edit()
             .remove(KEY_TIME_SLOTS)
-            .putInt(KEY_MAX_NODES, 12)
+            .putInt(KEY_MAX_NODES, 13)
             .apply()
         // 保存默认时间槽
         saveTimeSlots(defaultTimeSlots)

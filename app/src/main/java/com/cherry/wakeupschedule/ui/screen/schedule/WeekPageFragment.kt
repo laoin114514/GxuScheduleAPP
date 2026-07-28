@@ -110,10 +110,10 @@ class WeekPageFragment : Fragment() {
                     LinearLayout.LayoutParams.MATCH_PARENT, cellHeight
                 )
                 timeView.findViewById<TextView>(R.id.tv_node).text = node.toString()
-                timeView.findViewById<TextView>(R.id.tv_start_time).text =
-                    timeSlot?.startTime ?: "08:00"
-                timeView.findViewById<TextView>(R.id.tv_end_time).text =
-                    timeSlot?.endTime ?: "08:45"
+                val start = timeSlot?.startTime?.takeIf { it.isNotBlank() }
+                val end = timeSlot?.endTime?.takeIf { it.isNotBlank() }
+                timeView.findViewById<TextView>(R.id.tv_start_time).text = start ?: "--:--"
+                timeView.findViewById<TextView>(R.id.tv_end_time).text = end ?: "--:--"
                 timeAxis.addView(timeView)
             }
 
