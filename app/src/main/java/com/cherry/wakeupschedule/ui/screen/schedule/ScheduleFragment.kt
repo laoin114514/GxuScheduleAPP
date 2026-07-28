@@ -72,7 +72,8 @@ class ScheduleFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        refreshScheduleFromJwxt(showError = false)
+        // 不在 onResume 触发教务刷新，避免每次切tab都重建课表
+        // 手动刷新按钮 + 首次启动已覆盖数据更新场景
     }
 
     private fun initViews(view: View) {
@@ -121,10 +122,12 @@ class ScheduleFragment : Fragment() {
         val totalWeeks = settingsManager.getTotalWeeks()
 
         adapter = WeekPagerAdapter(this, totalWeeks)
-        viewPager.adapter = adapter
-        viewPager.offscreenPageLimit = 2
+        // 仅预加载相邻1页（3页总量），减少tab切换时的初始构建压力
+        viewPager.offscreenPageLimit = 1
 
+        // 延迟到下一帧设置 adapter + 当前页，让tab切换动画先完成
         viewPager.post {
+            viewPager.adapter = adapter
             viewPager.setCurrentItem(displayWk - 1, false)
         }
 
