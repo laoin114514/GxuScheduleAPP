@@ -10,14 +10,21 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
+import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
+import com.cherry.wakeupschedule.service.JwxtAuthManager
+import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -54,6 +61,14 @@ class ScheduleFragment : Fragment() {
         setupObservers()
         updateDateTimeHeader()
         startCountdown()
+
+        // 自动从教务刷新（静默）
+        refreshScheduleFromJwxt(showError = false)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshScheduleFromJwxt(showError = false)
     }
 
     private fun initViews(view: View) {
@@ -63,7 +78,7 @@ class ScheduleFragment : Fragment() {
         tvCountdown = view.findViewById(R.id.tv_countdown)
 
         view.findViewById<View>(R.id.btn_refresh).setOnClickListener {
-            Toast.makeText(requireContext(), "刷新课表", Toast.LENGTH_SHORT).show()
+            refreshScheduleFromJwxt(showError = true)
         }
     }
 
@@ -88,7 +103,6 @@ class ScheduleFragment : Fragment() {
         val viewModel = ViewModelProvider(requireActivity())[CourseViewModel::class.java]
         viewModel.courses.observe(viewLifecycleOwner) { _ ->
             allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
-            // Fragments read directly from CourseDataManager, no need to update adapter
         }
     }
 
@@ -127,7 +141,6 @@ class ScheduleFragment : Fragment() {
 
         val root = view ?: return
 
-        // Update month label
         val monthLabel = root.findViewById<TextView>(R.id.tv_month_value)
         monthLabel?.text = "${cal.get(Calendar.MONTH) + 1}"
 
@@ -143,6 +156,51 @@ class ScheduleFragment : Fragment() {
                 tv.background = null
             }
             cal.add(Calendar.DAY_OF_MONTH, 1)
+        }
+    }
+
+    private fun refreshScheduleFromJwxt(showError: Boolean) {
+        if (!JwxtAuthManager.isBound()) return
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val result = JwxtAuthManager.doWithAuth { client ->
+                val selectedSemester = settingsManager.getCurrentSemester()
+                val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
+                val term = com.gxu.jwxt.model.Term.fromCode(termCode)
+                    ?: com.gxu.jwxt.model.Term.SPRING
+                client.schedule().personal(year, term)
+            }
+
+            withContext(Dispatchers.Main) {
+                result.onSuccess { response ->
+                    val (courses, semesterStart) = JwxtImportService.convertScheduleResponse(response)
+
+                    if (semesterStart != null && semesterStart > 0
+                        && settingsManager.getSemesterStartDate() == 0L) {
+                        settingsManager.setSemesterStartDate(semesterStart)
+                    }
+
+                    CourseDataManager.getInstance(requireContext()).replaceAllCourses(courses)
+
+                    currentWeek = calculateCurrentWeek()
+                    displayWeek = currentWeek
+                    allCourses = courses
+                    viewPager.setCurrentItem(currentWeek - 1, false)
+                    updateDateTimeHeader()
+
+                    (requireActivity().application as App).registerAllCourseNotifications()
+
+                    if (showError) {
+                        Toast.makeText(requireContext(),
+                            "成功导入 ${courses.size} 门课程", Toast.LENGTH_SHORT).show()
+                    }
+                }.onFailure { e ->
+                    if (showError) {
+                        Toast.makeText(requireContext(),
+                            "刷新失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
     }
 
