@@ -21,7 +21,6 @@ import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 
 class ScheduleFragment : Fragment() {
 
@@ -29,14 +28,12 @@ class ScheduleFragment : Fragment() {
     private lateinit var tvDate: TextView
     private lateinit var tvWeekInfo: TextView
     private lateinit var tvCountdown: TextView
-    private lateinit var fabViewToggle: ExtendedFloatingActionButton
     private lateinit var settingsManager: SettingsManager
     private lateinit var adapter: WeekPagerAdapter
 
     private var currentWeek = 1
     private var displayWeek = 1
     private var allCourses: List<Course> = emptyList()
-    private var currentViewState = "week"
 
     private val dateFormat = SimpleDateFormat("yyyy/M/d", Locale.getDefault())
     private val countdownHandler = Handler(Looper.getMainLooper())
@@ -54,7 +51,6 @@ class ScheduleFragment : Fragment() {
 
         initViews(view)
         setupViewPager()
-        setupFAB()
         setupObservers()
         updateDateTimeHeader()
         startCountdown()
@@ -65,7 +61,6 @@ class ScheduleFragment : Fragment() {
         tvDate = view.findViewById(R.id.tv_date)
         tvWeekInfo = view.findViewById(R.id.tv_week_info)
         tvCountdown = view.findViewById(R.id.tv_countdown)
-        fabViewToggle = view.findViewById(R.id.fab_view_toggle)
 
         view.findViewById<View>(R.id.btn_refresh).setOnClickListener {
             Toast.makeText(requireContext(), "刷新课表", Toast.LENGTH_SHORT).show()
@@ -89,29 +84,11 @@ class ScheduleFragment : Fragment() {
         })
     }
 
-    private fun setupFAB() {
-        fabViewToggle.text = "周"
-        fabViewToggle.setOnClickListener {
-            currentViewState = when (currentViewState) {
-                "week" -> "day"
-                "day" -> "overview"
-                else -> "week"
-            }
-            fabViewToggle.text = when (currentViewState) {
-                "week" -> "周"; "day" -> "今"; else -> "总"
-            }
-            Toast.makeText(requireContext(),
-                when (currentViewState) {
-                    "week" -> "周视图"; "day" -> "今日视图"; else -> "课程全览"
-                }, Toast.LENGTH_SHORT).show()
-        }
-    }
-
     private fun setupObservers() {
         val viewModel = ViewModelProvider(requireActivity())[CourseViewModel::class.java]
         viewModel.courses.observe(viewLifecycleOwner) { _ ->
             allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
-            adapter.updateCourses(allCourses)
+            // Fragments read directly from CourseDataManager, no need to update adapter
         }
     }
 
@@ -149,6 +126,11 @@ class ScheduleFragment : Fragment() {
         val fmt = SimpleDateFormat("M/d", Locale.getDefault())
 
         val root = view ?: return
+
+        // Update month label
+        val monthLabel = root.findViewById<TextView>(R.id.tv_month_value)
+        monthLabel?.text = "${cal.get(Calendar.MONTH) + 1}"
+
         dateViewIds.forEachIndexed { index, id ->
             val tv = root.findViewById<TextView>(id)
             tv.text = fmt.format(cal.time)

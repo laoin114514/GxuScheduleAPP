@@ -10,25 +10,20 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import com.cherry.wakeupschedule.R
-import com.cherry.wakeupschedule.model.Course
+import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 
 class WeekPageFragment : Fragment() {
 
     private var weekNumber: Int = 1
-    private var courses: List<Course> = emptyList()
 
     companion object {
         private const val ARG_WEEK = "week"
-        private const val ARG_COURSES = "courses"
 
-        fun newInstance(week: Int, courses: List<Course>): WeekPageFragment {
+        fun newInstance(week: Int): WeekPageFragment {
             return WeekPageFragment().apply {
-                arguments = Bundle().apply {
-                    putInt(ARG_WEEK, week)
-                    putSerializable(ARG_COURSES, ArrayList(courses))
-                }
+                arguments = Bundle().apply { putInt(ARG_WEEK, week) }
             }
         }
     }
@@ -36,8 +31,6 @@ class WeekPageFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         weekNumber = arguments?.getInt(ARG_WEEK, 1) ?: 1
-        @Suppress("UNCHECKED_CAST")
-        courses = (arguments?.getSerializable(ARG_COURSES) as? ArrayList<Course>) ?: emptyList()
     }
 
     override fun onCreateView(
@@ -64,8 +57,11 @@ class WeekPageFragment : Fragment() {
         val cellHeight = resources.getDimensionPixelSize(R.dimen.course_cell_height)
         val courseColors = ThemeManager.getCourseColors()
 
-        val weekCourses = courses.filter { weekNumber in it.startWeek..it.endWeek }
+        // Read courses directly from CourseDataManager (always current)
+        val allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
+        val weekCourses = allCourses.filter { weekNumber in it.startWeek..it.endWeek }
 
+        // Build time axis
         for (node in 1..maxNodes) {
             val timeSlot = timeTableManager.getTimeSlots().find { it.node == node }
             val timeView = layoutInflater.inflate(R.layout.item_time_slot, timeAxis, false) as LinearLayout
@@ -78,6 +74,7 @@ class WeekPageFragment : Fragment() {
             timeAxis.addView(timeView)
         }
 
+        // Build grid cells
         for (row in 0 until maxNodes) {
             for (col in 0 until 7) {
                 val cell = View(requireContext()).apply {
