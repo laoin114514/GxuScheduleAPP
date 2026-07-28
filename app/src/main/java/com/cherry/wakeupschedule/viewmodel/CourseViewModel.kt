@@ -28,6 +28,10 @@ class CourseViewModel(application: Application) : AndroidViewModel(application) 
     private val _courses = MutableLiveData<List<Course>>()
     val courses: LiveData<List<Course>> = _courses
 
+    // 当前浏览的周次（ViewModel 作用域为 Activity，tab 切换不丢失，进程死亡后重建为默认值）
+    var displayWeek: Int = 0
+    var currentWeek: Int = 0
+
     private val courseDataManager = CourseDataManager.getInstance(application)
     private val settingsManager = SettingsManager(application)
     private val holidayManager = HolidayManager.getInstance(application)

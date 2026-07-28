@@ -37,13 +37,8 @@ class ScheduleFragment : Fragment() {
     private lateinit var tvCountdown: TextView
     private lateinit var settingsManager: SettingsManager
     private lateinit var adapter: WeekPagerAdapter
+    private lateinit var courseViewModel: CourseViewModel
 
-    companion object {
-        private const val KEY_DISPLAY_WEEK = "display_week"
-    }
-
-    private var currentWeek = 1
-    private var displayWeek = 1
     private var allCourses: List<Course> = emptyList()
     private var isFirstInit = true
 
@@ -60,23 +55,19 @@ class ScheduleFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         settingsManager = SettingsManager(requireContext())
+        courseViewModel = ViewModelProvider(requireActivity())[CourseViewModel::class.java]
 
         initViews(view)
-        setupViewPager(savedInstanceState)
+        setupViewPager()
         setupObservers()
         updateDateTimeHeader()
         startCountdown()
 
-        // 自动从教务刷新（静默）
+        // 自动从教务刷新（静默），仅首次
         if (isFirstInit) {
             isFirstInit = false
             refreshScheduleFromJwxt(showError = false)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(KEY_DISPLAY_WEEK, displayWeek)
     }
 
     override fun onResume() {
@@ -95,30 +86,51 @@ class ScheduleFragment : Fragment() {
         }
     }
 
-    private fun setupViewPager(savedInstanceState: Bundle?) {
-        currentWeek = calculateCurrentWeek()
+    /**
+     * 获取当前周数（便捷访问 ViewModel 或计算）
+     */
+    private fun getCurrentWeek(): Int {
+        if (courseViewModel.currentWeek == 0) {
+            courseViewModel.currentWeek = calculateCurrentWeek()
+        }
+        return courseViewModel.currentWeek
+    }
 
-        // 恢复上次浏览的周次（切换tab后再切回时保持位置）
-        val savedWeek = savedInstanceState?.getInt(KEY_DISPLAY_WEEK)
-        displayWeek = savedWeek?.coerceIn(1, settingsManager.getTotalWeeks())
-            ?: currentWeek
+    /**
+     * 获取当前显示的周数。
+     * ViewModel 作用域为 Activity，tab 切换保持位置，进程死亡后重建回到当前周。
+     */
+    private fun getDisplayWeek(): Int {
+        if (courseViewModel.displayWeek == 0) {
+            courseViewModel.displayWeek = calculateCurrentWeek()
+        }
+        return courseViewModel.displayWeek
+    }
 
+    private fun setDisplayWeek(week: Int) {
+        courseViewModel.displayWeek = week
+    }
+
+    private fun setupViewPager() {
+        val currentWk = calculateCurrentWeek()
+        courseViewModel.currentWeek = currentWk
+
+        // ViewModel 未初始化（新鲜启动）→ 显示当前周
+        // ViewModel 已有值（tab 切换归来）→ 保持位置
+        val displayWk = getDisplayWeek()
         val totalWeeks = settingsManager.getTotalWeeks()
 
         adapter = WeekPagerAdapter(this, totalWeeks)
         viewPager.adapter = adapter
-        // 预加载相邻两页，减少快速滑动卡顿
         viewPager.offscreenPageLimit = 2
 
-        // 用 post 延迟设置初始页，避免 ViewPager2 首帧先渲染第0页
-        // 再跳转到目标页导致的视觉闪烁
         viewPager.post {
-            viewPager.setCurrentItem(displayWeek - 1, false)
+            viewPager.setCurrentItem(displayWk - 1, false)
         }
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                displayWeek = position + 1
+                setDisplayWeek(position + 1)
                 updateDateTimeHeader()
             }
         })
@@ -141,10 +153,12 @@ class ScheduleFragment : Fragment() {
     private fun updateDateTimeHeader() {
         val cal = Calendar.getInstance()
         tvDate.text = dateFormat.format(cal.time)
-        val weekText = if (displayWeek == currentWeek) "第${displayWeek}周 (本周)"
-        else "第${displayWeek}周"
+        val displayWk = getDisplayWeek()
+        val currentWk = getCurrentWeek()
+        val weekText = if (displayWk == currentWk) "第${displayWk}周 (本周)"
+        else "第${displayWk}周"
         tvWeekInfo.text = weekText
-        updateDateHeaderRow(displayWeek)
+        updateDateHeaderRow(displayWk)
     }
 
     private fun updateDateHeaderRow(week: Int) {
@@ -173,7 +187,7 @@ class ScheduleFragment : Fragment() {
             val tv = root.findViewById<TextView>(id)
             tv.text = fmt.format(cal.time)
 
-            if (displayWeek == currentWeek &&
+            if (getDisplayWeek() == getCurrentWeek() &&
                 cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) &&
                 cal.get(Calendar.YEAR) == today.get(Calendar.YEAR)) {
                 tv.setBackgroundResource(R.drawable.bg_date_selected)
@@ -208,12 +222,11 @@ class ScheduleFragment : Fragment() {
                     CourseDataManager.getInstance(requireContext()).replaceAllCourses(courses)
 
                     // 手动刷新时跳回当前周，自动刷新时保持用户浏览的周次
+                    val currentWk = calculateCurrentWeek()
+                    courseViewModel.currentWeek = currentWk
                     if (showError) {
-                        currentWeek = calculateCurrentWeek()
-                        displayWeek = currentWeek
-                        viewPager.setCurrentItem(currentWeek - 1, false)
-                    } else {
-                        currentWeek = calculateCurrentWeek()
+                        setDisplayWeek(currentWk)
+                        viewPager.setCurrentItem(currentWk - 1, false)
                     }
                     allCourses = courses
                     updateDateTimeHeader()
@@ -252,7 +265,7 @@ class ScheduleFragment : Fragment() {
                 cal.get(Calendar.MINUTE) * 60 + cal.get(Calendar.SECOND)
 
         val todayCourses = allCourses
-            .filter { it.dayOfWeek == adjustedDay && currentWeek in it.startWeek..it.endWeek }
+            .filter { it.dayOfWeek == adjustedDay && getCurrentWeek() in it.startWeek..it.endWeek }
             .sortedBy { getCourseStartMinutes(it) }
 
         val currentCourse = todayCourses.find {
