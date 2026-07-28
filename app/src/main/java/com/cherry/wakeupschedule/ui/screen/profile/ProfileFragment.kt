@@ -129,25 +129,161 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showSemesterDialog() {
-        val semesters = settingsManager.getCustomSemesters().toMutableList()
+        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+        val currentAcademicStart = if (currentMonth >= 9) currentYear else currentYear - 1
+
+        val academicYears = (-1 until 9).map { offset ->
+            val start = currentAcademicStart - offset
+            "${start}-${start + 1}学年"
+        }.toTypedArray()
+
         AlertDialog.Builder(requireContext())
-            .setTitle("选择学期")
-            .setItems(semesters.toTypedArray()) { _, which ->
-                settingsManager.setCurrentSemester(semesters[which])
+            .setTitle("选择学年")
+            .setItems(academicYears) { _, which ->
+                showTermPicker(academicYears[which])
+            }
+            .setPositiveButton("管理学期") { _, _ -> showManageSemestersDialog() }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showTermPicker(academicYear: String) {
+        val terms = arrayOf("第一学期", "第二学期")
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择学期 — $academicYear")
+            .setItems(terms) { _, which ->
+                val semester = "$academicYear ${terms[which]}"
+                settingsManager.setCurrentSemester(semester)
+                settingsManager.addCustomSemester(semester)
                 updateDisplay()
-                Toast.makeText(requireContext(), "已切换至: ${semesters[which]}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "已切换至: $semester", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("返回", null)
+            .show()
+    }
+
+    private fun showManageSemestersDialog() {
+        val semesters = settingsManager.getCustomSemesters().toMutableList()
+        val currentSemester = settingsManager.getCurrentSemester()
+        if (semesters.isEmpty()) {
+            Toast.makeText(requireContext(), "没有可管理的学期", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val displaySemesters = semesters.map {
+            if (it == currentSemester) "$it (当前)" else it
+        }.toMutableList()
+
+        val listView = android.widget.ListView(requireContext())
+        listView.adapter = android.widget.ArrayAdapter(requireContext(),
+            android.R.layout.simple_list_item_1, displaySemesters)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("管理学期 (长按删除)")
+            .setView(listView)
+            .setPositiveButton("新增") { _, _ -> showAddSemesterDialog() }
+            .setNegativeButton("关闭", null)
+            .create()
+
+        listView.setOnItemClickListener { _, _, position, _ ->
+            settingsManager.setCurrentSemester(semesters[position])
+            updateDisplay()
+            Toast.makeText(requireContext(), "已切换到: ${semesters[position]}", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+        listView.setOnItemLongClickListener { _, _, position, _ ->
+            val toDelete = semesters[position]
+            if (toDelete == currentSemester) {
+                Toast.makeText(requireContext(), "不能删除当前正在使用的学期", Toast.LENGTH_SHORT).show()
+                return@setOnItemLongClickListener true
+            }
+            AlertDialog.Builder(requireContext())
+                .setTitle("删除学期")
+                .setMessage("确定要删除学期 \"$toDelete\" 吗？")
+                .setPositiveButton("删除") { _, _ ->
+                    settingsManager.removeCustomSemester(toDelete)
+                    updateDisplay()
+                    dialog.dismiss()
+                }
+                .setNegativeButton("取消", null)
+                .show()
+            true
+        }
+        dialog.show()
+    }
+
+    private fun showAddSemesterDialog() {
+        val editView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_edit_text, null)
+        val editText = editView.findViewById<android.widget.EditText>(R.id.et_input)
+        editText.hint = "例如: 2024-2025学年 第一学期"
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("新增学期")
+            .setView(editView)
+            .setPositiveButton("添加") { _, _ ->
+                val name = editText.text.toString().trim()
+                if (name.isNotEmpty()) {
+                    settingsManager.addCustomSemester(name)
+                    settingsManager.setCurrentSemester(name)
+                    updateDisplay()
+                    Toast.makeText(requireContext(), "已添加: $name", Toast.LENGTH_SHORT).show()
+                }
             }
             .setNegativeButton("取消", null)
             .show()
     }
 
     private fun showWeekDialog() {
-        val weeks = (1..20).map { "第${it}周" }.toTypedArray()
-        val currentWeek = settingsManager.getDefaultWeek()
+        val options = arrayOf("设置学期开始日期（自动计算当前周）", "设置当前周")
         AlertDialog.Builder(requireContext())
-            .setTitle("设置默认周次")
-            .setSingleChoiceItems(weeks, currentWeek - 1) { dialog, which ->
-                settingsManager.setDefaultWeek(which + 1)
+            .setTitle("周次设置")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showSemesterStartDatePicker()
+                    1 -> showCurrentWeekPicker()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showSemesterStartDatePicker() {
+        val calendar = Calendar.getInstance()
+        val currentStartDate = settingsManager.getSemesterStartDate()
+        if (currentStartDate > 0) calendar.timeInMillis = currentStartDate
+
+        android.app.DatePickerDialog(requireContext(),
+            { _, year, month, dayOfMonth ->
+                val sel = Calendar.getInstance()
+                sel.set(year, month, dayOfMonth, 0, 0, 0)
+                sel.set(Calendar.MILLISECOND, 0)
+                settingsManager.setSemesterStartDate(sel.timeInMillis)
+                val diffDays = ((System.currentTimeMillis() - sel.timeInMillis) / 86400000L).toInt()
+                val week = (diffDays / 7 + 1).coerceIn(1, 20)
+                Toast.makeText(requireContext(), "学期开始日期已设置，当前为第${week}周", Toast.LENGTH_LONG).show()
+                updateDisplay()
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun showCurrentWeekPicker() {
+        val weeks = (1..20).map { "第${it}周" }.toTypedArray()
+        val semesterStartDate = settingsManager.getSemesterStartDate()
+        val currentWeek = if (semesterStartDate > 0) {
+            ((System.currentTimeMillis() - semesterStartDate) / 86400000L).toInt() / 7 + 1
+        } else settingsManager.getDefaultWeek()
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("设置当前周（将调整学期开始日期）")
+            .setSingleChoiceItems(weeks, currentWeek.coerceIn(1, 20) - 1) { dialog, which ->
+                val selectedWeek = which + 1
+                val daysToSubtract = (selectedWeek - 1) * 7L
+                settingsManager.setSemesterStartDate(System.currentTimeMillis() - daysToSubtract * 86400000L)
+                settingsManager.setDefaultWeek(selectedWeek)
                 updateDisplay()
                 dialog.dismiss()
             }
