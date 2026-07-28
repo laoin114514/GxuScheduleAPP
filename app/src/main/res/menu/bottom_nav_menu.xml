@@ -2,10 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_schedule"
-        android:icon="@drawable/ic_schedule"
+        android:icon="@drawable/ic_mtrl_calendar_month"
         android:title="课表" />
     <item
-        android:id="@+id/nav_settings"
-        android:icon="@drawable/ic_settings"
-        android:title="设置" />
+        android:id="@+id/nav_tools"
+        android:icon="@drawable/ic_mtrl_grid_view"
+        android:title="工具" />
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/ic_mtrl_person"
+        android:title="我的" />
 </menu>
