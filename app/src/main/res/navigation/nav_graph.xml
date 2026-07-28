@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/nav_schedule">
+
+    <fragment
+        android:id="@+id/nav_schedule"
+        android:name="com.cherry.wakeupschedule.ui.screen.schedule.ScheduleFragment"
+        android:label="课表" />
+
+    <fragment
+        android:id="@+id/nav_tools"
+        android:name="com.cherry.wakeupschedule.ui.screen.tools.ToolsFragment"
+        android:label="工具" />
+
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.cherry.wakeupschedule.ui.screen.profile.ProfileFragment"
+        android:label="我的" />
+
+</navigation>
