@@ -9,10 +9,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class WeekPageFragment : Fragment() {
 
@@ -42,6 +46,14 @@ class WeekPageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         buildSchedule(view)
+
+        // Observe course data changes and rebuild
+        val dataManager = CourseDataManager.getInstance(requireContext())
+        lifecycleScope.launch {
+            dataManager.coursesFlow.collectLatest {
+                buildSchedule(view)
+            }
+        }
     }
 
     private fun buildSchedule(view: View) {
