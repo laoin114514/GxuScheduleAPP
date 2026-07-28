@@ -29,7 +29,7 @@
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
-    <style name="ProfileSection" parent="Widget.Material3.Card.Elevated">
+    <style name="ProfileSection" parent="Widget.Material3.CardView.Elevated">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="cardCornerRadius">16dp</item>

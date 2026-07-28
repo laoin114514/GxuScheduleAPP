@@ -130,7 +130,7 @@
         android:layout_gravity="center"
         android:orientation="horizontal" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fab_view_toggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -139,7 +139,7 @@
         android:contentDescription="切换视图"
         android:text="周"
         app:backgroundTint="?attr/colorPrimaryContainer"
-        app:tint="?attr/colorOnPrimaryContainer"
+        app:iconTint="?attr/colorOnPrimaryContainer"
         app:fabCustomSize="56dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

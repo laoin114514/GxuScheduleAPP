@@ -21,7 +21,7 @@ import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 
 class ScheduleFragment : Fragment() {
 
@@ -29,7 +29,7 @@ class ScheduleFragment : Fragment() {
     private lateinit var tvDate: TextView
     private lateinit var tvWeekInfo: TextView
     private lateinit var tvCountdown: TextView
-    private lateinit var fabViewToggle: FloatingActionButton
+    private lateinit var fabViewToggle: ExtendedFloatingActionButton
     private lateinit var settingsManager: SettingsManager
     private lateinit var adapter: WeekPagerAdapter
 
