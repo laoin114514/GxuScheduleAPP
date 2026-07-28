@@ -295,9 +295,16 @@ class ProfileFragment : Fragment() {
         val tv = view?.findViewById<TextView>(R.id.tv_semester_value)
         tv?.text = settingsManager.getCurrentSemester()
         val tvWeek = view?.findViewById<TextView>(R.id.tv_week_value)
-        tvWeek?.text = "第${settingsManager.getDefaultWeek()}周"
-
+        // 自动计算当前周，而不是使用存储的默认值
         val startMs = settingsManager.getSemesterStartDate()
+        val currentWeek = if (startMs > 0) {
+            val diffDays = ((System.currentTimeMillis() - startMs) / 86400000L).toInt()
+            (diffDays / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
+        } else {
+            settingsManager.getDefaultWeek()
+        }
+        tvWeek?.text = "第${currentWeek}周"
+
         val totalWeeks = settingsManager.getTotalWeeks()
         val tvRange = view?.findViewById<TextView>(R.id.tv_semester_date_range)
         val tvWeeks = view?.findViewById<TextView>(R.id.tv_total_weeks)
