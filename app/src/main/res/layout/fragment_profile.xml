@@ -169,6 +169,66 @@
 
                 </LinearLayout>
 
+                <!-- 学期日期范围 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp">
+
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
+                        android:src="@drawable/ic_mtrl_date_range"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+
+                    <TextView android:id="@+id/tv_semester_date_range"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:layout_marginStart="16dp"
+                        android:text="未获取"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                </LinearLayout>
+
+                <!-- 学期总周数 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp">
+
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
+                        android:src="@drawable/ic_mtrl_schedule"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+
+                    <TextView android:id="@+id/tv_total_weeks"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:layout_marginStart="16dp"
+                        android:text="20周"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                </LinearLayout>
+
+                <!-- 从教务获取按钮 -->
+                <TextView
+                    android:id="@+id/btn_fetch_semester_info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="从教务获取学期日期和总周数"
+                    android:textSize="14sp"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:padding="12dp"
+                    android:gravity="center"
+                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="?attr/colorPrimary"
+                    android:clickable="true"
+                    android:focusable="true" />
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>

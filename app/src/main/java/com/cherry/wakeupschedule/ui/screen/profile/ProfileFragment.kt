@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.cherry.wakeupschedule.AboutActivity
@@ -14,9 +15,19 @@ import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.SchoolImportActivity
 import com.cherry.wakeupschedule.TimeTableEditActivity
+import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
+import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.gxu.jwxt.model.Term
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class ProfileFragment : Fragment() {
 
@@ -52,6 +63,10 @@ class ProfileFragment : Fragment() {
 
         view.findViewById<View>(R.id.item_week).setOnClickListener {
             showWeekDialog()
+        }
+
+        view.findViewById<View>(R.id.btn_fetch_semester_info).setOnClickListener {
+            fetchSemesterInfo()
         }
 
         view.findViewById<View>(R.id.item_theme_palette).setOnClickListener {
@@ -141,9 +156,77 @@ class ProfileFragment : Fragment() {
     }
 
     private fun updateDisplay() {
-        val tv = view?.findViewById<android.widget.TextView>(R.id.tv_semester_value)
+        val tv = view?.findViewById<TextView>(R.id.tv_semester_value)
         tv?.text = settingsManager.getCurrentSemester()
-        val tvWeek = view?.findViewById<android.widget.TextView>(R.id.tv_week_value)
+        val tvWeek = view?.findViewById<TextView>(R.id.tv_week_value)
         tvWeek?.text = "第${settingsManager.getDefaultWeek()}周"
+
+        val startMs = settingsManager.getSemesterStartDate()
+        val totalWeeks = settingsManager.getTotalWeeks()
+        val tvRange = view?.findViewById<TextView>(R.id.tv_semester_date_range)
+        val tvWeeks = view?.findViewById<TextView>(R.id.tv_total_weeks)
+        if (startMs > 0) {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val endCal = Calendar.getInstance().apply {
+                timeInMillis = startMs
+                add(Calendar.DAY_OF_YEAR, totalWeeks * 7 - 1)
+            }
+            tvRange?.text = "${sdf.format(startMs)} ~ ${sdf.format(endCal.time)}"
+            tvWeeks?.text = "${totalWeeks}周"
+        } else {
+            tvRange?.text = "未获取"
+            tvWeeks?.text = "20周"
+        }
+    }
+
+    private fun fetchSemesterInfo() {
+        if (!JwxtAuthManager.isBound()) {
+            Toast.makeText(requireContext(), "请先绑定教务账号", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val btn = view?.findViewById<View>(R.id.btn_fetch_semester_info)
+        btn?.isEnabled = false
+
+        val cached = JwxtAccountManager.getCachedProfile()
+        val classId = cached?.className ?: ""
+        val gradeCode = cached?.grade ?: ""
+        val majorCode = cached?.major ?: ""
+
+        if (classId.isEmpty() || gradeCode.isEmpty()) {
+            Toast.makeText(requireContext(), "请先获取个人信息以获取班级信息", Toast.LENGTH_SHORT).show()
+            btn?.isEnabled = true
+            return
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val selectedSemester = settingsManager.getCurrentSemester()
+            val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
+            val term = Term.fromCode(termCode) ?: Term.SPRING
+
+            val result = JwxtAuthManager.doWithAuth { client ->
+                client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
+            }
+
+            withContext(Dispatchers.Main) {
+                btn?.isEnabled = true
+                result.onSuccess { resp ->
+                    val startStr = resp.semesterStartDate
+                    val weeks = resp.weeks?.size ?: 0
+                    if (startStr != null && weeks > 0) {
+                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        val startMs = sdf.parse(startStr)?.time ?: 0
+                        settingsManager.setSemesterStartDate(startMs)
+                        settingsManager.setTotalWeeks(weeks)
+                        updateDisplay()
+                        Toast.makeText(requireContext(), "已获取：${startStr}，共${weeks}周", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "获取失败：数据不完整", Toast.LENGTH_SHORT).show()
+                    }
+                }.onFailure { e ->
+                    Toast.makeText(requireContext(), "获取失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }
