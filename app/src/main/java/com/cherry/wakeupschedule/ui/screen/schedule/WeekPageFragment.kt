@@ -98,6 +98,8 @@ class WeekPageFragment : Fragment() {
 
         if (!backdropBuilt) {
             backdropBuilt = true
+            // 动态设置行数，匹配实际时间表节数
+            gridLayout.rowCount = maxNodes
             timeAxis.removeAllViews()
             for (node in 1..maxNodes) {
                 val timeSlot = timeTableManager.getTimeSlots().find { it.node == node }
@@ -153,7 +155,11 @@ class WeekPageFragment : Fragment() {
             val baseColor = courseColors[colorIndex]
             // WakeUp: 50% alpha 背景 + 白色文字
             val bgColor = ColorUtils.setAlphaComponent(baseColor, 128)
+            // 校验数据，防止越界崩溃
+            val rowStart = (course.startTime - 1).coerceIn(0, maxNodes - 1)
             val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
+                .coerceAtMost(maxNodes - rowStart)
+            val dayCol = (course.dayOfWeek - 1).coerceIn(0, 6)
             val cardHeight = cellHeight * span
 
             val cardBg = GradientDrawable().apply {
@@ -164,8 +170,8 @@ class WeekPageFragment : Fragment() {
 
             val cardView = CardView(ctx).apply {
                 layoutParams = GridLayout.LayoutParams().apply {
-                    rowSpec = GridLayout.spec(course.startTime - 1, span, 1f)
-                    columnSpec = GridLayout.spec(course.dayOfWeek - 1, 1f)
+                    rowSpec = GridLayout.spec(rowStart, span, 1f)
+                    columnSpec = GridLayout.spec(dayCol, 1f)
                     width = 0
                     height = cardHeight
                     setMargins(marginPx, marginPx, marginPx, marginPx)
