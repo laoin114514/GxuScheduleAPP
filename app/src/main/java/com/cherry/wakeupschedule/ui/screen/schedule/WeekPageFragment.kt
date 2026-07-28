@@ -268,11 +268,39 @@ class WeekPageFragment : Fragment() {
 
         dialog.setContentView(sheetView)
 
-        // 设置窗口：内容从底部弹出，高度自适应（约半屏）
+        // 将 sheetView 包在 LinearLayout 中：上方透明可点击区域 + 下方内容
+        // 确保弹窗占满下半屏且下方无漏缝
+        val container = android.widget.LinearLayout(requireContext()).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        // 从原 parent 移除 sheetView
+        (sheetView.parent as? ViewGroup)?.removeView(sheetView)
+        sheetView.layoutParams = android.widget.LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        // 上方：透明可点击区域，点击关闭
+        val spacer = View(requireContext()).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            )
+            setOnClickListener { dialog.dismiss() }
+        }
+        container.addView(spacer)
+        container.addView(sheetView)
+        dialog.setContentView(container)
+
+        // 窗口全屏，内容在下方
         dialog.window?.apply {
             setLayout(
                 WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT
+                WindowManager.LayoutParams.MATCH_PARENT
             )
             setGravity(Gravity.BOTTOM)
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -283,7 +311,6 @@ class WeekPageFragment : Fragment() {
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         }
 
-        // 点击灰罩区域关闭
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
 
