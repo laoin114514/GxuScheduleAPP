@@ -268,11 +268,11 @@ class WeekPageFragment : Fragment() {
 
         dialog.setContentView(sheetView)
 
-        // 设置窗口：全屏高度覆盖课表，内容从底部弹出
+        // 设置窗口：内容从底部弹出，高度自适应（约半屏）
         dialog.window?.apply {
             setLayout(
                 WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT
+                WindowManager.LayoutParams.WRAP_CONTENT
             )
             setGravity(Gravity.BOTTOM)
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -283,6 +283,7 @@ class WeekPageFragment : Fragment() {
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         }
 
+        // 点击灰罩区域关闭
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
 
