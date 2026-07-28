@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -7,129 +7,140 @@
     android:background="?attr/colorSurface">
 
     <LinearLayout
-        android:id="@+id/layout_header"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="12dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
+        <!-- 顶部信息区 -->
         <LinearLayout
+            android:id="@+id/layout_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp">
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_date"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2026/7/28"
+                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/tv_week_info"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="第5周 (本周)"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                </LinearLayout>
 
                 <TextView
-                    android:id="@+id/tv_date"
+                    android:id="@+id/tv_countdown"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="2026/7/28"
-                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:text=""
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorPrimary"
+                    android:visibility="gone" />
 
-                <TextView
-                    android:id="@+id/tv_week_info"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="第5周 (本周)"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                <ImageButton
+                    android:id="@+id/btn_refresh"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_mtrl_refresh"
+                    android:contentDescription="刷新课表"
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/tv_countdown"
-                android:layout_width="wrap_content"
+            <!-- 日期表头 -->
+            <LinearLayout
+                android:id="@+id/header_weekdays"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text=""
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorPrimary"
-                android:visibility="gone" />
+                android:orientation="horizontal"
+                android:paddingTop="12dp">
 
-            <ImageButton
-                android:id="@+id/btn_refresh"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_mtrl_refresh"
-                android:contentDescription="刷新课表"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                <View android:layout_width="32dp" android:layout_height="1dp" />
 
-        </LinearLayout>
+                <TextView android:id="@+id/tv_weekday_1" style="@style/DateHeaderText"
+                    android:layout_weight="1" android:text="周一" />
+                <TextView android:id="@+id/tv_weekday_2" style="@style/DateHeaderText"
+                    android:layout_weight="1" android:text="周二" />
+                <TextView android:id="@+id/tv_weekday_3" style="@style/DateHeaderText"
+                    android:layout_weight="1" android:text="周三" />
+                <TextView android:id="@+id/tv_weekday_4" style="@style/DateHeaderText"
+                    android:layout_weight="1" android:text="周四" />
+                <TextView android:id="@+id/tv_weekday_5" style="@style/DateHeaderText"
+                    android:layout_weight="1" android:text="周五" />
+                <TextView android:id="@+id/tv_weekday_6" style="@style/DateHeaderText"
+                    android:layout_weight="1" android:text="周六" />
+                <TextView android:id="@+id/tv_weekday_7" style="@style/DateHeaderText"
+                    android:layout_weight="1" android:text="周日" />
 
-        <LinearLayout
-            android:id="@+id/header_weekdays"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingTop="12dp">
+            </LinearLayout>
 
-            <View android:layout_width="32dp" android:layout_height="1dp" />
+            <LinearLayout
+                android:id="@+id/header_dates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
 
-            <TextView android:id="@+id/tv_weekday_1" style="@style/DateHeaderText"
-                android:layout_weight="1" android:text="周一" />
-            <TextView android:id="@+id/tv_weekday_2" style="@style/DateHeaderText"
-                android:layout_weight="1" android:text="周二" />
-            <TextView android:id="@+id/tv_weekday_3" style="@style/DateHeaderText"
-                android:layout_weight="1" android:text="周三" />
-            <TextView android:id="@+id/tv_weekday_4" style="@style/DateHeaderText"
-                android:layout_weight="1" android:text="周四" />
-            <TextView android:id="@+id/tv_weekday_5" style="@style/DateHeaderText"
-                android:layout_weight="1" android:text="周五" />
-            <TextView android:id="@+id/tv_weekday_6" style="@style/DateHeaderText"
-                android:layout_weight="1" android:text="周六" />
-            <TextView android:id="@+id/tv_weekday_7" style="@style/DateHeaderText"
-                android:layout_weight="1" android:text="周日" />
+                <View android:layout_width="32dp" android:layout_height="1dp" />
 
-        </LinearLayout>
+                <TextView android:id="@+id/tv_date_1" style="@style/DateNumberText"
+                    android:layout_weight="1" android:text="7/28" />
+                <TextView android:id="@+id/tv_date_2" style="@style/DateNumberText"
+                    android:layout_weight="1" android:text="7/29" />
+                <TextView android:id="@+id/tv_date_3" style="@style/DateNumberText"
+                    android:layout_weight="1" android:text="7/30" />
+                <TextView android:id="@+id/tv_date_4" style="@style/DateNumberText"
+                    android:layout_weight="1" android:text="7/31" />
+                <TextView android:id="@+id/tv_date_5" style="@style/DateNumberText"
+                    android:layout_weight="1" android:text="8/1" />
+                <TextView android:id="@+id/tv_date_6" style="@style/DateNumberText"
+                    android:layout_weight="1" android:text="8/2" />
+                <TextView android:id="@+id/tv_date_7" style="@style/DateNumberText"
+                    android:layout_weight="1" android:text="8/3" />
 
-        <LinearLayout
-            android:id="@+id/header_dates"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="8dp">
+            </LinearLayout>
 
-            <View android:layout_width="32dp" android:layout_height="1dp" />
-
-            <TextView android:id="@+id/tv_date_1" style="@style/DateNumberText"
-                android:layout_weight="1" android:text="7/28" />
-            <TextView android:id="@+id/tv_date_2" style="@style/DateNumberText"
-                android:layout_weight="1" android:text="7/29" />
-            <TextView android:id="@+id/tv_date_3" style="@style/DateNumberText"
-                android:layout_weight="1" android:text="7/30" />
-            <TextView android:id="@+id/tv_date_4" style="@style/DateNumberText"
-                android:layout_weight="1" android:text="7/31" />
-            <TextView android:id="@+id/tv_date_5" style="@style/DateNumberText"
-                android:layout_weight="1" android:text="8/1" />
-            <TextView android:id="@+id/tv_date_6" style="@style/DateNumberText"
-                android:layout_weight="1" android:text="8/2" />
-            <TextView android:id="@+id/tv_date_7" style="@style/DateNumberText"
-                android:layout_weight="1" android:text="8/3" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorOutlineVariant" />
 
         </LinearLayout>
 
-        <View
+        <!-- ViewPager2 -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/view_pager"
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?attr/colorOutlineVariant" />
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal" />
 
     </LinearLayout>
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/view_pager"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:orientation="horizontal" />
-
+    <!-- FAB 覆盖在右下角 -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fab_view_toggle"
         android:layout_width="wrap_content"
@@ -142,4 +153,4 @@
         app:iconTint="?attr/colorOnPrimaryContainer"
         app:fabCustomSize="56dp" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>
