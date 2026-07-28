@@ -209,8 +209,8 @@ class CourseDataManager private constructor(context: Context) {
         @Volatile
         private var instance: CourseDataManager? = null
 
-        /** 课程颜色数量，与 ThemeManager.sampleCourseColors 对齐 */
-        const val COURSE_COLOR_COUNT = 16
+        /** 课程颜色数量，与 ThemeManager.COURSE_COLORS 对齐 */
+        const val COURSE_COLOR_COUNT = 10
 
         fun getInstance(context: Context): CourseDataManager {
             return instance ?: synchronized(this) {
