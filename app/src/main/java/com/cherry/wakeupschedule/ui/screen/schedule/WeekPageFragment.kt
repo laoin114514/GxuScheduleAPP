@@ -14,6 +14,7 @@ import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.R
@@ -144,19 +145,21 @@ class WeekPageFragment : Fragment() {
         emptyView.visibility = View.GONE
 
         val textColor = Color.WHITE
-        val borderColor = Color.WHITE
+        val strokeColor = 0x80FFFFFF.toInt()  // 50% 白色
         val marginPx = 2.dpToPx()
 
         for (course in weekCourses) {
             val colorIndex = if (course.color > 0) (course.color - 1) % courseColors.size else 0
-            val bgColor = courseColors[colorIndex]
+            val baseColor = courseColors[colorIndex]
+            // WakeUp: 50% alpha 背景 + 白色文字
+            val bgColor = ColorUtils.setAlphaComponent(baseColor, 128)
             val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
             val cardHeight = cellHeight * span
 
             val cardBg = GradientDrawable().apply {
                 setColor(bgColor)
                 cornerRadius = 14f
-                setStroke(2.dpToPx(), borderColor)
+                setStroke(2.dpToPx(), strokeColor)
             }
 
             val cardView = CardView(ctx).apply {
@@ -188,8 +191,7 @@ class WeekPageFragment : Fragment() {
                 setTextColor(textColor)
                 gravity = Gravity.CENTER
                 setPadding(4.dpToPx(), 2.dpToPx(), 4.dpToPx(), 2.dpToPx())
-                // 名称行粗体
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
             }
             cardView.addView(textView)
             gridLayout.addView(cardView)

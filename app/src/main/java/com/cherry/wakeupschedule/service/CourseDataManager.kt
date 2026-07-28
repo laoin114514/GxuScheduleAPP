@@ -49,19 +49,23 @@ class CourseDataManager private constructor(context: Context) {
                 _coursesFlow.value = courses
             }
         }
-        // 为已有但未分配颜色的课程补分配颜色（一次性的迁移）
+        // 颜色版本号：色板变更时递增，触发全量重新分配
         scope.launch {
-            val courses = dao.getAllCourses()
-            if (courses.isNotEmpty() && courses.any { it.color == 0 }) {
-                val updated = courses.map {
-                    if (it.color == 0) it.copy(color = assignColorIndex(it.name, it.teacher))
-                    else it
+            val appPrefs = context.applicationContext.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            val colorVersion = appPrefs.getInt("color_scheme_version", 0)
+            if (colorVersion < COURSE_COLOR_COUNT) {
+                val courses = dao.getAllCourses()
+                if (courses.isNotEmpty()) {
+                    val updated = courses.map {
+                        it.copy(color = assignColorIndex(it.name, it.teacher))
+                    }
+                    dao.insertCourses(updated)
+                    appPrefs.edit().putInt("color_scheme_version", COURSE_COLOR_COUNT).apply()
+                    android.util.Log.d(
+                        "CourseDataManager",
+                        "Re-assigned colors for ${updated.size} courses (version $colorVersion → $COURSE_COLOR_COUNT)"
+                    )
                 }
-                dao.insertCourses(updated)
-                android.util.Log.d(
-                    "CourseDataManager",
-                    "Assigned colors to ${updated.count { it.color > 0 }} existing courses"
-                )
             }
         }
     }
@@ -210,7 +214,7 @@ class CourseDataManager private constructor(context: Context) {
         private var instance: CourseDataManager? = null
 
         /** 课程颜色数量，与 ThemeManager.COURSE_COLORS 对齐 */
-        const val COURSE_COLOR_COUNT = 10
+        const val COURSE_COLOR_COUNT = 9
 
         fun getInstance(context: Context): CourseDataManager {
             return instance ?: synchronized(this) {

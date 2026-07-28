@@ -9,24 +9,23 @@ object ThemeManager {
 
     private const val PREFS_NAME = "m3_theme"
     private const val KEY_PALETTE_INDEX = "palette_index"
-    const val COURSE_COLOR_COUNT = 10
+    const val COURSE_COLOR_COUNT = 9
 
-    /** 课程卡片固定10色，不再从调色板采样 */
+    /** 课程卡片颜色 (WakeUp Schedule) */
     val COURSE_COLORS: IntArray
         get() = _courseColors
 
-    // ── 固定课程颜色集（白色文字） ──
+    // ── WakeUp Schedule 9 色 ──
     private val FIXED_COURSE_COLORS = intArrayOf(
-        0xFF4A90E2.toInt(),  // 蓝色
-        0xFF26C6DA.toInt(),  // 青色
-        0xFF66BB6A.toInt(),  // 绿色
-        0xFF9CCC65.toInt(),  // 黄绿
-        0xFFFFD54F.toInt(),  // 黄色
-        0xFFFFA726.toInt(),  // 橙色
-        0xFFEF5350.toInt(),  // 红色
-        0xFFEC407A.toInt(),  // 粉色
-        0xFFAB47BC.toInt(),  // 紫色
-        0xFF7E57C2.toInt(),  // 深紫
+        0xFFFF1744.toInt(),  // red
+        0xFFFA6278.toInt(),  // pink
+        0xFF2979FF.toInt(),  // blue
+        0xFF1DE9B6.toInt(),  // green
+        0xFFA375FF.toInt(),  // purple
+        0xFFFF9100.toInt(),  // orange
+        0xFFFF3D00.toInt(),  // deepOrange
+        0xFF2196F3.toInt(),  // lightBlue
+        0xFF005CAF.toInt(),  // ruri
     )
 
     @Volatile
