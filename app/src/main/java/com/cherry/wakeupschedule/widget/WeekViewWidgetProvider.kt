@@ -14,6 +14,7 @@ import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -189,7 +190,7 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
 
                 if (dayCourses.isNotEmpty()) {
                     val firstCourse = dayCourses.first()
-                    val colors = settingsManager.getCourseColors()
+                    val colors = ThemeManager.getCourseColors()
                     val color = colors[(firstCourse.id % colors.size).toInt()]
 
                     views.setTextViewText(courseViewId, firstCourse.name)

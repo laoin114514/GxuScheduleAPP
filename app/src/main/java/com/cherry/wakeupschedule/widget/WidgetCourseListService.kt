@@ -12,6 +12,7 @@ import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import java.util.Calendar
 
 /**
@@ -160,7 +161,7 @@ class WidgetCourseListFactory(
         val currentWeek = calculateCurrentWeek(settingsManager)
         val timeTableManager = TimeTableManager.getInstance(context)
         val timeSlots = timeTableManager.getTimeSlots()
-        val colors = settingsManager.getCourseColors()
+        val colors = ThemeManager.getCourseColors()
 
         val allCourses = CourseDataManager.getInstance(context).getAllCourses()
         val todayCourses = allCourses
@@ -210,7 +211,7 @@ class WidgetCourseListFactory(
         val targetWeek = calculateWeekForDay(settingsManager, calendar)
         val timeTableManager = TimeTableManager.getInstance(context)
         val timeSlots = timeTableManager.getTimeSlots()
-        val colors = settingsManager.getCourseColors()
+        val colors = ThemeManager.getCourseColors()
 
         val allCourses = CourseDataManager.getInstance(context).getAllCourses()
         val tomorrowCourses = allCourses

@@ -12,6 +12,7 @@ import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.cherry.wakeupschedule.service.SettingsManager
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import android.graphics.drawable.GradientDrawable
 
 class AddCourseActivity : AppCompatActivity() {
@@ -39,7 +40,7 @@ class AddCourseActivity : AppCompatActivity() {
     private var selectedColor: Int = 0xFF6200EE.toInt()
 
     private val courseColors: IntArray
-        get() = settingsManager.getCourseColors()
+        get() = ThemeManager.getCourseColors()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

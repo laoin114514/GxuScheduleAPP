@@ -213,7 +213,17 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         btnColorTheme.setOnClickListener {
-            startActivity(Intent(this, ColorThemePickerActivity::class.java))
+            val names = com.cherry.wakeupschedule.ui.theme.ThemeManager.paletteNames().toTypedArray()
+            val currentIndex = com.cherry.wakeupschedule.ui.theme.ThemeManager.getPaletteIndex(this)
+            AlertDialog.Builder(this)
+                .setTitle("选择主题色板")
+                .setSingleChoiceItems(names, currentIndex) { dialog, which ->
+                    com.cherry.wakeupschedule.ui.theme.ThemeManager.setPaletteIndex(which, this)
+                    recreate()
+                    dialog.dismiss()
+                }
+                .setNegativeButton("取消", null)
+                .show()
         }
 
         btnAbout.setOnClickListener {
@@ -445,12 +455,13 @@ class SettingsActivity : AppCompatActivity() {
         tvDefaultAlarm.text = "提前${settingsManager.getDefaultAlarmMinutes()}分钟"
 
         // 更新外观设置状态显示
-        val backgroundText = when (settingsManager.getBackgroundMode()) {
-            SettingsManager.BackgroundType.IMAGE -> "图片背景"
-            else -> settingsManager.getCurrentBackgroundTheme().name
+        val backgroundText = "默认"
+            if (settingsManager.getCustomBackgroundPath().isNotEmpty()) "图片背景" else ""
+        if (backgroundText.isNotEmpty()) {
+            btnBackgroundSettings.text = "背景设置 - $backgroundText"
+        } else {
+            btnBackgroundSettings.text = "背景设置"
         }
-
-        btnBackgroundSettings.text = "背景设置 - $backgroundText"
         btnAlarmSettings.text = "课前提醒 - ${if (settingsManager.isAlarmEnabled()) "开启" else "关闭"}"
         
         // 更新开关状态（不触发监听器提示）
@@ -730,16 +741,15 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showBackgroundThemePicker() {
-        val currentIndex = settingsManager.getBackgroundThemeIndex()
-        val themeNames = settingsManager.backgroundThemes.map { it.name }.toTypedArray()
+        val themeNames = arrayOf("默认")
+        val currentIndex = 0
 
         AlertDialog.Builder(this)
             .setTitle("选择背景颜色")
             .setSingleChoiceItems(themeNames, currentIndex) { dialog, which ->
-                settingsManager.setBackgroundThemeIndex(which)
                 applyBackgroundSettings()
                 updateSettingsDisplay()
-                Toast.makeText(this, "已设置为: ${settingsManager.backgroundThemes[which].name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "已设置为默认背景", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
             .setNegativeButton("取消", null)
@@ -768,7 +778,6 @@ class SettingsActivity : AppCompatActivity() {
 
             // 保存路径并设置背景类型
             settingsManager.setCustomBackgroundPath(file.absolutePath)
-            settingsManager.setBackgroundTypeString("custom")
 
             // 显示预览
             showBackgroundPreview(file.absolutePath)
@@ -803,7 +812,6 @@ class SettingsActivity : AppCompatActivity() {
                 // 删除已保存的图片
                 File(imagePath).delete()
                 settingsManager.setCustomBackgroundPath("")
-                settingsManager.setBackgroundThemeIndex(0)
             }
             .setCancelable(false)
             .show()
@@ -828,7 +836,7 @@ class SettingsActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("选择背景颜色")
             .setItems(colorNames) { _, which ->
-                settingsManager.setSolidBackgroundColor(colors[which].second)
+                settingsManager.setCustomBackgroundPath("")
                 applyBackgroundSettings()
                 Toast.makeText(this, "已设置为${colors[which].first}背景", Toast.LENGTH_SHORT).show()
             }

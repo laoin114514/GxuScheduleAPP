@@ -28,6 +28,7 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import kotlinx.coroutines.CoroutineScope
@@ -200,7 +201,17 @@ class SettingsFragment : Fragment() {
         btnAlarmSettings.setOnClickListener { showAlarmSettingsDialog() }
         btnAppearanceSettings.setOnClickListener { showAppearanceSettingsDialog() }
         btnColorTheme.setOnClickListener {
-            startActivity(Intent(requireContext(), ColorThemePickerActivity::class.java))
+            val names = ThemeManager.paletteNames().toTypedArray()
+            val currentIndex = ThemeManager.getPaletteIndex(requireContext())
+            AlertDialog.Builder(requireContext())
+                .setTitle("选择主题色板")
+                .setSingleChoiceItems(names, currentIndex) { dialog, which ->
+                    ThemeManager.setPaletteIndex(which, requireContext())
+                    requireActivity().recreate()
+                    dialog.dismiss()
+                }
+                .setNegativeButton("取消", null)
+                .show()
         }
         btnAbout.setOnClickListener {
             startActivity(Intent(requireContext(), AboutActivity::class.java))
@@ -433,8 +444,8 @@ class SettingsFragment : Fragment() {
     }
 
     private fun clearImageBackground() {
-        val currentMode = settingsManager.getBackgroundMode()
-        if (currentMode != SettingsManager.BackgroundType.IMAGE) {
+        val currentMode = settingsManager.getCustomBackgroundPath()
+        if (currentMode.isEmpty()) {
             Toast.makeText(requireContext(), "当前不是图片背景，无需清空", Toast.LENGTH_SHORT).show()
             return
         }
@@ -445,7 +456,6 @@ class SettingsFragment : Fragment() {
         }
         // 重置为默认背景
         settingsManager.setCustomBackgroundPath("")
-        settingsManager.setBackgroundThemeIndex(0)
         // 立即刷新主界面背景
         (requireActivity() as? MainActivity)?.applyBackgroundSettings()
         updateSettingsDisplay()
@@ -453,16 +463,13 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showBackgroundThemePicker() {
-        val currentIndex = settingsManager.getBackgroundThemeIndex()
-        val themeNames = settingsManager.backgroundThemes.map { it.name }.toTypedArray()
+        val themeNames = arrayOf("默认")
+        val currentIndex = 0
         AlertDialog.Builder(requireContext())
             .setTitle("选择背景颜色")
             .setSingleChoiceItems(themeNames, currentIndex) { dialog, which ->
-                settingsManager.setBackgroundThemeIndex(which)
                 updateSettingsDisplay()
-                Toast.makeText(requireContext(),
-                    "已设置为: ${settingsManager.backgroundThemes[which].name}",
-                    Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "已设置为默认背景", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
             .setNegativeButton("取消", null)
@@ -483,7 +490,6 @@ class SettingsFragment : Fragment() {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 80, output)
             }
             settingsManager.setCustomBackgroundPath(file.absolutePath)
-            settingsManager.setBackgroundTypeString("custom")
             showBackgroundPreview(file.absolutePath)
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "保存背景图片失败: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -508,7 +514,6 @@ class SettingsFragment : Fragment() {
             .setNeutralButton("取消") { _, _ ->
                 File(imagePath).delete()
                 settingsManager.setCustomBackgroundPath("")
-                settingsManager.setBackgroundThemeIndex(0)
             }
             .setCancelable(false)
             .show()
@@ -839,10 +844,7 @@ class SettingsFragment : Fragment() {
         tvCurrentSemester.text = settingsManager.getCurrentSemester()
         tvDefaultWeek.text = "第${settingsManager.getDefaultWeek()}周"
         tvDefaultAlarm.text = "提前${settingsManager.getDefaultAlarmMinutes()}分钟"
-        val backgroundText = when (settingsManager.getBackgroundMode()) {
-            SettingsManager.BackgroundType.IMAGE -> "图片背景"
-            else -> settingsManager.getCurrentBackgroundTheme().name
-        }
+        val backgroundText = if (settingsManager.getCustomBackgroundPath().isNotEmpty()) "图片背景" else "默认"
         btnBackgroundSettings.text = "背景设置 - $backgroundText"
         btnAlarmSettings.text = "课前提醒 - ${if (settingsManager.isAlarmEnabled()) "开启" else "关闭"}"
         isUpdatingSwitchState = true

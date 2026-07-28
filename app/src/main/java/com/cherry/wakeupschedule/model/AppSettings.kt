@@ -18,8 +18,5 @@ data class AppSettings(
     val fontSize: String = "normal",                 // 字体大小设置
     val semesterStartDate: Long = 0L,                 // 学期开始日期时间戳
     val customSemesters: List<String> = emptyList(),  // 自定义学期列表
-    val courseColorThemeIndex: Int = 0,              // 课程配色主题索引
-    val backgroundThemeIndex: Int = 0,                // 背景主题索引
-    val backgroundType: String = "default",           // 背景类型
     val customBackgroundPath: String = ""            // 自定义背景图片路径
 ) : Serializable
