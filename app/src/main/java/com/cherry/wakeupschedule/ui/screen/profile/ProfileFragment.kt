@@ -14,7 +14,6 @@ import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
-import com.cherry.wakeupschedule.SchoolImportActivity
 import com.cherry.wakeupschedule.TimeTableEditActivity
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtAccountManager
@@ -102,15 +101,6 @@ class ProfileFragment : Fragment() {
 
         view.findViewById<View>(R.id.item_time_table).setOnClickListener {
             startActivity(Intent(requireContext(), TimeTableEditActivity::class.java))
-        }
-
-        view.findViewById<View>(R.id.item_import).setOnClickListener {
-            startActivity(Intent(requireContext(), SchoolImportActivity::class.java))
-        }
-
-        view.findViewById<View>(R.id.item_export).setOnClickListener {
-            // Open export options — re-use MainActivity export logic? For now, just show a toast
-            Toast.makeText(requireContext(), "导出功能请从课表页操作", Toast.LENGTH_SHORT).show()
         }
 
         view.findViewById<View>(R.id.item_about).setOnClickListener {
