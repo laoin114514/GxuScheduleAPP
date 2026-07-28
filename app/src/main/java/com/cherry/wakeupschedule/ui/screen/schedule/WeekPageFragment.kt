@@ -3,12 +3,12 @@ package com.cherry.wakeupschedule.ui.screen.schedule
 import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
 import android.view.WindowManager
 import android.widget.GridLayout
 import android.widget.LinearLayout
@@ -24,7 +24,9 @@ import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 class WeekPageFragment : Fragment() {
 
@@ -93,7 +95,6 @@ class WeekPageFragment : Fragment() {
             isInWeekRange && isWeekTypeMatch
         }
 
-        // ── 网格背景（仅首次） ──
         if (!backdropBuilt) {
             backdropBuilt = true
             timeAxis.removeAllViews()
@@ -142,9 +143,9 @@ class WeekPageFragment : Fragment() {
         }
         emptyView.visibility = View.GONE
 
-        // ── 课程卡片 ──
         val textColor = Color.WHITE
         val borderColor = Color.WHITE
+        val marginPx = 2.dpToPx()
 
         for (course in weekCourses) {
             val colorIndex = if (course.color > 0) (course.color - 1) % courseColors.size else 0
@@ -152,8 +153,7 @@ class WeekPageFragment : Fragment() {
             val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
             val cardHeight = cellHeight * span
 
-            // 带白色描边的背景 drawable
-            val cardBg = android.graphics.drawable.GradientDrawable().apply {
+            val cardBg = GradientDrawable().apply {
                 setColor(bgColor)
                 cornerRadius = 14f
                 setStroke(2.dpToPx(), borderColor)
@@ -165,70 +165,33 @@ class WeekPageFragment : Fragment() {
                     columnSpec = GridLayout.spec(course.dayOfWeek - 1, 1f)
                     width = 0
                     height = cardHeight
-                    setMargins(4.dpToPx(), 4.dpToPx(), 4.dpToPx(), 4.dpToPx())
+                    setMargins(marginPx, marginPx, marginPx, marginPx)
                 }
-                // 用 GradientDrawable 替代 CardView 默认背景
                 background = cardBg
-                // 保持 CardView 圆角与背景一致
                 radius = 14f
                 cardElevation = 0f
-                // 防止 CardView 自带背景裁剪干扰
-                setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
-                // 白色边框阴影效果：轻微 elevation + 白色 outline
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                    outlineSpotShadowColor = borderColor
-                }
+                setCardBackgroundColor(Color.TRANSPARENT)
                 tag = TAG_COURSE_CARD
-
-                setOnClickListener {
-                    showCourseDetail(course)
-                }
+                setOnClickListener { showCourseDetail(course) }
             }
 
-            val textLayout = LinearLayout(ctx).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(6.dpToPx(), 4.dpToPx(), 6.dpToPx(), 4.dpToPx())
-                gravity = Gravity.CENTER
-            }
+            // 单行信息拼接，自动换行占满卡片
+            val parts = mutableListOf<String>()
+            parts.add(course.name)
+            if (course.classroom.isNotBlank()) parts.add(course.classroom)
+            if (course.teacher.isNotBlank()) parts.add(course.teacher)
+            val infoText = parts.joinToString("\n")
 
-            // 课程名称（粗体）
-            textLayout.addView(TextView(ctx).apply {
-                text = course.name
+            val textView = TextView(ctx).apply {
+                text = infoText
                 textSize = 10f
                 setTextColor(textColor)
-                maxLines = 2
-                ellipsize = android.text.TextUtils.TruncateAt.END
                 gravity = Gravity.CENTER
+                setPadding(4.dpToPx(), 2.dpToPx(), 4.dpToPx(), 2.dpToPx())
+                // 名称行粗体
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
-            })
-
-            // 教室（有空间才显示）
-            if (course.classroom.isNotBlank()) {
-                textLayout.addView(TextView(ctx).apply {
-                    text = course.classroom
-                    textSize = 8f
-                    setTextColor(textColor)
-                    alpha = 0.85f
-                    maxLines = 1
-                    ellipsize = android.text.TextUtils.TruncateAt.END
-                    gravity = Gravity.CENTER
-                })
             }
-
-            // 教师（有空间才显示）
-            if (course.teacher.isNotBlank()) {
-                textLayout.addView(TextView(ctx).apply {
-                    text = course.teacher
-                    textSize = 8f
-                    setTextColor(textColor)
-                    alpha = 0.7f
-                    maxLines = 1
-                    ellipsize = android.text.TextUtils.TruncateAt.END
-                    gravity = Gravity.CENTER
-                })
-            }
-
-            cardView.addView(textLayout)
+            cardView.addView(textView)
             gridLayout.addView(cardView)
         }
     }
@@ -238,6 +201,20 @@ class WeekPageFragment : Fragment() {
     private fun showCourseDetail(course: Course) {
         val dialog = Dialog(requireContext(), R.style.BottomSheetDialog)
         val sheetView = layoutInflater.inflate(R.layout.dialog_course_detail, null)
+
+        // 上方圆角背景
+        val topRadius = 20.dpToPx().toFloat()
+        val sheetBg = GradientDrawable().apply {
+            setColor(Color.WHITE) // 会被 theme surface 覆盖，先设白色兜底
+            cornerRadii = floatArrayOf(topRadius, topRadius, topRadius, topRadius, 0f, 0f, 0f, 0f)
+        }
+        // 使用 theme surface 颜色
+        val typedValue = android.util.TypedValue()
+        requireContext().theme.resolveAttribute(
+            com.google.android.material.R.attr.colorSurface, typedValue, true
+        )
+        sheetBg.setColor(typedValue.data)
+        sheetView.background = sheetBg
 
         // 获取时间段信息
         val timeTableManager = TimeTableManager.getInstance(requireContext())
@@ -258,7 +235,6 @@ class WeekPageFragment : Fragment() {
                     else -> ""
                 }
 
-        // 学期开始日期 → 计算具体日期范围
         val settingsManager = SettingsManager(requireContext())
         val startDate = settingsManager.getSemesterStartDate()
         var dateRangeText = ""
@@ -267,19 +243,18 @@ class WeekPageFragment : Fragment() {
             cal.add(Calendar.WEEK_OF_YEAR, course.startWeek - 1)
             cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
             cal.add(Calendar.DAY_OF_MONTH, course.dayOfWeek - 1)
-            val startStr = "${cal.get(Calendar.MONTH) + 1}/${cal.get(Calendar.DAY_OF_MONTH)}"
+            val startFmt = SimpleDateFormat("M/d", Locale.getDefault())
+            val startStr = startFmt.format(cal.time)
             cal.add(Calendar.WEEK_OF_YEAR, course.endWeek - course.startWeek)
-            val endStr = "${cal.get(Calendar.MONTH) + 1}/${cal.get(Calendar.DAY_OF_MONTH)}"
+            val endStr = startFmt.format(cal.time)
             dateRangeText = "$startStr - $endStr"
         }
 
-        // 课程颜色
         val courseColors = ThemeManager.getCourseColors()
         val colorIndex = if (course.color > 0) (course.color - 1) % courseColors.size else 0
         val courseColor = courseColors[colorIndex]
 
-        sheetView.findViewById<View>(R.id.color_indicator)
-            ?.setBackgroundColor(courseColor)
+        sheetView.findViewById<View>(R.id.color_indicator)?.setBackgroundColor(courseColor)
         sheetView.findViewById<TextView>(R.id.tv_detail_name)?.text = course.name
         sheetView.findViewById<TextView>(R.id.tv_detail_teacher)?.text =
             if (course.teacher.isNotBlank()) course.teacher else "未知"
@@ -292,24 +267,22 @@ class WeekPageFragment : Fragment() {
         }
 
         dialog.setContentView(sheetView)
+
+        // 设置窗口：全屏高度覆盖课表，内容从底部弹出
         dialog.window?.apply {
-            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+            setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT
+            )
             setGravity(Gravity.BOTTOM)
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            // 底部滑入动画
             setWindowAnimations(R.style.BottomSheetAnimation)
-            // 点击灰罩关闭
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 setDimAmount(0.5f)
             }
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            // 点击外部区域关闭
-            setFlags(
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-            )
         }
-        // 点击灰罩区域关闭
+
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
 
