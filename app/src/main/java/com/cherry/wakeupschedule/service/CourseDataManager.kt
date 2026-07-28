@@ -1,225 +1,189 @@
 package com.cherry.wakeupschedule.service
 
 import android.content.Context
-import android.content.SharedPreferences
+import com.cherry.wakeupschedule.model.AppDatabase
 import com.cherry.wakeupschedule.model.Course
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
  * 课程数据管理器
- * 负责课程数据的CRUD操作和持久化存储
+ * 使用 Room (SQLite) 进行持久化存储
+ *
+ * 写操作通过单线程 Executor 排队执行，避免 runBlocking 阻塞主线程；
+ * 读操作直接读取内存缓存 StateFlow。
  */
 class CourseDataManager private constructor(context: Context) {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val gson = Gson()
+    private val db = AppDatabase.getInstance(context)
+    private val dao = db.courseDao()
     private val holidayManager = HolidayManager.getInstance(context)
     private val settingsManager = SettingsManager(context)
 
     private val _coursesFlow = MutableStateFlow<List<Course>>(emptyList())
     val coursesFlow: StateFlow<List<Course>> = _coursesFlow
 
-    init {
-        loadCoursesFromPrefs()
+    // 单线程 Executor，保证写操作串行，Room 自身也线程安全
+    private val dbExecutor = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "course-db").apply { isDaemon = true }
     }
 
-    private fun loadCoursesFromPrefs() {
-        val coursesJson = prefs.getString(KEY_COURSES, null)
-        android.util.Log.d("CourseDataManager", "loadCoursesFromPrefs: JSON数据存在=${coursesJson != null}")
-        if (coursesJson != null) {
-            try {
-                val type = object : TypeToken<List<Course>>() {}.type
-                val courses: List<Course> = gson.fromJson(coursesJson, type)
-                android.util.Log.d("CourseDataManager", "loadCoursesFromPrefs: 解析到${courses.size}门课程")
+    private val scope = CoroutineScope(Dispatchers.IO)
+
+    init {
+        // 迁移旧 SharedPreferences 数据（如果存在）
+        migrateFromSharedPreferences(context)
+        // 同步加载初始数据，确保调用方能立即获取
+        _coursesFlow.value = executeDb { dao.getAllCourses() }
+        // 监听 Room 数据变化，自动更新缓存
+        scope.launch {
+            dao.getAllCoursesFlow().collect { courses ->
                 _coursesFlow.value = courses
-            } catch (e: Exception) {
-                android.util.Log.e("CourseDataManager", "loadCoursesFromPrefs: 解析失败", e)
-                _coursesFlow.value = emptyList()
             }
         }
     }
 
-    private fun saveCoursesToPrefs(courses: List<Course>, synchronous: Boolean = false) {
-        val coursesJson = gson.toJson(courses)
-        val editor = prefs.edit().putString(KEY_COURSES, coursesJson)
-        if (synchronous) {
-            editor.commit()
-        } else {
-            editor.apply()
+    /**
+     * 从旧的 SharedPreferences JSON 存储迁移到 Room（同步执行）
+     */
+    private fun migrateFromSharedPreferences(context: Context) {
+        val prefs = context.getSharedPreferences("course_data", Context.MODE_PRIVATE)
+        val coursesJson = prefs.getString("courses", null) ?: return
+
+        try {
+            val count = executeDb { dao.getCourseCount() }
+            if (count > 0) {
+                prefs.edit().remove("courses").apply()
+                return
+            }
+
+            val gson = Gson()
+            val type = object : TypeToken<List<Course>>() {}.type
+            val courses: List<Course> = gson.fromJson(coursesJson, type)
+
+            if (courses.isNotEmpty()) {
+                val migratedCourses = courses.map { it.copy(id = 0) }
+                executeDb { dao.insertCourses(migratedCourses) }
+                android.util.Log.d(
+                    "CourseDataManager",
+                    "Migrated ${migratedCourses.size} courses from SharedPreferences to Room"
+                )
+            }
+
+            prefs.edit().remove("courses").apply()
+        } catch (e: Exception) {
+            android.util.Log.e("CourseDataManager", "Migration from SP failed", e)
         }
     }
 
-    /**
-     * 获取所有课程
-     */
-    fun getAllCourses(): List<Course> {
-        return _coursesFlow.value
-    }
+    // ── 读操作（内存缓存，不访问数据库） ──
 
-    /**
-     * 获取指定周的课程
-     */
+    fun getAllCourses(): List<Course> = _coursesFlow.value
+
     fun getCoursesForWeek(week: Int): List<Course> {
         return _coursesFlow.value.filter { course ->
             val isInWeekRange = week in course.startWeek..course.endWeek
             val isWeekTypeMatch = when (course.weekType) {
-                0 -> true // 每周
-                1 -> week % 2 == 1 // 单周
-                2 -> week % 2 == 0 // 双周
+                0 -> true
+                1 -> week % 2 == 1
+                2 -> week % 2 == 0
                 else -> true
             }
             isInWeekRange && isWeekTypeMatch
         }
     }
 
-    /**
-     * 获取指定日期的课程
-     */
     fun getCoursesForDate(date: Calendar): List<Course> {
-        // 1. 如果设置了隐藏节假日课程，并且当天是节假日，则返回空
         if (settingsManager.isHideHolidayCourses() && holidayManager.isHoliday(date)) {
             return emptyList()
         }
-
-        // 2. 计算周数
         val week = calculateWeekNumber(date)
         if (week <= 0) return emptyList()
-
-        // 3. 获取该周的课程
         val coursesForWeek = getCoursesForWeek(week)
-
-        // 4. 过滤出当天的课程
-        val dayOfWeek = date.get(Calendar.DAY_OF_WEEK) - 1 // Calendar是1-7，转为0-6（周一-周日
-        val adjustedDayOfWeek = if (dayOfWeek == 0) 7 else dayOfWeek // 周日调整为7
-
+        val dayOfWeek = date.get(Calendar.DAY_OF_WEEK) - 1
+        val adjustedDayOfWeek = if (dayOfWeek == 0) 7 else dayOfWeek
         return coursesForWeek.filter { it.dayOfWeek == adjustedDayOfWeek }
     }
 
-    /**
-     * 计算指定日期是学期第几周
-     */
     private fun calculateWeekNumber(date: Calendar): Int {
         val startDate = settingsManager.getSemesterStartDate()
         if (startDate == 0L) return -1
-
         val startCalendar = Calendar.getInstance().apply { timeInMillis = startDate }
-
-        // 设置到当天的开始
         startCalendar.set(Calendar.HOUR_OF_DAY, 0)
         startCalendar.set(Calendar.MINUTE, 0)
         startCalendar.set(Calendar.SECOND, 0)
         startCalendar.set(Calendar.MILLISECOND, 0)
-
         val dateCopy = (date.clone() as Calendar).apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
-
-        // 计算天数差
         val diffInMillis = dateCopy.timeInMillis - startCalendar.timeInMillis
-        if (diffInMillis < 0) return -1 // 还没开学
-
+        if (diffInMillis < 0) return -1
         val daysDiff = TimeUnit.DAYS.convert(diffInMillis, TimeUnit.MILLISECONDS).toInt()
-
-        // 计算周数
         return (daysDiff / 7) + 1
     }
 
-    /**
-     * 添加一门课程
-     */
-    @Synchronized
+    // ── 写操作（Executor + Future，避免 runBlocking） ──
+
     fun addCourse(course: Course): Course {
-        val currentCourses = _coursesFlow.value.toMutableList()
-        val newId = if (currentCourses.isEmpty()) 1L else currentCourses.maxOf { it.id } + 1
-        val newCourse = course.copy(id = newId)
-        currentCourses.add(newCourse)
-        _coursesFlow.value = currentCourses
-        saveCoursesToPrefs(currentCourses)
-        return newCourse
+        val courseToInsert = course.copy(id = 0)
+        val newId = executeDb { dao.insertCourse(courseToInsert) }
+        return course.copy(id = newId)
     }
 
-    /**
-     * 批量添加课程
-     */
-    @Synchronized
     fun addCourses(courses: List<Course>) {
-        val currentCourses = _coursesFlow.value.toMutableList()
-        var nextId = if (currentCourses.isEmpty()) 1L else currentCourses.maxOf { it.id } + 1
-        courses.forEach { course ->
-            val newCourse = course.copy(id = nextId++)
-            currentCourses.add(newCourse)
-        }
-        _coursesFlow.value = currentCourses
-        saveCoursesToPrefs(currentCourses)
+        executeDb { dao.insertCourses(courses.map { it.copy(id = 0) }) }
     }
 
-    /**
-     * 更新课程（同步写入，避免进程被杀时数据丢失）
-     */
-    @Synchronized
     fun updateCourse(course: Course) {
-        val currentCourses = _coursesFlow.value.toMutableList()
-        val index = currentCourses.indexOfFirst { it.id == course.id }
-        if (index != -1) {
-            currentCourses[index] = course
-            _coursesFlow.value = currentCourses
-            saveCoursesToPrefs(currentCourses, synchronous = true)
-        }
+        executeDb { dao.updateCourse(course) }
     }
 
-    /**
-     * 删除课程（同步写入，避免进程被杀时数据丢失）
-     */
-    @Synchronized
     fun deleteCourse(course: Course) {
-        val currentCourses = _coursesFlow.value.toMutableList()
-        currentCourses.removeAll { it.id == course.id }
-        _coursesFlow.value = currentCourses
-        saveCoursesToPrefs(currentCourses, synchronous = true)
+        executeDb { dao.deleteCourse(course) }
     }
 
-    /**
-     * 清空所有课程
-     */
     fun clearAllCourses() {
-        synchronized(this) {
-            _coursesFlow.value = emptyList()
-            saveCoursesToPrefs(emptyList(), synchronous = true)
+        executeDb { dao.deleteAllCourses() }
+    }
+
+    fun replaceAllCourses(courses: List<Course>) {
+        executeDb {
+            dao.deleteAllCourses()
+            dao.insertCourses(courses.map { it.copy(id = 0) })
         }
     }
 
-    /**
-     * 替换所有课程（清空 + 批量添加）
-     */
-    fun replaceAllCourses(courses: List<com.cherry.wakeupschedule.model.Course>) {
-        synchronized(this) {
-            // 重新生成 ID
-            var nextId = System.currentTimeMillis()
-            val newCourses = courses.map { it.copy(id = nextId++) }
-            _coursesFlow.value = newCourses
-            saveCoursesToPrefs(newCourses, synchronous = true)
-        }
-    }
-
-    /**
-     * 刷新课程数据
-     */
     fun refreshCourses() {
-        loadCoursesFromPrefs()
+        scope.launch {
+            _coursesFlow.value = dao.getAllCourses()
+        }
+    }
+
+    // ── 内部工具 ──
+
+    /**
+     * 在 dbExecutor 上执行 Room 操作，阻塞当前线程等待结果。
+     * 通过 Future.get() 实现，不涉及协程上下文，避免 runBlocking 的潜在死锁。
+     */
+    private fun <T> executeDb(block: suspend () -> T): T {
+        val future = dbExecutor.submit<T> {
+            kotlinx.coroutines.runBlocking(Dispatchers.IO) { block() }
+        }
+        return future.get()
     }
 
     companion object {
-        private const val PREFS_NAME = "course_data"
-        private const val KEY_COURSES = "courses"
-
         @Volatile
         private var instance: CourseDataManager? = null
 

@@ -340,6 +340,9 @@ class AlarmService(private val context: Context) {
                     Log.e("AlarmService", "闹钟($tag)setExact 失败", e2)
                     false
                 }
+            } catch (e: IllegalStateException) {
+                Log.w("AlarmService", "闹钟($tag)超出系统上限(500)，无法注册更多闹钟", e)
+                false
             } catch (e: SecurityException) {
                 Log.w("AlarmService", "setAlarmClock 权限被拒绝($tag)，降级到 setExactAndAllowWhileIdle", e)
                 try {
@@ -484,9 +487,11 @@ class AlarmService(private val context: Context) {
         val currentWeek = getCurrentWeek()
 
         // 为每门课程的每周安排通知
-        allCourses.forEach { course ->
-            if (course.alarmEnabled) {
-                collectValidAlarmTimes(course, semesterEndWeek).forEach { (alarmTime, week) ->
+        var alarmLimitReached = false
+        allCourses.forEach loop@{ course ->
+            if (alarmLimitReached || !course.alarmEnabled) return@loop
+            collectValidAlarmTimes(course, semesterEndWeek).forEach { (alarmTime, week) ->
+                if (alarmLimitReached) return@forEach
             // 使用课程ID和周数生成唯一的通知ID（统一公式）
             val notificationId = NotificationHelper.generateNotificationId(course.id, week)
             val pendingIntent = PendingIntent.getBroadcast(
@@ -503,7 +508,12 @@ class AlarmService(private val context: Context) {
             )
 
             // 使用多重兜底设置闹钟，国产 ROM 也能尽量保证触发
-            scheduleAlarmWithFallback(alarmTime, pendingIntent, "${course.name}#w${week}")
+            val alarmSet = scheduleAlarmWithFallback(alarmTime, pendingIntent, "${course.name}#w${week}")
+            if (!alarmSet) {
+                alarmLimitReached = true
+                Log.w("AlarmService", "闹钟注册已达系统上限，停止注册后续课程闹钟")
+                return@forEach
+            }
             Log.d("AlarmService", "Registered alarm for ${course.name} week $week at ${java.util.Date(alarmTime)}")
 
             // 分配到闹钟槽位，追踪活跃状态
@@ -547,7 +557,6 @@ class AlarmService(private val context: Context) {
                 scheduleAlarmWithFallback(autoStartTime, autoStartPendingIntent, "autostart#${course.name}#w${week}")
                 Log.d("AlarmService", "Registered auto-start for ${course.name} week $week at ${java.util.Date(autoStartTime)}")
             }
-                }
             }
         }
         Log.d("AlarmService", "Registered all notifications for ${allCourses.size} courses for semester")

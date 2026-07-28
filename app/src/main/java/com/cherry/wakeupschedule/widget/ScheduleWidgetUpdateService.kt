@@ -66,31 +66,37 @@ class ScheduleWidgetUpdateService {
          * 调度下次小组件更新
          */
         fun scheduleNextUpdate(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, WidgetUpdateReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                WIDGET_UPDATE_REQUEST_CODE,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            val updateInterval = 30 * 60 * 1000L
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    System.currentTimeMillis() + updateInterval,
-                    pendingIntent
+            try {
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                val intent = Intent(context, WidgetUpdateReceiver::class.java)
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    WIDGET_UPDATE_REQUEST_CODE,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-            } else {
-                alarmManager.set(
-                    AlarmManager.RTC_WAKEUP,
-                    System.currentTimeMillis() + updateInterval,
-                    pendingIntent
-                )
+
+                val updateInterval = 30 * 60 * 1000L
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        System.currentTimeMillis() + updateInterval,
+                        pendingIntent
+                    )
+                } else {
+                    alarmManager.set(
+                        AlarmManager.RTC_WAKEUP,
+                        System.currentTimeMillis() + updateInterval,
+                        pendingIntent
+                    )
+                }
+                Log.d(TAG, "已调度小组件下次更新")
+            } catch (e: IllegalStateException) {
+                Log.e(TAG, "调度小组件更新失败：闹钟数量已达系统上限", e)
+            } catch (e: SecurityException) {
+                Log.e(TAG, "调度小组件更新失败：缺少闹钟权限", e)
             }
-            Log.d(TAG, "已调度小组件下次更新")
         }
 
         /**

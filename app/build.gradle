@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.devtools.ksp' version '1.9.24-1.0.20'
 }
 
 
@@ -148,10 +149,10 @@ dependencies {
     // Toasty for better toast messages
     // implementation 'com.github.GrenderG:Toasty:1.5.2'
     
-    // Room database (commented out due to compilation issues)
-    // implementation "androidx.room:room-runtime:2.5.2"
-    // implementation "androidx.room:room-ktx:2.5.2"
-    // annotationProcessor "androidx.room:room-compiler:2.5.2"
+    // Room database
+    implementation "androidx.room:room-runtime:2.6.1"
+    implementation "androidx.room:room-ktx:2.6.1"
+    ksp "androidx.room:room-compiler:2.6.1"
     
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
