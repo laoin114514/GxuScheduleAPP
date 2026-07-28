@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="1"
-        android:textColor="@android:color/white"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="12sp"
         android:textStyle="bold" />
 
@@ -20,7 +20,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="08:00"
-        android:textColor="#CCFFFFFF"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="9sp"
         android:layout_marginTop="2dp" />
 
@@ -29,7 +29,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="08:45"
-        android:textColor="#CCFFFFFF"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="9sp" />
 
 </LinearLayout>
