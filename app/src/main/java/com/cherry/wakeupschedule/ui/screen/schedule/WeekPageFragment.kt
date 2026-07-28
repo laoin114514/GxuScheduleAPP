@@ -66,12 +66,6 @@ class WeekPageFragment : Fragment() {
 
         val weekCourses = courses.filter { weekNumber in it.startWeek..it.endWeek }
 
-        if (weekCourses.isEmpty()) {
-            emptyView.visibility = View.VISIBLE
-            return
-        }
-        emptyView.visibility = View.GONE
-
         for (node in 1..maxNodes) {
             val timeSlot = timeTableManager.getTimeSlots().find { it.node == node }
             val timeView = layoutInflater.inflate(R.layout.item_time_slot, timeAxis, false) as LinearLayout
@@ -97,6 +91,12 @@ class WeekPageFragment : Fragment() {
                 gridLayout.addView(cell)
             }
         }
+
+        if (weekCourses.isEmpty()) {
+            emptyView.visibility = View.VISIBLE
+            return
+        }
+        emptyView.visibility = View.GONE
 
         val palette = ThemeManager.currentPalette(requireContext())
         weekCourses.forEachIndexed { index, course ->

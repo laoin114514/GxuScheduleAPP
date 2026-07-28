@@ -30,6 +30,7 @@ class ProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         settingsManager = SettingsManager(requireContext())
         setupClickListeners(view)
+        updateDisplay()
     }
 
     private fun setupClickListeners(view: View) {
@@ -43,6 +44,14 @@ class ProfileFragment : Fragment() {
                 return@setOnClickListener
             }
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
+        }
+
+        view.findViewById<View>(R.id.item_semester).setOnClickListener {
+            showSemesterDialog()
+        }
+
+        view.findViewById<View>(R.id.item_week).setOnClickListener {
+            showWeekDialog()
         }
 
         view.findViewById<View>(R.id.item_theme_palette).setOnClickListener {
@@ -102,5 +111,39 @@ class ProfileFragment : Fragment() {
                 Toast.makeText(requireContext(), "未找到邮件应用", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun showSemesterDialog() {
+        val semesters = settingsManager.getCustomSemesters().toMutableList()
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择学期")
+            .setItems(semesters.toTypedArray()) { _, which ->
+                settingsManager.setCurrentSemester(semesters[which])
+                updateDisplay()
+                Toast.makeText(requireContext(), "已切换至: ${semesters[which]}", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showWeekDialog() {
+        val weeks = (1..20).map { "第${it}周" }.toTypedArray()
+        val currentWeek = settingsManager.getDefaultWeek()
+        AlertDialog.Builder(requireContext())
+            .setTitle("设置默认周次")
+            .setSingleChoiceItems(weeks, currentWeek - 1) { dialog, which ->
+                settingsManager.setDefaultWeek(which + 1)
+                updateDisplay()
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun updateDisplay() {
+        val tv = view?.findViewById<android.widget.TextView>(R.id.tv_semester_value)
+        tv?.text = settingsManager.getCurrentSemester()
+        val tvWeek = view?.findViewById<android.widget.TextView>(R.id.tv_week_value)
+        tvWeek?.text = "第${settingsManager.getDefaultWeek()}周"
     }
 }
