@@ -3,18 +3,18 @@ package com.cherry.wakeupschedule.ui.widget
 import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.widget.ScrollView
 import kotlin.math.abs
 
 /**
  * 竖直方向优先的 ScrollView，解决 ViewPager2 嵌套时的触摸冲突。
  *
- * 策略：
- * - 手势方向未确定时：先禁止父 View（ViewPager2）拦截
- * - 确定水平方向：放行父 View 拦截，让 ViewPager2 处理左右滑动
- * - 确定竖直方向：继续禁止父 View 拦截，由 ScrollView 处理上下滚动
+ * 跟之前的区别：
+ * - ~~ACTION_DOWN 立即 block 父 View~~ → 会造成水平滑动 12px 死区
+ * - ACTION_MOVE 仅当确认是竖直滑动（dy > dx + 超过 touchSlop）才 block 父 View
  *
- * 解决：课表上下滑动容易被 ViewPager2 误判为左右滑动的问题。
+ * 这样水平滑动零延迟，斜向/竖直滑动也不会被 ViewPager2 误拦截。
  */
 class VerticalScrollView @JvmOverloads constructor(
     context: Context,
@@ -24,69 +24,40 @@ class VerticalScrollView @JvmOverloads constructor(
 
     private var startX = 0f
     private var startY = 0f
-    private var axisLocked = false
-    private var isVertical = false
-    private var lastAction = MotionEvent.ACTION_DOWN
+    private var locked = false
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 startX = ev.x
                 startY = ev.y
-                axisLocked = false
-                isVertical = false
-                lastAction = MotionEvent.ACTION_DOWN
-                // Don't let ViewPager2 steal before we know the axis
-                parent.requestDisallowInterceptTouchEvent(true)
+                locked = false
+                // 不再在 DOWN 时 block 父 View——让 ViewPager2 也能响应
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (!axisLocked) {
-                    val dx = abs(ev.x - startX)
-                    val dy = abs(ev.y - startY)
-                    val threshold = 12f // slightly above system touch slop
-                    if (dx > threshold || dy > threshold) {
-                        axisLocked = true
-                        isVertical = dy > dx
-                    }
-                }
-                if (axisLocked) {
-                    // Vertical → block parent; horizontal → release to ViewPager2
-                    parent.requestDisallowInterceptTouchEvent(isVertical)
-                } else {
-                    // Still ambiguous, keep blocking parent
+                if (locked) return super.onInterceptTouchEvent(ev)
+
+                val dx = abs(ev.x - startX)
+                val dy = abs(ev.y - startY)
+
+                if (dy > dx && dy > touchSlop) {
+                    // 确认竖直滑动 → 阻止 ViewPager2 拦截
+                    locked = true
                     parent.requestDisallowInterceptTouchEvent(true)
+                } else if (dx > dy && dx > touchSlop) {
+                    // 确认水平滑动 → 放行给 ViewPager2
+                    locked = true
+                    parent.requestDisallowInterceptTouchEvent(false)
                 }
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                axisLocked = false
-                isVertical = false
-                lastAction = ev.actionMasked
+                locked = false
                 parent.requestDisallowInterceptTouchEvent(false)
             }
         }
         return super.onInterceptTouchEvent(ev)
-    }
-
-    // Also disallow parent intercept during direct touch handling (when we are scrolling)
-    override fun onTouchEvent(ev: MotionEvent): Boolean {
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                parent.requestDisallowInterceptTouchEvent(true)
-            }
-            MotionEvent.ACTION_MOVE -> {
-                if (!axisLocked) {
-                    val dx = abs(ev.x - startX)
-                    val dy = abs(ev.y - startY)
-                    if (dx > 12f || dy > 12f) {
-                        axisLocked = true
-                        isVertical = dy > dx
-                    }
-                }
-                parent.requestDisallowInterceptTouchEvent(axisLocked && isVertical)
-            }
-        }
-        return super.onTouchEvent(ev)
     }
 }

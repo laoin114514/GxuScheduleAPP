@@ -1,17 +1,327 @@
 package com.cherry.wakeupschedule.ui.adapter
 
-import androidx.fragment.app.Fragment
-import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.cherry.wakeupschedule.ui.screen.schedule.WeekPageFragment
+import android.content.Context
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.core.graphics.ColorUtils
+import androidx.recyclerview.widget.RecyclerView
+import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.model.Course
+import com.cherry.wakeupschedule.service.TimeTableManager
+import com.cherry.wakeupschedule.ui.screen.schedule.SchedulePageDetailDialog
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.widget.GridBackgroundView
+import com.cherry.wakeupschedule.ui.widget.VerticalScrollView
 
+/**
+ * ViewPager2 适配器。
+ * 完全模仿原始 app：RecyclerView.Adapter + 代码构建 View（零 XML inflation）+ 每页直接渲染。
+ */
 class WeekPagerAdapter(
-    fragment: Fragment,
     private val totalWeeks: Int
-) : FragmentStateAdapter(fragment) {
+) : RecyclerView.Adapter<WeekPagerAdapter.WeekViewHolder>() {
+
+    private var allCourses: List<Course> = emptyList()
+
+    fun updateData(courses: List<Course>) {
+        allCourses = courses
+        notifyDataSetChanged()
+    }
 
     override fun getItemCount(): Int = totalWeeks
 
-    override fun createFragment(position: Int): Fragment {
-        return WeekPageFragment.newInstance(position + 1)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WeekViewHolder {
+        return WeekViewHolder(parent.context)
+    }
+
+    override fun onBindViewHolder(holder: WeekViewHolder, position: Int) {
+        val week = position + 1
+        holder.bind(week, allCourses)
+    }
+
+    class WeekViewHolder(context: Context) : RecyclerView.ViewHolder(
+        buildPageRoot(context)
+    ) {
+        // ── 缓存的 view 引用 ──
+        private val scrollView: VerticalScrollView
+        private val gridBg: GridBackgroundView
+        private val timeAxis: LinearLayout
+        private val courseContainer: FrameLayout
+        private val emptyView: LinearLayout
+
+        private var axisBuilt = false
+        private var builtNodes = 0
+        private val courseColors: IntArray get() = ThemeManager.getCourseColors()
+
+        init {
+            val root = itemView as LinearLayout
+            scrollView = root.getChildAt(0) as VerticalScrollView
+            val contentLayout = scrollView.getChildAt(0) as LinearLayout
+            timeAxis = contentLayout.getChildAt(0) as LinearLayout
+            val contentArea = contentLayout.getChildAt(1) as FrameLayout
+            gridBg = contentArea.getChildAt(0) as GridBackgroundView
+            courseContainer = contentArea.getChildAt(1) as FrameLayout
+            emptyView = contentArea.getChildAt(2) as LinearLayout
+        }
+
+        fun bind(week: Int, allCourses: List<Course>) {
+            val ctx = itemView.context
+            val cellHeight = ctx.resources.getDimensionPixelSize(R.dimen.course_cell_height)
+            val maxNodes = TimeTableManager.getInstance(ctx).getMaxNodes()
+            val density = ctx.resources.displayMetrics.density
+
+            // ── 网格背景（只配置一次） ──
+            if (!axisBuilt || builtNodes != maxNodes) {
+                gridBg.rowCount = maxNodes
+                gridBg.columnCount = 7
+                val typedValue = android.util.TypedValue()
+                ctx.theme.resolveAttribute(
+                    com.google.android.material.R.attr.colorOutline, typedValue, true
+                )
+                gridBg.gridColor = ColorUtils.setAlphaComponent(typedValue.data, 60)
+            }
+
+            // ── 时间轴（只构建一次或节点数变化时重建） ──
+            if (!axisBuilt || builtNodes != maxNodes) {
+                timeAxis.removeAllViews()
+                val slots = TimeTableManager.getInstance(ctx).getTimeSlots()
+                for (node in 1..maxNodes) {
+                    val slot = slots.find { it.node == node }
+                    val timeView = buildTimeSlotView(ctx, node, slot?.startTime, slot?.endTime, cellHeight)
+                    timeAxis.addView(timeView)
+                }
+                axisBuilt = true
+                builtNodes = maxNodes
+            }
+
+            // ── 筛选本周课程 ──
+            val weekCourses = allCourses.filter { course ->
+                val inRange = week in course.startWeek..course.endWeek
+                val weekMatch = when (course.weekType) {
+                    0 -> true
+                    1 -> week % 2 == 1
+                    2 -> week % 2 == 0
+                    else -> true
+                }
+                inRange && weekMatch
+            }
+
+            // ── 空状态 ──
+            if (weekCourses.isEmpty()) {
+                emptyView.visibility = View.VISIBLE
+                courseContainer.removeAllViews()
+                return
+            }
+            emptyView.visibility = View.GONE
+
+            // ── 同步计算 cell 宽度 ──
+            val timeAxisWidth = (32 * density).toInt()
+            val contentWidth = ctx.resources.displayMetrics.widthPixels - timeAxisWidth
+            if (contentWidth <= 0) return
+
+            // ── 重建课程卡片 ──
+            courseContainer.removeAllViews()
+            val gapPx = (2 * density).toInt()
+            val cellWidth = contentWidth / 7f
+            val textColor = Color.WHITE
+            val strokeColor = 0x80FFFFFF.toInt()
+            val colors = courseColors
+
+            for (course in weekCourses) {
+                val ci = if (course.color > 0) (course.color - 1) % colors.size else 0
+                val bgColor = ColorUtils.setAlphaComponent(colors[ci], 128)
+
+                val rowStart = (course.startTime - 1).coerceIn(0, maxNodes - 1)
+                val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
+                    .coerceAtMost(maxNodes - rowStart)
+                val dayCol = (course.dayOfWeek - 1).coerceIn(0, 6)
+
+                val cardW = (cellWidth - 2 * gapPx).toInt()
+                val cardH = cellHeight * span - 2 * gapPx
+                val leftMargin = (dayCol * cellWidth + gapPx).toInt()
+                val topMargin = rowStart * cellHeight + gapPx
+
+                val cardBg = GradientDrawable().apply {
+                    setColor(bgColor)
+                    cornerRadius = 14f
+                    setStroke((2 * density).toInt(), strokeColor)
+                }
+
+                val card = FrameLayout(ctx).apply {
+                    layoutParams = FrameLayout.LayoutParams(cardW, cardH).apply {
+                        setMargins(leftMargin, topMargin, 0, 0)
+                    }
+                    background = cardBg
+                    setOnClickListener { SchedulePageDetailDialog.show(ctx, course, courseColors) }
+                }
+
+                val parts = mutableListOf(course.name)
+                if (course.classroom.isNotBlank()) parts.add(course.classroom)
+                if (course.teacher.isNotBlank()) parts.add(course.teacher)
+
+                val tv = TextView(ctx).apply {
+                    text = parts.joinToString("\n")
+                    textSize = 10f
+                    setTextColor(textColor)
+                    gravity = Gravity.CENTER
+                    setPadding((4 * density).toInt(), (2 * density).toInt(),
+                        (4 * density).toInt(), (2 * density).toInt())
+                    setTypeface(Typeface.DEFAULT_BOLD)
+                }
+                card.addView(tv)
+                courseContainer.addView(card)
+            }
+        }
+
+        private fun buildTimeSlotView(ctx: Context, node: Int, start: String?, end: String?, cellHeight: Int): LinearLayout {
+            return LinearLayout(ctx).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, cellHeight
+                )
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(4, 4, 4, 4)
+
+                addView(TextView(ctx).apply {
+                    text = node.toString()
+                    textSize = 12f
+                    setTypeface(null, Typeface.BOLD)
+                    val typedValue = android.util.TypedValue()
+                    ctx.theme.resolveAttribute(
+                        com.google.android.material.R.attr.colorOnSurface, typedValue, true
+                    )
+                    setTextColor(typedValue.data)
+                })
+                addView(TextView(ctx).apply {
+                    text = start?.takeIf { it.isNotBlank() } ?: "--:--"
+                    textSize = 9f
+                    val typedValue = android.util.TypedValue()
+                    ctx.theme.resolveAttribute(
+                        com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
+                    )
+                    setTextColor(typedValue.data)
+                })
+                addView(TextView(ctx).apply {
+                    text = end?.takeIf { it.isNotBlank() } ?: "--:--"
+                    textSize = 9f
+                    val typedValue = android.util.TypedValue()
+                    ctx.theme.resolveAttribute(
+                        com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
+                    )
+                    setTextColor(typedValue.data)
+                })
+            }
+        }
+    }
+
+    companion object {
+        /** 用代码构建页面根布局（零 XML inflation，跟原始 app 一致） */
+        private fun buildPageRoot(context: Context): LinearLayout {
+            val density = context.resources.displayMetrics.density
+
+            // 右侧内容区
+            val gridBg = GridBackgroundView(context).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            }
+
+            val courseContainer = FrameLayout(context).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            }
+
+            val emptyIcon = ImageView(context).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    (80 * density).toInt(), (80 * density).toInt()
+                ).apply { gravity = Gravity.CENTER }
+                setImageResource(R.drawable.ic_mtrl_calendar_month)
+                alpha = 0.3f
+                val typedValue = android.util.TypedValue()
+                context.theme.resolveAttribute(
+                    com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
+                )
+                setColorFilter(typedValue.data)
+            }
+
+            val emptyText = TextView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (16 * density).toInt() }
+                text = "暂无课程"
+                textSize = 16f
+                val typedValue = android.util.TypedValue()
+                context.theme.resolveAttribute(
+                    com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
+                )
+                setTextColor(typedValue.data)
+            }
+
+            val emptyLayout = LinearLayout(context).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                visibility = View.GONE
+                addView(emptyIcon)
+                addView(emptyText)
+            }
+
+            val contentArea = FrameLayout(context).apply {
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                addView(gridBg)
+                addView(courseContainer)
+                addView(emptyLayout)
+            }
+
+            val timeAxis = LinearLayout(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    (32 * density).toInt(), ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                orientation = LinearLayout.VERTICAL
+            }
+
+            val contentLayout = LinearLayout(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                orientation = LinearLayout.HORIZONTAL
+                addView(timeAxis)
+                addView(contentArea)
+            }
+
+            val scrollView = VerticalScrollView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                overScrollMode = View.OVER_SCROLL_NEVER
+                isVerticalScrollBarEnabled = false
+                isFillViewport = true
+                addView(contentLayout)
+            }
+
+            return LinearLayout(context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                addView(scrollView)
+            }
+        }
     }
 }

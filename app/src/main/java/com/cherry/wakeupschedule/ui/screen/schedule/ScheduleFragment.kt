@@ -123,7 +123,7 @@ class ScheduleFragment : Fragment() {
         val displayWk = getDisplayWeek()
         val totalWeeks = settingsManager.getTotalWeeks()
 
-        adapter = WeekPagerAdapter(this, totalWeeks)
+        adapter = WeekPagerAdapter(totalWeeks)
         // 仅预加载相邻1页（3页总量），减少tab切换时的初始构建压力
         viewPager.offscreenPageLimit = 1
 
@@ -145,6 +145,7 @@ class ScheduleFragment : Fragment() {
         val viewModel = ViewModelProvider(requireActivity())[CourseViewModel::class.java]
         viewModel.courses.observe(viewLifecycleOwner) { _ ->
             allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
+            adapter.updateData(allCourses)
         }
     }
 
@@ -259,6 +260,7 @@ class ScheduleFragment : Fragment() {
                         viewPager.setCurrentItem(currentWk - 1, false)
                     }
                     allCourses = courses
+                    adapter.updateData(allCourses)
                     updateDateTimeHeader()
 
                     (requireActivity().application as App).registerAllCourseNotifications()
