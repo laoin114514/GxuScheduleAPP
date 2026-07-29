@@ -18,6 +18,11 @@ import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
+import android.content.Intent
+import android.widget.Button
+import android.widget.FrameLayout
+import com.cherry.wakeupschedule.BindJwxtActivity
+import com.cherry.wakeupschedule.service.AccountRepository
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
@@ -38,6 +43,8 @@ class ScheduleFragment : Fragment() {
     private lateinit var settingsManager: SettingsManager
     private lateinit var adapter: WeekPagerAdapter
     private lateinit var courseViewModel: CourseViewModel
+    private lateinit var maskContainer: FrameLayout
+    private val accountRepo by lazy { AccountRepository.getInstance(requireContext()) }
 
     private var allCourses: List<Course> = emptyList()
     private var isFirstInit = true
@@ -58,6 +65,8 @@ class ScheduleFragment : Fragment() {
         courseViewModel = ViewModelProvider(requireActivity())[CourseViewModel::class.java]
 
         initViews(view)
+        maskContainer = view.findViewById(R.id.mask_container)
+        updateMaskVisibility()
         setupViewPager()
         setupObservers()
         updateDateTimeHeader()
@@ -72,6 +81,7 @@ class ScheduleFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        updateMaskVisibility()
         // 不在 onResume 触发教务刷新，避免每次切tab都重建课表
         // 手动刷新按钮 + 首次启动已覆盖数据更新场景
     }
@@ -84,6 +94,21 @@ class ScheduleFragment : Fragment() {
 
         view.findViewById<View>(R.id.btn_refresh).setOnClickListener {
             refreshScheduleFromJwxt(showError = true)
+        }
+    }
+
+    private fun updateMaskVisibility() {
+        if (!accountRepo.hasActiveAccount()) {
+            if (maskContainer.childCount == 0) {
+                val mask = layoutInflater.inflate(R.layout.layout_unbound_mask, maskContainer, false)
+                mask.findViewById<Button>(R.id.btn_bind_now).setOnClickListener {
+                    startActivity(Intent(requireContext(), BindJwxtActivity::class.java))
+                }
+                maskContainer.addView(mask)
+            }
+            maskContainer.visibility = View.VISIBLE
+        } else {
+            maskContainer.visibility = View.GONE
         }
     }
 
