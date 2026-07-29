@@ -5,12 +5,17 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
+import com.cherry.wakeupschedule.service.AccountRepository
+import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.ImportService
+import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -22,8 +27,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize theme manager and apply current palette overlay
-        // MUST be called before setContentView() so all ?attr/ references resolve correctly
         ThemeManager.init(this)
         ThemeManager.applyToTheme(this)
 
@@ -35,11 +38,32 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
 
         binding.bottomNav.setupWithNavController(navController)
+
+        // 处理绑定后的初始化
+        val initAccountId = intent.getLongExtra("init_account_id", -1L)
+        if (initAccountId > 0) {
+            val accountRepo = AccountRepository.getInstance(this)
+            lifecycleScope.launch {
+                // 切换 CourseDataManager 到目标账号
+                CourseDataManager.getInstance(this@MainActivity).switchAccount(initAccountId)
+                // 加载账号设置到缓存
+                SettingsManager(this@MainActivity).loadAccountSettings(initAccountId)
+                // 触发初始化流程
+                val viewModel = ViewModelProvider(this@MainActivity)[CourseViewModel::class.java]
+                viewModel.startInitFlow(initAccountId)
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
         handlePendingImport()
+        // 每次 resume 确保活跃账号课程已加载
+        val accountRepo = AccountRepository.getInstance(this)
+        if (accountRepo.hasActiveAccount()) {
+            val activeId = accountRepo.getActiveAccountId()
+            CourseDataManager.getInstance(this).switchAccount(activeId)
+        }
     }
 
     /**

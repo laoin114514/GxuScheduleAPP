@@ -99,11 +99,11 @@ class SettingsActivity : AppCompatActivity() {
             saveAndProcessBackgroundImage(selectedUri)
         }
     }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-        
+
         viewModel = ViewModelProvider(this)[CourseViewModel::class.java]
         settingsManager = SettingsManager(this)
         timeTableManager = TimeTableManager.getInstance(this)
@@ -111,6 +111,12 @@ class SettingsActivity : AppCompatActivity() {
         initViews()
         setupClickListeners()
         updateSettingsDisplay()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateSettingsDisplay()
+        refreshAccountCard()
     }
 
     private fun initViews() {
@@ -473,20 +479,19 @@ class SettingsActivity : AppCompatActivity() {
 
     
     private fun updateSettingsDisplay() {
-        tvCurrentSemester.text = settingsManager.getCurrentSemester()
-        tvDefaultWeek.text = "第${settingsManager.getDefaultWeek()}周"
+        val accountId = accountRepo.getActiveAccountId()
+        if (accountId > 0) {
+            settingsManager.loadAccountSettings(accountId)
+            tvCurrentSemester.text = settingsManager.getCurrentSemester(accountId)
+            tvDefaultWeek.text = "第${settingsManager.getDefaultWeek(accountId)}周"
+        } else {
+            tvCurrentSemester.text = settingsManager.getAutoDetectedSemester()
+            tvDefaultWeek.text = "第1周"
+        }
         tvDefaultAlarm.text = "提前${settingsManager.getDefaultAlarmMinutes()}分钟"
 
-        // 更新外观设置状态显示
-        val backgroundText = if (settingsManager.getCustomBackgroundPath().isNotEmpty()) "图片背景" else ""
-        if (backgroundText.isNotEmpty()) {
-            btnBackgroundSettings.text = "背景设置 - $backgroundText"
-        } else {
-            btnBackgroundSettings.text = "背景设置"
-        }
-        btnAlarmSettings.text = "课前提醒 - ${if (settingsManager.isAlarmEnabled()) "开启" else "关闭"}"
-        
-        // 更新开关状态（不触发监听器提示）
+        btnAlarmSettings.text = "课前提醒 - ${if (accountId > 0 && settingsManager.isAlarmEnabled(accountId)) "开启" else "关闭"}"
+
         isUpdatingSwitchState = true
         switchUpdateRemind.isChecked = settingsManager.isUpdateRemindEnabled()
         switchHideHolidayCourses.isChecked = settingsManager.isHideHolidayCourses()
@@ -494,23 +499,46 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun showSemesterDialog() {
-        val semesters = settingsManager.getCustomSemesters().toMutableList()
+        val accountId = accountRepo.getActiveAccountId()
+        if (accountId <= 0) {
+            Toast.makeText(this, "请先绑定教务账号", Toast.LENGTH_SHORT).show()
+            return
+        }
+        lifecycleScope.launch {
+            val semesters = accountRepo.getSemesters(accountId)
+            if (semesters.isEmpty()) {
+                Toast.makeText(this@SettingsActivity, "暂无学期数据，请先同步课表", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val labels = semesters.map { "${it.gradeLabel}·${if (it.termCode == "3") "第一学期" else "第二学期"}" +
+                if (it.isDataLoaded) "" else " (未同步)" }.toTypedArray()
 
-        AlertDialog.Builder(this)
-            .setTitle("选择学期")
-            .setItems(semesters.toTypedArray()) { _, which ->
-                settingsManager.setCurrentSemester(semesters[which])
-                updateSettingsDisplay()
-                Toast.makeText(this, "学期设置已更新", Toast.LENGTH_SHORT).show()
-            }
-            .setPositiveButton("新增学期") { _, _ ->
-                showAddSemesterDialog()
-            }
-            .setNeutralButton("管理学期") { _, _ ->
-                showManageSemestersDialog()
-            }
-            .setNegativeButton("取消", null)
-            .show()
+            val currentSemester = settingsManager.getCurrentSemester(accountId)
+            val currentIndex = semesters.indexOfFirst {
+                val label = "${it.gradeLabel}·${if (it.termCode == "3") "第一学期" else "第二学期"}"
+                label == currentSemester || it.academicYear == currentSemester
+            }.coerceAtLeast(0)
+
+            AlertDialog.Builder(this@SettingsActivity)
+                .setTitle("选择学期（大一~大四）")
+                .setSingleChoiceItems(labels, currentIndex) { dialog, which ->
+                    lifecycleScope.launch {
+                        val selected = semesters[which]
+                        val label = "${selected.gradeLabel}·${if (selected.termCode == "3") "第一学期" else "第二学期"}"
+                        settingsManager.setCurrentSemester(accountId, label)
+                        settingsManager.setSemesterStartDate(accountId, selected.startDate)
+                        settingsManager.setTotalWeeks(accountId, selected.totalWeeks)
+                        updateSettingsDisplay()
+                        Toast.makeText(this@SettingsActivity, "已切换到: $label", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    }
+                }
+                .setPositiveButton("刷新全部学期") { _, _ ->
+                    viewModel.refreshAllSemesters(accountId)
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        }
     }
 
     private fun showAddSemesterDialog() {
@@ -645,8 +673,13 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showSemesterStartDatePicker() {
+        val accountId = accountRepo.getActiveAccountId()
+        if (accountId <= 0) {
+            Toast.makeText(this, "请先绑定教务账号", Toast.LENGTH_SHORT).show()
+            return
+        }
         val calendar = Calendar.getInstance()
-        val currentStartDate = settingsManager.getSemesterStartDate()
+        val currentStartDate = settingsManager.getSemesterStartDate(accountId)
         if (currentStartDate > 0) {
             calendar.timeInMillis = currentStartDate
         }
@@ -658,9 +691,10 @@ class SettingsActivity : AppCompatActivity() {
                 selectedCalendar.set(year, month, dayOfMonth, 0, 0, 0)
                 selectedCalendar.set(Calendar.MILLISECOND, 0)
 
-                settingsManager.setSemesterStartDate(selectedCalendar.timeInMillis)
+                lifecycleScope.launch {
+                    settingsManager.setSemesterStartDate(accountId, selectedCalendar.timeInMillis)
+                }
 
-                // 计算当前周
                 val now = System.currentTimeMillis()
                 val diffMillis = now - selectedCalendar.timeInMillis
                 val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
@@ -676,13 +710,16 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showDefaultWeekPicker() {
+        val accountId = accountRepo.getActiveAccountId()
+        val currentWeek = settingsManager.getDefaultWeek(accountId)
         val weeks = (1..20).map { "第${it}周" }.toTypedArray()
-        val currentWeek = settingsManager.getDefaultWeek()
 
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("选择默认显示周")
             .setSingleChoiceItems(weeks, currentWeek - 1) { dialog, which ->
-                settingsManager.setDefaultWeek(which + 1)
+                lifecycleScope.launch {
+                    settingsManager.setDefaultWeek(accountId, which + 1)
+                }
                 Toast.makeText(this, "默认显示周已设置为第${which + 1}周", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
@@ -691,31 +728,30 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showCurrentWeekPicker() {
+        val accountId = accountRepo.getActiveAccountId()
         val weeks = (1..20).map { "第${it}周" }.toTypedArray()
-
-        // 计算当前周
-        val semesterStartDate = settingsManager.getSemesterStartDate()
+        val semesterStartDate = settingsManager.getSemesterStartDate(accountId)
         val currentWeek = if (semesterStartDate > 0) {
             val now = System.currentTimeMillis()
             val diffMillis = now - semesterStartDate
             val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
             (diffDays / 7) + 1
         } else {
-            settingsManager.getDefaultWeek()
+            settingsManager.getDefaultWeek(accountId)
         }
 
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("设置当前周（将调整学期开始日期）")
             .setSingleChoiceItems(weeks, currentWeek.coerceIn(1, 20) - 1) { dialog, which ->
                 val selectedWeek = which + 1
-
-                // 根据选择的周次反推学期开始日期
                 val now = System.currentTimeMillis()
                 val daysToSubtract = (selectedWeek - 1) * 7L
                 val startDate = now - (daysToSubtract * 24 * 60 * 60 * 1000)
 
-                settingsManager.setSemesterStartDate(startDate)
-                settingsManager.setDefaultWeek(selectedWeek)
+                lifecycleScope.launch {
+                    settingsManager.setSemesterStartDate(accountId, startDate)
+                    settingsManager.setDefaultWeek(accountId, selectedWeek)
+                }
 
                 Toast.makeText(this, "当前周已设置为第${selectedWeek}周", Toast.LENGTH_SHORT).show()
                 updateSettingsDisplay()
@@ -928,19 +964,24 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun showAlarmSettingsDialog() {
         val alarmOptions = arrayOf("开启课前提醒", "关闭课前提醒", "电池优化设置")
+        val accountId = accountRepo.getActiveAccountId()
 
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("课前提醒设置")
             .setItems(alarmOptions) { _, which ->
                 when (which) {
                     0 -> {
-                        settingsManager.setAlarmEnabled(true)
-                        applyAlarmSettings()
+                        if (accountId > 0) {
+                            lifecycleScope.launch { settingsManager.setAlarmEnabled(accountId, true) }
+                            applyAlarmSettings()
+                        }
                         Toast.makeText(this, "课前提醒已开启", Toast.LENGTH_SHORT).show()
                     }
                     1 -> {
-                        settingsManager.setAlarmEnabled(false)
-                        applyAlarmSettings()
+                        if (accountId > 0) {
+                            lifecycleScope.launch { settingsManager.setAlarmEnabled(accountId, false) }
+                            applyAlarmSettings()
+                        }
                         Toast.makeText(this, "课前提醒已关闭", Toast.LENGTH_SHORT).show()
                     }
                     2 -> showBatteryOptimizationDialog()
@@ -1071,7 +1112,9 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun applyAlarmSettings() {
-        val alarmEnabled = settingsManager.isAlarmEnabled()
+        val accountId = accountRepo.getActiveAccountId()
+        if (accountId <= 0) return
+        val alarmEnabled = settingsManager.isAlarmEnabled(accountId)
         try {
             val app = com.cherry.wakeupschedule.App.instance
             if (alarmEnabled) {
@@ -1209,7 +1252,7 @@ class SettingsActivity : AppCompatActivity() {
                         accountRepo.switchAccount(selected.id)
                         CourseDataManager.getInstance(this@SettingsActivity).switchAccount(selected.id)
                         refreshAccountCard()
-                        val intent = Intent(this@SettingsActivity, ScheduleActivity::class.java).apply {
+                        val intent = Intent(this@SettingsActivity, MainActivity::class.java).apply {
                             putExtra("init_account_id", selected.id)
                             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                         }

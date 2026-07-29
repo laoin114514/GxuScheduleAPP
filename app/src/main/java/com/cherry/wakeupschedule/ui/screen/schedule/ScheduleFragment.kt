@@ -12,13 +12,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
-import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
-import com.cherry.wakeupschedule.service.JwxtAccountManager
-import com.cherry.wakeupschedule.service.JwxtAuthManager
-import com.cherry.wakeupschedule.service.JwxtImportService
 import android.content.Intent
 import android.widget.Button
 import android.widget.FrameLayout
@@ -28,9 +24,6 @@ import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -142,16 +135,13 @@ class ScheduleFragment : Fragment() {
         val currentWk = calculateCurrentWeek()
         courseViewModel.currentWeek = currentWk
 
-        // ViewModel 未初始化（新鲜启动）→ 显示当前周
-        // ViewModel 已有值（tab 切换归来）→ 保持位置
         val displayWk = getDisplayWeek()
-        val totalWeeks = settingsManager.getTotalWeeks()
+        val accountId = accountRepo.getActiveAccountId()
+        val totalWeeks = if (accountId > 0) settingsManager.getTotalWeeks(accountId) else 20
 
         adapter = WeekPagerAdapter(this, totalWeeks)
-        // 仅预加载相邻1页（3页总量），减少tab切换时的初始构建压力
         viewPager.offscreenPageLimit = 1
 
-        // 延迟到下一帧设置 adapter + 当前页，让tab切换动画先完成
         viewPager.post {
             viewPager.adapter = adapter
             viewPager.setCurrentItem(displayWk - 1, false)
@@ -173,10 +163,12 @@ class ScheduleFragment : Fragment() {
     }
 
     private fun calculateCurrentWeek(): Int {
-        val startDate = settingsManager.getSemesterStartDate()
+        val accountId = accountRepo.getActiveAccountId()
+        if (accountId <= 0) return 1
+        val startDate = settingsManager.getSemesterStartDate(accountId)
         if (startDate == 0L) return 1
         val diffDays = ((System.currentTimeMillis() - startDate) / 86400000L).toInt()
-        return (diffDays / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
+        return (diffDays / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks(accountId))
     }
 
     private fun updateDateTimeHeader() {
@@ -191,7 +183,9 @@ class ScheduleFragment : Fragment() {
     }
 
     private fun updateDateHeaderRow(week: Int) {
-        val startDate = settingsManager.getSemesterStartDate()
+        val accountId = accountRepo.getActiveAccountId()
+        if (accountId <= 0) return
+        val startDate = settingsManager.getSemesterStartDate(accountId)
         if (startDate == 0L) return
 
         val cal = Calendar.getInstance().apply {
@@ -228,58 +222,13 @@ class ScheduleFragment : Fragment() {
     }
 
     private fun refreshScheduleFromJwxt(showError: Boolean) {
-        if (!JwxtAccountManager.isBound()) return
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val accountRepo = AccountRepository.getInstance(requireContext())
-            val accountId = accountRepo.getActiveAccountId()
-            val activeAccount = accountRepo.getActiveAccount()
-            val username = activeAccount?.username ?: return@launch
-            val password = activeAccount?.password ?: return@launch
-
-            val result = JwxtAuthManager.doWithAuth(accountId, username, password) { client ->
-                val selectedSemester = settingsManager.getCurrentSemester()
-                val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
-                val term = com.gxu.jwxt.model.Term.fromCode(termCode)
-                    ?: com.gxu.jwxt.model.Term.SPRING
-                client.schedule().personal(year, term)
-            }
-
-            withContext(Dispatchers.Main) {
-                result.onSuccess { response ->
-                    val (courses, semesterStart) = JwxtImportService.convertScheduleResponse(response)
-
-                    if (semesterStart != null && semesterStart > 0
-                        && settingsManager.getSemesterStartDate() == 0L) {
-                        settingsManager.setSemesterStartDate(semesterStart)
-                    }
-
-                    CourseDataManager.getInstance(requireContext()).replaceAllCourses(courses)
-
-                    // 手动刷新时跳回当前周，自动刷新时保持用户浏览的周次
-                    val currentWk = calculateCurrentWeek()
-                    courseViewModel.currentWeek = currentWk
-                    if (showError) {
-                        setDisplayWeek(currentWk)
-                        viewPager.setCurrentItem(currentWk - 1, false)
-                    }
-                    allCourses = courses
-                    updateDateTimeHeader()
-
-                    (requireActivity().application as App).registerAllCourseNotifications()
-
-                    if (showError) {
-                        Toast.makeText(requireContext(),
-                            "成功导入 ${courses.size} 门课程", Toast.LENGTH_SHORT).show()
-                    }
-                }.onFailure { e ->
-                    if (showError) {
-                        Toast.makeText(requireContext(),
-                            "刷新失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
+        val accountId = accountRepo.getActiveAccountId()
+        if (accountId <= 0) {
+            if (showError) Toast.makeText(requireContext(), "请先绑定教务账号", Toast.LENGTH_SHORT).show()
+            return
         }
+        // 委托给 ViewModel 执行初始化流程
+        courseViewModel.startInitFlow(accountId)
     }
 
     private fun startCountdown() {

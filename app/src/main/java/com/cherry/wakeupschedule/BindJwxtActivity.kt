@@ -59,7 +59,7 @@ class BindJwxtActivity : AppCompatActivity() {
             result.onSuccess {
                 val repo = AccountRepository.getInstance(this@BindJwxtActivity)
                 val account = repo.bindAccount(username, password)
-                val intent = Intent(this@BindJwxtActivity, ScheduleActivity::class.java).apply {
+                val intent = Intent(this@BindJwxtActivity, MainActivity::class.java).apply {
                     putExtra("init_account_id", account.id)
                     flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 }
