@@ -5,95 +5,67 @@ import com.gxu.jwxt.exceptions.LoginException
 import com.gxu.jwxt.exceptions.SessionExpiredException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
-/**
- * 教务系统认证管理器。
- *
- * 所有需要认证的接口调用都通过 [doWithAuth]，自动处理 session 过期重登录。
- *
- * 使用示例：
- * ```kotlin
- * val result = JwxtAuthManager.doWithAuth { client ->
- *     client.profile().profile()
- * }
- * result.onSuccess { profile -> showProfile(profile) }
- *       .onFailure { e -> showError(e) }
- * ```
- */
 object JwxtAuthManager {
 
-    @Volatile
-    private var client: JwxtClient? = null
+    // accountId -> JwxtClient 缓存
+    private val clients = ConcurrentHashMap<Long, JwxtClient>()
 
-    /**
-     * 执行需要认证的操作，自动处理 session 过期。
-     *
-     * @param action 业务逻辑，接收已登录的 [JwxtClient]
-     * @return [Result] 包装的结果
-     */
-    suspend fun <T> doWithAuth(action: (JwxtClient) -> T): Result<T> = withContext(Dispatchers.IO) {
-        try {
-            val c = getOrCreateClient()
-            Result.success(action(c))
-        } catch (e: SessionExpiredException) {
-            try {
-                // session 过期 → 重登录 → 重试
-                getOrCreateClient().relogin()
-                Result.success(action(getOrCreateClient()))
-            } catch (reloginError: LoginException) {
-                // 重登录失败 → 清除凭证
-                JwxtAccountManager.clear()
-                destroyClient()
-                Result.failure(LoginException("登录已过期，请重新绑定教务账号"))
-            }
-        } catch (e: LoginException) {
-            JwxtAccountManager.clear()
-            destroyClient()
-            Result.failure(e)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * 测试登录是否成功。
-     */
-    suspend fun testLogin(username: String, password: String): Result<String> = withContext(Dispatchers.IO) {
-        try {
+    private fun getOrCreateClient(accountId: Long, username: String, password: String): JwxtClient {
+        return clients.getOrPut(accountId) {
             val c = JwxtClient(username, password)
             c.login()
-            destroyClient()
-            this@JwxtAuthManager.client = c
-            Result.success("登录成功")
-        } catch (e: LoginException) {
-            Result.failure(e)
-        } catch (e: Exception) {
-            Result.failure(LoginException("登录失败: ${e.message}"))
-        }
-    }
-
-    fun isBound(): Boolean = JwxtAccountManager.isBound()
-
-    fun getBoundUsername(): String = JwxtAccountManager.getUsername()
-
-    fun unbind() {
-        JwxtAccountManager.clear()
-        destroyClient()
-    }
-
-    private fun getOrCreateClient(): JwxtClient {
-        return client ?: run {
-            val c = JwxtClient(
-                JwxtAccountManager.getUsername(),
-                JwxtAccountManager.getPassword()
-            )
-            c.login()
-            client = c
             c
         }
     }
 
-    private fun destroyClient() {
-        client = null
+    fun destroyClient(accountId: Long) {
+        clients.remove(accountId)
+    }
+
+    /**
+     * 测试登录
+     */
+    suspend fun testLogin(username: String, password: String): Result<JwxtClient> =
+        withContext(Dispatchers.IO) {
+            try {
+                val c = JwxtClient(username, password)
+                c.login()
+                Result.success(c)
+            } catch (e: LoginException) {
+                Result.failure(e)
+            } catch (e: Exception) {
+                Result.failure(LoginException("登录失败: ${e.message}"))
+            }
+        }
+
+    /**
+     * 带自动 session 恢复的操作
+     */
+    suspend fun <T> doWithAuth(
+        accountId: Long,
+        username: String,
+        password: String,
+        action: (JwxtClient) -> T
+    ): Result<T> = withContext(Dispatchers.IO) {
+        try {
+            val c = getOrCreateClient(accountId, username, password)
+            Result.success(action(c))
+        } catch (e: SessionExpiredException) {
+            try {
+                val c = getOrCreateClient(accountId, username, password)
+                c.relogin()
+                Result.success(action(c))
+            } catch (reloginError: LoginException) {
+                destroyClient(accountId)
+                Result.failure(LoginException("登录已过期，请重新绑定教务账号"))
+            }
+        } catch (e: LoginException) {
+            destroyClient(accountId)
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
