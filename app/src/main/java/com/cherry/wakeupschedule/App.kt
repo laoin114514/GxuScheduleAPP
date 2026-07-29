@@ -38,8 +38,9 @@ class App : Application() {
         // 初始化调试日志（在 Application 层，确保所有组件都能使用）
         DebugLogger.init(this)
 
-        // 初始化 AccountRepository（替代原来的 JwxtAccountManager.init，支持多账号）
+        // 初始化 AccountRepository 和 JwxtAccountManager
         AccountRepository.getInstance(this)
+        com.cherry.wakeupschedule.service.JwxtAccountManager.init(this)
 
         try {
             NotificationHelper(this).createNotificationChannels()
