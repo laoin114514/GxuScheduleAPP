@@ -286,7 +286,14 @@ class StyledDialog private constructor(
             ?.alpha(0f)
             ?.setDuration(200)
             ?.setInterpolator(DecelerateInterpolator())
-            ?.withEndAction { super.dismiss() }
+            ?.withEndAction {
+                try {
+                    super.dismiss()
+                } catch (_: IllegalArgumentException) {
+                    // Activity already destroyed (e.g. via recreate()),
+                    // dialog window already removed — safe to ignore.
+                }
+            }
             ?.start()
     }
 
