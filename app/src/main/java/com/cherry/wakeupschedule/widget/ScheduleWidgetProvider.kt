@@ -38,6 +38,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    @Suppress("DEPRECATION")
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (appWidgetId in appWidgetIds) updateAppWidget(context, appWidgetManager, appWidgetId)
         // 通知 ListView 数据可能变化，重新拉取
@@ -136,7 +137,6 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             val settingsManager = SettingsManager(context)
             val calendar = Calendar.getInstance()
             val dayOfWeek = if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else calendar.get(Calendar.DAY_OF_WEEK) - 1
-            val currentTime = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
 
             views.setTextViewText(R.id.tv_widget_title, settingsManager.getCurrentSemester())
             views.setTextViewText(R.id.tv_widget_date, "${calendar.get(Calendar.MONTH) + 1}.${calendar.get(Calendar.DAY_OF_MONTH)} ${arrayOf("", "周一", "周二", "周三", "周四", "周五", "周六", "周日")[dayOfWeek]}")
@@ -148,6 +148,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
                 putExtra(WidgetCourseListService.EXTRA_SOURCE, WidgetCourseListService.SOURCE_TODAY)
                 data = android.net.Uri.parse("widget://course-list/today")
             }
+            @Suppress("DEPRECATION")
             views.setRemoteAdapter(R.id.lv_today_courses, todayIntent)
             views.setEmptyView(R.id.lv_today_courses, android.R.id.empty)
 
@@ -209,12 +210,6 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, ScheduleWidgetProvider::class.java))
         if (appWidgetIds.isNotEmpty()) onUpdate(context, appWidgetManager, appWidgetIds)
-    }
-
-    // 更新课程显示区域（已废弃：现在使用 ListView + RemoteViewsService 自动填充）
-    @Deprecated("使用 ListView + RemoteViewsService 后不再需要此方法")
-    private fun updateCourseDisplay(context: Context, views: RemoteViews, upcomingCourses: List<com.cherry.wakeupschedule.model.Course>, allTodayCourses: List<com.cherry.wakeupschedule.model.Course>) {
-        // 此方法保留以保持源码兼容，实际显示已由 WidgetCourseListService 提供
     }
 
     private fun getCourseEndTimeInMinutes(context: Context, course: com.cherry.wakeupschedule.model.Course): Int = try {

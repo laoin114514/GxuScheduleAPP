@@ -191,7 +191,7 @@ class WidgetCourseListFactory(
             WidgetCourseItem(
                 id = course.id,
                 name = course.name,
-                location = course.classroom ?: "",
+                location = course.classroom,
                 time = formatCourseTime(timeSlots, course),
                 color = color
             )
@@ -231,7 +231,7 @@ class WidgetCourseListFactory(
             WidgetCourseItem(
                 id = course.id,
                 name = course.name,
-                location = course.classroom ?: "",
+                location = course.classroom,
                 time = formatCourseTime(timeSlots, course),
                 color = color
             )

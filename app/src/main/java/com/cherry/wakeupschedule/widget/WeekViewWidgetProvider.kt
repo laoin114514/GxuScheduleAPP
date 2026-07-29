@@ -64,6 +64,7 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun schedulePeriodicUpdate(context: Context) {
         // 一周课程组件已禁用，不进行更新调度
         /*
@@ -88,6 +89,7 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
         */
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun cancelPeriodicUpdate(context: Context) {
         // 一周课程组件已禁用，不进行更新取消
         /*

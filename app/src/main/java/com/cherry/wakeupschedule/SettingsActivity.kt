@@ -455,8 +455,7 @@ class SettingsActivity : AppCompatActivity() {
         tvDefaultAlarm.text = "提前${settingsManager.getDefaultAlarmMinutes()}分钟"
 
         // 更新外观设置状态显示
-        val backgroundText = "默认"
-            if (settingsManager.getCustomBackgroundPath().isNotEmpty()) "图片背景" else ""
+        val backgroundText = if (settingsManager.getCustomBackgroundPath().isNotEmpty()) "图片背景" else ""
         if (backgroundText.isNotEmpty()) {
             btnBackgroundSettings.text = "背景设置 - $backgroundText"
         } else {
@@ -746,7 +745,7 @@ class SettingsActivity : AppCompatActivity() {
 
         AlertDialog.Builder(this)
             .setTitle("选择背景颜色")
-            .setSingleChoiceItems(themeNames, currentIndex) { dialog, which ->
+            .setSingleChoiceItems(themeNames, currentIndex) { dialog, _ ->
                 applyBackgroundSettings()
                 updateSettingsDisplay()
                 Toast.makeText(this, "已设置为默认背景", Toast.LENGTH_SHORT).show()

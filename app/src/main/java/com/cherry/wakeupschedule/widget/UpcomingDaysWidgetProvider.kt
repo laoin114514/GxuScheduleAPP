@@ -36,7 +36,9 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
         // 通知两个 ListView 数据变化
+        @Suppress("DEPRECATION")
         appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_today_courses)
+        @Suppress("DEPRECATION")
         appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_tomorrow_courses)
         schedulePeriodicUpdate(context)
     }
@@ -156,6 +158,7 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
                 // 不同的 data Uri 让系统识别为不同的 Intent
                 data = android.net.Uri.parse("widget://course-list/upcoming_today")
             }
+            @Suppress("DEPRECATION")
             views.setRemoteAdapter(R.id.lv_today_courses, todayIntent)
             views.setEmptyView(R.id.lv_today_courses, android.R.id.empty)
 
@@ -163,6 +166,7 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
                 putExtra(WidgetCourseListService.EXTRA_SOURCE, WidgetCourseListService.SOURCE_TOMORROW)
                 data = android.net.Uri.parse("widget://course-list/tomorrow")
             }
+            @Suppress("DEPRECATION")
             views.setRemoteAdapter(R.id.lv_tomorrow_courses, tomorrowIntent)
             views.setEmptyView(R.id.lv_tomorrow_courses, android.R.id.empty)
 
@@ -179,11 +183,6 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-    @Deprecated("使用 ListView + RemoteViewsService 后不再需要此方法")
-    private fun updateDayCourses(context: Context, views: RemoteViews, courses: List<Course>, prefix: String) {
-        // 此方法保留以保持源码兼容，实际显示已由 WidgetCourseListService 提供
     }
 
     private fun getIdByName(context: Context, name: String): Int {
