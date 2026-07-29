@@ -263,21 +263,6 @@
 
                 </LinearLayout>
 
-                <!-- 从教务获取按钮 -->
-                <TextView
-                    android:id="@+id/btn_fetch_semester_info"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="从教务获取学期日期和总周数"
-                    android:textSize="14sp"
-                    android:textColor="?attr/colorOnPrimary"
-                    android:padding="12dp"
-                    android:gravity="center"
-                    android:layout_marginHorizontal="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="?attr/colorPrimary"
-                    android:clickable="true"
-                    android:focusable="true" />
 
             </LinearLayout>
 
