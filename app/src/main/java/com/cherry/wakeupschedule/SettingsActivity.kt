@@ -69,6 +69,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnFeedback: TextView
     private lateinit var switchUpdateRemind: Switch
     private lateinit var switchHideHolidayCourses: Switch
+    private lateinit var switchSilentRelogin: Switch
     private lateinit var timeTableManager: TimeTableManager
     private lateinit var updateService: com.cherry.wakeupschedule.service.UpdateService
     private var isUpdatingSwitchState = false
@@ -141,6 +142,7 @@ class SettingsActivity : AppCompatActivity() {
         btnFeedback = findViewById(R.id.btn_feedback)
         switchUpdateRemind = findViewById<Switch>(R.id.switch_update_remind)
         switchHideHolidayCourses = findViewById<Switch>(R.id.switch_hide_holiday_courses)
+        switchSilentRelogin = findViewById<Switch>(R.id.switch_silent_relogin)
 
         llAccountCard = findViewById(R.id.ll_account_card)
         tvAccountDisplay = findViewById(R.id.tv_account_display)
@@ -185,6 +187,25 @@ class SettingsActivity : AppCompatActivity() {
                     if (isChecked) "已开启节假日隐藏课程" else "已关闭节假日隐藏课程",
                     Toast.LENGTH_SHORT
                 ).show()
+            }
+        })
+
+        // 无感重载开关监听器
+        switchSilentRelogin.setOnCheckedChangeListener(object : CompoundButton.OnCheckedChangeListener {
+            override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+                if (isUpdatingSwitchState) return
+                val accountId = accountRepo.getActiveAccountId()
+                if (accountId > 0) {
+                    lifecycleScope.launch {
+                        settingsManager.setSilentReloginEnabled(accountId, isChecked)
+                    }
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        if (isChecked) "无感重载已开启：Session 过期时自动重新登录"
+                        else "无感重载已关闭：Session 过期时需手动重新登录",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         })
         
@@ -495,6 +516,11 @@ class SettingsActivity : AppCompatActivity() {
         isUpdatingSwitchState = true
         switchUpdateRemind.isChecked = settingsManager.isUpdateRemindEnabled()
         switchHideHolidayCourses.isChecked = settingsManager.isHideHolidayCourses()
+        if (accountId > 0) {
+            switchSilentRelogin.isChecked = settingsManager.isSilentReloginEnabled(accountId)
+        } else {
+            switchSilentRelogin.isChecked = false
+        }
         isUpdatingSwitchState = false
     }
     

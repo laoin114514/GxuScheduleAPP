@@ -367,6 +367,46 @@
                     android:gravity="start|center_vertical"
                     android:layout_marginBottom="8dp" />
 
+                <!-- 无感重载开关 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="12dp"
+                    android:background="@drawable/bg_button_outline"
+                    android:layout_marginBottom="8dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="无感重载"
+                            android:textSize="15sp"
+                            android:textColor="@android:color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Session过期时自动重新登录"
+                            android:textSize="11sp"
+                            android:textColor="#AAFFFFFF" />
+
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/switch_silent_relogin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:theme="@style/SwitchTheme" />
+
+                </LinearLayout>
+
                 <!-- 节假日隐藏课程 -->
                 <LinearLayout
                     android:layout_width="match_parent"
