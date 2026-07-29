@@ -11,6 +11,7 @@ import android.widget.RemoteViews
 import com.cherry.wakeupschedule.MainActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
+import com.cherry.wakeupschedule.service.AccountRepository
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
@@ -32,6 +33,15 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        val repo = AccountRepository.getInstance(context)
+        if (!repo.hasActiveAccount()) {
+            for (appWidgetId in appWidgetIds) {
+                val views = RemoteViews(context.packageName, R.layout.widget_upcoming_days)
+                views.setTextViewText(R.id.tv_widget_title, "请先绑定教务账号")
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            }
+            return
+        }
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
