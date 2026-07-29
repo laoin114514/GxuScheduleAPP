@@ -18,6 +18,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
+import com.cherry.wakeupschedule.service.AccountRepository
+
 /**
  * 用于跳过 setAlarmClock 的控制异常
  * 非最近闹钟抛出此异常以直接降级到 setExactAndAllowWhileIdle，避免覆盖全局唯一的 setAlarmClock
@@ -475,6 +477,11 @@ class AlarmService(private val context: Context) {
      * 仅在课程数据发生变更时才完全重建；定期兜底刷新使用增量合并策略。
      */
     fun registerAllCourseNotifications() {
+        val accountId = AccountRepository.getInstance(context).getActiveAccountId()
+        if (accountId <= 0) {
+            Log.d("AlarmService", "无活跃账号，跳过闹钟注册")
+            return
+        }
         // 启动每日多时段刷新闹钟（防止 vivo/OPPO 杀进程后闹钟丢失）
         scheduleDailyAlarmRefreshes(context)
         // 启动定期检查和前台服务
