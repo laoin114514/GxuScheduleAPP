@@ -14,6 +14,9 @@ data class Course(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,                        // 课程唯一ID
 
+    @ColumnInfo(name = "account_id")
+    val accountId: Long = 0,              // 所属账号ID（外键）
+
     @ColumnInfo(name = "name")
     val name: String,                         // 课程名称
 
