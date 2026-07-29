@@ -35,6 +35,12 @@ object JwxtAuthManager {
                 // 两步都成功 → 持久化
                 JwxtAccountManager.saveCredentials(username, password)
                 JwxtAccountManager.saveProfile(profile)
+                // 步骤 3：根据入学年份初始化学期 + 推断当前学期
+                kotlinx.coroutines.runBlocking {
+                    SemesterManager.initialize(profile)
+                    val idx = SemesterManager.inferCurrentSemesterIndex(profile.grade ?: "")
+                    SemesterManager.setCurrentIndex(idx)
+                }
                 Result.success("登录成功")
             } catch (e: Exception) {
                 // profile 获取失败 → 等同登录失败
@@ -84,6 +90,10 @@ object JwxtAuthManager {
 
     fun unbind() {
         JwxtAccountManager.clear()
+        kotlinx.coroutines.runBlocking {
+            SemesterManager.clear()
+        }
+        SemesterManager.setCurrentIndex(-1)
         destroyClient()
     }
 
