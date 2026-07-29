@@ -9,6 +9,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.cherry.wakeupschedule.service.JwxtAccountManager
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.gxu.jwxt.model.StudentProfile
 
 class ProfileActivity : AppCompatActivity() {
@@ -19,6 +20,7 @@ class ProfileActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_profile)
 
         scrollProfile = findViewById(R.id.scroll_profile)

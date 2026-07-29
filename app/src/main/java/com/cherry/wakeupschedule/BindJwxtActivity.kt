@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import kotlinx.coroutines.launch
 
 class BindJwxtActivity : AppCompatActivity() {
@@ -25,6 +26,7 @@ class BindJwxtActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_bind_jwxt)
 
         etUsername = findViewById(R.id.et_username)
