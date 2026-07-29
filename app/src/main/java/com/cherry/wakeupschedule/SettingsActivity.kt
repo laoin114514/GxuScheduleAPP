@@ -25,6 +25,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.service.ImportService
+import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
@@ -471,141 +472,30 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun showSemesterDialog() {
-        val semesters = settingsManager.getCustomSemesters().toMutableList()
-
-        AlertDialog.Builder(this)
-            .setTitle("选择学期")
-            .setItems(semesters.toTypedArray()) { _, which ->
-                settingsManager.setCurrentSemester(semesters[which])
-                updateSettingsDisplay()
-                Toast.makeText(this, "学期设置已更新", Toast.LENGTH_SHORT).show()
-            }
-            .setPositiveButton("新增学期") { _, _ ->
-                showAddSemesterDialog()
-            }
-            .setNeutralButton("管理学期") { _, _ ->
-                showManageSemestersDialog()
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
-
-    private fun showAddSemesterDialog() {
-        val view = layoutInflater.inflate(R.layout.dialog_edit_text, null)
-        val editText = view.findViewById<android.widget.EditText>(R.id.et_input)
-        editText.hint = "例如: 2024-2025学年 第一学期"
-
-        AlertDialog.Builder(this)
-            .setTitle("新增学期")
-            .setView(view)
-            .setPositiveButton("添加") { _, _ ->
-                val semesterName = editText.text.toString().trim()
-                if (semesterName.isNotEmpty()) {
-                    settingsManager.addCustomSemester(semesterName)
-                    settingsManager.setCurrentSemester(semesterName)
-                    updateSettingsDisplay()
-                    Toast.makeText(this, "已添加并选中: $semesterName", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "学期名称不能为空", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
-
-    private fun showManageSemestersDialog() {
-        val semesters = settingsManager.getCustomSemesters().toMutableList()
-        val currentSemester = settingsManager.getCurrentSemester()
-
+        val semesters = SemesterManager.getAll()
         if (semesters.isEmpty()) {
-            Toast.makeText(this, "没有可管理的学期", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "请先绑定教务账号", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 标记当前选中的学期
-        val displaySemesters = semesters.map {
-            if (it == currentSemester) "$it (当前)" else it
-        }.toMutableList()
+        val currentIndex = settingsManager.getCurrentSemesterIndex()
+        val labels = semesters.map { s ->
+            val mark = if (s.sortOrder == currentIndex) "  ← 当前" else ""
+            "${s.label}  (${s.academicYear}学年 ${s.termName})$mark"
+        }.toTypedArray()
 
-        // 创建ListView
-        val listView = ListView(this)
-        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, displaySemesters)
-        listView.adapter = adapter
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("管理学期 (长按删除)")
-            .setView(listView)
-            .setPositiveButton("新增") { _, _ ->
-                showAddSemesterDialog()
+        AlertDialog.Builder(this)
+            .setTitle("选择当前学期")
+            .setSingleChoiceItems(labels, currentIndex.coerceAtLeast(0)) { dialog, which ->
+                settingsManager.setCurrentSemesterIndex(which)
+                updateSettingsDisplay()
+                Toast.makeText(this, "已切换至: ${semesters[which].label}", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
             }
-            .setNegativeButton("关闭", null)
-            .create()
-
-        // 点击切换学期
-        listView.setOnItemClickListener { _, _, position, _ ->
-            val selectedSemester = semesters[position]
-            settingsManager.setCurrentSemester(selectedSemester)
-            updateSettingsDisplay()
-            Toast.makeText(this, "已切换到: $selectedSemester", Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
-        }
-
-        // 长按删除学期
-        listView.setOnItemLongClickListener { _, _, position, _ ->
-            val semesterToDelete = semesters[position]
-
-            // 不能删除当前选中的学期
-            if (semesterToDelete == currentSemester) {
-                Toast.makeText(this, "不能删除当前正在使用的学期", Toast.LENGTH_SHORT).show()
-                return@setOnItemLongClickListener true
-            }
-
-            AlertDialog.Builder(this)
-                .setTitle("删除学期")
-                .setMessage("确定要删除学期 \"$semesterToDelete\" 吗？\n注意：该学期下的所有课程数据也会被删除！")
-                .setPositiveButton("删除") { _, _ ->
-                    // 从列表中移除
-                    semesters.removeAt(position)
-                    displaySemesters.removeAt(position)
-
-                    // 保存更新后的学期列表
-                    settingsManager.saveCustomSemesters(semesters)
-
-                    // 删除该学期的课程数据
-                    deleteCoursesForSemester(semesterToDelete)
-
-                    adapter.notifyDataSetChanged()
-                    Toast.makeText(this, "已删除: $semesterToDelete", Toast.LENGTH_SHORT).show()
-
-                    // 如果列表为空，关闭对话框
-                    if (semesters.isEmpty()) {
-                        dialog.dismiss()
-                    }
-                }
-                .setNegativeButton("取消", null)
-                .show()
-
-            true
-        }
-
-        dialog.show()
+            .setNegativeButton("取消", null)
+            .show()
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun deleteCoursesForSemester(semester: String) {
-        // 获取该学期的所有课程并删除
-        val courseDataManager = com.cherry.wakeupschedule.service.CourseDataManager.getInstance(this)
-        @Suppress("UNUSED_VARIABLE")
-        val allCourses = courseDataManager.getAllCourses()
-
-        // 删除与该学期相关的课程
-        // 注意：这里假设课程数据中没有直接存储学期信息
-        // 如果需要按学期删除，需要在Course模型中添加学期字段
-
-        // 更新小组件
-        ScheduleWidgetUpdateService.triggerUpdate(this)
-    }
-    
     private fun showWeekDialog() {
         val options = arrayOf("设置学期开始日期（自动计算当前周）", "设置当前周")
 
