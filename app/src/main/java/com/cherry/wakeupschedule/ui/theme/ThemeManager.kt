@@ -32,10 +32,10 @@ object ThemeManager {
     private var _courseColors: IntArray = FIXED_COURSE_COLORS
 
     @Volatile
-    private var currentLight: M3ColorPalette = M3ColorPalette.LIGHT_PALETTES[0]
+    private var currentLight: M3ColorPalette = M3ColorPalette.LIGHT_PALETTES[1]
 
     @Volatile
-    private var currentDark: M3ColorPalette = M3ColorPalette.DARK_PALETTES[0]
+    private var currentDark: M3ColorPalette = M3ColorPalette.DARK_PALETTES[1]
 
     /** Map palette index to theme overlay style resource ID */
     private val OVERLAY_STYLES = intArrayOf(
@@ -48,7 +48,7 @@ object ThemeManager {
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val index = prefs.getInt(KEY_PALETTE_INDEX, 0).coerceIn(0, 4)
+        val index = prefs.getInt(KEY_PALETTE_INDEX, 1).coerceIn(0, 4)
         setPaletteIndex(index)
     }
 
@@ -66,7 +66,7 @@ object ThemeManager {
 
     fun getPaletteIndex(context: Context): Int {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getInt(KEY_PALETTE_INDEX, 0)
+            .getInt(KEY_PALETTE_INDEX, 1)
     }
 
     fun setPaletteIndex(index: Int, context: Context? = null) {
