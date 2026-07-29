@@ -88,7 +88,7 @@ object SemesterManager {
 
     fun getStartDate(): Long = getCurrent()?.startDate ?: 0L
 
-    fun getTotalWeeks(): Int = getCurrent()?.totalWeeks ?: 0
+    fun getTotalWeeks(): Int = getCurrent()?.totalWeeks?.takeIf { it > 0 } ?: 20
 
     // ── 更新 ──
 
