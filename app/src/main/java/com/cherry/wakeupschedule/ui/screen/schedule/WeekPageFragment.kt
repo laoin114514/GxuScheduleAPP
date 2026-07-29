@@ -19,6 +19,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
+import com.cherry.wakeupschedule.service.AccountRepository
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
@@ -59,6 +60,12 @@ class WeekPageFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val repo = AccountRepository.getInstance(requireContext())
+        if (!repo.hasActiveAccount()) {
+            view.findViewById<LinearLayout>(R.id.layout_empty)?.visibility = View.GONE
+            return
+        }
 
         val dataManager = CourseDataManager.getInstance(requireContext())
         viewLifecycleOwner.lifecycleScope.launch {
