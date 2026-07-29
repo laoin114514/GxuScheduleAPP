@@ -10,10 +10,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.GridLayout
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -23,6 +23,7 @@ import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.widget.GridBackgroundView
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -36,8 +37,6 @@ class WeekPageFragment : Fragment() {
 
     companion object {
         private const val ARG_WEEK = "week"
-        private const val TAG_GRID_CELL = "grid_cell"
-        private const val TAG_COURSE_CARD = "course_card"
 
         fun newInstance(week: Int): WeekPageFragment {
             return WeekPageFragment().apply {
@@ -74,8 +73,9 @@ class WeekPageFragment : Fragment() {
     }
 
     private fun buildSchedule(view: View) {
-        val gridLayout = view.findViewById<GridLayout>(R.id.course_grid)
+        val gridBg = view.findViewById<GridBackgroundView>(R.id.grid_bg)
         val timeAxis = view.findViewById<LinearLayout>(R.id.time_axis)
+        val courseContainer = view.findViewById<FrameLayout>(R.id.course_container)
         val emptyView = view.findViewById<LinearLayout>(R.id.layout_empty)
 
         val timeTableManager = TimeTableManager.getInstance(requireContext())
@@ -98,8 +98,18 @@ class WeekPageFragment : Fragment() {
 
         if (!backdropBuilt) {
             backdropBuilt = true
-            // 动态设置行数，匹配实际时间表节数
-            gridLayout.rowCount = maxNodes
+
+            // ── 配置 Canvas 网格背景 ──
+            gridBg.rowCount = maxNodes
+            gridBg.columnCount = 7
+            // 获取主题中的 outline 颜色作为网格线颜色
+            val typedValue = android.util.TypedValue()
+            ctx.theme.resolveAttribute(
+                com.google.android.material.R.attr.colorOutline, typedValue, true
+            )
+            gridBg.gridColor = ColorUtils.setAlphaComponent(typedValue.data, 60)
+
+            // ── 构建时间轴 ──
             timeAxis.removeAllViews()
             for (node in 1..maxNodes) {
                 val timeSlot = timeTableManager.getTimeSlots().find { it.node == node }
@@ -116,28 +126,9 @@ class WeekPageFragment : Fragment() {
                 timeView.findViewById<TextView>(R.id.tv_end_time).text = end ?: "--:--"
                 timeAxis.addView(timeView)
             }
-
-            for (row in 0 until maxNodes) {
-                for (col in 0 until 7) {
-                    val cell = View(ctx).apply {
-                        layoutParams = GridLayout.LayoutParams().apply {
-                            rowSpec = GridLayout.spec(row, 1f)
-                            columnSpec = GridLayout.spec(col, 1f)
-                            width = 0
-                            height = cellHeight
-                        }
-                        setBackgroundResource(R.drawable.bg_grid_cell)
-                        tag = TAG_GRID_CELL
-                    }
-                    gridLayout.addView(cell)
-                }
-            }
         } else {
-            for (i in gridLayout.childCount - 1 downTo 0) {
-                if (gridLayout.getChildAt(i).tag == TAG_COURSE_CARD) {
-                    gridLayout.removeViewAt(i)
-                }
-            }
+            // 数据刷新时仅清除课程卡片，保留网格背景和时间轴
+            courseContainer.removeAllViews()
         }
 
         if (weekCourses.isEmpty()) {
@@ -146,61 +137,65 @@ class WeekPageFragment : Fragment() {
         }
         emptyView.visibility = View.GONE
 
-        val textColor = Color.WHITE
-        val strokeColor = 0x80FFFFFF.toInt()  // 50% 白色
-        val marginPx = 2.dpToPx()
+        // ── 等 layout 完成后计算 cell 宽度再放置卡片 ──
+        courseContainer.post {
+            val contentWidth = courseContainer.width
+            if (contentWidth <= 0) return@post
 
-        for (course in weekCourses) {
-            val colorIndex = if (course.color > 0) (course.color - 1) % courseColors.size else 0
-            val baseColor = courseColors[colorIndex]
-            // WakeUp: 50% alpha 背景 + 白色文字
-            val bgColor = ColorUtils.setAlphaComponent(baseColor, 128)
-            // 校验数据，防止越界崩溃
-            val rowStart = (course.startTime - 1).coerceIn(0, maxNodes - 1)
-            val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
-                .coerceAtMost(maxNodes - rowStart)
-            val dayCol = (course.dayOfWeek - 1).coerceIn(0, 6)
-            val cardHeight = cellHeight * span
+            courseContainer.removeAllViews()
 
-            val cardBg = GradientDrawable().apply {
-                setColor(bgColor)
-                cornerRadius = 14f
-                setStroke(2.dpToPx(), strokeColor)
-            }
+            val gapPx = 2.dpToPx()
+            val cellWidth = contentWidth / 7f
+            val textColor = Color.WHITE
+            val strokeColor = 0x80FFFFFF.toInt()  // 50% white border
 
-            val cardView = CardView(ctx).apply {
-                layoutParams = GridLayout.LayoutParams().apply {
-                    rowSpec = GridLayout.spec(rowStart, span, 1f)
-                    columnSpec = GridLayout.spec(dayCol, 1f)
-                    width = 0
-                    height = cardHeight
-                    setMargins(marginPx, marginPx, marginPx, marginPx)
+            for (course in weekCourses) {
+                val colorIndex = if (course.color > 0) (course.color - 1) % courseColors.size else 0
+                val baseColor = courseColors[colorIndex]
+                val bgColor = ColorUtils.setAlphaComponent(baseColor, 128)
+
+                val rowStart = (course.startTime - 1).coerceIn(0, maxNodes - 1)
+                val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
+                    .coerceAtMost(maxNodes - rowStart)
+                val dayCol = (course.dayOfWeek - 1).coerceIn(0, 6)
+
+                val cardW = (cellWidth - 2 * gapPx).toInt()
+                val cardH = cellHeight * span - 2 * gapPx
+                val leftMargin = (dayCol * cellWidth + gapPx).toInt()
+                val topMargin = rowStart * cellHeight + gapPx
+
+                val cardBg = GradientDrawable().apply {
+                    setColor(bgColor)
+                    cornerRadius = 14f
+                    setStroke(2.dpToPx(), strokeColor)
                 }
-                background = cardBg
-                radius = 14f
-                cardElevation = 0f
-                setCardBackgroundColor(Color.TRANSPARENT)
-                tag = TAG_COURSE_CARD
-                setOnClickListener { showCourseDetail(course) }
-            }
 
-            // 单行信息拼接，自动换行占满卡片
-            val parts = mutableListOf<String>()
-            parts.add(course.name)
-            if (course.classroom.isNotBlank()) parts.add(course.classroom)
-            if (course.teacher.isNotBlank()) parts.add(course.teacher)
-            val infoText = parts.joinToString("\n")
+                // ── 轻量课程卡片：FrameLayout + TextView，取代 CardView ──
+                val card = FrameLayout(ctx).apply {
+                    layoutParams = FrameLayout.LayoutParams(cardW, cardH).apply {
+                        setMargins(leftMargin, topMargin, 0, 0)
+                    }
+                    background = cardBg
+                    setOnClickListener { showCourseDetail(course) }
+                }
 
-            val textView = TextView(ctx).apply {
-                text = infoText
-                textSize = 10f
-                setTextColor(textColor)
-                gravity = Gravity.CENTER
-                setPadding(4.dpToPx(), 2.dpToPx(), 4.dpToPx(), 2.dpToPx())
-                setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+                val parts = mutableListOf<String>()
+                parts.add(course.name)
+                if (course.classroom.isNotBlank()) parts.add(course.classroom)
+                if (course.teacher.isNotBlank()) parts.add(course.teacher)
+                val infoText = parts.joinToString("\n")
+
+                val textView = TextView(ctx).apply {
+                    text = infoText
+                    textSize = 10f
+                    setTextColor(textColor)
+                    gravity = Gravity.CENTER
+                    setPadding(4.dpToPx(), 2.dpToPx(), 4.dpToPx(), 2.dpToPx())
+                    setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+                }
+                card.addView(textView)
+                courseContainer.addView(card)
             }
-            cardView.addView(textView)
-            gridLayout.addView(cardView)
         }
     }
 
@@ -210,13 +205,11 @@ class WeekPageFragment : Fragment() {
         val dialog = Dialog(requireContext(), R.style.BottomSheetDialog)
         val sheetView = layoutInflater.inflate(R.layout.dialog_course_detail, null)
 
-        // 上方圆角背景
         val topRadius = 20.dpToPx().toFloat()
         val sheetBg = GradientDrawable().apply {
-            setColor(Color.WHITE) // 会被 theme surface 覆盖，先设白色兜底
+            setColor(Color.WHITE)
             cornerRadii = floatArrayOf(topRadius, topRadius, topRadius, topRadius, 0f, 0f, 0f, 0f)
         }
-        // 使用 theme surface 颜色
         val typedValue = android.util.TypedValue()
         requireContext().theme.resolveAttribute(
             com.google.android.material.R.attr.colorSurface, typedValue, true
@@ -224,7 +217,6 @@ class WeekPageFragment : Fragment() {
         sheetBg.setColor(typedValue.data)
         sheetView.background = sheetBg
 
-        // 获取时间段信息
         val timeTableManager = TimeTableManager.getInstance(requireContext())
         val startSlot = timeTableManager.getTimeSlots().find { it.node == course.startTime }
         val endSlot = timeTableManager.getTimeSlots().find { it.node == course.endTime }
@@ -276,26 +268,22 @@ class WeekPageFragment : Fragment() {
 
         dialog.setContentView(sheetView)
 
-        // 将 sheetView 包在 LinearLayout 中：上方透明可点击区域 + 下方内容
-        // 确保弹窗占满下半屏且下方无漏缝
-        val container = android.widget.LinearLayout(requireContext()).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
+        val container = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
         }
 
-        // 从原 parent 移除 sheetView
         (sheetView.parent as? ViewGroup)?.removeView(sheetView)
-        sheetView.layoutParams = android.widget.LinearLayout.LayoutParams(
+        sheetView.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
 
-        // 上方：透明可点击区域，点击关闭
         val spacer = View(requireContext()).apply {
-            layoutParams = android.widget.LinearLayout.LayoutParams(
+            layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
             )
             setOnClickListener { dialog.dismiss() }
@@ -304,7 +292,6 @@ class WeekPageFragment : Fragment() {
         container.addView(sheetView)
         dialog.setContentView(container)
 
-        // 窗口全屏，内容在下方
         dialog.window?.apply {
             setLayout(
                 WindowManager.LayoutParams.MATCH_PARENT,

@@ -10,23 +10,37 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
+        <!-- 左侧时间轴 -->
         <LinearLayout
             android:id="@+id/time_axis"
             android:layout_width="32dp"
             android:layout_height="match_parent"
             android:orientation="vertical" />
 
+        <!-- 右侧课表内容区 -->
         <FrameLayout
+            android:id="@+id/content_area"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
-            <GridLayout
-                android:id="@+id/course_grid"
+            <!-- Canvas 虚线网格背景，替代原来的 84+ 个 cell View -->
+            <com.cherry.wakeupschedule.ui.widget.GridBackgroundView
+                android:id="@+id/grid_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- 课程卡片容器，手动定位 -->
+            <FrameLayout
+                android:id="@+id/course_container"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:columnCount="7" />
+                android:clipChildren="false"
+                android:clipToPadding="false" />
 
+            <!-- 空状态 -->
             <LinearLayout
                 android:id="@+id/layout_empty"
                 android:layout_width="match_parent"

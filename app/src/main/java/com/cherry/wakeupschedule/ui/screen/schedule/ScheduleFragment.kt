@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
@@ -134,61 +133,12 @@ class ScheduleFragment : Fragment() {
             viewPager.setCurrentItem(displayWk - 1, false)
         }
 
-        // ── 优化 ViewPager2 滑动体验 ──
-        // 接管 fling，每次只翻一页，速度可控，不阻塞连续滑动
-        takeOverFling(viewPager)
-
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 setDisplayWeek(position + 1)
                 updateDateTimeHeader()
             }
         })
-    }
-
-    /**
-     * 接管 ViewPager2 的 fling，实现受控的匀速翻页。
-     *
-     * 默认 ViewPager2 内部 RecyclerView 的 fling 速度无上限（~8000px/s），
-     * 快速滑动时动画帧跨度太大，加上每页 GridLayout + CardView 渲染开销重，
-     * 导致视觉跳帧卡顿。同时默认的 settle 动画会阻塞新手势，导致必须等
-     * 当前页停稳才能继续滑动。
-     *
-     * 方案：通过 OnFlingListener 拦截 fling，统一用 setCurrentItem + smoothScroll
-     * 翻一页，确保每次翻页动画速度一致且可控。同时 setCurrentItem 不阻塞
-     * 新的触摸事件，解决了连续快速翻页的问题。
-     *
-     * 注意：onFling 内绝不能调用 recyclerView.fling()，否则无限递归→StackOverflow。
-     */
-    private fun takeOverFling(pager: ViewPager2) {
-        try {
-            val recyclerViewField = ViewPager2::class.java.getDeclaredField("mRecyclerView")
-            recyclerViewField.isAccessible = true
-            val recyclerView = recyclerViewField.get(pager) as RecyclerView
-
-            recyclerView.setOnFlingListener(object : RecyclerView.OnFlingListener() {
-                override fun onFling(velocityX: Int, velocityY: Int): Boolean {
-                    val adapter = pager.adapter ?: return false
-                    val total = adapter.itemCount
-                    if (total == 0) return false
-
-                    val current = pager.currentItem
-                    // 根据 fling 方向翻一页（无论速度多大，统一只翻一页）
-                    val target = if (velocityX > 0) {
-                        (current + 1).coerceAtMost(total - 1)
-                    } else {
-                        (current - 1).coerceAtLeast(0)
-                    }
-
-                    if (target != current) {
-                        pager.setCurrentItem(target, true)
-                    }
-                    return true // 阻止 RecyclerView 默认 fling
-                }
-            })
-        } catch (_: Exception) {
-            // 反射失败时使用默认行为，不影响正常使用
-        }
     }
 
     private fun setupObservers() {
