@@ -21,6 +21,9 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
+import com.cherry.wakeupschedule.ui.component.SelectOption
+import com.cherry.wakeupschedule.ui.component.SelectionDialog
+import com.cherry.wakeupschedule.ui.theme.M3ColorPalette
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.gxu.jwxt.model.Term
@@ -85,18 +88,22 @@ class ProfileFragment : Fragment() {
 
 
         view.findViewById<View>(R.id.item_theme_palette).setOnClickListener {
-            val names = ThemeManager.paletteNames().toTypedArray()
+            val palettes = M3ColorPalette.LIGHT_PALETTES
             val currentIndex = ThemeManager.getPaletteIndex(requireContext())
-            AlertDialog.Builder(requireContext())
-                .setTitle("选择主题色板")
-                .setSingleChoiceItems(names, currentIndex) { dialog, which ->
-                    ThemeManager.setPaletteIndex(which, requireContext())
-                    Toast.makeText(requireContext(), "已选择: ${names[which]}", Toast.LENGTH_SHORT).show()
+            val options = palettes.map { palette ->
+                SelectOption(label = palette.name, leadingColor = palette.primary)
+            }
+            SelectionDialog.show(
+                context = requireContext(),
+                title = "选择主题色板",
+                options = options,
+                selectedIndex = currentIndex,
+                onSelected = { index ->
+                    ThemeManager.setPaletteIndex(index, requireContext())
+                    Toast.makeText(requireContext(), "已选择: ${palettes[index].name}", Toast.LENGTH_SHORT).show()
                     requireActivity().recreate()
-                    dialog.dismiss()
                 }
-                .setNegativeButton("取消", null)
-                .show()
+            )
         }
 
         view.findViewById<View>(R.id.item_alarm).setOnClickListener {
@@ -142,34 +149,42 @@ class ProfileFragment : Fragment() {
         }
 
         val currentIndex = settingsManager.getCurrentSemesterIndex()
-        val labels = semesters.map { s ->
-            val mark = if (s.sortOrder == currentIndex) "  ← 当前" else ""
-            "${s.label}  (${s.academicYear}学年 ${s.termName})$mark"
-        }.toTypedArray()
+        val options = semesters.map { s ->
+            SelectOption(
+                label = "${s.label}  (${s.academicYear}学年 ${s.termName})",
+                subtitle = if (s.sortOrder == currentIndex) "← 当前" else null
+            )
+        }
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("选择当前学期")
-            .setSingleChoiceItems(labels, currentIndex.coerceAtLeast(0)) { dialog, which ->
-                settingsManager.setCurrentSemesterIndex(which)
+        SelectionDialog.show(
+            context = requireContext(),
+            title = "选择当前学期",
+            options = options,
+            selectedIndex = currentIndex.coerceAtLeast(0),
+            onSelected = { index ->
+                settingsManager.setCurrentSemesterIndex(index)
                 updateDisplay()
-                dialog.dismiss()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun showWeekDialog() {
-        val options = arrayOf("设置学期开始日期（自动计算当前周）", "设置当前周")
-        AlertDialog.Builder(requireContext())
-            .setTitle("周次设置")
-            .setItems(options) { _, which ->
-                when (which) {
+        val options = listOf(
+            SelectOption(label = "设置学期开始日期（自动计算当前周）"),
+            SelectOption(label = "直接设置当前周")
+        )
+        SelectionDialog.show(
+            context = requireContext(),
+            title = "周次设置",
+            options = options,
+            selectedIndex = 0,
+            onSelected = { index ->
+                when (index) {
                     0 -> showSemesterStartDatePicker()
                     1 -> showCurrentWeekPicker()
                 }
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun showSemesterStartDatePicker() {
@@ -195,24 +210,25 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showCurrentWeekPicker() {
-        val weeks = (1..20).map { "第${it}周" }.toTypedArray()
+        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
         val semesterStartDate = settingsManager.getSemesterStartDate()
         val currentWeek = if (semesterStartDate > 0) {
             ((System.currentTimeMillis() - semesterStartDate) / 86400000L).toInt() / 7 + 1
         } else settingsManager.getDefaultWeek()
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("设置当前周（将调整学期开始日期）")
-            .setSingleChoiceItems(weeks, currentWeek.coerceIn(1, 20) - 1) { dialog, which ->
-                val selectedWeek = which + 1
+        SelectionDialog.show(
+            context = requireContext(),
+            title = "设置当前周（将调整学期开始日期）",
+            options = weeks,
+            selectedIndex = currentWeek.coerceIn(1, 20) - 1,
+            onSelected = { index ->
+                val selectedWeek = index + 1
                 val daysToSubtract = (selectedWeek - 1) * 7L
                 settingsManager.setSemesterStartDate(System.currentTimeMillis() - daysToSubtract * 86400000L)
                 settingsManager.setDefaultWeek(selectedWeek)
                 updateDisplay()
-                dialog.dismiss()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun updateDisplay() {

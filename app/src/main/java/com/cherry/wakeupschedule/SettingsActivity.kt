@@ -29,7 +29,8 @@ import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
-import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
+import com.cherry.wakeupschedule.ui.component.SelectOption
+import com.cherry.wakeupschedule.ui.component.SelectionDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -214,17 +215,21 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         btnColorTheme.setOnClickListener {
-            val names = com.cherry.wakeupschedule.ui.theme.ThemeManager.paletteNames().toTypedArray()
+            val palettes = com.cherry.wakeupschedule.ui.theme.M3ColorPalette.LIGHT_PALETTES
             val currentIndex = com.cherry.wakeupschedule.ui.theme.ThemeManager.getPaletteIndex(this)
-            AlertDialog.Builder(this)
-                .setTitle("选择主题色板")
-                .setSingleChoiceItems(names, currentIndex) { dialog, which ->
-                    com.cherry.wakeupschedule.ui.theme.ThemeManager.setPaletteIndex(which, this)
+            val options = palettes.map { palette ->
+                SelectOption(label = palette.name, leadingColor = palette.primary)
+            }
+            SelectionDialog.show(
+                context = this,
+                title = "选择主题色板",
+                options = options,
+                selectedIndex = currentIndex,
+                onSelected = { index ->
+                    com.cherry.wakeupschedule.ui.theme.ThemeManager.setPaletteIndex(index, this)
                     recreate()
-                    dialog.dismiss()
                 }
-                .setNegativeButton("取消", null)
-                .show()
+            )
         }
 
         btnAbout.setOnClickListener {
@@ -414,13 +419,16 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showMaxNodesDialog() {
         val currentMax = timeTableManager.getMaxNodes()
-        val nodes = (4..16).map { "$it 节" }.toTypedArray()
+        val options = (4..16).map { SelectOption(label = "$it 节") }
         val currentIndex = (4..16).indexOf(currentMax).coerceAtLeast(0)
 
-        AlertDialog.Builder(this)
-            .setTitle("设置每天节数")
-            .setSingleChoiceItems(nodes, currentIndex) { dialog, which ->
-                val maxNodes = which + 4
+        SelectionDialog.show(
+            context = this,
+            title = "设置每天节数",
+            options = options,
+            selectedIndex = currentIndex,
+            onSelected = { index ->
+                val maxNodes = index + 4
                 timeTableManager.setMaxNodes(maxNodes)
 
                 // 如果新的节数大于当前时间段数量，自动添加缺失的时间段
@@ -428,7 +436,6 @@ class SettingsActivity : AppCompatActivity() {
                 val maxNodeInSlots = currentSlots.maxOfOrNull { it.node } ?: 0
                 if (maxNodes > maxNodeInSlots) {
                     for (node in (maxNodeInSlots + 1)..maxNodes) {
-                        // 根据节次生成默认时间
                         val defaultTimeSlot = TimeTableManager.getTimeSlot(node)
                         timeTableManager.addTimeSlot(
                             node,
@@ -439,11 +446,9 @@ class SettingsActivity : AppCompatActivity() {
                 }
 
                 Toast.makeText(this, "每天节数已设置为 $maxNodes 节", Toast.LENGTH_SHORT).show()
-            App.instance.registerAllCourseNotifications()
-            dialog.dismiss()
+                App.instance.registerAllCourseNotifications()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
 
@@ -479,36 +484,44 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val currentIndex = settingsManager.getCurrentSemesterIndex()
-        val labels = semesters.map { s ->
-            val mark = if (s.sortOrder == currentIndex) "  ← 当前" else ""
-            "${s.label}  (${s.academicYear}学年 ${s.termName})$mark"
-        }.toTypedArray()
+        val options = semesters.map { s ->
+            SelectOption(
+                label = "${s.label}  (${s.academicYear}学年 ${s.termName})",
+                subtitle = if (s.sortOrder == currentIndex) "← 当前" else null
+            )
+        }
 
-        AlertDialog.Builder(this)
-            .setTitle("选择当前学期")
-            .setSingleChoiceItems(labels, currentIndex.coerceAtLeast(0)) { dialog, which ->
-                settingsManager.setCurrentSemesterIndex(which)
+        SelectionDialog.show(
+            context = this,
+            title = "选择当前学期",
+            options = options,
+            selectedIndex = currentIndex.coerceAtLeast(0),
+            onSelected = { index ->
+                settingsManager.setCurrentSemesterIndex(index)
                 updateSettingsDisplay()
-                Toast.makeText(this, "已切换至: ${semesters[which].label}", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
+                Toast.makeText(this, "已切换至: ${semesters[index].label}", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun showWeekDialog() {
-        val options = arrayOf("设置学期开始日期（自动计算当前周）", "设置当前周")
+        val options = listOf(
+            SelectOption(label = "设置学期开始日期（自动计算当前周）"),
+            SelectOption(label = "直接设置当前周")
+        )
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("周次设置")
-            .setItems(options) { _, which ->
-                when (which) {
+        SelectionDialog.show(
+            context = this,
+            title = "周次设置",
+            options = options,
+            selectedIndex = 0,
+            onSelected = { index ->
+                when (index) {
                     0 -> showSemesterStartDatePicker()
                     1 -> showCurrentWeekPicker()
                 }
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun showSemesterStartDatePicker() {
@@ -543,24 +556,24 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showDefaultWeekPicker() {
-        val weeks = (1..20).map { "第${it}周" }.toTypedArray()
+        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
         val currentWeek = settingsManager.getDefaultWeek()
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("选择默认显示周")
-            .setSingleChoiceItems(weeks, currentWeek - 1) { dialog, which ->
-                settingsManager.setDefaultWeek(which + 1)
-                Toast.makeText(this, "默认显示周已设置为第${which + 1}周", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
+        SelectionDialog.show(
+            context = this,
+            title = "选择默认显示周",
+            options = weeks,
+            selectedIndex = currentWeek - 1,
+            onSelected = { index ->
+                settingsManager.setDefaultWeek(index + 1)
+                Toast.makeText(this, "默认显示周已设置为第${index + 1}周", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun showCurrentWeekPicker() {
-        val weeks = (1..20).map { "第${it}周" }.toTypedArray()
+        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
 
-        // 计算当前周
         val semesterStartDate = settingsManager.getSemesterStartDate()
         val currentWeek = if (semesterStartDate > 0) {
             val now = System.currentTimeMillis()
@@ -571,47 +584,51 @@ class SettingsActivity : AppCompatActivity() {
             settingsManager.getDefaultWeek()
         }
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("设置当前周（将调整学期开始日期）")
-            .setSingleChoiceItems(weeks, currentWeek.coerceIn(1, 20) - 1) { dialog, which ->
-                val selectedWeek = which + 1
-
-                // 根据选择的周次反推学期开始日期
-                val now = System.currentTimeMillis()
+        SelectionDialog.show(
+            context = this,
+            title = "设置当前周（将调整学期开始日期）",
+            options = weeks,
+            selectedIndex = currentWeek.coerceIn(1, 20) - 1,
+            onSelected = { index ->
+                val selectedWeek = index + 1
                 val daysToSubtract = (selectedWeek - 1) * 7L
-                val startDate = now - (daysToSubtract * 24 * 60 * 60 * 1000)
+                val startDate = System.currentTimeMillis() - (daysToSubtract * 24 * 60 * 60 * 1000)
 
                 settingsManager.setSemesterStartDate(startDate)
                 settingsManager.setDefaultWeek(selectedWeek)
 
                 Toast.makeText(this, "当前周已设置为第${selectedWeek}周", Toast.LENGTH_SHORT).show()
                 updateSettingsDisplay()
-                dialog.dismiss()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
     
     private fun showAlarmDialog() {
-        val alarmTimes = arrayOf("提前5分钟", "提前10分钟", "提前15分钟", "提前20分钟", "提前30分钟")
-        
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("选择默认闹钟提醒时间")
-            .setItems(alarmTimes) { _, which ->
-                val minutes = when (which) {
-                    0 -> 5
-                    1 -> 10
-                    2 -> 15
-                    3 -> 20
-                    4 -> 30
+        val alarmOptions = (0..4).map { i ->
+            val minutes = when (i) { 0 -> 5; 1 -> 10; 2 -> 15; 3 -> 20; 4 -> 30; else -> 15 }
+            SelectOption(label = "提前${minutes}分钟")
+        }
+        val currentMinutes = settingsManager.getDefaultAlarmMinutes()
+        val currentIndex = when (currentMinutes) {
+            5 -> 0; 10 -> 1; 15 -> 2; 20 -> 3; 30 -> 4
+            else -> 2
+        }
+
+        SelectionDialog.show(
+            context = this,
+            title = "选择默认闹钟提醒时间",
+            options = alarmOptions,
+            selectedIndex = currentIndex,
+            onSelected = { index ->
+                val minutes = when (index) {
+                    0 -> 5; 1 -> 10; 2 -> 15; 3 -> 20; 4 -> 30
                     else -> 15
                 }
                 settingsManager.setDefaultAlarmMinutes(minutes)
                 updateSettingsDisplay()
                 Toast.makeText(this, "闹钟设置已更新", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
     
     private fun showBackgroundDialog() {
@@ -630,19 +647,19 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showBackgroundThemePicker() {
-        val themeNames = arrayOf("默认")
-        val currentIndex = 0
+        val options = listOf(SelectOption(label = "默认"))
 
-        AlertDialog.Builder(this)
-            .setTitle("选择背景颜色")
-            .setSingleChoiceItems(themeNames, currentIndex) { dialog, _ ->
+        SelectionDialog.show(
+            context = this,
+            title = "选择背景颜色",
+            options = options,
+            selectedIndex = 0,
+            onSelected = { _ ->
                 applyBackgroundSettings()
                 updateSettingsDisplay()
                 Toast.makeText(this, "已设置为默认背景", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun saveAndProcessBackgroundImage(uri: Uri) {
@@ -754,20 +771,21 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showCourseCardAlphaDialog() {
-        val alphas = (20..100 step 10).map { "$it%" }.toTypedArray()
+        val options = (2..10).map { SelectOption(label = "${it * 10}%") }
         val currentAlpha = settingsManager.getCourseCardAlpha()
-        val currentIndex = ((currentAlpha * 100).toInt() / 10 - 2).coerceIn(0, alphas.size - 1)
+        val currentIndex = ((currentAlpha * 100).toInt() / 10 - 2).coerceIn(0, options.size - 1)
 
-        AlertDialog.Builder(this)
-            .setTitle("课程卡片透明度")
-            .setSingleChoiceItems(alphas, currentIndex) { dialog, which ->
-                val alpha = (which + 2) * 0.1f
+        SelectionDialog.show(
+            context = this,
+            title = "课程卡片透明度",
+            options = options,
+            selectedIndex = currentIndex,
+            onSelected = { index ->
+                val alpha = (index + 2) * 0.1f
                 settingsManager.setCourseCardAlpha(alpha)
                 Toast.makeText(this, "课程卡片透明度已设置为 ${(alpha * 100).toInt()}%", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun toggleShowNonCurrentWeekCourses() {
@@ -777,20 +795,21 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showNonCurrentWeekAlphaDialog() {
-        val alphas = (10..80 step 10).map { "$it%" }.toTypedArray()
+        val options = (1..8).map { SelectOption(label = "${it * 10}%") }
         val currentAlpha = settingsManager.getNonCurrentWeekAlpha()
-        val currentIndex = ((currentAlpha * 100).toInt() / 10 - 1).coerceIn(0, alphas.size - 1)
+        val currentIndex = ((currentAlpha * 100).toInt() / 10 - 1).coerceIn(0, options.size - 1)
 
-        AlertDialog.Builder(this)
-            .setTitle("非本周课程透明度")
-            .setSingleChoiceItems(alphas, currentIndex) { dialog, which ->
-                val alpha = (which + 1) * 0.1f
+        SelectionDialog.show(
+            context = this,
+            title = "非本周课程透明度",
+            options = options,
+            selectedIndex = currentIndex,
+            onSelected = { index ->
+                val alpha = (index + 1) * 0.1f
                 settingsManager.setNonCurrentWeekAlpha(alpha)
                 Toast.makeText(this, "非本周课程透明度已设置为 ${(alpha * 100).toInt()}%", Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
     
     private fun showAlarmSettingsDialog() {

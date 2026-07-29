@@ -10,6 +10,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.cherry.wakeupschedule.databinding.ActivityTimeTableEditBinding
 import com.cherry.wakeupschedule.service.TimeTableManager
+import com.cherry.wakeupschedule.ui.component.SelectOption
+import com.cherry.wakeupschedule.ui.component.SelectionDialog
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -139,13 +141,16 @@ class TimeTableEditActivity : AppCompatActivity() {
 
     private fun showMaxNodesDialog() {
         val currentMax = timeTableManager.getMaxNodes()
-        val nodes = (4..16).map { "$it 节" }.toTypedArray()
+        val options = (4..16).map { SelectOption(label = "$it 节") }
         val currentIndex = (4..16).indexOf(currentMax).coerceAtLeast(0)
 
-        AlertDialog.Builder(this)
-            .setTitle("设置每天课程数")
-            .setSingleChoiceItems(nodes, currentIndex) { dialog, which ->
-                val maxNodes = which + 4
+        SelectionDialog.show(
+            context = this,
+            title = "设置每天课程数",
+            options = options,
+            selectedIndex = currentIndex,
+            onSelected = { index ->
+                val maxNodes = index + 4
                 timeTableManager.setMaxNodes(maxNodes)
                 binding.tvMaxNodes.text = "$maxNodes 节"
 
@@ -161,12 +166,10 @@ class TimeTableEditActivity : AppCompatActivity() {
                     }
                 }
 
-                dialog.dismiss()
                 loadAndDisplayTimeSlots()
                 App.instance.registerAllCourseNotifications()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        )
     }
 
     private fun showResetConfirmDialog() {
