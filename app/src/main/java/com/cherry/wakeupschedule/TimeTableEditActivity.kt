@@ -2,25 +2,28 @@ package com.cherry.wakeupschedule
 
 import android.app.TimePickerDialog
 import android.os.Bundle
+import android.text.format.DateFormat
 import android.view.LayoutInflater
-import android.view.MenuItem
-import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.cherry.wakeupschedule.databinding.ActivityTimeTableEditBinding
 import com.cherry.wakeupschedule.service.TimeTableManager
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import java.util.Calendar
 
 class TimeTableEditActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTimeTableEditBinding
     private lateinit var timeTableManager: TimeTableManager
-    
+
     private val timeSlotViews = mutableListOf<TimeSlotView>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyToTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityTimeTableEditBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -33,9 +36,10 @@ class TimeTableEditActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "编辑时间表"
+        binding.toolbar.apply {
+            title = "编辑时间表"
+            setNavigationOnClickListener { finish() }
+        }
     }
 
     private fun setupButtons() {
@@ -55,7 +59,7 @@ class TimeTableEditActivity : AppCompatActivity() {
             saveTimeSlots()
         }
     }
-    
+
     private fun setCurrentAsDefault() {
         timeTableManager.setCurrentAsDefault()
         Toast.makeText(this, "当前时间表已设为默认", Toast.LENGTH_SHORT).show()
@@ -66,14 +70,14 @@ class TimeTableEditActivity : AppCompatActivity() {
         binding.tvMaxNodes.text = "$maxNodes 节"
 
         val timeSlots = timeTableManager.getTimeSlots().sortedBy { it.node }
-        
+
         binding.llTimeSlots.removeAllViews()
         timeSlotViews.clear()
 
         for (node in 1..maxNodes) {
             val timeSlot = timeSlots.find { it.node == node }
                 ?: TimeTableManager.TimeSlot(node, getDefaultStartTime(node), getDefaultEndTime(node))
-            
+
             addTimeSlotView(timeSlot)
         }
     }
@@ -91,11 +95,11 @@ class TimeTableEditActivity : AppCompatActivity() {
         tvEndTime.text = timeSlot.endTime
 
         tvStartTime.setOnClickListener {
-            showTimePicker(tvStartTime)
+            showMaterialTimePicker(tvStartTime)
         }
 
         tvEndTime.setOnClickListener {
-            showTimePicker(tvEndTime)
+            showMaterialTimePicker(tvEndTime)
         }
 
         val slotView = TimeSlotView(timeSlot.node, tvStartTime, tvEndTime)
@@ -103,7 +107,11 @@ class TimeTableEditActivity : AppCompatActivity() {
         binding.llTimeSlots.addView(view)
     }
 
-    private fun showTimePicker(textView: TextView) {
+    /**
+     * Use Material 3 TimePicker instead of the legacy [TimePickerDialog],
+     * so the clock UI follows the current M3 theme palette.
+     */
+    private fun showMaterialTimePicker(textView: TextView) {
         val currentText = textView.text.toString()
         var hour = 8
         var minute = 0
@@ -113,9 +121,20 @@ class TimeTableEditActivity : AppCompatActivity() {
             minute = parts[1].toIntOrNull() ?: 0
         }
 
-        TimePickerDialog(this, { _, selectedHour, selectedMinute ->
-            textView.text = String.format("%02d:%02d", selectedHour, selectedMinute)
-        }, hour, minute, true).show()
+        val isSystem24Hour = DateFormat.is24HourFormat(this)
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(if (isSystem24Hour) TimeFormat.CLOCK_24H else TimeFormat.CLOCK_12H)
+            .setHour(hour)
+            .setMinute(minute)
+            .setTitleText("选择时间")
+            .setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK)
+            .build()
+
+        picker.addOnPositiveButtonClickListener {
+            textView.text = String.format("%02d:%02d", picker.hour, picker.minute)
+        }
+
+        picker.show(supportFragmentManager, "time_picker")
     }
 
     private fun showMaxNodesDialog() {
@@ -129,19 +148,19 @@ class TimeTableEditActivity : AppCompatActivity() {
                 val maxNodes = which + 4
                 timeTableManager.setMaxNodes(maxNodes)
                 binding.tvMaxNodes.text = "$maxNodes 节"
-                
+
                 val currentSlots = timeTableManager.getTimeSlots()
                 val maxNodeInSlots = currentSlots.maxOfOrNull { it.node } ?: 0
                 if (maxNodes > maxNodeInSlots) {
                     for (node in (maxNodeInSlots + 1)..maxNodes) {
                         timeTableManager.addTimeSlot(
-                            node, 
-                            getDefaultStartTime(node), 
+                            node,
+                            getDefaultStartTime(node),
                             getDefaultEndTime(node)
                         )
                     }
                 }
-                
+
                 dialog.dismiss()
                 loadAndDisplayTimeSlots()
                 App.instance.registerAllCourseNotifications()
@@ -219,16 +238,6 @@ class TimeTableEditActivity : AppCompatActivity() {
             15 -> "01:15"
             16 -> "02:10"
             else -> "08:45"
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                finish()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
         }
     }
 
