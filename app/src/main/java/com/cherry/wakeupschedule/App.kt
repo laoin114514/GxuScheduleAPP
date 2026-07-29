@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.cherry.wakeupschedule.util.DebugLogger
+import com.cherry.wakeupschedule.service.AccountRepository
 import com.cherry.wakeupschedule.service.AlarmService
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.CourseReminderWorker
@@ -37,8 +38,8 @@ class App : Application() {
         // 初始化调试日志（在 Application 层，确保所有组件都能使用）
         DebugLogger.init(this)
 
-        // 初始化教务账号管理器
-        com.cherry.wakeupschedule.service.JwxtAccountManager.init(this)
+        // 初始化 AccountRepository（替代原来的 JwxtAccountManager.init，支持多账号）
+        AccountRepository.getInstance(this)
 
         try {
             NotificationHelper(this).createNotificationChannels()
@@ -152,6 +153,11 @@ class App : Application() {
     }
 
     fun registerAllCourseNotifications() {
+        val accountId = AccountRepository.getInstance(this).getActiveAccountId()
+        if (accountId <= 0) {
+            Log.d("App", "无活跃账号，跳过闹钟注册")
+            return
+        }
         if (SettingsManager(this).isAlarmEnabled()) {
             alarmService?.registerAllCourseNotifications()
             // 启动前台服务，确保闹钟在国产 ROM 上不被杀
