@@ -13,6 +13,8 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CompoundButton
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.view.View
 import android.widget.ListView
 import android.widget.Switch
 import android.widget.TextView
@@ -25,6 +27,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.service.ImportService
+import com.cherry.wakeupschedule.service.AccountRepository
+import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
@@ -67,6 +71,13 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var timeTableManager: TimeTableManager
     private lateinit var updateService: com.cherry.wakeupschedule.service.UpdateService
     private var isUpdatingSwitchState = false
+
+    private lateinit var llAccountCard: LinearLayout
+    private lateinit var tvAccountDisplay: TextView
+    private lateinit var tvAccountDetail: TextView
+    private lateinit var btnSwitchAccount: Button
+    private lateinit var btnUnbindAccount: Button
+    private val accountRepo by lazy { AccountRepository.getInstance(this) }
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -123,6 +134,17 @@ class SettingsActivity : AppCompatActivity() {
         btnFeedback = findViewById(R.id.btn_feedback)
         switchUpdateRemind = findViewById<Switch>(R.id.switch_update_remind)
         switchHideHolidayCourses = findViewById<Switch>(R.id.switch_hide_holiday_courses)
+
+        llAccountCard = findViewById(R.id.ll_account_card)
+        tvAccountDisplay = findViewById(R.id.tv_account_display)
+        tvAccountDetail = findViewById(R.id.tv_account_detail)
+        btnSwitchAccount = findViewById(R.id.btn_switch_account)
+        btnUnbindAccount = findViewById(R.id.btn_unbind_account)
+
+        refreshAccountCard()
+
+        btnSwitchAccount.setOnClickListener { showSwitchAccountDialog() }
+        btnUnbindAccount.setOnClickListener { showUnbindConfirmDialog() }
 
         // 初始化更新服务
         updateService = com.cherry.wakeupschedule.service.UpdateService(this)
@@ -1146,5 +1168,82 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.makeText(this, "导出失败: ${e2.message}", Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    private fun refreshAccountCard() {
+        lifecycleScope.launch {
+            val account = accountRepo.getActiveAccount()
+            if (account != null) {
+                llAccountCard.visibility = View.VISIBLE
+                tvAccountDisplay.text = account.username
+                val profile = accountRepo.getProfile(account.id)
+                if (profile != null) {
+                    tvAccountDetail.text = "${profile.getCollege()} · ${profile.getMajor()}"
+                    tvAccountDisplay.text = "${profile.getName()} (${profile.getStudentId()})"
+                }
+            } else {
+                llAccountCard.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun showSwitchAccountDialog() {
+        lifecycleScope.launch {
+            val accounts = accountRepo.getAllAccounts()
+            val names = accounts.map { acc ->
+                val profile = accountRepo.getProfile(acc.id)
+                if (profile != null) "${profile.getName()} (${acc.username})" else acc.username
+            }.toTypedArray()
+
+            if (names.isEmpty()) {
+                Toast.makeText(this@SettingsActivity, "没有其他账号", Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            AlertDialog.Builder(this@SettingsActivity)
+                .setTitle("切换账号")
+                .setItems(names) { _, which ->
+                    lifecycleScope.launch {
+                        val selected = accounts[which]
+                        accountRepo.switchAccount(selected.id)
+                        CourseDataManager.getInstance(this@SettingsActivity).switchAccount(selected.id)
+                        refreshAccountCard()
+                        val intent = Intent(this@SettingsActivity, ScheduleActivity::class.java).apply {
+                            putExtra("init_account_id", selected.id)
+                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        }
+                        startActivity(intent)
+                    }
+                }
+                .setNeutralButton("添加新账号") { _, _ ->
+                    startActivity(Intent(this@SettingsActivity, BindJwxtActivity::class.java))
+                }
+                .show()
+        }
+    }
+
+    private fun showUnbindConfirmDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("确认解绑")
+            .setMessage("将清除此账号的所有数据：\n· 个人信息\n· 课表数据\n· 学期设置\n\n此操作不可撤销。")
+            .setPositiveButton("确认解绑") { _, _ ->
+                lifecycleScope.launch {
+                    val accountId = accountRepo.getActiveAccountId()
+                    if (accountId > 0) {
+                        App.instance.alarmService?.cancelAllReminders()
+                        accountRepo.unbindAccount(accountId)
+                        val newActiveId = accountRepo.getActiveAccountId()
+                        if (newActiveId > 0) {
+                            CourseDataManager.getInstance(this@SettingsActivity).switchAccount(newActiveId)
+                        } else {
+                            CourseDataManager.getInstance(this@SettingsActivity).clearAccount()
+                        }
+                        refreshAccountCard()
+                        Toast.makeText(this@SettingsActivity, "已解绑", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 }
