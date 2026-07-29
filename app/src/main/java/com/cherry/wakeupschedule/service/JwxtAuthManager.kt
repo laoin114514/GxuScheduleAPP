@@ -10,20 +10,43 @@ import kotlinx.coroutines.withContext
  * 教务系统认证管理器。
  *
  * 所有需要认证的接口调用都通过 [doWithAuth]，自动处理 session 过期重登录。
- *
- * 使用示例：
- * ```kotlin
- * val result = JwxtAuthManager.doWithAuth { client ->
- *     client.profile().profile()
- * }
- * result.onSuccess { profile -> showProfile(profile) }
- *       .onFailure { e -> showError(e) }
- * ```
  */
 object JwxtAuthManager {
 
     @Volatile
     private var client: JwxtClient? = null
+
+    /**
+     * 登录并获取个人信息（原子操作）。
+     * 步骤 1：验证凭据 → 步骤 2：获取个人信息
+     * 任一步骤失败则整体失败，成功则持久化到数据库。
+     */
+    suspend fun login(username: String, password: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            // 步骤 1：验证凭据
+            val c = JwxtClient(username, password)
+            c.login()
+            destroyClient()
+            this@JwxtAuthManager.client = c
+
+            // 步骤 2：获取个人信息
+            try {
+                val profile = c.profile().profile()
+                // 两步都成功 → 持久化
+                JwxtAccountManager.saveCredentials(username, password)
+                JwxtAccountManager.saveProfile(profile)
+                Result.success("登录成功")
+            } catch (e: Exception) {
+                // profile 获取失败 → 等同登录失败
+                destroyClient()
+                Result.failure(LoginException("获取个人信息失败: ${e.message}"))
+            }
+        } catch (e: LoginException) {
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(LoginException("登录失败: ${e.message}"))
+        }
+    }
 
     /**
      * 执行需要认证的操作，自动处理 session 过期。
@@ -52,23 +75,6 @@ object JwxtAuthManager {
             Result.failure(e)
         } catch (e: Exception) {
             Result.failure(e)
-        }
-    }
-
-    /**
-     * 测试登录是否成功。
-     */
-    suspend fun testLogin(username: String, password: String): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val c = JwxtClient(username, password)
-            c.login()
-            destroyClient()
-            this@JwxtAuthManager.client = c
-            Result.success("登录成功")
-        } catch (e: LoginException) {
-            Result.failure(e)
-        } catch (e: Exception) {
-            Result.failure(LoginException("登录失败: ${e.message}"))
         }
     }
 

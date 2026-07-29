@@ -44,6 +44,7 @@ class ProfileFragment : Fragment() {
         settingsManager = SettingsManager(requireContext())
         setupClickListeners(view)
         updateDisplay()
+        updateAccountSection()
     }
 
     private fun setupClickListeners(view: View) {
@@ -57,6 +58,20 @@ class ProfileFragment : Fragment() {
                 return@setOnClickListener
             }
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
+        }
+
+        // 解绑
+        view.findViewById<View>(R.id.btn_unbind).setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle("解绑教务账号")
+                .setMessage("确定要解绑教务账号吗？解绑后个人信息将被清除。")
+                .setPositiveButton("解绑") { _, _ ->
+                    JwxtAuthManager.unbind()
+                    updateAccountSection()
+                    Toast.makeText(requireContext(), "已解绑教务账号", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("取消", null)
+                .show()
         }
 
         view.findViewById<View>(R.id.item_semester).setOnClickListener {
@@ -346,7 +361,7 @@ class ProfileFragment : Fragment() {
             }
 
             // ── 2. classDetail() API：获取学期日期（需班级信息，可选） ──
-            val cached = JwxtAccountManager.getCachedProfile()
+            val cached = JwxtAccountManager.getProfile()
             val classId = cached?.className ?: ""
             val gradeCode = cached?.grade ?: ""
             val majorCode = cached?.major ?: ""
@@ -394,6 +409,33 @@ class ProfileFragment : Fragment() {
                             "未获取到课程数据，请检查学期设置是否正确", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateAccountSection()
+    }
+
+    private fun updateAccountSection() {
+        val isBound = JwxtAuthManager.isBound()
+        val view = requireView()
+
+        view.findViewById<View>(R.id.item_bind_jwxt).visibility =
+            if (isBound) View.GONE else View.VISIBLE
+
+        view.findViewById<View>(R.id.item_account_info).visibility =
+            if (isBound) View.VISIBLE else View.GONE
+
+        view.findViewById<View>(R.id.btn_unbind).visibility =
+            if (isBound) View.VISIBLE else View.GONE
+
+        if (isBound) {
+            val profile = JwxtAccountManager.getProfile()
+            val tvName = view.findViewById<TextView>(R.id.tv_account_name)
+            val tvId = view.findViewById<TextView>(R.id.tv_account_id)
+            tvName.text = profile?.name ?: JwxtAuthManager.getBoundUsername()
+            tvId.text = if (profile?.studentId != null) "学号: ${profile.studentId}" else "已绑定"
         }
     }
 }

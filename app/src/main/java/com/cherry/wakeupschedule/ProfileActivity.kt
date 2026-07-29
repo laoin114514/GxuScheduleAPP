@@ -4,23 +4,15 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
-import android.widget.Button
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.service.JwxtAccountManager
-import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.gxu.jwxt.model.StudentProfile
-import kotlinx.coroutines.launch
 
 class ProfileActivity : AppCompatActivity() {
 
-    private lateinit var btnRefresh: Button
-    private lateinit var pbLoading: ProgressBar
     private lateinit var scrollProfile: ScrollView
     private lateinit var layoutProfile: LinearLayout
     private lateinit var tvError: TextView
@@ -29,56 +21,20 @@ class ProfileActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
-        btnRefresh = findViewById(R.id.btn_refresh)
-        pbLoading = findViewById(R.id.pb_loading)
         scrollProfile = findViewById(R.id.scroll_profile)
         layoutProfile = findViewById(R.id.layout_profile)
         tvError = findViewById(R.id.tv_error)
 
-        // 优先显示缓存
-        val cached = JwxtAccountManager.getCachedProfile()
-        if (cached != null) {
-            displayProfile(cached)
+        // 仅从数据库读取
+        val profile = JwxtAccountManager.getProfile()
+        if (profile != null) {
+            displayProfile(profile)
             scrollProfile.visibility = View.VISIBLE
-            // 后台静默刷新
-            fetchProfile(showLoading = false)
-        } else {
-            fetchProfile(showLoading = true)
-        }
-
-        btnRefresh.setOnClickListener {
-            fetchProfile(showLoading = true)
-        }
-    }
-
-    private fun fetchProfile(showLoading: Boolean) {
-        if (showLoading) {
-            pbLoading.visibility = View.VISIBLE
             tvError.visibility = View.GONE
-        }
-
-        lifecycleScope.launch {
-            val result = JwxtAuthManager.doWithAuth { client ->
-                client.profile().profile()
-            }
-
-            pbLoading.visibility = View.GONE
-
-            result.onSuccess { profile ->
-                JwxtAccountManager.saveProfileCache(profile)
-                displayProfile(profile)
-                scrollProfile.visibility = View.VISIBLE
-            }.onFailure { e ->
-                val cached = JwxtAccountManager.getCachedProfile()
-                if (cached != null) {
-                    // 有缓存就不报错
-                    Toast.makeText(this@ProfileActivity,
-                        "刷新失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                } else {
-                    tvError.text = "获取失败: ${e.message}"
-                    tvError.visibility = View.VISIBLE
-                }
-            }
+        } else {
+            tvError.text = "未绑定教务账号或个人信息未获取\n\n请先在「我的」页面绑定教务系统账号"
+            tvError.visibility = View.VISIBLE
+            scrollProfile.visibility = View.GONE
         }
     }
 
@@ -121,13 +77,17 @@ class ProfileActivity : AppCompatActivity() {
             text = name
             textSize = 26f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(0xFFFFFFFF.toInt())
+            val typedValue = android.util.TypedValue()
+            theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+            setTextColor(typedValue.data)
             gravity = Gravity.CENTER
         }
         val tvId = TextView(this).apply {
             text = "学号: $studentId"
             textSize = 14f
-            setTextColor(0xFFAAAAAA.toInt())
+            val typedValue = android.util.TypedValue()
+            theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
+            setTextColor(typedValue.data)
             gravity = Gravity.CENTER
             setPadding(0, 4, 0, 24)
         }
@@ -140,7 +100,9 @@ class ProfileActivity : AppCompatActivity() {
             text = title
             textSize = 16f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(0xFF7C4DFF.toInt())
+            val typedValue = android.util.TypedValue()
+            theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+            setTextColor(typedValue.data)
             setPadding(0, 16, 0, 8)
         }
         layoutProfile.addView(tv)
@@ -155,13 +117,17 @@ class ProfileActivity : AppCompatActivity() {
         val tvLabel = TextView(this).apply {
             text = label
             textSize = 14f
-            setTextColor(0xFFAAAAAA.toInt())
+            val typedValue = android.util.TypedValue()
+            theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
+            setTextColor(typedValue.data)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.4f)
         }
         val tvValue = TextView(this).apply {
             text = displayValue
             textSize = 14f
-            setTextColor(0xFFFFFFFF.toInt())
+            val typedValue = android.util.TypedValue()
+            theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)
+            setTextColor(typedValue.data)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.6f)
         }
         row.addView(tvLabel)

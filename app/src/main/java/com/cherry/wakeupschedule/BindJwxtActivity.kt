@@ -1,6 +1,8 @@
 package com.cherry.wakeupschedule
 
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -31,6 +33,8 @@ class BindJwxtActivity : AppCompatActivity() {
         tvStatus = findViewById(R.id.tv_status)
         pbLoading = findViewById(R.id.pb_loading)
 
+        applyThemeBackgrounds()
+
         // 如果已绑定，预填用户名
         if (JwxtAccountManager.isBound()) {
             etUsername.setText(JwxtAccountManager.getUsername())
@@ -51,18 +55,52 @@ class BindJwxtActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyThemeBackgrounds() {
+        // 获取主题颜色
+        val surfaceVariant = TypedValue().let { tv ->
+            theme.resolveAttribute(com.google.android.material.R.attr.colorSurfaceVariant, tv, true)
+            tv.data
+        }
+        val outlineColor = TypedValue().let { tv ->
+            theme.resolveAttribute(com.google.android.material.R.attr.colorOutline, tv, true)
+            tv.data
+        }
+        val primaryColor = TypedValue().let { tv ->
+            theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, tv, true)
+            tv.data
+        }
+
+        // 输入框背景：圆角 + surfaceVariant 填充 + outline 描边
+        val density = resources.displayMetrics.density
+        etUsername.background = GradientDrawable().apply {
+            setColor(surfaceVariant)
+            cornerRadius = 8f * density
+            setStroke((1f * density).toInt(), outlineColor)
+        }
+        etPassword.background = GradientDrawable().apply {
+            setColor(surfaceVariant)
+            cornerRadius = 8f * density
+            setStroke((1f * density).toInt(), outlineColor)
+        }
+
+        // 按钮背景：primaryColor 填充 + 圆角
+        btnLogin.background = GradientDrawable().apply {
+            setColor(primaryColor)
+            cornerRadius = 8f * density
+        }
+    }
+
     private fun doLogin(username: String, password: String) {
         tvStatus.visibility = View.GONE
         pbLoading.visibility = View.VISIBLE
         btnLogin.isEnabled = false
 
         lifecycleScope.launch {
-            val result = JwxtAuthManager.testLogin(username, password)
+            val result = JwxtAuthManager.login(username, password)
             pbLoading.visibility = View.GONE
             btnLogin.isEnabled = true
 
             result.onSuccess {
-                JwxtAccountManager.saveCredentials(username, password)
                 Toast.makeText(this@BindJwxtActivity, "绑定成功！", Toast.LENGTH_SHORT).show()
                 finish()
             }.onFailure { e ->

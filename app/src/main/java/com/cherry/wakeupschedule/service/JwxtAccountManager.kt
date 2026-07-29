@@ -1,76 +1,72 @@
 package com.cherry.wakeupschedule.service
 
 import android.content.Context
-import android.content.SharedPreferences
+import com.cherry.wakeupschedule.model.AccountEntity
+import com.cherry.wakeupschedule.model.AppDatabase
 import com.google.gson.Gson
 import com.gxu.jwxt.model.StudentProfile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 /**
- * 教务系统账号凭证 + 个人信息本地管理器。
+ * 教务系统账号凭证 + 个人信息本地管理器（Room 存储 + 内存缓存）。
  */
 object JwxtAccountManager {
 
-    private const val PREFS_NAME = "jwxt_account"
-    private const val KEY_USERNAME = "username"
-    private const val KEY_PASSWORD = "password"
-    private const val KEY_IS_BOUND = "is_bound"
-    private const val KEY_PROFILE_JSON = "profile_json"
-    private const val KEY_PROFILE_USERNAME = "profile_username"
-
     private val gson = Gson()
-    private lateinit var prefs: SharedPreferences
+    private lateinit var dao: com.cherry.wakeupschedule.model.AccountDao
+
+    @Volatile
+    private var cached: AccountEntity? = null
 
     fun init(context: Context) {
-        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    }
-
-    fun isBound(): Boolean = prefs.getBoolean(KEY_IS_BOUND, false)
-    fun getUsername(): String = prefs.getString(KEY_USERNAME, "") ?: ""
-    fun getPassword(): String = prefs.getString(KEY_PASSWORD, "") ?: ""
-
-    fun saveCredentials(username: String, password: String) {
-        // 账号变了就清掉旧缓存
-        if (username != getUsername()) {
-            clearProfileCache()
+        dao = AppDatabase.getInstance(context).accountDao()
+        // 从 Room 加载缓存
+        runBlocking(Dispatchers.IO) {
+            cached = dao.getAccount() ?: AccountEntity()
         }
-        prefs.edit()
-            .putString(KEY_USERNAME, username)
-            .putString(KEY_PASSWORD, password)
-            .putBoolean(KEY_IS_BOUND, true)
-            .apply()
     }
 
-    fun clear() {
-        clearProfileCache()
-        prefs.edit()
-            .remove(KEY_USERNAME)
-            .remove(KEY_PASSWORD)
-            .putBoolean(KEY_IS_BOUND, false)
-            .apply()
-    }
+    // ── 同步读（内存缓存，线程安全） ──
 
-    // ── 个人信息缓存 ──
+    fun isBound(): Boolean = cached?.isBound == true
+    fun getUsername(): String = cached?.username ?: ""
+    fun getPassword(): String = cached?.password ?: ""
 
-    fun getCachedProfile(): StudentProfile? {
-        val json = prefs.getString(KEY_PROFILE_JSON, null) ?: return null
-        val cachedUser = prefs.getString(KEY_PROFILE_USERNAME, "")
-        if (cachedUser != getUsername()) return null // 账号变了，缓存失效
+    fun getProfile(): StudentProfile? {
+        val json = cached?.profileJson ?: return null
+        if (cached?.isBound != true) return null
         return try {
             gson.fromJson(json, StudentProfile::class.java)
         } catch (_: Exception) { null }
     }
 
-    fun saveProfileCache(profile: StudentProfile) {
-        prefs.edit()
-            .putString(KEY_PROFILE_JSON, gson.toJson(profile))
-            .putString(KEY_PROFILE_USERNAME, getUsername())
-            .apply()
+    // ── 写操作 ──
+
+    fun saveCredentials(username: String, password: String) {
+        val entity = (cached ?: AccountEntity()).copy(
+            username = username,
+            password = password,
+            isBound = true
+        )
+        cached = entity
+        runBlocking(Dispatchers.IO) { dao.saveAccount(entity) }
     }
 
-    private fun clearProfileCache() {
-        prefs.edit()
-            .remove(KEY_PROFILE_JSON)
-            .remove(KEY_PROFILE_USERNAME)
-            .apply()
+    fun saveProfile(profile: StudentProfile) {
+        val json = gson.toJson(profile)
+        val entity = (cached ?: AccountEntity()).copy(profileJson = json)
+        cached = entity
+        runBlocking(Dispatchers.IO) { dao.saveAccount(entity) }
+    }
+
+    fun clear() {
+        cached = (cached ?: AccountEntity()).copy(
+            username = "",
+            password = "",
+            isBound = false,
+            profileJson = null
+        )
+        runBlocking(Dispatchers.IO) { dao.clearAccount() }
     }
 }

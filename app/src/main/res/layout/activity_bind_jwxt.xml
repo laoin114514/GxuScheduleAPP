@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:background="#1E1E2E">
+    android:background="?attr/colorSurface">
 
     <TextView
         android:layout_width="match_parent"
@@ -12,7 +12,7 @@
         android:text="绑定教务系统"
         android:textSize="22sp"
         android:textStyle="bold"
-        android:textColor="@android:color/white"
+        android:textColor="?attr/colorOnSurface"
         android:layout_marginBottom="32dp" />
 
     <TextView
@@ -20,17 +20,16 @@
         android:layout_height="wrap_content"
         android:text="学号"
         android:textSize="14sp"
-        android:textColor="#AAAAAA"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginBottom="8dp" />
 
     <EditText
         android:id="@+id/et_username"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:background="@drawable/bg_input_field"
         android:hint="请输入学号"
-        android:textColorHint="#666666"
-        android:textColor="@android:color/white"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
+        android:textColor="?attr/colorOnSurface"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:inputType="text"
@@ -42,17 +41,16 @@
         android:layout_height="wrap_content"
         android:text="密码"
         android:textSize="14sp"
-        android:textColor="#AAAAAA"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginBottom="8dp" />
 
     <EditText
         android:id="@+id/et_password"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:background="@drawable/bg_input_field"
         android:hint="请输入教务系统密码"
-        android:textColorHint="#666666"
-        android:textColor="@android:color/white"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
+        android:textColor="?attr/colorOnSurface"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:inputType="textPassword"
@@ -65,8 +63,7 @@
         android:layout_height="48dp"
         android:text="登录"
         android:textSize="16sp"
-        android:textColor="@android:color/white"
-        android:background="@drawable/bg_button_primary"
+        android:textColor="?attr/colorOnPrimary"
         android:textAllCaps="false" />
 
     <TextView
@@ -75,7 +72,7 @@
         android:layout_height="wrap_content"
         android:text=""
         android:textSize="14sp"
-        android:textColor="#FF6B6B"
+        android:textColor="?attr/colorError"
         android:gravity="center"
         android:layout_marginTop="16dp"
         android:visibility="gone" />
