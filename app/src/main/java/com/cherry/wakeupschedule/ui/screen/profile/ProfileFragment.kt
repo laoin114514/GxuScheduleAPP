@@ -19,6 +19,7 @@ import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
+import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
@@ -82,9 +83,6 @@ class ProfileFragment : Fragment() {
             showWeekDialog()
         }
 
-        view.findViewById<View>(R.id.btn_fetch_semester_info).setOnClickListener {
-            fetchSemesterInfo()
-        }
 
         view.findViewById<View>(R.id.item_theme_palette).setOnClickListener {
             val names = ThemeManager.paletteNames().toTypedArray()
@@ -137,106 +135,24 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showSemesterDialog() {
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
-        val currentAcademicStart = if (currentMonth >= 9) currentYear else currentYear - 1
+        val semesters = SemesterManager.getAll()
+        if (semesters.isEmpty()) {
+            Toast.makeText(requireContext(), "请先绑定教务账号", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        val academicYears = (-1 until 9).map { offset ->
-            val start = currentAcademicStart - offset
-            "${start}-${start + 1}学年"
+        val currentIndex = settingsManager.getCurrentSemesterIndex()
+        val labels = semesters.map { s ->
+            val mark = if (s.sortOrder == currentIndex) "  ← 当前" else ""
+            "${s.label}  (${s.academicYear}学年 ${s.termName})$mark"
         }.toTypedArray()
 
         AlertDialog.Builder(requireContext())
-            .setTitle("选择学年")
-            .setItems(academicYears) { _, which ->
-                showTermPicker(academicYears[which])
-            }
-            .setPositiveButton("管理学期") { _, _ -> showManageSemestersDialog() }
-            .setNegativeButton("取消", null)
-            .show()
-    }
-
-    private fun showTermPicker(academicYear: String) {
-        val terms = arrayOf("第一学期", "第二学期")
-        AlertDialog.Builder(requireContext())
-            .setTitle("选择学期 — $academicYear")
-            .setItems(terms) { _, which ->
-                val semester = "$academicYear ${terms[which]}"
-                settingsManager.setCurrentSemester(semester)
-                settingsManager.addCustomSemester(semester)
+            .setTitle("选择当前学期")
+            .setSingleChoiceItems(labels, currentIndex.coerceAtLeast(0)) { dialog, which ->
+                settingsManager.setCurrentSemesterIndex(which)
                 updateDisplay()
-                Toast.makeText(requireContext(), "已切换至: $semester", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("返回", null)
-            .show()
-    }
-
-    private fun showManageSemestersDialog() {
-        val semesters = settingsManager.getCustomSemesters().toMutableList()
-        val currentSemester = settingsManager.getCurrentSemester()
-        if (semesters.isEmpty()) {
-            Toast.makeText(requireContext(), "没有可管理的学期", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val displaySemesters = semesters.map {
-            if (it == currentSemester) "$it (当前)" else it
-        }.toMutableList()
-
-        val listView = android.widget.ListView(requireContext())
-        listView.adapter = android.widget.ArrayAdapter(requireContext(),
-            android.R.layout.simple_list_item_1, displaySemesters)
-
-        val dialog = AlertDialog.Builder(requireContext())
-            .setTitle("管理学期 (长按删除)")
-            .setView(listView)
-            .setPositiveButton("新增") { _, _ -> showAddSemesterDialog() }
-            .setNegativeButton("关闭", null)
-            .create()
-
-        listView.setOnItemClickListener { _, _, position, _ ->
-            settingsManager.setCurrentSemester(semesters[position])
-            updateDisplay()
-            Toast.makeText(requireContext(), "已切换到: ${semesters[position]}", Toast.LENGTH_SHORT).show()
-            dialog.dismiss()
-        }
-        listView.setOnItemLongClickListener { _, _, position, _ ->
-            val toDelete = semesters[position]
-            if (toDelete == currentSemester) {
-                Toast.makeText(requireContext(), "不能删除当前正在使用的学期", Toast.LENGTH_SHORT).show()
-                return@setOnItemLongClickListener true
-            }
-            AlertDialog.Builder(requireContext())
-                .setTitle("删除学期")
-                .setMessage("确定要删除学期 \"$toDelete\" 吗？")
-                .setPositiveButton("删除") { _, _ ->
-                    settingsManager.removeCustomSemester(toDelete)
-                    updateDisplay()
-                    dialog.dismiss()
-                }
-                .setNegativeButton("取消", null)
-                .show()
-            true
-        }
-        dialog.show()
-    }
-
-    private fun showAddSemesterDialog() {
-        val editView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.dialog_edit_text, null)
-        val editText = editView.findViewById<android.widget.EditText>(R.id.et_input)
-        editText.hint = "例如: 2024-2025学年 第一学期"
-
-        AlertDialog.Builder(requireContext())
-            .setTitle("新增学期")
-            .setView(editView)
-            .setPositiveButton("添加") { _, _ ->
-                val name = editText.text.toString().trim()
-                if (name.isNotEmpty()) {
-                    settingsManager.addCustomSemester(name)
-                    settingsManager.setCurrentSemester(name)
-                    updateDisplay()
-                    Toast.makeText(requireContext(), "已添加: $name", Toast.LENGTH_SHORT).show()
-                }
+                dialog.dismiss()
             }
             .setNegativeButton("取消", null)
             .show()
@@ -301,13 +217,18 @@ class ProfileFragment : Fragment() {
 
     private fun updateDisplay() {
         val tv = view?.findViewById<TextView>(R.id.tv_semester_value)
-        tv?.text = settingsManager.getCurrentSemester()
+        val current = SemesterManager.getCurrent()
+        if (current != null) {
+            tv?.text = "${current.label} · ${current.academicYear}学年 ${current.termName}"
+        } else {
+            tv?.text = "未设置"
+        }
+
         val tvWeek = view?.findViewById<TextView>(R.id.tv_week_value)
-        // 自动计算当前周，而不是使用存储的默认值
         val startMs = settingsManager.getSemesterStartDate()
         val currentWeek = if (startMs > 0) {
             val diffDays = ((System.currentTimeMillis() - startMs) / 86400000L).toInt()
-            (diffDays / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
+            (diffDays / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks().coerceAtLeast(1))
         } else {
             settingsManager.getDefaultWeek()
         }
@@ -316,7 +237,7 @@ class ProfileFragment : Fragment() {
         val totalWeeks = settingsManager.getTotalWeeks()
         val tvRange = view?.findViewById<TextView>(R.id.tv_semester_date_range)
         val tvWeeks = view?.findViewById<TextView>(R.id.tv_total_weeks)
-        if (startMs > 0) {
+        if (startMs > 0 && totalWeeks > 0) {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val endCal = Calendar.getInstance().apply {
                 timeInMillis = startMs
@@ -325,90 +246,8 @@ class ProfileFragment : Fragment() {
             tvRange?.text = "${sdf.format(startMs)} ~ ${sdf.format(endCal.time)}"
             tvWeeks?.text = "${totalWeeks}周"
         } else {
-            tvRange?.text = "未获取"
-            tvWeeks?.text = "20周"
-        }
-    }
-
-    private fun fetchSemesterInfo() {
-        if (!JwxtAuthManager.isBound()) {
-            Toast.makeText(requireContext(), "请先绑定教务账号", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val btn = view?.findViewById<View>(R.id.btn_fetch_semester_info)
-        btn?.isEnabled = false
-
-        val appCtx = requireContext().applicationContext
-
-        CoroutineScope(Dispatchers.IO).launch {
-            val selectedSemester = settingsManager.getCurrentSemester()
-            val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
-            val term = Term.fromCode(termCode) ?: Term.SPRING
-
-            // ── 1. personal() API：获取个人课表（最可靠，只需学年+学期） ──
-            val personalResult = JwxtAuthManager.doWithAuth { client ->
-                client.schedule().personal(year, term)
-            }
-
-            var courseCount = 0
-            personalResult.onSuccess { scheduleResp ->
-                val (courses, _) = JwxtImportService.convertScheduleResponse(scheduleResp)
-                if (courses.isNotEmpty()) {
-                    CourseDataManager.getInstance(appCtx).replaceAllCourses(courses)
-                    courseCount = courses.size
-                }
-            }
-
-            // ── 2. classDetail() API：获取学期日期（需班级信息，可选） ──
-            val cached = JwxtAccountManager.getProfile()
-            val classId = cached?.className ?: ""
-            val gradeCode = cached?.grade ?: ""
-            val majorCode = cached?.major ?: ""
-
-            var semesterUpdated = false
-            if (classId.isNotEmpty() && gradeCode.isNotEmpty()) {
-                val classResult = JwxtAuthManager.doWithAuth { client ->
-                    client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
-                }
-                classResult.onSuccess { resp ->
-                    val startStr = resp.semesterStartDate
-                    val weeks = resp.weeks?.size ?: 0
-                    if (startStr != null && weeks > 0) {
-                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        val startMs = sdf.parse(startStr)?.time ?: 0
-                        settingsManager.setSemesterStartDate(startMs)
-                        settingsManager.setTotalWeeks(weeks)
-                        semesterUpdated = true
-                    }
-                }
-            }
-
-            // ── 3. 注册闹钟 + 更新 UI ──
-            if (courseCount > 0) {
-                App.instance.registerAllCourseNotifications()
-            }
-
-            withContext(Dispatchers.Main) {
-                btn?.isEnabled = true
-                updateDisplay()
-                ScheduleWidgetUpdateService.triggerUpdate(requireContext())
-
-                when {
-                    courseCount > 0 && semesterUpdated ->
-                        Toast.makeText(requireContext(),
-                            "已导入 ${courseCount} 门课程，学期信息已更新", Toast.LENGTH_SHORT).show()
-                    courseCount > 0 ->
-                        Toast.makeText(requireContext(),
-                            "已导入 ${courseCount} 门课程（请手动设置学期开始日期）", Toast.LENGTH_SHORT).show()
-                    personalResult.isFailure ->
-                        Toast.makeText(requireContext(),
-                            "获取失败: ${personalResult.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
-                    else ->
-                        Toast.makeText(requireContext(),
-                            "未获取到课程数据，请检查学期设置是否正确", Toast.LENGTH_SHORT).show()
-                }
-            }
+            tvRange?.text = "刷新课表后获取"
+            tvWeeks?.text = "—"
         }
     }
 
