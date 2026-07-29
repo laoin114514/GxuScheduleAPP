@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:background="#CCFFFFFF"
+    android:clickable="true"
+    android:focusable="true">
+
+    <ImageView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:src="@drawable/ic_empty"
+        android:alpha="0.5" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="尚未绑定教务账号"
+        android:textSize="18sp"
+        android:textColor="@android:color/darker_gray" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="绑定后即可查看课表"
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:alpha="0.7" />
+
+    <Button
+        android:id="@+id/btn_bind_now"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="前往绑定" />
+</LinearLayout>
