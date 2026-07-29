@@ -12,12 +12,7 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         Handler(Looper.getMainLooper()).postDelayed({
-            val targetActivity = if (IntroActivity.isFirstLaunch(this)) {
-                IntroActivity::class.java
-            } else {
-                MainActivity::class.java
-            }
-            val intent = Intent(this, targetActivity)
+            val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
         }, 1000)

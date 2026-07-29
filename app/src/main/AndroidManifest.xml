@@ -51,7 +51,6 @@
         <activity android:name=".TimeTableEditActivity" />
         <activity android:name=".ApplyAdapterActivity" />
         <activity android:name=".PermissionGuideActivity" />
-        <activity android:name=".IntroActivity" />
         <activity android:name=".AboutActivity" />
         <activity android:name=".CourseOverviewActivity" />
 
