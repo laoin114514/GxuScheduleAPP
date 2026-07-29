@@ -1,23 +1,25 @@
 package com.cherry.wakeupschedule
 
+import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.cherry.wakeupschedule.service.JwxtAccountManager
-import com.cherry.wakeupschedule.service.JwxtAuthManager
+import com.cherry.wakeupschedule.service.AccountRepository
 import com.gxu.jwxt.model.StudentProfile
 import kotlinx.coroutines.launch
 
 class ProfileActivity : AppCompatActivity() {
+
+    private val accountRepo by lazy { AccountRepository.getInstance(this) }
 
     private lateinit var btnRefresh: Button
     private lateinit var pbLoading: ProgressBar
@@ -35,85 +37,117 @@ class ProfileActivity : AppCompatActivity() {
         layoutProfile = findViewById(R.id.layout_profile)
         tvError = findViewById(R.id.tv_error)
 
-        // 优先显示缓存
-        val cached = JwxtAccountManager.getCachedProfile()
-        if (cached != null) {
-            displayProfile(cached)
-            scrollProfile.visibility = View.VISIBLE
-            // 后台静默刷新
-            fetchProfile(showLoading = false)
-        } else {
-            fetchProfile(showLoading = true)
-        }
-
         btnRefresh.setOnClickListener {
-            fetchProfile(showLoading = true)
-        }
-    }
-
-    private fun fetchProfile(showLoading: Boolean) {
-        if (showLoading) {
             pbLoading.visibility = View.VISIBLE
-            tvError.visibility = View.GONE
-        }
-
-        lifecycleScope.launch {
-            val result = JwxtAuthManager.doWithAuth { client ->
-                client.profile().profile()
-            }
-
-            pbLoading.visibility = View.GONE
-
-            result.onSuccess { profile ->
-                JwxtAccountManager.saveProfileCache(profile)
-                displayProfile(profile)
-                scrollProfile.visibility = View.VISIBLE
-            }.onFailure { e ->
-                val cached = JwxtAccountManager.getCachedProfile()
-                if (cached != null) {
-                    // 有缓存就不报错
-                    Toast.makeText(this@ProfileActivity,
-                        "刷新失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                } else {
-                    tvError.text = "获取失败: ${e.message}"
-                    tvError.visibility = View.VISIBLE
+            lifecycleScope.launch {
+                val accountId = accountRepo.getActiveAccountId()
+                if (accountId > 0) {
+                    val profile = accountRepo.getProfile(accountId)
+                    if (profile != null) {
+                        showProfile(profile)
+                    } else {
+                        showEmptyState()
+                    }
                 }
+                pbLoading.visibility = View.GONE
             }
         }
     }
 
-    private fun displayProfile(p: StudentProfile) {
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            val accountId = accountRepo.getActiveAccountId()
+            if (accountId > 0) {
+                // 有活跃账号 → 展示缓存的个人信息（不刷新）
+                val profile = accountRepo.getProfile(accountId)
+                if (profile != null) {
+                    showProfile(profile)
+                } else {
+                    showEmptyState()
+                }
+            } else {
+                // 未绑定 → 蒙版 + 跳转按钮
+                showUnboundMask()
+            }
+        }
+    }
+
+    private fun showProfile(profile: StudentProfile) {
+        pbLoading.visibility = View.GONE
+        tvError.visibility = View.GONE
+        removeUnboundMask()
         layoutProfile.removeAllViews()
 
-        addHeader("${p.name ?: "未知"}", "${p.studentId ?: ""}")
+        addHeader(profile.getName() ?: "未知", profile.getStudentId() ?: "")
 
         addSection("基本信息")
-        addRow("性别", p.gender)
-        addRow("出生日期", p.birthDate)
-        addRow("民族", p.ethnicity)
-        addRow("政治面貌", p.politicalStatus)
-        addRow("身份证号", p.idNumber?.let { maskIdCard(it) })
+        addRow("性别", profile.getGender())
+        addRow("出生日期", profile.getBirthDate())
+        addRow("民族", profile.getEthnicity())
+        addRow("政治面貌", profile.getPoliticalStatus())
+        addRow("身份证号", profile.getIdNumber()?.let { maskIdCard(it) })
 
         addSection("学籍信息")
-        addRow("学院", p.college)
-        addRow("专业", p.major)
-        addRow("班级", p.className)
-        addRow("年级", p.grade)
-        addRow("培养层次", p.eduLevel)
-        addRow("培养方式", p.eduMode)
-        addRow("学制", p.schoolingLength)
-        addRow("学籍状态", p.status)
-        addRow("是否在校", p.isAtSchool)
+        addRow("学院", profile.getCollege())
+        addRow("专业", profile.getMajor())
+        addRow("班级", profile.getClassName())
+        addRow("年级", profile.getGrade())
+        addRow("培养层次", profile.getEduLevel())
+        addRow("培养方式", profile.getEduMode())
+        addRow("学制", profile.getSchoolingLength())
+        addRow("学籍状态", profile.getStatus())
+        addRow("是否在校", profile.getIsAtSchool())
 
         addSection("入学信息")
-        addRow("入学日期", p.enrollDate)
-        addRow("招生年度", p.admitYear)
-        addRow("招生专业", p.admitMajor)
-        addRow("招生学院", p.admitCollege)
-        addRow("考生号", p.examNumber)
-        addRow("毕业中学", p.highSchool)
-        addRow("入学总分", p.entranceScore)
-        addRow("生源地", p.hometown)
+        addRow("入学日期", profile.getEnrollDate())
+        addRow("招生年度", profile.getAdmitYear())
+        addRow("招生专业", profile.getAdmitMajor())
+        addRow("招生学院", profile.getAdmitCollege())
+        addRow("考生号", profile.getExamNumber())
+        addRow("毕业中学", profile.getHighSchool())
+        addRow("入学总分", profile.getEntranceScore())
+        addRow("生源地", profile.getHometown())
+
+        scrollProfile.visibility = View.VISIBLE
+    }
+
+    private fun showEmptyState() {
+        pbLoading.visibility = View.GONE
+        scrollProfile.visibility = View.GONE
+        removeUnboundMask()
+        tvError.text = "暂无个人信息"
+        tvError.visibility = View.VISIBLE
+    }
+
+    private fun showUnboundMask() {
+        pbLoading.visibility = View.GONE
+        scrollProfile.visibility = View.GONE
+        tvError.visibility = View.GONE
+
+        val rootLayout = scrollProfile.parent as? ViewGroup ?: return
+
+        // 避免重复添加蒙版
+        val existingMask = rootLayout.findViewWithTag<View>("unbound_mask")
+        if (existingMask != null) {
+            existingMask.visibility = View.VISIBLE
+            return
+        }
+
+        val mask = layoutInflater.inflate(R.layout.layout_unbound_mask, rootLayout, false)
+        mask.tag = "unbound_mask"
+        mask.findViewById<Button>(R.id.btn_bind_now).setOnClickListener {
+            startActivity(Intent(this, BindJwxtActivity::class.java))
+        }
+        rootLayout.addView(mask)
+    }
+
+    private fun removeUnboundMask() {
+        val rootLayout = scrollProfile.parent as? ViewGroup ?: return
+        val mask = rootLayout.findViewWithTag<View>("unbound_mask")
+        if (mask != null) {
+            mask.visibility = View.GONE
+        }
     }
 
     private fun addHeader(name: String, studentId: String) {
