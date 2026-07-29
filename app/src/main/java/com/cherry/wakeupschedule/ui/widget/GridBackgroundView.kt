@@ -63,6 +63,8 @@ class GridBackgroundView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        // 透明色时跳过绘制（隐藏虚线网格）
+        if (paint.alpha == 0) return
         if (rowCount <= 0 || columnCount <= 0) return
 
         val w = width.toFloat()

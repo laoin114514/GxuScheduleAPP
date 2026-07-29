@@ -82,11 +82,7 @@ class WeekPagerAdapter(
             if (!axisBuilt || builtNodes != maxNodes) {
                 gridBg.rowCount = maxNodes
                 gridBg.columnCount = 7
-                val typedValue = android.util.TypedValue()
-                ctx.theme.resolveAttribute(
-                    com.google.android.material.R.attr.colorOutline, typedValue, true
-                )
-                gridBg.gridColor = ColorUtils.setAlphaComponent(typedValue.data, 60)
+                gridBg.gridColor = android.graphics.Color.TRANSPARENT
             }
 
             // ── 时间轴（只构建一次或节点数变化时重建） ──
