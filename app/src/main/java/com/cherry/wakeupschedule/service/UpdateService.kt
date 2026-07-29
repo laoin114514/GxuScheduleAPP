@@ -8,8 +8,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.webkit.WebView
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import com.cherry.wakeupschedule.WebViewActivity
+import com.cherry.wakeupschedule.ui.component.StyledDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -327,9 +327,9 @@ class UpdateService(private val context: Context) {
         val htmlContent = markdownToHtml(notes)
         webViewNotes.loadDataWithBaseURL(null, htmlContent, "text/html; charset=UTF-8", "UTF-8", null)
         
-        val dialog = AlertDialog.Builder(context)
-            .setView(dialogView)
-            .create()
+        val dialog = StyledDialog.Builder(context)
+            .view(dialogView)
+            .show()
         
         dialogView.findViewById<TextView>(com.cherry.wakeupschedule.R.id.btn_download_original).setOnClickListener {
             openDownloadPage(url)

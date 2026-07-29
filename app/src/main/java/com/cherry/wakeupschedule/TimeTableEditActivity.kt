@@ -6,12 +6,12 @@ import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.cherry.wakeupschedule.databinding.ActivityTimeTableEditBinding
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.component.SelectOption
 import com.cherry.wakeupschedule.ui.component.SelectionDialog
+import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -173,16 +173,16 @@ class TimeTableEditActivity : AppCompatActivity() {
     }
 
     private fun showResetConfirmDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("确认重置")
-            .setMessage("确定要重置为默认时间表吗？")
-            .setPositiveButton("重置") { _, _ ->
+        StyledDialog.Builder(this)
+            .title("确认重置")
+            .message("确定要重置为默认时间表吗？")
+            .positiveButton("重置") {
                 timeTableManager.resetToDefault()
                 Toast.makeText(this, "已重置为默认时间表", Toast.LENGTH_SHORT).show()
                 loadAndDisplayTimeSlots()
                 App.instance.registerAllCourseNotifications()
             }
-            .setNegativeButton("取消", null)
+            .negativeButton("取消")
             .show()
     }
 

@@ -18,7 +18,6 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.cherry.wakeupschedule.BuildConfig
 import androidx.core.app.ActivityCompat
@@ -31,6 +30,7 @@ import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import com.cherry.wakeupschedule.ui.component.SelectOption
 import com.cherry.wakeupschedule.ui.component.SelectionDialog
+import com.cherry.wakeupschedule.ui.component.StyledDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -179,14 +179,14 @@ class SettingsActivity : AppCompatActivity() {
         
         btnClearData.setOnClickListener {
             // 显示二次确认对话框
-            AlertDialog.Builder(this)
-                .setTitle("确认清除数据")
-                .setMessage("确定要清除所有课程数据吗？此操作不可恢复。")
-                .setPositiveButton("确定清除") { _, _ ->
+            StyledDialog.Builder(this)
+                .title("确认清除数据")
+                .message("确定要清除所有课程数据吗？此操作不可恢复。")
+                .positiveButton("确定清除") {
                     viewModel.clearAllCourses()
                     Toast.makeText(this, "所有课程数据已清除", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("取消", null)
+                .negativeButton("取消")
                 .show()
         }
         
@@ -266,31 +266,28 @@ class SettingsActivity : AppCompatActivity() {
             message.appendLine("第${slot.node}节: ${slot.startTime}-${slot.endTime}")
         }
 
-        AlertDialog.Builder(this)
-            .setTitle("时间表设置")
-            .setMessage(message.toString())
-            .setItems(arrayOf("编辑时间段", "设置每天节数", "重置为默认")) { _, which ->
+        StyledDialog.Builder(this)
+            .title("时间表设置")
+            .message(message.toString())
+            .items(arrayOf("编辑时间段", "设置每天节数", "重置为默认")) { which ->
                 when (which) {
-                    0 -> {
-                        // 跳转到新的时间表编辑界面
-                        startActivity(Intent(this, TimeTableEditActivity::class.java))
-                    }
+                    0 -> startActivity(Intent(this, TimeTableEditActivity::class.java))
                     1 -> showMaxNodesDialog()
                     2 -> {
-                        AlertDialog.Builder(this)
-                            .setTitle("确认重置")
-                            .setMessage("确定要重置为默认时间表吗？")
-                            .setPositiveButton("确定") { _, _ ->
-                        timeTableManager.resetToDefault()
-                        App.instance.registerAllCourseNotifications()
-                        Toast.makeText(this, "已重置为默认时间表", Toast.LENGTH_SHORT).show()
-                    }
-                            .setNegativeButton("取消", null)
+                        StyledDialog.Builder(this)
+                            .title("确认重置")
+                            .message("确定要重置为默认时间表吗？")
+                            .positiveButton("确定") {
+                                timeTableManager.resetToDefault()
+                                App.instance.registerAllCourseNotifications()
+                                Toast.makeText(this, "已重置为默认时间表", Toast.LENGTH_SHORT).show()
+                            }
+                            .negativeButton("取消")
                             .show()
                     }
                 }
             }
-            .setNegativeButton("关闭", null)
+            .negativeButton("关闭")
             .show()
     }
 
@@ -298,15 +295,15 @@ class SettingsActivity : AppCompatActivity() {
         val timeSlots = timeTableManager.getTimeSlots().sortedBy { it.node }
         val slotStrings = timeSlots.map { "第${it.node}节: ${it.startTime}-${it.endTime}" }.toTypedArray()
 
-        AlertDialog.Builder(this)
-            .setTitle("编辑时间段 (点击编辑)")
-            .setItems(slotStrings) { _, which ->
+        StyledDialog.Builder(this)
+            .title("编辑时间段 (点击编辑)")
+            .items(slotStrings) { which ->
                 showEditTimeSlotDialog(timeSlots[which])
             }
-            .setPositiveButton("添加新节次") { _, _ ->
+            .positiveButton("添加新节次") {
                 showAddTimeSlotDialog()
             }
-            .setNegativeButton("关闭", null)
+            .negativeButton("关闭")
             .show()
     }
 
@@ -320,26 +317,24 @@ class SettingsActivity : AppCompatActivity() {
         etStartTime.setText(timeSlot.startTime)
         etEndTime.setText(timeSlot.endTime)
 
-        AlertDialog.Builder(this)
-            .setTitle("编辑第${timeSlot.node}节时间段")
-            .setView(view)
-            .setPositiveButton("保存") { _, _ ->
+        StyledDialog.Builder(this)
+            .title("编辑第${timeSlot.node}节时间段")
+            .view(view)
+            .positiveButton("保存") {
                 val node = etNode.text.toString().toIntOrNull()
                 val startTime = etStartTime.text.toString().trim()
                 val endTime = etEndTime.text.toString().trim()
 
                 if (node == null || node <= 0) {
                     Toast.makeText(this, "节次必须为正整数", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@positiveButton
                 }
 
-                // 验证时间格式
                 if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime)) {
                     Toast.makeText(this, "时间格式不正确，请使用 HH:MM 格式", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@positiveButton
                 }
 
-                // 如果节次改变了，先删除旧的，再添加新的
                 if (node != timeSlot.node) {
                     timeTableManager.removeTimeSlot(timeSlot.node)
                 }
@@ -347,22 +342,21 @@ class SettingsActivity : AppCompatActivity() {
                 App.instance.registerAllCourseNotifications()
                 Toast.makeText(this, "第${node}节时间段已更新", Toast.LENGTH_SHORT).show()
 
-                // 重新打开编辑器显示更新后的列表
                 showTimeSlotsEditor()
             }
-            .setNegativeButton("删除") { _, _ ->
-                AlertDialog.Builder(this)
-                    .setTitle("确认删除")
-                    .setMessage("确定要删除第${timeSlot.node}节吗？")
-                    .setPositiveButton("删除") { _, _ ->
-                    timeTableManager.removeTimeSlot(timeSlot.node)
-                    App.instance.registerAllCourseNotifications()
-                    Toast.makeText(this, "第${timeSlot.node}节已删除", Toast.LENGTH_SHORT).show()
-                }
-                    .setNegativeButton("取消", null)
+            .negativeButton("删除") {
+                StyledDialog.Builder(this)
+                    .title("确认删除")
+                    .message("确定要删除第${timeSlot.node}节吗？")
+                    .positiveButton("删除") {
+                        timeTableManager.removeTimeSlot(timeSlot.node)
+                        App.instance.registerAllCourseNotifications()
+                        Toast.makeText(this, "第${timeSlot.node}节已删除", Toast.LENGTH_SHORT).show()
+                    }
+                    .negativeButton("取消")
                     .show()
             }
-            .setNeutralButton("取消", null)
+            .neutralButton("取消")
             .show()
     }
 
@@ -377,43 +371,39 @@ class SettingsActivity : AppCompatActivity() {
         val etStartTime = view.findViewById<android.widget.EditText>(R.id.et_start_time)
         val etEndTime = view.findViewById<android.widget.EditText>(R.id.et_end_time)
 
-        // 自动填充下一个节次
         val maxNode = timeTableManager.getTimeSlots().maxOfOrNull { it.node } ?: 0
         val nextNode = maxNode + 1
         etNode.setText(nextNode.toString())
 
-        // 根据节次自动填充默认时间
         val defaultTimeSlot = TimeTableManager.getTimeSlot(nextNode)
         etStartTime.setText(defaultTimeSlot?.startTime ?: "08:00")
         etEndTime.setText(defaultTimeSlot?.endTime ?: "08:45")
 
-        AlertDialog.Builder(this)
-            .setTitle("添加新节次")
-            .setView(view)
-            .setPositiveButton("添加") { _, _ ->
+        StyledDialog.Builder(this)
+            .title("添加新节次")
+            .view(view)
+            .positiveButton("添加") {
                 val node = etNode.text.toString().toIntOrNull()
                 val startTime = etStartTime.text.toString().trim()
                 val endTime = etEndTime.text.toString().trim()
 
                 if (node == null || node <= 0) {
                     Toast.makeText(this, "节次必须为正整数", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@positiveButton
                 }
 
-                // 验证时间格式
                 if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime)) {
                     Toast.makeText(this, "时间格式不正确，请使用 HH:MM 格式", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@positiveButton
                 }
 
                 timeTableManager.addTimeSlot(node, startTime, endTime)
-            App.instance.registerAllCourseNotifications()
-            Toast.makeText(this, "第${node}节时间段已添加", Toast.LENGTH_SHORT).show()
+                App.instance.registerAllCourseNotifications()
+                Toast.makeText(this, "第${node}节时间段已添加", Toast.LENGTH_SHORT).show()
 
-                // 重新打开编辑器显示更新后的列表
                 showTimeSlotsEditor()
             }
-            .setNegativeButton("取消", null)
+            .negativeButton("取消")
             .show()
     }
 
@@ -632,17 +622,15 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun showBackgroundDialog() {
-        val options = arrayOf("颜色背景", "图片背景")
-
-        AlertDialog.Builder(this)
-            .setTitle("选择应用背景")
-            .setItems(options) { _, which ->
+        StyledDialog.Builder(this)
+            .title("选择应用背景")
+            .items(arrayOf("颜色背景", "图片背景")) { which ->
                 when (which) {
                     0 -> showBackgroundThemePicker()
                     1 -> imagePickerLauncher.launch("image/*")
                 }
             }
-            .setNegativeButton("取消", null)
+            .negativeButton("取消")
             .show()
     }
 
@@ -697,56 +685,42 @@ class SettingsActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_background_preview, null)
         val imageView = dialogView.findViewById<ImageView>(R.id.iv_preview)
 
-        // 加载图片
         val bitmap = BitmapFactory.decodeFile(imagePath)
         imageView.setImageBitmap(bitmap)
 
-        AlertDialog.Builder(this)
-            .setTitle("背景预览")
-            .setView(dialogView)
-            .setPositiveButton("应用") { _, _ ->
+        StyledDialog.Builder(this)
+            .title("背景预览")
+            .view(dialogView)
+            .positiveButton("应用") {
                 applyBackgroundSettings()
                 Toast.makeText(this, "背景设置已更新", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("重新选择") { _, _ ->
-                // 删除已保存的图片
+            .negativeButton("重新选择") {
                 File(imagePath).delete()
                 settingsManager.setCustomBackgroundPath("")
                 imagePickerLauncher.launch("image/*")
             }
-            .setNeutralButton("取消") { _, _ ->
-                // 删除已保存的图片
+            .neutralButton("取消") {
                 File(imagePath).delete()
                 settingsManager.setCustomBackgroundPath("")
             }
-            .setCancelable(false)
             .show()
     }
 
     private fun showSolidColorPicker() {
-        val colors = arrayOf(
-            "白色" to android.graphics.Color.WHITE,
-            "浅灰" to android.graphics.Color.parseColor("#F5F5F5"),
-            "浅蓝" to android.graphics.Color.parseColor("#E3F2FD"),
-            "浅绿" to android.graphics.Color.parseColor("#E8F5E9"),
-            "浅黄" to android.graphics.Color.parseColor("#FFFDE7"),
-            "浅粉" to android.graphics.Color.parseColor("#FCE4EC"),
-            "浅紫" to android.graphics.Color.parseColor("#F3E5F5"),
-            "米色" to android.graphics.Color.parseColor("#FFF8E1"),
-            "天蓝" to android.graphics.Color.parseColor("#E0F7FA"),
-            "薄荷绿" to android.graphics.Color.parseColor("#E0F2F1")
+        val colorNames = arrayOf(
+            "白色", "浅灰", "浅蓝", "浅绿", "浅黄",
+            "浅粉", "浅紫", "米色", "天蓝", "薄荷绿"
         )
 
-        val colorNames = colors.map { it.first }.toTypedArray()
-
-        AlertDialog.Builder(this)
-            .setTitle("选择背景颜色")
-            .setItems(colorNames) { _, which ->
+        StyledDialog.Builder(this)
+            .title("选择背景颜色")
+            .items(colorNames) { which ->
                 settingsManager.setCustomBackgroundPath("")
                 applyBackgroundSettings()
-                Toast.makeText(this, "已设置为${colors[which].first}背景", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "已设置为${colorNames[which]}背景", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("取消", null)
+            .negativeButton("取消")
             .show()
     }
     
@@ -757,16 +731,16 @@ class SettingsActivity : AppCompatActivity() {
             "非本周课程透明度 (${(settingsManager.getNonCurrentWeekAlpha() * 100).toInt()}%)"
         )
 
-        AlertDialog.Builder(this)
-            .setTitle("外观设置")
-            .setItems(options) { _, which ->
+        StyledDialog.Builder(this)
+            .title("外观设置")
+            .items(options) { which ->
                 when (which) {
                     0 -> showCourseCardAlphaDialog()
                     1 -> toggleShowNonCurrentWeekCourses()
                     2 -> showNonCurrentWeekAlphaDialog()
                 }
             }
-            .setNegativeButton("关闭", null)
+            .negativeButton("关闭")
             .show()
     }
 
@@ -813,11 +787,9 @@ class SettingsActivity : AppCompatActivity() {
     }
     
     private fun showAlarmSettingsDialog() {
-        val alarmOptions = arrayOf("开启课前提醒", "关闭课前提醒", "电池优化设置")
-
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("课前提醒设置")
-            .setItems(alarmOptions) { _, which ->
+        StyledDialog.Builder(this)
+            .title("课前提醒设置")
+            .items(arrayOf("开启课前提醒", "关闭课前提醒", "电池优化设置")) { which ->
                 when (which) {
                     0 -> {
                         settingsManager.setAlarmEnabled(true)
@@ -832,23 +804,19 @@ class SettingsActivity : AppCompatActivity() {
                     2 -> showBatteryOptimizationDialog()
                 }
             }
-            .setPositiveButton("确定", null)
-            .setNegativeButton("取消", null)
+            .positiveButton("确定")
+            .negativeButton("取消")
             .show()
     }
 
     private fun showBatteryOptimizationDialog() {
-        val options = arrayOf("请求关闭电池优化", "查看详细设置教程", "打开系统设置")
+        val status = if (com.cherry.wakeupschedule.service.BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this))
+            "已关闭电池优化 ✓" else "未关闭电池优化（可能影响提醒）"
 
-        AlertDialog.Builder(this)
-            .setTitle("电池优化设置")
-            .setMessage("为了确保课前提醒稳定推送，建议关闭电池优化。\n\n当前状态：${
-                if (com.cherry.wakeupschedule.service.BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this))
-                    "已关闭电池优化 ✓"
-                else
-                    "未关闭电池优化（可能影响提醒）"
-            }")
-            .setItems(options) { _, which ->
+        StyledDialog.Builder(this)
+            .title("电池优化设置")
+            .message("为了确保课前提醒稳定推送，建议关闭电池优化。\n\n当前状态：$status")
+            .items(arrayOf("请求关闭电池优化", "查看详细设置教程", "打开系统设置")) { which ->
                 when (which) {
                     0 -> {
                         if (!com.cherry.wakeupschedule.service.BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(this)) {
@@ -859,23 +827,23 @@ class SettingsActivity : AppCompatActivity() {
                     2 -> com.cherry.wakeupschedule.service.BatteryOptimizationHelper.openBatteryOptimizationSettings(this)
                 }
             }
-            .setPositiveButton("确定", null)
+            .positiveButton("确定")
             .show()
     }
 
     private fun showBatteryOptimizationInstructions() {
         val instructions = com.cherry.wakeupschedule.service.BatteryOptimizationHelper.getDetailedInstructions(this)
 
-        AlertDialog.Builder(this)
-            .setTitle("设置教程")
-            .setMessage(instructions)
-            .setPositiveButton("打开设置") { _, _ ->
+        StyledDialog.Builder(this)
+            .title("设置教程")
+            .message(instructions)
+            .positiveButton("打开设置") {
                 com.cherry.wakeupschedule.service.BatteryOptimizationHelper.openManufacturerPowerSettings(this)
             }
-            .setNegativeButton("关闭", null)
+            .negativeButton("关闭")
             .show()
     }
-    
+
     private fun showAboutDialog() {
         val message = """
             西大课栈
@@ -889,25 +857,23 @@ class SettingsActivity : AppCompatActivity() {
             反馈: 2908451607@qq.com
         """.trimIndent()
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("关于应用")
-            .setMessage(message)
-            .setPositiveButton("确定", null)
+        StyledDialog.Builder(this)
+            .title("关于应用")
+            .message(message)
+            .positiveButton("确定")
             .show()
     }
 
     private fun showFeedbackDialog() {
-        val options = arrayOf("GitHub Issue（功能需求、Bug反馈）", "发送邮件（其他反馈或联系开发者）")
-
-        AlertDialog.Builder(this)
-            .setTitle("选择反馈方式")
-            .setItems(options) { _, which ->
+        StyledDialog.Builder(this)
+            .title("选择反馈方式")
+            .items(arrayOf("GitHub Issue（功能需求、Bug反馈）", "发送邮件（其他反馈或联系开发者）")) { which ->
                 when (which) {
                     0 -> openGitHubIssues()
                     1 -> sendFeedbackEmail()
                 }
             }
-            .setNegativeButton("取消", null)
+            .negativeButton("取消")
             .show()
     }
 

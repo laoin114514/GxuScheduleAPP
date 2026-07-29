@@ -7,12 +7,12 @@ import android.view.LayoutInflater
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.adapter.SchoolAdapter
+import com.cherry.wakeupschedule.ui.component.StyledDialog
 
 class SchoolListActivity : AppCompatActivity() {
 
@@ -395,21 +395,21 @@ class SchoolListActivity : AppCompatActivity() {
         val etSchoolName = dialogView.findViewById<EditText>(R.id.et_custom_school_name)
         val etUrl = dialogView.findViewById<EditText>(R.id.et_custom_url)
 
-        AlertDialog.Builder(this)
-            .setTitle("自定义教务系统")
-            .setView(dialogView)
-            .setPositiveButton("确定") { _, _ ->
+        StyledDialog.Builder(this)
+            .title("自定义教务系统")
+            .view(dialogView)
+            .positiveButton("确定") {
                 val schoolName = etSchoolName.text.toString().trim()
                 val url = etUrl.text.toString().trim()
 
                 if (schoolName.isEmpty()) {
                     Toast.makeText(this, "请输入学校名称", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@positiveButton
                 }
 
                 if (url.isEmpty()) {
                     Toast.makeText(this, "请输入教务系统网址", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@positiveButton
                 }
 
                 val validUrl = if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -420,22 +420,20 @@ class SchoolListActivity : AppCompatActivity() {
 
                 openWebView(schoolName, validUrl)
             }
-            .setNegativeButton("取消", null)
+            .negativeButton("取消")
             .show()
     }
 
     private fun showApplyDialog() {
-        val options = arrayOf("通过邮箱申请", "通过 GitHub Issue 申请")
-
-        AlertDialog.Builder(this)
-            .setTitle("申请适配")
-            .setItems(options) { _, which ->
+        StyledDialog.Builder(this)
+            .title("申请适配")
+            .items(arrayOf("通过邮箱申请", "通过 GitHub Issue 申请")) { which ->
                 when (which) {
                     0 -> openEmail()
                     1 -> openGitHubIssue()
                 }
             }
-            .setNegativeButton("取消", null)
+            .negativeButton("取消")
             .show()
     }
 

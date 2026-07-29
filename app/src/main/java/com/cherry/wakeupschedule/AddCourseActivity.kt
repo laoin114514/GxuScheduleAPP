@@ -5,7 +5,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.model.Course
@@ -13,6 +12,7 @@ import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.component.StyledDialog
 import android.graphics.drawable.GradientDrawable
 
 class AddCourseActivity : AppCompatActivity() {
@@ -121,9 +121,9 @@ class AddCourseActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_color_picker, null)
         val gridLayout = dialogView.findViewById<GridLayout>(R.id.gl_colors)
 
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
+        val dialog = StyledDialog.Builder(this)
+            .view(dialogView)
+            .show()
 
         val itemSize = (resources.displayMetrics.widthPixels - 80) / 4
         val spacing = 16
@@ -150,8 +150,6 @@ class AddCourseActivity : AppCompatActivity() {
             }
             gridLayout.addView(colorView)
         }
-
-        dialog.show()
     }
 
     override fun onSupportNavigateUp(): Boolean {

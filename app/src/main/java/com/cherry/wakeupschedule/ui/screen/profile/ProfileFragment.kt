@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.cherry.wakeupschedule.AboutActivity
 import com.cherry.wakeupschedule.App
@@ -23,6 +22,7 @@ import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.component.SelectOption
 import com.cherry.wakeupschedule.ui.component.SelectionDialog
+import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.theme.M3ColorPalette
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
@@ -66,15 +66,15 @@ class ProfileFragment : Fragment() {
 
         // 解绑
         view.findViewById<View>(R.id.btn_unbind).setOnClickListener {
-            AlertDialog.Builder(requireContext())
-                .setTitle("解绑教务账号")
-                .setMessage("确定要解绑教务账号吗？解绑后个人信息将被清除。")
-                .setPositiveButton("解绑") { _, _ ->
+            StyledDialog.Builder(requireContext())
+                .title("解绑教务账号")
+                .message("确定要解绑教务账号吗？解绑后个人信息将被清除。")
+                .positiveButton("解绑") {
                     JwxtAuthManager.unbind()
                     updateAccountSection()
                     Toast.makeText(requireContext(), "已解绑教务账号", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("取消", null)
+                .negativeButton("取消")
                 .show()
         }
 
@@ -107,10 +107,9 @@ class ProfileFragment : Fragment() {
         }
 
         view.findViewById<View>(R.id.item_alarm).setOnClickListener {
-            // Open alarm settings
-            AlertDialog.Builder(requireContext())
-                .setTitle("课前提醒")
-                .setItems(arrayOf("开启课前提醒", "关闭课前提醒")) { _, which ->
+            StyledDialog.Builder(requireContext())
+                .title("课前提醒")
+                .items(arrayOf("开启课前提醒", "关闭课前提醒")) { which ->
                     settingsManager.setAlarmEnabled(which == 0)
                     Toast.makeText(requireContext(),
                         if (which == 0) "课前提醒已开启" else "课前提醒已关闭",
