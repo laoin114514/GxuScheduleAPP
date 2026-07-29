@@ -204,7 +204,7 @@ object BatteryOptimizationHelper {
             manufacturer.contains("xiaomi") || manufacturer.contains("redmi") || manufacturer.contains("poco") -> {
                 """
                 小米/红米/POCO 系统设置步骤：
-                1. 设置 → 应用设置 → 应用管理 → 找到「Wakeup课程表」
+                1. 设置 → 应用设置 → 应用管理 → 找到「西大课栈」
                 2. 点击「省电策略」→ 选择「无限制」
                 3. 返回 → 设置 → 应用设置 → 应用管理 → 授权管理 → 后台弹出界面 → 允许
                 4. 设置 → 应用设置 → 应用管理 → 授权管理 → 后台启动 → 允许
@@ -213,7 +213,7 @@ object BatteryOptimizationHelper {
             manufacturer.contains("huawei") || manufacturer.contains("honor") -> {
                 """
                 华为/荣耀 系统设置步骤：
-                1. 设置 → 应用 → 应用管理 → 找到「Wakeup课程表」
+                1. 设置 → 应用 → 应用管理 → 找到「西大课栈」
                 2. 点击「电池」→「启动管理」→ 关闭「自动管理」
                 3. 手动开启「允许自启动」「允许后台活动」「允许关联启动」
                 4. 设置 → 电池 → 更多电池管理 → 关闭「严格限制后台」
@@ -222,36 +222,36 @@ object BatteryOptimizationHelper {
             manufacturer.contains("oppo") || manufacturer.contains("realme") || manufacturer.contains("oneplus") -> {
                 """
                 OPPO/Realme/一加 系统设置步骤：
-                1. 设置 → 应用管理 → 找到「Wakeup课程表」
+                1. 设置 → 应用管理 → 找到「西大课栈」
                 2. 点击「电池使用」→ 选择「允许后台活动」
                 3. 返回 → 设置 → 电池 → 更多设置 → 关闭「后台冻结」「检测异常」
-                4. 设置 → 应用管理 → 找到「Wakeup课程表」→「权限」→ 允许「自启动」
+                4. 设置 → 应用管理 → 找到「西大课栈」→「权限」→ 允许「自启动」
                 """.trimIndent()
             }
             manufacturer.contains("vivo") -> {
                 """
                 Vivo 系统设置步骤：
                 1. 设置 → 电池 → 高耗电提醒 → 关闭
-                2. 设置 → 更多设置 → 应用程序 → 找到「Wakeup课程表」
+                2. 设置 → 更多设置 → 应用程序 → 找到「西大课栈」
                 3. 点击「后台管理」→ 选择「允许后台运行」
-                4. i管家 → 手机管理 → 启动管理 → 找到「Wakeup课程表」→ 开启
+                4. i管家 → 手机管理 → 启动管理 → 找到「西大课栈」→ 开启
                 """.trimIndent()
             }
             manufacturer.contains("meizu") -> {
                 """
                 魅族 系统设置步骤：
-                1. 设置 → 电池 → 找到「Wakeup课程表」
+                1. 设置 → 电池 → 找到「西大课栈」
                 2. 选择「无限制」模式
-                3. 设置 → 应用管理 → 找到「Wakeup课程表」→ 权限 → 开启「自启动」
+                3. 设置 → 应用管理 → 找到「西大课栈」→ 权限 → 开启「自启动」
                 """.trimIndent()
             }
             else -> {
                 """
                 通用设置步骤：
-                1. 设置 → 应用管理 → 找到「Wakeup课程表」
+                1. 设置 → 应用管理 → 找到「西大课栈」
                 2. 点击「电池」→ 选择「不受限制」或「允许后台活动」
                 3. 开启应用的自启动权限
-                4. 如果有省电管家，将「Wakeup课程表」加入白名单
+                4. 如果有省电管家，将「西大课栈」加入白名单
                 """.trimIndent()
             }
         }

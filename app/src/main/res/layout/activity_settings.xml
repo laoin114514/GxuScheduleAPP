@@ -422,7 +422,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="1. 本应用所有课程数据均由用户自行导入或手动添加\n2. 教务系统导入功能仅供学习研究使用\n3. 所有数据均存储在本地设备上\n4. 使用本应用产生的风险由用户自行承担\n5. 应用UI设计参考了WakeUp课程表官方设计\n6. 本项目基于wakeup3.612版本进行魔改重构，遵循相同的开源原则"
+                    android:text="1. 本应用所有课程数据均由用户自行导入或手动添加\n2. 教务系统导入功能仅供学习研究使用\n3. 所有数据均存储在本地设备上\n4. 使用本应用产生的风险由用户自行承担\n5. 本项目基于 WakeUp 课程表 3.612 版本进行魔改重构，遵循相同的开源原则"
                     android:textSize="12sp"
                     android:textColor="#CCFFFFFF"
                     android:lineSpacingMultiplier="1.3" />

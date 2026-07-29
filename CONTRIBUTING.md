@@ -24,5 +24,5 @@
 
 ## 问题反馈
 
-- GitHub Issues: https://github.com/Yngu196/Schedule/issues
-- 邮箱: Yngu196@qq.com
+- GitHub Issues: https://github.com/laoin114514/GxuScheduleAPP/issues
+- 邮箱: 2908451607@qq.com

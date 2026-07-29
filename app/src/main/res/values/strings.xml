@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Schedule</string>
+    <string name="app_name">西大课栈</string>
     <string name="appbar_scrolling_view_behavior">com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior</string>
     <string name="countdown_format">下节课: %1$s</string>
     <string name="countdown_no_more_classes">今日课程已结束</string>

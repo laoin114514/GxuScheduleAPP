@@ -442,7 +442,7 @@ class SchoolListActivity : AppCompatActivity() {
     private fun openEmail() {
         try {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
-                data = Uri.parse("mailto:Yngu196@qq.com")
+                data = Uri.parse("mailto:2908451607@qq.com")
                 putExtra(Intent.EXTRA_SUBJECT, "申请教务系统适配")
             }
             startActivity(intent)

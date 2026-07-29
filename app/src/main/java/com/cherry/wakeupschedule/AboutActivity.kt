@@ -27,11 +27,11 @@ class AboutActivity : AppCompatActivity() {
 
         btnBack.setOnClickListener { finish() }
 
-        llOfficialWebsite.setOnClickListener { openUrl("https://yngu196.github.io/Schedule/") }
+        llOfficialWebsite.setOnClickListener { openUrl("https://laoin114514.github.io/GxuScheduleAPP/") }
 
-        llGithub.setOnClickListener { openUrl("https://github.com/Yngu196/Schedule") }
+        llGithub.setOnClickListener { openUrl("https://github.com/laoin114514/GxuScheduleAPP") }
 
-        llLicense.setOnClickListener { openUrl("https://github.com/Yngu196/Schedule/blob/main/LICENSE") }
+        llLicense.setOnClickListener { openUrl("https://github.com/laoin114514/GxuScheduleAPP/blob/main/LICENSE") }
 
         llUpdateAdapter.setOnClickListener { startActivity(Intent(this, SchoolListActivity::class.java)) }
     }

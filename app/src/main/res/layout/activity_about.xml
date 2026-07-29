@@ -84,7 +84,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="课表"
+                        android:text="西大课栈"
                         android:textSize="24sp"
                         android:textColor="@android:color/white"
                         android:textStyle="bold"

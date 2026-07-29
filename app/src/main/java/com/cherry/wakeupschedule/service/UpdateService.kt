@@ -28,9 +28,7 @@ class UpdateService(private val context: Context) {
 
     companion object {
         private const val TAG = "UpdateService"
-        private const val GITHUB_API_URL = "https://api.github.com/repos/Yngu196/Schedule/releases"
-        private const val GITCODE_URL = "https://gitcode.com/2401_87059416/Schedule/releases/"
-        private const val LANZOU_URL = "https://wwbph.lanzn.com/b019vqfy9c"
+        private const val GITHUB_API_URL = "https://api.github.com/repos/laoin114514/GxuScheduleAPP/releases"
     }
 
     private val currentVersion: String = com.cherry.wakeupschedule.BuildConfig.VERSION_NAME
@@ -337,18 +335,6 @@ class UpdateService(private val context: Context) {
             openDownloadPage(url)
             dialog.dismiss()
         }
-
-        dialogView.findViewById<TextView>(com.cherry.wakeupschedule.R.id.btn_download_gitcode).setOnClickListener {
-            openDownloadWithSystemBrowser(GITCODE_URL)
-            dialog.dismiss()
-        }
-
-        dialogView.findViewById<TextView>(com.cherry.wakeupschedule.R.id.btn_download_lanzou).setOnClickListener {
-            openDownloadWithSystemBrowser(LANZOU_URL)
-            showToast("蓝奏云下载密码: 666")
-            dialog.dismiss()
-        }
-        
         dialogView.findViewById<TextView>(com.cherry.wakeupschedule.R.id.btn_later).setOnClickListener {
             dialog.dismiss()
         }

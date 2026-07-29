@@ -970,7 +970,7 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun showAboutDialog() {
         val message = """
-            课表
+            西大课栈
 
             版本: ${BuildConfig.VERSION_NAME}
 
@@ -978,7 +978,7 @@ class SettingsActivity : AppCompatActivity() {
 
             感谢使用！
 
-            反馈: Yngu196@qq.com
+            反馈: 2908451607@qq.com
         """.trimIndent()
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -1005,7 +1005,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun openGitHubIssues() {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Yngu196/Schedule/issues/new"))
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/laoin114514/GxuScheduleAPP/issues/new"))
             startActivity(intent)
         } catch (e: Exception) {
             Toast.makeText(this, "无法打开链接，请检查网络连接", Toast.LENGTH_SHORT).show()
@@ -1016,8 +1016,8 @@ class SettingsActivity : AppCompatActivity() {
         try {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("mailto:")
-                putExtra(Intent.EXTRA_EMAIL, arrayOf("Yngu196@qq.com"))
-                putExtra(Intent.EXTRA_SUBJECT, "Schedule 应用反馈")
+                putExtra(Intent.EXTRA_EMAIL, arrayOf("2908451607@qq.com"))
+                putExtra(Intent.EXTRA_SUBJECT, "西大课栈 应用反馈")
                 putExtra(Intent.EXTRA_TEXT, """
                     应用版本: ${BuildConfig.VERSION_NAME}
                     设备信息: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}

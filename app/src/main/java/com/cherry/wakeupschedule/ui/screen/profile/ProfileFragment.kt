@@ -111,8 +111,8 @@ class ProfileFragment : Fragment() {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
                     data = android.net.Uri.parse("mailto:")
-                    putExtra(Intent.EXTRA_EMAIL, arrayOf("Yngu196@qq.com"))
-                    putExtra(Intent.EXTRA_SUBJECT, "Schedule 应用反馈")
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf("2908451607@qq.com"))
+                    putExtra(Intent.EXTRA_SUBJECT, "西大课栈 应用反馈")
                 }
                 startActivity(Intent.createChooser(intent, "发送邮件"))
             } catch (e: Exception) {

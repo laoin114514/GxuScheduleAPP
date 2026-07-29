@@ -40,11 +40,11 @@ android {
             if (abi == null) {
                 // Universal APK
                 output.versionCodeOverride = baseVersionCode * 10 + 0
-                output.outputFileName = "Schedule-app-${variant.buildType.name}-${defaultConfig.versionName}-universal.apk"
+                output.outputFileName = "GxuScheduleAPP-${variant.buildType.name}-${defaultConfig.versionName}-universal.apk"
             } else {
                 // Specific ABI APK
                 output.versionCodeOverride = baseVersionCode * 10 + versionCodes.get(abi)
-                output.outputFileName = "Schedule-app-${variant.buildType.name}-${defaultConfig.versionName}-${abi}.apk"
+                output.outputFileName = "GxuScheduleAPP-${variant.buildType.name}-${defaultConfig.versionName}-${abi}.apk"
             }
         }
     }

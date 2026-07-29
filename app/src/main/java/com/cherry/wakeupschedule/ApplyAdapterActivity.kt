@@ -111,7 +111,7 @@ class ApplyAdapterActivity : AppCompatActivity() {
             
             // 构建邮件Intent
             val intent = Intent(Intent.ACTION_SENDTO)
-            intent.data = Uri.parse("mailto:Yngu196@qq.com")
+            intent.data = Uri.parse("mailto:2908451607@qq.com")
             intent.putExtra(Intent.EXTRA_SUBJECT, subject)
             intent.putExtra(Intent.EXTRA_TEXT, body)
             
