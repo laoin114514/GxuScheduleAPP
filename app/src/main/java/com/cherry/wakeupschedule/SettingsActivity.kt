@@ -26,6 +26,7 @@ import com.cherry.wakeupschedule.BuildConfig
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.service.ImportService
 import com.cherry.wakeupschedule.service.AccountRepository
 import com.cherry.wakeupschedule.service.CourseDataManager

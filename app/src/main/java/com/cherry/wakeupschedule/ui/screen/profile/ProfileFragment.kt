@@ -15,6 +15,7 @@ import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.TimeTableEditActivity
+import com.cherry.wakeupschedule.service.AccountRepository
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
@@ -52,7 +53,7 @@ class ProfileFragment : Fragment() {
         }
 
         view.findViewById<View>(R.id.item_profile).setOnClickListener {
-            if (!JwxtAuthManager.isBound()) {
+            if (!JwxtAccountManager.isBound()) {
                 Toast.makeText(requireContext(), "请先绑定教务账号", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -316,7 +317,7 @@ class ProfileFragment : Fragment() {
     }
 
     private fun fetchSemesterInfo() {
-        if (!JwxtAuthManager.isBound()) {
+        if (!JwxtAccountManager.isBound()) {
             Toast.makeText(requireContext(), "请先绑定教务账号", Toast.LENGTH_SHORT).show()
             return
         }
@@ -327,12 +328,18 @@ class ProfileFragment : Fragment() {
         val appCtx = requireContext().applicationContext
 
         CoroutineScope(Dispatchers.IO).launch {
+            val accountRepo = AccountRepository.getInstance(appCtx)
+            val accountId = accountRepo.getActiveAccountId()
+            val activeAccount = accountRepo.getActiveAccount()
+            val username = activeAccount?.username ?: return@launch
+            val password = activeAccount?.password ?: return@launch
+
             val selectedSemester = settingsManager.getCurrentSemester()
             val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
             val term = Term.fromCode(termCode) ?: Term.SPRING
 
             // ── 1. personal() API：获取个人课表（最可靠，只需学年+学期） ──
-            val personalResult = JwxtAuthManager.doWithAuth { client ->
+            val personalResult = JwxtAuthManager.doWithAuth(accountId, username, password) { client ->
                 client.schedule().personal(year, term)
             }
 
@@ -353,7 +360,7 @@ class ProfileFragment : Fragment() {
 
             var semesterUpdated = false
             if (classId.isNotEmpty() && gradeCode.isNotEmpty()) {
-                val classResult = JwxtAuthManager.doWithAuth { client ->
+                val classResult = JwxtAuthManager.doWithAuth(accountId, username, password) { client ->
                     client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
                 }
                 classResult.onSuccess { resp ->

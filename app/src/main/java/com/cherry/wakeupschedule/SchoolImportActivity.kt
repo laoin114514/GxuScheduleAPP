@@ -77,8 +77,6 @@ class SchoolImportActivity : AppCompatActivity() {
             try {
                 val success = importService.importFromFile(uri)
                 if (success) {
-                    // 刷新课程数据
-                    viewModel.refreshCourses()
                     Toast.makeText(this@SchoolImportActivity, "文件导入成功 ✓", Toast.LENGTH_SHORT).show()
                     finish()
                 } else {

@@ -16,6 +16,7 @@ import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
+import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
 import android.content.Intent
@@ -227,10 +228,16 @@ class ScheduleFragment : Fragment() {
     }
 
     private fun refreshScheduleFromJwxt(showError: Boolean) {
-        if (!JwxtAuthManager.isBound()) return
+        if (!JwxtAccountManager.isBound()) return
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val result = JwxtAuthManager.doWithAuth { client ->
+            val accountRepo = AccountRepository.getInstance(requireContext())
+            val accountId = accountRepo.getActiveAccountId()
+            val activeAccount = accountRepo.getActiveAccount()
+            val username = activeAccount?.username ?: return@launch
+            val password = activeAccount?.password ?: return@launch
+
+            val result = JwxtAuthManager.doWithAuth(accountId, username, password) { client ->
                 val selectedSemester = settingsManager.getCurrentSemester()
                 val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
                 val term = com.gxu.jwxt.model.Term.fromCode(termCode)
