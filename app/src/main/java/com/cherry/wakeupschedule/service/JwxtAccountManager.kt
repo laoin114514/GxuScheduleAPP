@@ -1,76 +1,54 @@
 package com.cherry.wakeupschedule.service
 
 import android.content.Context
-import android.content.SharedPreferences
-import com.google.gson.Gson
 import com.gxu.jwxt.model.StudentProfile
 
 /**
- * 教务系统账号凭证 + 个人信息本地管理器。
+ * 教务账号凭据管理（委托 AccountRepository）。
+ * 保留原有接口兼容，内部改为多账号感知。
  */
 object JwxtAccountManager {
 
-    private const val PREFS_NAME = "jwxt_account"
-    private const val KEY_USERNAME = "username"
-    private const val KEY_PASSWORD = "password"
-    private const val KEY_IS_BOUND = "is_bound"
-    private const val KEY_PROFILE_JSON = "profile_json"
-    private const val KEY_PROFILE_USERNAME = "profile_username"
-
-    private val gson = Gson()
-    private lateinit var prefs: SharedPreferences
+    private lateinit var appContext: Context
+    private val repo: AccountRepository by lazy { AccountRepository.getInstance(appContext) }
 
     fun init(context: Context) {
-        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        appContext = context.applicationContext
     }
 
-    fun isBound(): Boolean = prefs.getBoolean(KEY_IS_BOUND, false)
-    fun getUsername(): String = prefs.getString(KEY_USERNAME, "") ?: ""
-    fun getPassword(): String = prefs.getString(KEY_PASSWORD, "") ?: ""
+    fun isBound(): Boolean = repo.hasActiveAccount()
 
-    fun saveCredentials(username: String, password: String) {
-        // 账号变了就清掉旧缓存
-        if (username != getUsername()) {
-            clearProfileCache()
-        }
-        prefs.edit()
-            .putString(KEY_USERNAME, username)
-            .putString(KEY_PASSWORD, password)
-            .putBoolean(KEY_IS_BOUND, true)
-            .apply()
+    suspend fun getUsername(): String {
+        return repo.getActiveAccount()?.username ?: ""
+    }
+
+    suspend fun getPassword(): String {
+        return repo.getActiveAccount()?.password ?: ""
+    }
+
+    suspend fun getActiveAccountId(): Long = repo.getActiveAccountId()
+
+    suspend fun saveCredentials(username: String, password: String) {
+        repo.bindAccount(username, password)
     }
 
     fun clear() {
-        clearProfileCache()
-        prefs.edit()
-            .remove(KEY_USERNAME)
-            .remove(KEY_PASSWORD)
-            .putBoolean(KEY_IS_BOUND, false)
-            .apply()
+        // 多账号下不应全局清理，改为 no-op
+        // 使用 AccountRepository.unbindAccount() 替代
     }
-
-    // ── 个人信息缓存 ──
 
     fun getCachedProfile(): StudentProfile? {
-        val json = prefs.getString(KEY_PROFILE_JSON, null) ?: return null
-        val cachedUser = prefs.getString(KEY_PROFILE_USERNAME, "")
-        if (cachedUser != getUsername()) return null // 账号变了，缓存失效
-        return try {
-            gson.fromJson(json, StudentProfile::class.java)
-        } catch (_: Exception) { null }
+        val accountId = repo.getActiveAccountId()
+        if (accountId <= 0) return null
+        return kotlinx.coroutines.runBlocking {
+            repo.getProfile(accountId)
+        }
     }
 
-    fun saveProfileCache(profile: StudentProfile) {
-        prefs.edit()
-            .putString(KEY_PROFILE_JSON, gson.toJson(profile))
-            .putString(KEY_PROFILE_USERNAME, getUsername())
-            .apply()
-    }
-
-    private fun clearProfileCache() {
-        prefs.edit()
-            .remove(KEY_PROFILE_JSON)
-            .remove(KEY_PROFILE_USERNAME)
-            .apply()
+    suspend fun saveProfileCache(profile: StudentProfile) {
+        val accountId = repo.getActiveAccountId()
+        if (accountId > 0) {
+            repo.saveProfile(accountId, profile)
+        }
     }
 }
