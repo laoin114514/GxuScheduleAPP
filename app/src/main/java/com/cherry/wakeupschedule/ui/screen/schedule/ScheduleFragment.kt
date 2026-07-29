@@ -16,8 +16,10 @@ import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
+import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
+import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
@@ -205,26 +207,51 @@ class ScheduleFragment : Fragment() {
         if (!JwxtAuthManager.isBound()) return
 
         lifecycleScope.launch(Dispatchers.IO) {
+            val selectedSemester = settingsManager.getCurrentSemesterFullName()
+            val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
+            val term = com.gxu.jwxt.model.Term.fromCode(termCode)
+                ?: com.gxu.jwxt.model.Term.SPRING
+
             val result = JwxtAuthManager.doWithAuth { client ->
-                val selectedSemester = settingsManager.getCurrentSemester()
-                val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
-                val term = com.gxu.jwxt.model.Term.fromCode(termCode)
-                    ?: com.gxu.jwxt.model.Term.SPRING
-                client.schedule().personal(year, term)
+                // 1. 获取个人课表
+                val scheduleResp = client.schedule().personal(year, term)
+                // 2. 获取班级课表（含学期日期/周数）
+                val profile = JwxtAccountManager.getProfile()
+                val classId = profile?.className ?: ""
+                val gradeCode = profile?.grade ?: ""
+                val majorCode = profile?.major ?: ""
+
+                var classDetail: com.gxu.jwxt.model.ClassScheduleResponse? = null
+                if (classId.isNotEmpty() && gradeCode.isNotEmpty()) {
+                    try {
+                        classDetail = client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
+                    } catch (_: Exception) { }
+                }
+                Pair(scheduleResp, classDetail)
             }
 
             withContext(Dispatchers.Main) {
-                result.onSuccess { response ->
-                    val (courses, semesterStart) = JwxtImportService.convertScheduleResponse(response)
-
-                    if (semesterStart != null && semesterStart > 0
-                        && settingsManager.getSemesterStartDate() == 0L) {
-                        settingsManager.setSemesterStartDate(semesterStart)
-                    }
+                result.onSuccess { (response, classDetail) ->
+                    val (courses, _) = JwxtImportService.convertScheduleResponse(response)
 
                     CourseDataManager.getInstance(requireContext()).replaceAllCourses(courses)
 
-                    // 手动刷新时跳回当前周，自动刷新时保持用户浏览的周次
+                    // 更新学期日期（如有）
+                    if (classDetail != null) {
+                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        val startStr = classDetail.semesterStartDate
+                        val weeks = classDetail.weeks?.size ?: 0
+                        if (startStr != null && weeks > 0) {
+                            val startMs = sdf.parse(startStr)?.time ?: 0
+                            val idx = settingsManager.getCurrentSemesterIndex()
+                            if (idx >= 0) {
+                                kotlinx.coroutines.runBlocking {
+                                    SemesterManager.updateDates(idx, startMs, weeks)
+                                }
+                            }
+                        }
+                    }
+
                     val currentWk = calculateCurrentWeek()
                     courseViewModel.currentWeek = currentWk
                     if (showError) {
