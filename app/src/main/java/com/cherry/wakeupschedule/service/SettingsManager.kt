@@ -21,21 +21,18 @@ class SettingsManager(context: Context) {
 
     companion object {
         // SharedPreferences键名常量
-        private const val KEY_CURRENT_SEMESTER = "current_semester"           // 当前学期
+        private const val KEY_CURRENT_SEMESTER_INDEX = "current_semester_index"
         private const val KEY_DEFAULT_WEEK = "default_week"                    // 默认显示周
         private const val KEY_DEFAULT_ALARM_MINUTES = "default_alarm_minutes" // 默认闹钟提前时间
         private const val KEY_AUTO_SWITCH_WEEK = "auto_switch_week"           // 是否自动切换周
         private const val KEY_THEME = "theme"                                  // 主题设置
         private const val KEY_FONT_SIZE = "font_size"                          // 字体大小
         private const val KEY_ALARM_ENABLED = "alarm_enabled"                  // 闹钟是否启用
-        private const val KEY_SEMESTER_START_DATE = "semester_start_date"      // 学期开始日期
-        private const val KEY_TOTAL_WEEKS = "total_weeks"                     // 学期总周数
         private const val KEY_CUSTOM_BACKGROUND_PATH = "custom_background_path"// 自定义背景图片路径
         private const val KEY_COURSE_CARD_ALPHA = "course_card_alpha"         // 课程卡片透明度
         private const val KEY_SHOW_NON_CURRENT_WEEK_COURSES = "show_non_current_week_courses" // 是否显示非本周课程
         private const val KEY_NON_CURRENT_WEEK_ALPHA = "non_current_week_alpha"// 非本周课程透明度
         private const val KEY_VIEW_MODE = "view_mode"                          // 视图模式（周视图/日视图）
-        private const val KEY_CUSTOM_SEMESTERS = "custom_semesters"            // 自定义学期列表
         private const val KEY_LAST_UPDATE_CHECK = "last_update_check"        // 上次检查更新日期
         private const val KEY_FLOAT_BUTTON_X = "float_button_x"             // 悬浮球X位置
         private const val KEY_FLOAT_BUTTON_Y = "float_button_y"             // 悬浮球Y位置
@@ -43,8 +40,6 @@ class SettingsManager(context: Context) {
         private const val KEY_ENABLE_UPDATE_REMIND = "enable_update_remind"  // 是否允许更新提醒
         private const val KEY_LAST_LOG_CLEAR = "last_log_clear"            // 上次清理日志日期
         private const val KEY_HIDE_HOLIDAY_COURSES = "hide_holiday_courses" // 是否在节假日隐藏课程
-
-        private const val DEFAULT_SEMESTER = "2024-2025学年 第一学期"
         private const val DEFAULT_HIDE_HOLIDAY_COURSES = false              // 默认不隐藏
         private const val DEFAULT_ENABLE_UPDATE_REMIND = true              // 默认开启更新提醒
         private const val DEFAULT_WEEK = 1                                     // 默认第1周
@@ -60,36 +55,23 @@ class SettingsManager(context: Context) {
 
     // ==================== 学期相关 ====================
 
-    /**
-     * 获取当前设置的学期名称
-     * @return 当前学期字符串，如"2024-2025学年 第一学期"
-     */
     fun getCurrentSemester(): String {
-        return sharedPreferences.getString(KEY_CURRENT_SEMESTER, getAutoDetectedSemester()) ?: getAutoDetectedSemester()
+        val entity = SemesterManager.getCurrent()
+        return entity?.label ?: "未设置"
     }
 
-    /**
-     * 自动检测当前学期
-     * 根据当前日期自动推断学期
-     * @return 自动检测的学期名称
-     */
-    fun getAutoDetectedSemester(): String {
-        val calendar = Calendar.getInstance()
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH) + 1
-        return when {
-            month in 1..6 -> "${year - 1}-${year}学年 第二学期"
-            month in 7..8 -> "${year - 1}-${year}学年 第二学期" // 暑假期间仍显示上学期
-            else -> "${year}-${year + 1}学年 第一学期"
-        }
+    fun getCurrentSemesterFullName(): String {
+        val entity = SemesterManager.getCurrent()
+        return if (entity != null) "${entity.academicYear}学年 ${entity.termName}" else "未设置"
     }
 
-    /**
-     * 设置当前学期
-     * @param semester 学期名称
-     */
-    fun setCurrentSemester(semester: String) {
-        sharedPreferences.edit().putString(KEY_CURRENT_SEMESTER, semester).apply()
+    fun getCurrentSemesterIndex(): Int {
+        return sharedPreferences.getInt(KEY_CURRENT_SEMESTER_INDEX, -1)
+    }
+
+    fun setCurrentSemesterIndex(index: Int) {
+        sharedPreferences.edit().putInt(KEY_CURRENT_SEMESTER_INDEX, index).apply()
+        SemesterManager.setCurrentIndex(index)
     }
 
     /**
@@ -275,118 +257,33 @@ class SettingsManager(context: Context) {
     // ==================== 学期日期相关 ====================
 
     /**
-     * 获取当前学期间对应的学期开始日期 key。
-     * 不同学期独立存储各自的开始日期。
-     */
-    private fun getSemesterStartDateKey(): String {
-        val semester = getCurrentSemester()
-        return "${KEY_SEMESTER_START_DATE}_$semester"
-    }
-
-    /**
      * 获取学期开始日期
      * @return 学期开始日期的毫秒时间戳，0表示未设置
      */
-    fun getSemesterStartDate(): Long {
-        return sharedPreferences.getLong(getSemesterStartDateKey(), 0L)
-    }
+    fun getSemesterStartDate(): Long = SemesterManager.getStartDate()
 
     /**
      * 设置学期开始日期
      * @param dateMillis 学期开始日期的毫秒时间戳
      */
     fun setSemesterStartDate(dateMillis: Long) {
-        sharedPreferences.edit().putLong(getSemesterStartDateKey(), dateMillis).apply()
-    }
-
-    /**
-     * 获取当前学期间对应的总周数 key。
-     */
-    private fun getTotalWeeksKey(): String {
-        val semester = getCurrentSemester()
-        return "${KEY_TOTAL_WEEKS}_$semester"
+        val idx = getCurrentSemesterIndex()
+        if (idx >= 0) {
+            val totalWeeks = getTotalWeeks()
+            SemesterManager.updateDatesSync(idx, dateMillis, totalWeeks)
+        }
     }
 
     /** 获取学期总周数 */
-    fun getTotalWeeks(): Int = sharedPreferences.getInt(getTotalWeeksKey(), 20)
+    fun getTotalWeeks(): Int = SemesterManager.getTotalWeeks()
 
     /** 设置学期总周数 */
     fun setTotalWeeks(weeks: Int) {
-        sharedPreferences.edit().putInt(getTotalWeeksKey(), weeks).apply()
-    }
-
-    // ==================== 自定义学期列表相关 ====================
-
-    /**
-     * 获取自定义学期列表
-     * @return 学期名称列表
-     */
-    fun getCustomSemesters(): List<String> {
-        val json = sharedPreferences.getString(KEY_CUSTOM_SEMESTERS, null)
-        return if (json != null) {
-            try {
-                val type = object : TypeToken<List<String>>() {}.type
-                gson.fromJson<List<String>>(json, type)
-            } catch (e: Exception) {
-                getDefaultSemesters()
-            }
-        } else {
-            getDefaultSemesters()
+        val idx = getCurrentSemesterIndex()
+        if (idx >= 0) {
+            val startDate = getSemesterStartDate()
+            SemesterManager.updateDatesSync(idx, startDate, weeks)
         }
-    }
-
-    /**
-     * 获取默认学期列表
-     * 生成最近 10 个学年的全部学期（每年第一/第二学期共 20 个选项）
-     * @return 学期名称列表
-     */
-    private fun getDefaultSemesters(): List<String> {
-        val calendar = Calendar.getInstance()
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH) + 1
-
-        // 当前学年起始年：9 月后属于新学年
-        val currentAcademicStart = if (month >= 9) year else year - 1
-
-        val semesters = mutableListOf<String>()
-        // 最近 10 个学年（含下一年，方便选未来学期）
-        for (offset in -1 until 9) {
-            val start = currentAcademicStart - offset
-            semesters.add("${start}-${start + 1}学年 第一学期")
-            semesters.add("${start}-${start + 1}学年 第二学期")
-        }
-        return semesters
-    }
-
-    /**
-     * 保存自定义学期列表
-     * @param semesters 学期名称列表
-     */
-    fun saveCustomSemesters(semesters: List<String>) {
-        val json = gson.toJson(semesters)
-        sharedPreferences.edit().putString(KEY_CUSTOM_SEMESTERS, json).apply()
-    }
-
-    /**
-     * 添加自定义学期
-     * @param semester 学期名称
-     */
-    fun addCustomSemester(semester: String) {
-        val currentList = getCustomSemesters().toMutableList()
-        if (!currentList.contains(semester)) {
-            currentList.add(semester)
-            saveCustomSemesters(currentList)
-        }
-    }
-
-    /**
-     * 删除自定义学期
-     * @param semester 学期名称
-     */
-    fun removeCustomSemester(semester: String) {
-        val currentList = getCustomSemesters().toMutableList()
-        currentList.remove(semester)
-        saveCustomSemesters(currentList)
     }
 
     // ==================== 更新检查相关 ====================
