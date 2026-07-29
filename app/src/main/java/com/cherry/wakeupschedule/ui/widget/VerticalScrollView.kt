@@ -10,11 +10,13 @@ import kotlin.math.abs
 /**
  * 竖直方向优先的 ScrollView，解决 ViewPager2 嵌套时的触摸冲突。
  *
- * 跟之前的区别：
- * - ~~ACTION_DOWN 立即 block 父 View~~ → 会造成水平滑动 12px 死区
- * - ACTION_MOVE 仅当确认是竖直滑动（dy > dx + 超过 touchSlop）才 block 父 View
+ * 策略：
+ * - ACTION_DOWN：不做任何阻止——让 RecyclerView 正常收到 DOWN 事件初始化触摸追踪
+ * - ACTION_MOVE：一旦确认是竖滑（dy > dx 且 dy > touchSlop），立即 block ViewPager2
+ * - 横滑：不干预，让 ViewPager2 自然接管
  *
- * 这样水平滑动零延迟，斜向/竖直滑动也不会被 ViewPager2 误拦截。
+ * 注意：不能在下 ACTION_DOWN 时就 block，否则 RecyclerView 的 onInterceptTouchEvent
+ * 永远收不到 DOWN，后续放行也失效，导致横滑完全不可用。
  */
 class VerticalScrollView @JvmOverloads constructor(
     context: Context,
@@ -24,7 +26,7 @@ class VerticalScrollView @JvmOverloads constructor(
 
     private var startX = 0f
     private var startY = 0f
-    private var locked = false
+    private var blocked = false
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
@@ -32,29 +34,26 @@ class VerticalScrollView @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> {
                 startX = ev.x
                 startY = ev.y
-                locked = false
-                // 不再在 DOWN 时 block 父 View——让 ViewPager2 也能响应
+                blocked = false
+                // 不 block——让 RecyclerView 也能收到 DOWN，正常初始化触摸追踪
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (locked) return super.onInterceptTouchEvent(ev)
+                if (blocked) return super.onInterceptTouchEvent(ev)
 
                 val dx = abs(ev.x - startX)
                 val dy = abs(ev.y - startY)
 
+                // 确认竖滑（dy > dx）时立即 block ViewPager2
                 if (dy > dx && dy > touchSlop) {
-                    // 确认竖直滑动 → 阻止 ViewPager2 拦截
-                    locked = true
+                    blocked = true
                     parent.requestDisallowInterceptTouchEvent(true)
-                } else if (dx > dy && dx > touchSlop) {
-                    // 确认水平滑动 → 放行给 ViewPager2
-                    locked = true
-                    parent.requestDisallowInterceptTouchEvent(false)
                 }
+                // 横滑：不干预，ViewPager2 自行接管
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                locked = false
+                blocked = false
                 parent.requestDisallowInterceptTouchEvent(false)
             }
         }
