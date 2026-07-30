@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="course_cell_height">80dp</dimen>
+    <dimen name="course_cell_height">68dp</dimen>
     <dimen name="card_elevation_normal">1dp</dimen>
     <dimen name="card_elevation_highlight">12dp</dimen>
 </resources>
