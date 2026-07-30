@@ -9,7 +9,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -284,8 +284,8 @@ class StyledDialog private constructor(
             ?.scaleX(0.95f)
             ?.scaleY(0.95f)
             ?.alpha(0f)
-            ?.setDuration(200)
-            ?.setInterpolator(DecelerateInterpolator())
+            ?.setDuration(100)
+            ?.setInterpolator(AccelerateInterpolator())
             ?.withEndAction {
                 try {
                     super.dismiss()
