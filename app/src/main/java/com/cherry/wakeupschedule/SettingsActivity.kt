@@ -62,6 +62,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnTimeTableSettings: TextView
     private lateinit var btnAppearanceSettings: TextView
     private lateinit var btnColorTheme: TextView
+    private lateinit var btnThemeMode: TextView
     private lateinit var btnCheckUpdate: TextView
     private lateinit var btnPermissionGuide: TextView
     private lateinit var btnFeedback: TextView
@@ -122,6 +123,7 @@ class SettingsActivity : AppCompatActivity() {
         btnAppearanceSettings = findViewById(R.id.btn_appearance_settings)
         btnColorTheme = findViewById(R.id.btn_color_theme)
         btnColorTheme.visibility = android.view.View.GONE
+        btnThemeMode = findViewById(R.id.btn_theme_mode)
         btnCheckUpdate = findViewById(R.id.btn_check_update)
         btnPermissionGuide = findViewById(R.id.btn_permission_guide)
         btnFeedback = findViewById(R.id.btn_feedback)
@@ -214,6 +216,10 @@ class SettingsActivity : AppCompatActivity() {
 
         btnAppearanceSettings.setOnClickListener {
             showAppearanceSettingsDialog()
+        }
+
+        btnThemeMode.setOnClickListener {
+            showThemeModeDialog()
         }
 
         btnAbout.setOnClickListener {
@@ -442,7 +448,15 @@ class SettingsActivity : AppCompatActivity() {
             btnBackgroundSettings.text = "背景设置"
         }
         btnAlarmSettings.text = "课前提醒 - ${if (settingsManager.isAlarmEnabled()) "开启" else "关闭"}"
-        
+
+        // 更新主题模式显示
+        val themeModeLabel = when (settingsManager.getThemeMode()) {
+            "light" -> "浅色"
+            "dark" -> "深色"
+            else -> "跟随系统"
+        }
+        btnThemeMode.text = "主题模式 - $themeModeLabel"
+
         // 更新开关状态（不触发监听器提示）
         isUpdatingSwitchState = true
         switchUpdateRemind.isChecked = settingsManager.isUpdateRemindEnabled()
@@ -768,6 +782,37 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.makeText(this, "非本周课程透明度已设置为 ${(alpha * 100).toInt()}%", Toast.LENGTH_SHORT).show()
             }
         )
+    }
+
+    private fun showThemeModeDialog() {
+        val modes = listOf("浅色", "深色", "跟随系统")
+        val modeKeys = listOf("light", "dark", "system")
+        val currentMode = settingsManager.getThemeMode()
+        val currentIndex = modeKeys.indexOf(currentMode).coerceAtLeast(0)
+
+        val options = modes.map { SelectOption(label = it) }
+        SelectionDialog.show(
+            context = this,
+            title = "主题模式",
+            options = options,
+            selectedIndex = currentIndex,
+            onSelected = { index ->
+                val newMode = modeKeys[index]
+                settingsManager.setThemeMode(newMode)
+                applyThemeMode(newMode)
+                updateSettingsDisplay()
+                Toast.makeText(this, "已切换至: ${modes[index]}", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    private fun applyThemeMode(mode: String) {
+        val nightMode = when (mode) {
+            "light" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+            "dark" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+            else -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(nightMode)
     }
     
     private fun showAlarmSettingsDialog() {

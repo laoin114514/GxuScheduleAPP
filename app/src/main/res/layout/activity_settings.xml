@@ -145,7 +145,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="课表外观"
+                    android:text="主题"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
@@ -188,6 +188,19 @@
                     android:background="@drawable/bg_button_outline"
                     android:gravity="start|center_vertical"
                     android:layout_marginTop="8dp" />
+
+                <!-- 主题模式 -->
+                <TextView
+                    android:id="@+id/btn_theme_mode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="主题模式"
+                    android:textSize="15sp"
+                    android:textColor="@android:color/white"
+                    android:padding="12dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_button_outline"
+                    android:gravity="start|center_vertical" />
 
             </LinearLayout>
 

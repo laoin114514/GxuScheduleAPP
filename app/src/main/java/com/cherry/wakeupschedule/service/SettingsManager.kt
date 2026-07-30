@@ -40,7 +40,9 @@ class SettingsManager(context: Context) {
         private const val KEY_ENABLE_UPDATE_REMIND = "enable_update_remind"  // 是否允许更新提醒
         private const val KEY_LAST_LOG_CLEAR = "last_log_clear"            // 上次清理日志日期
         private const val KEY_HIDE_HOLIDAY_COURSES = "hide_holiday_courses" // 是否在节假日隐藏课程
+        private const val KEY_THEME_MODE = "theme_mode"                // 主题模式: light/dark/system
         private const val DEFAULT_HIDE_HOLIDAY_COURSES = false              // 默认不隐藏
+        private const val DEFAULT_THEME_MODE = "system"                  // 默认跟随系统
         private const val DEFAULT_ENABLE_UPDATE_REMIND = true              // 默认开启更新提醒
         private const val DEFAULT_WEEK = 1                                     // 默认第1周
         private const val DEFAULT_ALARM_MINUTES = 15                           // 默认提前15分钟
@@ -445,5 +447,15 @@ class SettingsManager(context: Context) {
      */
     fun setHideHolidayCourses(hide: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_HIDE_HOLIDAY_COURSES, hide).apply()
+    }
+
+    // ==================== 主题模式相关 ====================
+
+    fun getThemeMode(): String {
+        return sharedPreferences.getString(KEY_THEME_MODE, DEFAULT_THEME_MODE) ?: DEFAULT_THEME_MODE
+    }
+
+    fun setThemeMode(mode: String) {
+        sharedPreferences.edit().putString(KEY_THEME_MODE, mode).apply()
     }
 }

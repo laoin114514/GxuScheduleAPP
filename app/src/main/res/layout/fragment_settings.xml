@@ -202,7 +202,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="课表外观"
+                    android:text="主题"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"

@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import com.cherry.wakeupschedule.util.DebugLogger
 import com.cherry.wakeupschedule.service.AlarmService
 import com.cherry.wakeupschedule.service.CourseDataManager
@@ -32,6 +33,10 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+
+        // 应用主题模式（浅色/深色/跟随系统）
+        applyStoredThemeMode()
+
         android.util.Log.d("App", "Application onCreate called")
 
         // 初始化调试日志（在 Application 层，确保所有组件都能使用）
@@ -181,6 +186,16 @@ class App : Application() {
             }
             Log.d("App", "All course notifications have been re-registered")
         }
+    }
+
+    private fun applyStoredThemeMode() {
+        val mode = SettingsManager(this).getThemeMode()
+        val nightMode = when (mode) {
+            "light" -> AppCompatDelegate.MODE_NIGHT_NO
+            "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        AppCompatDelegate.setDefaultNightMode(nightMode)
     }
 
     companion object {

@@ -87,6 +87,13 @@ class ProfileFragment : Fragment() {
 
         view.findViewById<View>(R.id.item_theme_palette).visibility = View.GONE
 
+        // 更新外观当前值
+        updateThemeModeDisplay(view)
+
+        view.findViewById<View>(R.id.item_theme_mode).setOnClickListener {
+            showThemeModeDialog()
+        }
+
         view.findViewById<View>(R.id.item_alarm).setOnClickListener {
             StyledDialog.Builder(requireContext())
                 .title("课前提醒")
@@ -272,5 +279,46 @@ class ProfileFragment : Fragment() {
             tvName.text = profile?.name ?: JwxtAuthManager.getBoundUsername()
             tvId.text = if (profile?.studentId != null) "学号: ${profile.studentId}" else "已绑定"
         }
+    }
+
+    private fun showThemeModeDialog() {
+        val modes = listOf("浅色", "深色", "跟随系统")
+        val modeKeys = listOf("light", "dark", "system")
+        val currentMode = settingsManager.getThemeMode()
+        val currentIndex = modeKeys.indexOf(currentMode).coerceAtLeast(0)
+
+        val options = modes.map { SelectOption(label = it) }
+        SelectionDialog.show(
+            context = requireContext(),
+            title = "外观",
+            options = options,
+            selectedIndex = currentIndex,
+            onSelected = { index ->
+                val newMode = modeKeys[index]
+                settingsManager.setThemeMode(newMode)
+                applyThemeMode(newMode)
+                updateThemeModeDisplay(requireView())
+                Toast.makeText(requireContext(), "已切换至: ${modes[index]}", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    private fun applyThemeMode(mode: String) {
+        val nightMode = when (mode) {
+            "light" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+            "dark" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+            else -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(nightMode)
+    }
+
+    private fun updateThemeModeDisplay(view: View) {
+        val label = when (settingsManager.getThemeMode()) {
+            "light" -> "浅色"
+            "dark" -> "深色"
+            else -> "跟随系统"
+        }
+        val tv = view.findViewById<TextView>(R.id.tv_theme_mode_value)
+        tv?.text = label
     }
 }
