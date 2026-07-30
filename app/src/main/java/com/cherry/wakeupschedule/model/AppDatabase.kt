@@ -39,10 +39,10 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // 1. 添加 week_bitmap 列
-                db.execSQL("ALTER TABLE courses ADD COLUMN week_bitmap INTEGER NOT NULL DEFAULT 0")
+                // 1. 添加 week_bitmap 列（DEFAULT 不带 NOT NULL，兼容旧 SQLite）
+                db.execSQL("ALTER TABLE courses ADD COLUMN week_bitmap INTEGER DEFAULT 0")
                 // 2. 添加 course_category 列
-                db.execSQL("ALTER TABLE courses ADD COLUMN course_category TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE courses ADD COLUMN course_category TEXT DEFAULT ''")
                 // 3. 迁移旧数据：逐行读取旧字段计算位图
                 val cursor = db.query("SELECT id, start_week, end_week, week_type FROM courses")
                 while (cursor.moveToNext()) {
