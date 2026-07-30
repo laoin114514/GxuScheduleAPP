@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.service.ImportService
 import com.cherry.wakeupschedule.service.CourseDataManager
+import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
@@ -494,6 +495,13 @@ class SettingsActivity : AppCompatActivity() {
                 settingsManager.setCurrentSemesterIndex(index)
                 // 切换学期后重新加载对应课表
                 CourseDataManager.getInstance(this).switchSemester(semesters[index].id)
+                // 若该学期日期信息为空，从教务获取课表
+                val sem = semesters[index]
+                if (sem.startDate == 0L || sem.totalWeeks == 0) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        JwxtImportService.fetchAndSaveScheduleForSemester(this@SettingsActivity, sem)
+                    }
+                }
                 updateSettingsDisplay()
                 Toast.makeText(this, "已切换至: ${semesters[index].label}", Toast.LENGTH_SHORT).show()
             }

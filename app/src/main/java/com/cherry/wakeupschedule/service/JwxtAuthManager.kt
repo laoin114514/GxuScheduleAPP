@@ -45,6 +45,12 @@ object JwxtAuthManager {
                 // 通知 CourseDataManager 切换到新学期的课程
                 CourseDataManager.getInstance(App.instance)
                     .switchSemester(SemesterManager.getCurrent()?.id ?: 0L)
+                // 获取当前学期的课表
+                val curSem = SemesterManager.getCurrent()
+                if (curSem != null) {
+                    JwxtImportService.fetchAndSaveScheduleForSemester(App.instance, curSem)
+                    App.instance.registerAllCourseNotifications()
+                }
                 Result.success("登录成功")
             } catch (e: Exception) {
                 // profile 获取失败 → 等同登录失败

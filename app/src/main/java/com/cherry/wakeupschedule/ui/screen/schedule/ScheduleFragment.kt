@@ -50,7 +50,6 @@ class ScheduleFragment : Fragment() {
     private lateinit var courseViewModel: CourseViewModel
 
     private var allCourses: List<Course> = emptyList()
-    private var isFirstInit = true
 
     private val dateFormat = SimpleDateFormat("yyyy/M/d", Locale.getDefault())
     private val countdownHandler = Handler(Looper.getMainLooper())
@@ -72,12 +71,6 @@ class ScheduleFragment : Fragment() {
         setupObservers()
         updateDateTimeHeader()
         startCountdown()
-
-        // 自动从教务刷新（静默），仅首次
-        if (isFirstInit) {
-            isFirstInit = false
-            refreshScheduleFromJwxt(showError = false)
-        }
     }
 
     override fun onResume() {
@@ -174,26 +167,29 @@ class ScheduleFragment : Fragment() {
         val displayWk = getDisplayWeek()
         val currentWk = getCurrentWeek()
 
-        val isInRange = isCurrentDateInSemesterRange()
-        val weekText = if (!isInRange) {
-            "第${displayWk}周 该学期已结束"
-        } else if (displayWk == currentWk) {
-            "第${displayWk}周 (本周)"
-        } else {
-            "第${displayWk}周"
+        val rangeStatus = getSemesterRangeStatus()
+        val weekText = when {
+            rangeStatus < 0 -> "第${displayWk}周 该学期未开始"
+            rangeStatus > 0 -> "第${displayWk}周 该学期已结束"
+            displayWk == currentWk -> "第${displayWk}周 (本周)"
+            else -> "第${displayWk}周"
         }
         tvWeekInfo.text = weekText
         updateDateHeaderRow(displayWk)
     }
 
-    /** 当前日期是否在学期日期范围内 */
-    private fun isCurrentDateInSemesterRange(): Boolean {
+    /** 返回 -1=未开始, 0=进行中, 1=已结束 */
+    private fun getSemesterRangeStatus(): Int {
         val startDate = settingsManager.getSemesterStartDate()
-        if (startDate == 0L) return true // 未设置学期日期，不判定
+        if (startDate == 0L) return 0 // 未设置学期日期，不判定
         val totalWeeks = settingsManager.getTotalWeeks()
         val now = System.currentTimeMillis()
         val endDate = startDate + totalWeeks * 7L * 86400000L
-        return now in startDate..endDate
+        return when {
+            now < startDate -> -1
+            now > endDate -> 1
+            else -> 0
+        }
     }
 
     private fun updateDateHeaderRow(week: Int) {
@@ -245,64 +241,20 @@ class ScheduleFragment : Fragment() {
 
     private fun refreshScheduleFromJwxt(showError: Boolean) {
         if (!JwxtAuthManager.isBound()) return
+        val curSem = SemesterManager.getCurrent() ?: return
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val selectedSemester = settingsManager.getCurrentSemesterFullName()
-            val (year, termCode) = JwxtImportService.getYearTermForSemester(selectedSemester)
-            val term = com.gxu.jwxt.model.Term.fromCode(termCode)
-                ?: com.gxu.jwxt.model.Term.SPRING
-
-            val result = JwxtAuthManager.doWithAuth { client ->
-                // 1. 获取个人课表
-                val scheduleResp = client.schedule().personal(year, term)
-                // 2. 获取班级课表（含学期日期/周数）
-                val profile = JwxtAccountManager.getProfile()
-                val classId = profile?.className ?: ""
-                val gradeCode = profile?.grade ?: ""
-                val majorCode = profile?.major ?: ""
-
-                var classDetail: com.gxu.jwxt.model.ClassScheduleResponse? = null
-                if (classId.isNotEmpty() && gradeCode.isNotEmpty()) {
-                    try {
-                        classDetail = client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
-                    } catch (_: Exception) { }
-                }
-                Pair(scheduleResp, classDetail)
-            }
-
+            val result = JwxtImportService.fetchAndSaveScheduleForSemester(requireContext(), curSem)
             withContext(Dispatchers.Main) {
-                result.onSuccess { (response, classDetail) ->
-                    val (courses, _) = JwxtImportService.convertScheduleResponse(response)
-
-                    CourseDataManager.getInstance(requireContext()).replaceAllCourses(courses)
-
-                    // 更新学期日期（如有）
-                    if (classDetail != null) {
-                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        val startStr = classDetail.semesterStartDate
-                        val weeks = classDetail.weeks?.size ?: 0
-                        if (startStr != null && weeks > 0) {
-                            val startMs = sdf.parse(startStr)?.time ?: 0
-                            val idx = settingsManager.getCurrentSemesterIndex()
-                            if (idx >= 0) {
-                                kotlinx.coroutines.runBlocking {
-                                    SemesterManager.updateDates(idx, startMs, weeks)
-                                }
-                            }
-                        }
-                    }
-
-                    val currentWk = calculateCurrentWeek()
-                    courseViewModel.currentWeek = currentWk
-                    allCourses = courses
+                result.onSuccess { count ->
+                    courseViewModel.currentWeek = calculateCurrentWeek()
+                    allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
                     adapter.updateData(allCourses)
                     updateDateTimeHeader()
-
                     (requireActivity().application as App).registerAllCourseNotifications()
-
                     if (showError) {
                         Toast.makeText(requireContext(),
-                            "成功导入 ${courses.size} 门课程", Toast.LENGTH_SHORT).show()
+                            "成功导入 ${count} 门课程", Toast.LENGTH_SHORT).show()
                     }
                 }.onFailure { e ->
                     if (showError) {
@@ -341,7 +293,6 @@ class ScheduleFragment : Fragment() {
 
         val totalWeeks = settingsManager.getTotalWeeks()
         val currentDisplayWeek = getDisplayWeek()
-        val currentWeek = getCurrentWeek()
 
         // ── 周数滑块 ──
         val tvWeekLabel = sheetView.findViewById<TextView>(R.id.tv_week_label)
@@ -451,6 +402,24 @@ class ScheduleFragment : Fragment() {
                 // 切换学期
                 settingsManager.setCurrentSemesterIndex(index)
                 CourseDataManager.getInstance(ctx).switchSemester(sem.id)
+
+                // 若该学期日期信息为空，从教务获取课表
+                if (sem.startDate == 0L || sem.totalWeeks == 0) {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val result = JwxtImportService.fetchAndSaveScheduleForSemester(ctx, sem)
+                        withContext(Dispatchers.Main) {
+                            result.onSuccess { _ ->
+                                // 更新 ViewPager 总页数
+                                adapter = WeekPagerAdapter(settingsManager.getTotalWeeks())
+                                viewPager.adapter = adapter
+                                adapter.updateData(CourseDataManager.getInstance(ctx).getAllCourses())
+                            }.onFailure { e ->
+                                Toast.makeText(ctx, "获取课表失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+
                 // 调到第一周
                 courseViewModel.currentWeek = calculateCurrentWeek()
                 setDisplayWeek(1)

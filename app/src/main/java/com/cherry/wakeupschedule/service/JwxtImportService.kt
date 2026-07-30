@@ -2,11 +2,14 @@ package com.cherry.wakeupschedule.service
 
 import android.content.Context
 import com.cherry.wakeupschedule.model.Course
+import com.cherry.wakeupschedule.model.SemesterEntity
 import com.gxu.jwxt.model.ClassScheduleResponse
 import com.gxu.jwxt.model.CourseEntry
 import com.gxu.jwxt.model.ScheduleResponse
 import com.gxu.jwxt.model.Semester
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 /**
  * 教务系统课表导入转换服务。
@@ -187,5 +190,57 @@ object JwxtImportService {
         }
         // 回退到基于当前日期的学期检测
         return getCurrentYearTerm()
+    }
+
+    /**
+     * 为指定学期从教务系统获取课表并保存到本地数据库。
+     * 同时更新学期的开始日期和总周数。
+     *
+     * @return 成功时返回导入的课程数量，失败时返回异常
+     */
+    suspend fun fetchAndSaveScheduleForSemester(
+        context: Context,
+        semester: SemesterEntity
+    ): Result<Int> {
+        val fullName = "${semester.academicYear}学年 ${semester.termName}"
+        val (year, termCode) = getYearTermForSemester(fullName)
+        val term = com.gxu.jwxt.model.Term.fromCode(termCode)
+            ?: com.gxu.jwxt.model.Term.SPRING
+
+        val result = JwxtAuthManager.doWithAuth { client ->
+            val scheduleResp = client.schedule().personal(year, term)
+            val profile = JwxtAccountManager.getProfile()
+            val classId = profile?.className ?: ""
+            val gradeCode = profile?.grade ?: ""
+            val majorCode = profile?.major ?: ""
+
+            var classDetail: ClassScheduleResponse? = null
+            if (classId.isNotEmpty() && gradeCode.isNotEmpty()) {
+                try {
+                    classDetail = client.schedule().classDetail(year, term, classId, gradeCode, majorCode)
+                } catch (_: Exception) { }
+            }
+            Triple(scheduleResp, classDetail, semester.sortOrder)
+        }
+
+        return result.map { (response, classDetail, sortOrder) ->
+            val (courses, _) = convertScheduleResponse(response)
+
+            CourseDataManager.getInstance(context)
+                .replaceAllCoursesForSemester(courses, semester.id)
+
+            // 更新学期日期
+            if (classDetail != null) {
+                val startStr = classDetail.semesterStartDate
+                val weeks = classDetail.weeks?.size ?: 0
+                if (startStr != null && weeks > 0) {
+                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val startMs = sdf.parse(startStr)?.time ?: 0
+                    SemesterManager.updateDates(sortOrder, startMs, weeks)
+                }
+            }
+
+            courses.size
+        }
     }
 }

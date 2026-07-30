@@ -203,12 +203,18 @@ class CourseDataManager private constructor(context: Context) {
     }
 
     fun replaceAllCourses(courses: List<Course>) {
+        replaceAllCoursesForSemester(courses, currentSemesterId)
+    }
+
+    /**
+     * 替换指定学期的所有课程（显式传入学期 ID，避免并发切换时误存到错误学期）。
+     */
+    fun replaceAllCoursesForSemester(courses: List<Course>, semesterId: Long) {
         val colorMap = assignColorsForBatch(courses)
-        val semId = currentSemesterId
         executeDb {
-            dao.deleteCoursesBySemesterId(semId)
+            dao.deleteCoursesBySemesterId(semesterId)
             dao.insertCourses(courses.map {
-                it.copy(id = 0, semesterId = semId,
+                it.copy(id = 0, semesterId = semesterId,
                     color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
             })
         }

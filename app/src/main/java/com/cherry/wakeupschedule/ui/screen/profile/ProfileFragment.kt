@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.AboutActivity
 import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.BindJwxtActivity
@@ -153,6 +154,13 @@ class ProfileFragment : Fragment() {
                 settingsManager.setCurrentSemesterIndex(index)
                 // 切换学期后重新加载对应课表
                 CourseDataManager.getInstance(requireContext()).switchSemester(semesters[index].id)
+                // 若该学期日期信息为空，从教务获取课表
+                val sem = semesters[index]
+                if (sem.startDate == 0L || sem.totalWeeks == 0) {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        JwxtImportService.fetchAndSaveScheduleForSemester(requireContext(), sem)
+                    }
+                }
                 updateDisplay()
             }
         )
