@@ -240,13 +240,3 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
         }
         return (((calendar.timeInMillis - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
     }
-
-    private fun isCourseInCurrentWeekType(course: Course, week: Int): Boolean {
-        return when (course.weekType) {
-            0 -> true
-            1 -> week % 2 == 1
-            2 -> week % 2 == 0
-            else -> true
-        }
-    }
-}

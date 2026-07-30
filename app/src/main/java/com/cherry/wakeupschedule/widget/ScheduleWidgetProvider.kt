@@ -174,7 +174,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             val currentWeek = calculateCurrentWeek(SettingsManager(context))
 
             val todayEndCourses = CourseDataManager.getInstance(context).getAllCourses()
-                .filter { it.dayOfWeek == dayOfWeek && currentWeek in it.startWeek..it.endWeek && isCourseInCurrentWeekType(it, currentWeek) }
+                .filter { it.dayOfWeek == dayOfWeek && it.isActiveInWeek(currentWeek) }
                 .mapNotNull { val end = getCourseEndTimeInMinutes(context, it); if (end > currentTimeMinutes) end to it else null }
                 .sortedBy { it.first }
 
@@ -223,5 +223,3 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
         return (((System.currentTimeMillis() - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
     }
 
-    private fun isCourseInCurrentWeekType(course: com.cherry.wakeupschedule.model.Course, week: Int): Boolean = when (course.weekType) { 0 -> true; 1 -> week % 2 == 1; 2 -> week % 2 == 0; else -> true }
-}

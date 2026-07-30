@@ -167,8 +167,7 @@ class WidgetCourseListFactory(
         val todayCourses = allCourses
             .filter {
                 it.dayOfWeek == dayOfWeek &&
-                currentWeek in it.startWeek..it.endWeek &&
-                isCourseInCurrentWeekType(it, currentWeek)
+                it.isActiveInWeek(currentWeek)
             }
             .sortedBy { it.startTime }
 
@@ -217,8 +216,7 @@ class WidgetCourseListFactory(
         val tomorrowCourses = allCourses
             .filter {
                 it.dayOfWeek == dayOfWeek &&
-                targetWeek in it.startWeek..it.endWeek &&
-                isCourseInCurrentWeekType(it, targetWeek)
+                it.isActiveInWeek(targetWeek)
             }
             .sortedBy { it.startTime }
 
@@ -282,14 +280,6 @@ class WidgetCourseListFactory(
         val startDate = settingsManager.getSemesterStartDate()
         if (startDate == 0L) return settingsManager.getDefaultWeek()
         return (((calendar.timeInMillis - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
-    }
-
-    private fun isCourseInCurrentWeekType(course: Course, week: Int): Boolean {
-        return when (course.weekType) {
-            1 -> week % 2 == 1
-            2 -> week % 2 == 0
-            else -> true
-        }
     }
 }
 

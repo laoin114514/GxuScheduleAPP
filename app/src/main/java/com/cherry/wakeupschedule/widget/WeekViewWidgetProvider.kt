@@ -184,8 +184,7 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
                 val weekForDay = calculateWeekForDay(settingsManager, weeksCalendar)
                 val dayCourses = allCourses.filter {
                     it.dayOfWeek == dayNumber &&
-                    weekForDay in it.startWeek..it.endWeek &&
-                    isCourseInCurrentWeekType(it, weekForDay)
+                    it.isActiveInWeek(weekForDay)
                 }.sortedBy { it.startTime }
 
                 val courseViewId = context.resources.getIdentifier("tv_${dayName}_course_name", "id", context.packageName)
@@ -225,13 +224,3 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
         }
         return (((calendar.timeInMillis - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, 20)
     }
-
-    private fun isCourseInCurrentWeekType(course: Course, week: Int): Boolean {
-        return when (course.weekType) {
-            0 -> true
-            1 -> week % 2 == 1
-            2 -> week % 2 == 0
-            else -> true
-        }
-    }
-}

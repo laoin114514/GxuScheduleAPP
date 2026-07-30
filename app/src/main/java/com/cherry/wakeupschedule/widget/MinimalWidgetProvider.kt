@@ -153,7 +153,7 @@ class MinimalWidgetProvider : AppWidgetProvider() {
             val currentWeek = calculateCurrentWeek(SettingsManager(context))
 
             val todayEndCourses = CourseDataManager.getInstance(context).getAllCourses()
-                .filter { it.dayOfWeek == dayOfWeek && currentWeek in it.startWeek..it.endWeek && isCourseInCurrentWeekType(it, currentWeek) }
+                .filter { it.dayOfWeek == dayOfWeek && it.isActiveInWeek(currentWeek) }
                 .mapNotNull { val end = getCourseEndMinutes(context, it); if (end > currentTimeMinutes) end to it else null }
                 .sortedBy { it.first }
 
@@ -286,9 +286,7 @@ class MinimalWidgetProvider : AppWidgetProvider() {
             val allCourses = courseDataManager.getAllCourses()
             val todayCourses = allCourses.filter { course ->
                 course.dayOfWeek == adjustedDayOfWeek &&
-                currentWeek >= course.startWeek &&
-                currentWeek <= course.endWeek &&
-                isCourseInCurrentWeekType(course, currentWeek)
+                course.isActiveInWeek(currentWeek)
             }.sortedBy { course -> getCourseStartMinutes(context, course) }
 
             val currentCourse = todayCourses.find { course ->
@@ -523,17 +521,5 @@ class MinimalWidgetProvider : AppWidgetProvider() {
         val week = (diffDays / 7) + 1
 
         return week.coerceIn(1, settingsManager.getTotalWeeks())
-    }
-
-    /**
-     * 检查课程是否符合当前周类型
-     */
-    private fun isCourseInCurrentWeekType(course: com.cherry.wakeupschedule.model.Course, currentWeek: Int): Boolean {
-        return when (course.weekType) {
-            0 -> true
-            1 -> currentWeek % 2 == 1
-            2 -> currentWeek % 2 == 0
-            else -> true
-        }
     }
 }
