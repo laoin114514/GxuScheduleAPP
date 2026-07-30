@@ -70,13 +70,12 @@ object JwxtAuthManager {
                 getOrCreateClient().relogin()
                 Result.success(action(getOrCreateClient()))
             } catch (reloginError: LoginException) {
-                // 重登录失败 → 清除凭证
-                JwxtAccountManager.clear()
+                // 重登录失败（可能是网络问题或凭据失效），不清除本地凭据
                 destroyClient()
-                Result.failure(LoginException("登录已过期，请重新绑定教务账号"))
+                Result.failure(LoginException("登录已过期，请稍后重试"))
             }
         } catch (e: LoginException) {
-            JwxtAccountManager.clear()
+            // 网络错误等导致的 LoginException，不清除本地凭据
             destroyClient()
             Result.failure(e)
         } catch (e: Exception) {
