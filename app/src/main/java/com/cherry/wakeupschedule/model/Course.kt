@@ -32,14 +32,11 @@ data class Course(
     @ColumnInfo(name = "end_time")
     val endTime: Int,                         // 结束节次
 
-    @ColumnInfo(name = "start_week")
-    val startWeek: Int,                       // 开始周
+    @ColumnInfo(name = "week_bitmap", defaultValue = "0")
+    val weekBitmap: Long = 0,
 
-    @ColumnInfo(name = "end_week")
-    val endWeek: Int,                         // 结束周
-
-    @ColumnInfo(name = "week_type", defaultValue = "0")
-    val weekType: Int = 0,                    // 周类型（0:每周, 1:单周, 2:双周）
+    @ColumnInfo(name = "course_category", defaultValue = "")
+    val courseCategory: String = "",
 
     @ColumnInfo(name = "alarm_enabled", defaultValue = "1")
     val alarmEnabled: Boolean = true,         // 是否启用闹钟提醒
@@ -52,4 +49,50 @@ data class Course(
 
     @ColumnInfo(name = "cover_image_path", defaultValue = "")
     val coverImagePath: String = ""            // 课程封面图片路径
-) : Serializable
+) : Serializable {
+    /**
+     * 判断课程在指定周是否有课（位图 bit 0 = 第 1 周）
+     */
+    fun isActiveInWeek(week: Int): Boolean {
+        if (week < 1 || week > 64) return false
+        return (weekBitmap shr (week - 1)) and 1L == 1L
+    }
+
+    companion object {
+        /** 从 startWeek/endWeek/weekType 生成位图（迁移用） */
+        fun bitmapFromRange(startWeek: Int, endWeek: Int, weekType: Int): Long {
+            var bitmap = 0L
+            for (w in startWeek..endWeek) {
+                val include = when (weekType) {
+                    1 -> w % 2 == 1  // 单周
+                    2 -> w % 2 == 0  // 双周
+                    else -> true     // 每周
+                }
+                if (include && w in 1..64) {
+                    bitmap = bitmap or (1L shl (w - 1))
+                }
+            }
+            return bitmap
+        }
+
+        /** 从连续范围生成位图（每周模式） */
+        fun bitmapFromRange(startWeek: Int, endWeek: Int): Long =
+            bitmapFromRange(startWeek, endWeek, 0)
+
+        /** 获取位图中激活的周列表 */
+        fun bitmapToWeekList(bitmap: Long): List<Int> {
+            val result = mutableListOf<Int>()
+            for (w in 1..64) {
+                if ((bitmap shr (w - 1)) and 1L == 1L) result.add(w)
+            }
+            return result
+        }
+
+        /** 获取位图的首尾周（用于显示 "第X-Y周"） */
+        fun bitmapToWeekRange(bitmap: Long): Pair<Int, Int>? {
+            val list = bitmapToWeekList(bitmap)
+            if (list.isEmpty()) return null
+            return Pair(list.first(), list.last())
+        }
+    }
+}
