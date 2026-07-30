@@ -51,10 +51,7 @@ class CourseOverviewActivity : AppCompatActivity() {
         // 更新统计摘要
         val currentWeek = getCurrentWeek()
         val thisWeekCourses = sortedCourses.filter { course ->
-            currentWeek in (course.startWeek..course.endWeek) &&
-                    (course.weekType == 0 ||
-                            (course.weekType == 1 && currentWeek % 2 == 1) ||
-                            (course.weekType == 2 && currentWeek % 2 == 0))
+            course.isActiveInWeek(currentWeek)
         }
         tvSummary.text = "共 ${sortedCourses.size} 门课程"
         tvThisWeek.text = "本周 ${thisWeekCourses.size} 门"

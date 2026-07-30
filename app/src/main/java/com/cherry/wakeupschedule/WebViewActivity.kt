@@ -981,8 +981,10 @@ class WebViewActivity : AppCompatActivity() {
                         dayOfWeek = courseObj.optInt("dayOfWeek", 1).coerceIn(1, 7),
                         startTime = courseObj.optInt("startTime", 1).coerceIn(1, 12),
                         endTime = courseObj.optInt("endTime", 2).coerceIn(1, 12),
-                        startWeek = courseObj.optInt("startWeek", 1).coerceIn(1, 20),
-                        endWeek = courseObj.optInt("endWeek", 16).coerceIn(1, 20),
+                        weekBitmap = Course.bitmapFromRange(
+                            courseObj.optInt("startWeek", 1).coerceIn(1, 20),
+                            courseObj.optInt("endWeek", 16).coerceIn(1, 20)
+                        ),
                         alarmEnabled = true,
                         alarmMinutesBefore = 15,
                         color = 0xFF6200EE.toInt()

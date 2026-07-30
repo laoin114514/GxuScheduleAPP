@@ -956,7 +956,8 @@ class SettingsActivity : AppCompatActivity() {
                     courseList.forEach { course ->
                         csvContent.append("${course.name},${course.teacher},${course.classroom},")
                         csvContent.append("${course.dayOfWeek},${course.startTime},${course.endTime},")
-                        csvContent.append("${course.startWeek},${course.endWeek}\n")
+                        val weekList = Course.bitmapToWeekList(course.weekBitmap)
+                        csvContent.append("${weekList.firstOrNull() ?: 1},${weekList.lastOrNull() ?: 16}\n")
                     }
                     
                     // 保存到文件并分享

@@ -56,14 +56,7 @@ class CourseViewModel(application: Application) : AndroidViewModel(application) 
             courseDataManager.coursesFlow.collect { allCourses ->
                 val week = activeWeek
                 val coursesForWeek = allCourses.filter { course ->
-                    val isInWeekRange = week in course.startWeek..course.endWeek
-                    val isWeekTypeMatch = when (course.weekType) {
-                        0 -> true // 每周
-                        1 -> week % 2 == 1 // 单周
-                        2 -> week % 2 == 0 // 双周
-                        else -> true
-                    }
-                    if (!isInWeekRange || !isWeekTypeMatch) {
+                    if (!course.isActiveInWeek(week)) {
                         return@filter false
                     }
                     
@@ -104,14 +97,7 @@ class CourseViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val allCourses = courseDataManager.getAllCourses()
             val coursesForWeek = allCourses.filter { course ->
-                val isInWeekRange = week in course.startWeek..course.endWeek
-                val isWeekTypeMatch = when (course.weekType) {
-                    0 -> true // 每周
-                    1 -> week % 2 == 1 // 单周
-                    2 -> week % 2 == 0 // 双周
-                    else -> true
-                }
-                if (!isInWeekRange || !isWeekTypeMatch) {
+                if (!course.isActiveInWeek(week)) {
                     return@filter false
                 }
 
