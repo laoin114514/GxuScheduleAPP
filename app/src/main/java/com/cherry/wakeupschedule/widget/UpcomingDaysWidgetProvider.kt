@@ -240,3 +240,5 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
         }
         return (((calendar.timeInMillis - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
     }
+
+}

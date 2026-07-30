@@ -70,7 +70,7 @@ class WeekPagerAdapter(
 
             // 筛选出本周的课程
             val weekCourses = allCourses.filter { course ->
-                week in course.startWeek..course.endWeek
+                course.isActiveInWeek(week)
             }
 
             // 创建网格背景
