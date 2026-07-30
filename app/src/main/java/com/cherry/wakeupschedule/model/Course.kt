@@ -48,7 +48,10 @@ data class Course(
     val color: Int = 0,                       // 课程颜色，0为默认颜色
 
     @ColumnInfo(name = "cover_image_path", defaultValue = "")
-    val coverImagePath: String = ""            // 课程封面图片路径
+    val coverImagePath: String = "",           // 课程封面图片路径
+
+    @ColumnInfo(name = "semester_id", defaultValue = "0")
+    val semesterId: Long = 0                   // 所属学期ID，外键关联 semesters 表
 ) : Serializable {
     /**
      * 判断课程在指定周是否有课（位图 bit 0 = 第 1 周）

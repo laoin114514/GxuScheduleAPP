@@ -944,11 +944,8 @@ class WebViewActivity : AppCompatActivity() {
                     // 解析JSON并保存课程
                     val courses = parseCoursesFromJson(coursesJson)
                     if (courses.isNotEmpty()) {
-                        // 清除现有课程
-                        courseDataManager.clearAllCourses()
-
-                        // 添加新课程
-                        courseDataManager.addCourses(courses)
+                        // 替换当前学期课程
+                        courseDataManager.replaceAllCourses(courses)
 
                         Toast.makeText(this@WebViewActivity, "成功导入 ${courses.size} 门课程", Toast.LENGTH_LONG).show()
 

@@ -77,7 +77,8 @@ object SemesterManager {
 
         dao.clearSemesters()
         dao.insertSemesters(semesters)
-        cached = semesters
+        // 重新从 DB 加载，确保缓存中的实体有真实的数据库 ID
+        cached = dao.getAllSemesters()
     }
 
     suspend fun clear() {

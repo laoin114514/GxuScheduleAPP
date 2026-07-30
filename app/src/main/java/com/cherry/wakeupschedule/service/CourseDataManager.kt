@@ -31,6 +31,10 @@ class CourseDataManager private constructor(context: Context) {
     private val _coursesFlow = MutableStateFlow<List<Course>>(emptyList())
     val coursesFlow: StateFlow<List<Course>> = _coursesFlow
 
+    // 当前活跃学期 ID，用于过滤课程和自动附加到新增课程
+    @Volatile
+    private var currentSemesterId: Long = 0L
+
     // 单线程 Executor，保证写操作串行，Room 自身也线程安全
     private val dbExecutor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "course-db").apply { isDaemon = true }
@@ -39,14 +43,17 @@ class CourseDataManager private constructor(context: Context) {
     private val scope = CoroutineScope(Dispatchers.IO)
 
     init {
+        // 获取当前学期 ID
+        currentSemesterId = SemesterManager.getCurrent()?.id ?: 0L
         // 迁移旧 SharedPreferences 数据（如果存在）
         migrateFromSharedPreferences(context)
-        // 同步加载初始数据，确保调用方能立即获取
-        _coursesFlow.value = executeDb { dao.getAllCourses() }
-        // 监听 Room 数据变化，自动更新缓存
+        // 同步加载当前学期的课程
+        _coursesFlow.value = executeDb { dao.getCoursesBySemesterId(currentSemesterId) }
+        // 监听 Room 数据变化，按学期过滤后更新缓存
         scope.launch {
             dao.getAllCoursesFlow().collect { courses ->
-                _coursesFlow.value = courses
+                val semId = currentSemesterId
+                _coursesFlow.value = courses.filter { it.semesterId == semId }
             }
         }
         // 颜色版本号：色板变更时递增，触发全量重新分配
@@ -54,7 +61,7 @@ class CourseDataManager private constructor(context: Context) {
             val appPrefs = context.applicationContext.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
             val colorVersion = appPrefs.getInt("color_scheme_version", 0)
             if (colorVersion < COURSE_COLOR_COUNT) {
-                val courses = dao.getAllCourses()
+                val courses = dao.getCoursesBySemesterId(currentSemesterId)
                 if (courses.isNotEmpty()) {
                     // 重置所有颜色为 0，再用批量分配
                     val reset = courses.map { it.copy(color = 0) }
@@ -92,7 +99,7 @@ class CourseDataManager private constructor(context: Context) {
             val courses: List<Course> = gson.fromJson(coursesJson, type)
 
             if (courses.isNotEmpty()) {
-                val migratedCourses = courses.map { it.copy(id = 0) }
+                val migratedCourses = courses.map { it.copy(id = 0, semesterId = currentSemesterId) }
                 executeDb { dao.insertCourses(migratedCourses) }
                 android.util.Log.d(
                     "CourseDataManager",
@@ -105,6 +112,21 @@ class CourseDataManager private constructor(context: Context) {
             android.util.Log.e("CourseDataManager", "Migration from SP failed", e)
         }
     }
+
+    /**
+     * 切换学期：更新当前学期 ID，重新从数据库加载对应学期的课程。
+     * 会触发 StateFlow 更新 → LiveData → UI 自动刷新。
+     */
+    fun switchSemester(semesterId: Long) {
+        if (semesterId == currentSemesterId) return
+        currentSemesterId = semesterId
+        scope.launch {
+            _coursesFlow.value = dao.getCoursesBySemesterId(semesterId)
+        }
+    }
+
+    /** 获取当前学期 ID */
+    fun getCurrentSemesterId(): Long = currentSemesterId
 
     // ── 读操作（内存缓存，不访问数据库） ──
 
@@ -152,16 +174,18 @@ class CourseDataManager private constructor(context: Context) {
 
     fun addCourse(course: Course): Course {
         val colorIndex = assignColorIndex(course.name, course.teacher)
-        val courseToInsert = course.copy(id = 0, color = colorIndex)
+        val courseToInsert = course.copy(id = 0, color = colorIndex, semesterId = currentSemesterId)
         val newId = executeDb { dao.insertCourse(courseToInsert) }
         return courseToInsert.copy(id = newId)
     }
 
     fun addCourses(courses: List<Course>) {
         val colorMap = assignColorsForBatch(courses)
+        val semId = currentSemesterId
         executeDb {
             dao.insertCourses(courses.map {
-                it.copy(id = 0, color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
+                it.copy(id = 0, semesterId = semId,
+                    color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
             })
         }
     }
@@ -180,17 +204,19 @@ class CourseDataManager private constructor(context: Context) {
 
     fun replaceAllCourses(courses: List<Course>) {
         val colorMap = assignColorsForBatch(courses)
+        val semId = currentSemesterId
         executeDb {
-            dao.deleteAllCourses()
+            dao.deleteCoursesBySemesterId(semId)
             dao.insertCourses(courses.map {
-                it.copy(id = 0, color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
+                it.copy(id = 0, semesterId = semId,
+                    color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
             })
         }
     }
 
     fun refreshCourses() {
         scope.launch {
-            _coursesFlow.value = dao.getAllCourses()
+            _coursesFlow.value = dao.getCoursesBySemesterId(currentSemesterId)
         }
     }
 

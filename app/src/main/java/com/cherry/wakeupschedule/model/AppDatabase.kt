@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Course::class, AccountEntity::class, SemesterEntity::class], version = 4, exportSchema = false)
+@Database(entities = [Course::class, AccountEntity::class, SemesterEntity::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun courseDao(): CourseDao
@@ -67,6 +67,31 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // courses 表新增 semester_id 外键列，直接删表重建
+                db.execSQL("DROP TABLE IF EXISTS courses")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS courses (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        teacher TEXT NOT NULL,
+                        classroom TEXT NOT NULL,
+                        day_of_week INTEGER NOT NULL,
+                        start_time INTEGER NOT NULL,
+                        end_time INTEGER NOT NULL,
+                        week_bitmap INTEGER DEFAULT 0,
+                        course_category TEXT DEFAULT '',
+                        alarm_enabled INTEGER DEFAULT 1,
+                        alarm_minutes_before INTEGER DEFAULT 15,
+                        color INTEGER DEFAULT 0,
+                        cover_image_path TEXT DEFAULT '',
+                        semester_id INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -74,7 +99,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "schedule.db"
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }

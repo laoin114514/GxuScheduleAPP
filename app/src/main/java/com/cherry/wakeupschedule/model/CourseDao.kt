@@ -12,6 +12,9 @@ interface CourseDao {
     @Query("SELECT * FROM courses ORDER BY day_of_week, start_time")
     suspend fun getAllCourses(): List<Course>
 
+    @Query("SELECT * FROM courses WHERE semester_id = :semesterId ORDER BY day_of_week, start_time")
+    suspend fun getCoursesBySemesterId(semesterId: Long): List<Course>
+
     @Query("SELECT * FROM courses WHERE id = :id")
     suspend fun getCourseById(id: Long): Course?
 
@@ -29,6 +32,9 @@ interface CourseDao {
 
     @Query("DELETE FROM courses")
     suspend fun deleteAllCourses()
+
+    @Query("DELETE FROM courses WHERE semester_id = :semesterId")
+    suspend fun deleteCoursesBySemesterId(semesterId: Long)
 
     @Query("SELECT COUNT(*) FROM courses")
     suspend fun getCourseCount(): Int

@@ -151,6 +151,8 @@ class ProfileFragment : Fragment() {
             selectedIndex = currentIndex.coerceAtLeast(0),
             onSelected = { index ->
                 settingsManager.setCurrentSemesterIndex(index)
+                // 切换学期后重新加载对应课表
+                CourseDataManager.getInstance(requireContext()).switchSemester(semesters[index].id)
                 updateDisplay()
             }
         )

@@ -1,5 +1,6 @@
 package com.cherry.wakeupschedule.service
 
+import com.cherry.wakeupschedule.App
 import com.gxu.jwxt.JwxtClient
 import com.gxu.jwxt.exceptions.LoginException
 import com.gxu.jwxt.exceptions.SessionExpiredException
@@ -41,6 +42,9 @@ object JwxtAuthManager {
                     val idx = SemesterManager.inferCurrentSemesterIndex(profile.grade ?: "")
                     SemesterManager.setCurrentIndex(idx)
                 }
+                // 通知 CourseDataManager 切换到新学期的课程
+                CourseDataManager.getInstance(App.instance)
+                    .switchSemester(SemesterManager.getCurrent()?.id ?: 0L)
                 Result.success("登录成功")
             } catch (e: Exception) {
                 // profile 获取失败 → 等同登录失败
@@ -93,6 +97,8 @@ object JwxtAuthManager {
             SemesterManager.clear()
         }
         SemesterManager.setCurrentIndex(-1)
+        // 清空课程显示
+        CourseDataManager.getInstance(App.instance).switchSemester(0L)
         destroyClient()
     }
 

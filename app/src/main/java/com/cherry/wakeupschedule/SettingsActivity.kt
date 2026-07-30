@@ -25,6 +25,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.service.ImportService
+import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
@@ -491,6 +492,8 @@ class SettingsActivity : AppCompatActivity() {
             selectedIndex = currentIndex.coerceAtLeast(0),
             onSelected = { index ->
                 settingsManager.setCurrentSemesterIndex(index)
+                // 切换学期后重新加载对应课表
+                CourseDataManager.getInstance(this).switchSemester(semesters[index].id)
                 updateSettingsDisplay()
                 Toast.makeText(this, "已切换至: ${semesters[index].label}", Toast.LENGTH_SHORT).show()
             }
