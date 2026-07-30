@@ -51,20 +51,33 @@ object SchedulePageDetailDialog {
         }
         val weekDays = arrayOf("", "周一", "周二", "周三", "周四", "周五", "周六", "周日")
         val dayText = weekDays.getOrElse(course.dayOfWeek) { "" }
-        val weekText = "第${course.startWeek}-${course.endWeek}周" +
-                when (course.weekType) { 1 -> " (单周)"; 2 -> " (双周)"; else -> "" }
+        val weekList = Course.bitmapToWeekList(course.weekBitmap)
+        val weekText = if (weekList.isNotEmpty()) {
+            val range = "${weekList.first()}-${weekList.last()}周"
+            val allOdd = weekList.all { it % 2 == 1 }
+            val allEven = weekList.all { it % 2 == 0 }
+            val isContinuous = weekList.zipWithNext().all { (a, b) -> b - a == 1 }
+            when {
+                !isContinuous -> "$range (分散)"
+                allOdd -> "$range (单周)"
+                allEven -> "$range (双周)"
+                else -> range
+            }
+        } else { "周次未设置" }
 
         val sm = SettingsManager(context)
         val startDate = sm.getSemesterStartDate()
         var dateRangeText = ""
         if (startDate > 0L) {
             val cal = Calendar.getInstance().apply { timeInMillis = startDate }
-            cal.add(Calendar.WEEK_OF_YEAR, course.startWeek - 1)
+            val firstWeek = weekList.firstOrNull() ?: 1
+            val lastWeek = weekList.lastOrNull() ?: 1
+            cal.add(Calendar.WEEK_OF_YEAR, firstWeek - 1)
             cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
             cal.add(Calendar.DAY_OF_MONTH, course.dayOfWeek - 1)
             val fmt = SimpleDateFormat("M/d", Locale.getDefault())
             val s = fmt.format(cal.time)
-            cal.add(Calendar.WEEK_OF_YEAR, course.endWeek - course.startWeek)
+            cal.add(Calendar.WEEK_OF_YEAR, lastWeek - firstWeek)
             dateRangeText = "$s - ${fmt.format(cal.time)}"
         }
 
