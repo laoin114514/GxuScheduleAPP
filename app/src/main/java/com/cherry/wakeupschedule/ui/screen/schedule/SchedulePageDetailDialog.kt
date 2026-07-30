@@ -23,8 +23,14 @@ import java.util.Locale
 /** 课程详情 Bottom Sheet Dialog，从原始 WeekPageFragment 提取 */
 object SchedulePageDetailDialog {
 
+    private var currentDialog: Dialog? = null
+
     fun show(context: Context, course: Course, courseColors: IntArray) {
+        // 防止连点打开多个详情弹窗
+        currentDialog?.dismiss()
         val dialog = Dialog(context, R.style.BottomSheetDialog)
+        currentDialog = dialog
+        dialog.setOnDismissListener { currentDialog = null }
         val inflater = LayoutInflater.from(context)
         val sheetView = inflater.inflate(R.layout.dialog_course_detail, null)
         val density = context.resources.displayMetrics.density
