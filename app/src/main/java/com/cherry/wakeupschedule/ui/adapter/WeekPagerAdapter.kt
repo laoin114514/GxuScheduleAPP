@@ -19,6 +19,7 @@ import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.screen.schedule.SchedulePageDetailDialog
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.widget.GridBackgroundView
+import com.cherry.wakeupschedule.ui.widget.OverlapBadgeView
 import com.cherry.wakeupschedule.ui.widget.VerticalScrollView
 
 /**
@@ -99,16 +100,7 @@ class WeekPagerAdapter(
             }
 
             // ── 筛选本周课程 ──
-            val weekCourses = allCourses.filter { course ->
-                val inRange = week in course.startWeek..course.endWeek
-                val weekMatch = when (course.weekType) {
-                    0 -> true
-                    1 -> week % 2 == 1
-                    2 -> week % 2 == 0
-                    else -> true
-                }
-                inRange && weekMatch
-            }
+            val weekCourses = allCourses.filter { it.isActiveInWeek(week) }
 
             // ── 空状态 ──
             if (weekCourses.isEmpty()) {
@@ -131,14 +123,23 @@ class WeekPagerAdapter(
             val strokeColor = 0x80FFFFFF.toInt()
             val colors = courseColors
 
-            for (course in weekCourses) {
-                val ci = if (course.color > 0) (course.color - 1) % colors.size else 0
+            // 按 (day, startTime, endTime) 分组检测重叠
+            val groups = weekCourses.groupBy {
+                Triple(it.dayOfWeek, it.startTime, it.endTime)
+            }
+
+            for ((_, group) in groups) {
+                // 组内按优先级排序
+                val sorted = group.sortedWith(compareBy { courseSortKey(it) })
+                val primary = sorted[0]
+
+                val ci = if (primary.color > 0) (primary.color - 1) % colors.size else 0
                 val bgColor = ColorUtils.setAlphaComponent(colors[ci], 128)
 
-                val rowStart = (course.startTime - 1).coerceIn(0, maxNodes - 1)
-                val span = (course.endTime - course.startTime + 1).coerceAtLeast(1)
+                val rowStart = (primary.startTime - 1).coerceIn(0, maxNodes - 1)
+                val span = (primary.endTime - primary.startTime + 1).coerceAtLeast(1)
                     .coerceAtMost(maxNodes - rowStart)
-                val dayCol = (course.dayOfWeek - 1).coerceIn(0, 6)
+                val dayCol = (primary.dayOfWeek - 1).coerceIn(0, 6)
 
                 val cardW = (cellWidth - 2 * gapPx).toInt()
                 val cardH = cellHeight * span - 2 * gapPx
@@ -156,12 +157,18 @@ class WeekPagerAdapter(
                         setMargins(leftMargin, topMargin, 0, 0)
                     }
                     background = cardBg
-                    setOnClickListener { SchedulePageDetailDialog.show(ctx, course, courseColors) }
+                    setOnClickListener {
+                        if (sorted.size > 1) {
+                            showOverlapPicker(ctx, sorted, colors)
+                        } else {
+                            SchedulePageDetailDialog.show(ctx, primary, colors)
+                        }
+                    }
                 }
 
-                val parts = mutableListOf(course.name)
-                if (course.classroom.isNotBlank()) parts.add(course.classroom)
-                if (course.teacher.isNotBlank()) parts.add(course.teacher)
+                val parts = mutableListOf(primary.name)
+                if (primary.classroom.isNotBlank()) parts.add(primary.classroom)
+                if (primary.teacher.isNotBlank()) parts.add(primary.teacher)
 
                 val tv = TextView(ctx).apply {
                     text = parts.joinToString("\n")
@@ -173,6 +180,25 @@ class WeekPagerAdapter(
                     setTypeface(Typeface.DEFAULT_BOLD)
                 }
                 card.addView(tv)
+
+                // 角标：组内多于1门课时显示 +N
+                if (sorted.size > 1) {
+                    val badge = OverlapBadgeView(ctx).apply {
+                        setCount(sorted.size - 1)
+                        layoutParams = FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            gravity = Gravity.BOTTOM or Gravity.END
+                            setMargins(0, 0, (4 * density).toInt(), (4 * density).toInt())
+                        }
+                        setOnClickListener {
+                            showOverlapPicker(ctx, sorted, colors)
+                        }
+                    }
+                    card.addView(badge)
+                }
+
                 courseContainer.addView(card)
             }
         }
@@ -215,6 +241,46 @@ class WeekPagerAdapter(
                     setTextColor(typedValue.data)
                 })
             }
+        }
+
+        // 课程类别优先级（数字越小越优先）
+        private fun categoryPriority(category: String): Int = when {
+            category.contains("专业核心") -> 1
+            category.contains("学类核心") -> 2
+            category.contains("通识必修") -> 3
+            category.contains("集中实践必修") -> 4
+            category.contains("专业选修") -> 5
+            else -> 99
+        }
+
+        // 课程优先级排序：实体课 > 虚拟教室；同级按类别排序
+        private fun courseSortKey(course: Course): Int {
+            val isVirtual = course.classroom.contains("虚拟") ||
+                            course.classroom.contains("慕课")
+            val tier = if (isVirtual) 2 else 1
+            return tier * 100 + categoryPriority(course.courseCategory)
+        }
+
+        private fun showOverlapPicker(
+            ctx: Context,
+            courses: List<Course>,
+            colors: IntArray
+        ) {
+            val items = courses.mapIndexed { _, c ->
+                val priority = when {
+                    courseSortKey(c) in 1..199 -> "实体课"
+                    else -> "网课"
+                }
+                "${c.name}\n${c.classroom} | ${c.teacher} | [$priority]"
+            }
+
+            androidx.appcompat.app.AlertDialog.Builder(ctx)
+                .setTitle("重叠课程 (${courses.size}门)")
+                .setItems(items.toTypedArray()) { _, which ->
+                    SchedulePageDetailDialog.show(ctx, courses[which], colors)
+                }
+                .setNegativeButton("取消", null)
+                .show()
         }
     }
 
