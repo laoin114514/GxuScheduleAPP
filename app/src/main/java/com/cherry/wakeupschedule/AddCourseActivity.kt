@@ -91,9 +91,12 @@ class AddCourseActivity : AppCompatActivity() {
         spinnerWeekDay.setSelection(course.dayOfWeek - 1)
         spinnerStartTime.setSelection(course.startTime - 1)
         spinnerEndTime.setSelection(course.endTime - 1)
-        spinnerStartWeek.setSelection(course.startWeek - 1)
-        spinnerEndWeek.setSelection(course.endWeek - 1)
-        spinnerWeekType.setSelection(course.weekType)
+        val weekList = Course.bitmapToWeekList(course.weekBitmap)
+        val firstWeek = weekList.firstOrNull() ?: 1
+        val lastWeek = weekList.lastOrNull() ?: 16
+        spinnerStartWeek.setSelection(firstWeek - 1)
+        spinnerEndWeek.setSelection(lastWeek - 1)
+        spinnerWeekType.setSelection(0)
         selectedColor = if (course.color != 0) course.color else courseColors[(course.id % courseColors.size).toInt()]
         updateColorIndicator()
     }
@@ -246,9 +249,7 @@ class AddCourseActivity : AppCompatActivity() {
                 dayOfWeek = weekDay,
                 startTime = startTime,
                 endTime = endTime,
-                startWeek = startWeek,
-                endWeek = endWeek,
-                weekType = weekType,
+                weekBitmap = Course.bitmapFromRange(startWeek, endWeek, weekType),
                 color = selectedColor
             )
         } else {
@@ -259,9 +260,7 @@ class AddCourseActivity : AppCompatActivity() {
                 dayOfWeek = weekDay,
                 startTime = startTime,
                 endTime = endTime,
-                startWeek = startWeek,
-                endWeek = endWeek,
-                weekType = weekType,
+                weekBitmap = Course.bitmapFromRange(startWeek, endWeek, weekType),
                 color = selectedColor
             )
         }
