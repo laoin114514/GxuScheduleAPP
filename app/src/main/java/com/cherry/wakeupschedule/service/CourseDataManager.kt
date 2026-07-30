@@ -56,8 +56,11 @@ class CourseDataManager private constructor(context: Context) {
             if (colorVersion < COURSE_COLOR_COUNT) {
                 val courses = dao.getAllCourses()
                 if (courses.isNotEmpty()) {
-                    val updated = courses.map {
-                        it.copy(color = assignColorIndex(it.name, it.teacher))
+                    // 重置所有颜色为 0，再用批量分配
+                    val reset = courses.map { it.copy(color = 0) }
+                    val colorMap = assignColorsForBatch(reset)
+                    val updated = reset.map {
+                        it.copy(color = colorMap[it.name] ?: assignColorIndex(it.name, it.teacher))
                     }
                     dao.insertCourses(updated)
                     appPrefs.edit().putInt("color_scheme_version", COURSE_COLOR_COUNT).apply()
@@ -155,9 +158,10 @@ class CourseDataManager private constructor(context: Context) {
     }
 
     fun addCourses(courses: List<Course>) {
+        val colorMap = assignColorsForBatch(courses)
         executeDb {
             dao.insertCourses(courses.map {
-                it.copy(id = 0, color = assignColorIndex(it.name, it.teacher))
+                it.copy(id = 0, color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
             })
         }
     }
@@ -175,10 +179,11 @@ class CourseDataManager private constructor(context: Context) {
     }
 
     fun replaceAllCourses(courses: List<Course>) {
+        val colorMap = assignColorsForBatch(courses)
         executeDb {
             dao.deleteAllCourses()
             dao.insertCourses(courses.map {
-                it.copy(id = 0, color = assignColorIndex(it.name, it.teacher))
+                it.copy(id = 0, color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
             })
         }
     }
@@ -219,11 +224,31 @@ class CourseDataManager private constructor(context: Context) {
 
         /**
          * 为课程分配稳定的颜色索引 (1..COURSE_COLOR_COUNT)。
-         * 同一「课程名+教师」组合始终返回同一颜色索引，保证跨页面一致。
+         * 同一课程名始终返回同一颜色索引，保证跨页面一致。
+         * 单门添加时使用（无法做批量去重优化）。
          */
         fun assignColorIndex(name: String, teacher: String): Int {
             val key = name  // 只用课程名，同名课同色
             return (Math.abs(key.hashCode()) % COURSE_COLOR_COUNT) + 1
+        }
+
+        /**
+         * 批量分配颜色：收集去重后的课程名，轮转分配（1→9→1→...），
+         * 解决课程少时 hashCode 取模导致颜色大量重复的问题。
+         * 同名课程始终分配到同一颜色。
+         */
+        fun assignColorsForBatch(courses: List<Course>): Map<String, Int> {
+            if (courses.isEmpty()) return emptyMap()
+            // 所有要分配颜色的课程（color == 0 表示未手动设置过）
+            val names = courses.filter { it.color == 0 }
+                .map { it.name }
+                .distinct()
+                .sorted() // 排序保证确定性
+            val map = mutableMapOf<String, Int>()
+            names.forEachIndexed { i, name ->
+                map[name] = (i % COURSE_COLOR_COUNT) + 1
+            }
+            return map
         }
     }
 }
