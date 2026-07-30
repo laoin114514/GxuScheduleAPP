@@ -235,8 +235,7 @@ class ImportService(private val context: Context) {
                 dayOfWeek = dayOfWeek,
                 startTime = startTime,
                 endTime = endTime,
-                startWeek = startWeek,
-                endWeek = endWeek
+                weekBitmap = Course.bitmapFromRange(startWeek, endWeek)
             )
         } catch (e: Exception) {
             Log.e("ImportService", "解析Excel行失败", e)
@@ -302,9 +301,7 @@ class ImportService(private val context: Context) {
                 dayOfWeek = dayOfWeek,
                 startTime = startTime,
                 endTime = endTime,
-                startWeek = startWeek,
-                endWeek = endWeek,
-                weekType = weekType
+                weekBitmap = Course.bitmapFromRange(startWeek, endWeek, weekType)
             )
         } catch (e: Exception) {
             Log.e("ImportService", "解析教务系统Excel行失败", e)
@@ -408,8 +405,7 @@ class ImportService(private val context: Context) {
                         dayOfWeek = courseKey.dayOfWeek,
                         startTime = courseKey.startTime,
                         endTime = courseKey.endTime,
-                        startWeek = startWeek,
-                        endWeek = endWeek
+                        weekBitmap = Course.bitmapFromRange(startWeek, endWeek)
                     ))
                 }
             }
@@ -443,8 +439,7 @@ class ImportService(private val context: Context) {
                 dayOfWeek = dayOfWeek,
                 startTime = startNode,
                 endTime = endNode,
-                startWeek = startWeek,
-                endWeek = endWeek
+                weekBitmap = Course.bitmapFromRange(startWeek, endWeek)
             )
         } catch (e: Exception) {
             Log.e("ImportService", "解析课程单元格失败", e)
@@ -500,8 +495,7 @@ class ImportService(private val context: Context) {
                 dayOfWeek = dayOfWeek,
                 startTime = startTime,
                 endTime = endTime,
-                startWeek = startWeek,
-                endWeek = endWeek
+                weekBitmap = Course.bitmapFromRange(startWeek, endWeek)
             )
         } catch (e: Exception) {
             Log.e("ImportService", "解析CSV行 $lineNumber 失败", e)
@@ -516,60 +510,16 @@ class ImportService(private val context: Context) {
 
     // 合并相同课程
     private fun mergeCourses(courses: List<Course>): List<Course> {
-        // ★ 关键修复：分组键必须包含 weekType，防止单双周课程被错误合并
-        // 例如：高等数学(单周) 和 高等数学(双周) 是两个独立课程，不应合并
+        // 使用位图 OR 合并：同一课程（名称/教师/地点/星期/节次相同）的周位图直接 OR
+        // weekType 已编码在位图中，不再需要作为分组键
         val groups = courses.groupBy {
-            "${it.name}-${it.teacher}-${it.classroom}-${it.dayOfWeek}-${it.startTime}-${it.endTime}-${it.weekType}"
+            "${it.name}-${it.teacher}-${it.classroom}-${it.dayOfWeek}-${it.startTime}-${it.endTime}"
         }
         return groups.map { (_, group) ->
-            val sortedGroup = group.sortedBy { it.startWeek }
-            val result = mutableListOf<Course>()
-
-            // 尝试合并连续或重叠的周范围（同一 weekType 组内）
-            if (sortedGroup.isNotEmpty()) {
-                var current = sortedGroup[0]
-                for (i in 1 until sortedGroup.size) {
-                    val next = sortedGroup[i]
-                    // 如果周范围连续或重叠，则合并
-                    if (next.startWeek <= current.endWeek + 1) {
-                        val newStartWeek = minOf(current.startWeek, next.startWeek)
-                        val newEndWeek = maxOf(current.endWeek, next.endWeek)
-                        current = current.copy(startWeek = newStartWeek, endWeek = newEndWeek)
-                    } else {
-                        result.add(current)
-                        current = next
-                    }
-                }
-                result.add(current)
-            }
-
-            // 重新校验合并后的 weekType 是否与分组时的 weekType 一致
-            // 合并范围扩大后可能引入异周次，需要修正
-            val resultWithWeekType = result.map { course ->
-                val weekNumbers = (course.startWeek..course.endWeek).toSet()
-                val computedWeekType = when {
-                    weekNumbers.all { w -> w % 2 == 1 } -> 1
-                    weekNumbers.all { w -> w % 2 == 0 } -> 2
-                    else -> 0
-                }
-                // 如果计算出的 weekType 与合并前不一致（因范围扩大），保留原始 weekType
-                // 而非错误地降级为 0（每周）
-                val finalWeekType = if (computedWeekType == 0 && group.isNotEmpty()) {
-                    val originalWeekType = group.first().weekType
-                    if (originalWeekType == 1 || originalWeekType == 2) {
-                        // 组内原始 weekType 为单/双周，但合并后范围跨周次
-                        // 保留原始值，由后续通知注册层的 isWeekTypeMatched 做精确过滤
-                        originalWeekType
-                    } else {
-                        computedWeekType
-                    }
-                } else {
-                    computedWeekType
-                }
-                course.copy(weekType = finalWeekType)
-            }
-            resultWithWeekType
-        }.flatten()
+            val mergedBitmap = group.fold(0L) { acc, c -> acc or c.weekBitmap }
+            val first = group.first()
+            first.copy(weekBitmap = mergedBitmap)
+        }
     }
 
     private fun getFileName(uri: Uri): String? {
@@ -630,9 +580,11 @@ class ImportService(private val context: Context) {
                         dayOfWeek = obj.optInt("dayOfWeek", 1).coerceIn(1, 7),
                         startTime = obj.optInt("startTime", 1).coerceIn(1, 14),
                         endTime = obj.optInt("endTime", 2).coerceIn(1, 14),
-                        startWeek = obj.optInt("startWeek", 1).coerceIn(1, 25),
-                        endWeek = obj.optInt("endWeek", 16).coerceIn(1, 25),
-                        weekType = parsedWeekType,
+                        weekBitmap = Course.bitmapFromRange(
+                            obj.optInt("startWeek", 1).coerceIn(1, 25),
+                            obj.optInt("endWeek", 16).coerceIn(1, 25),
+                            parsedWeekType
+                        ),
                         alarmEnabled = obj.optBoolean("alarmEnabled", true),
                         alarmMinutesBefore = obj.optInt("alarmMinutesBefore", 15),
                         color = obj.optInt("color", 0xFF6200EE.toInt())
