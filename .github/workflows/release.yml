@@ -67,9 +67,22 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
 
+      - name: Extract release notes from tag
+        id: release_notes
+        run: |
+          # 获取当前 tag 的 annotated message（去掉第一行标题）
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          NOTES=$(git tag -l --format='%(contents)' "$TAG_NAME" | tail -n +2)
+          # 多行输出用 heredoc 方式写入 GITHUB_OUTPUT
+          {
+            echo 'notes<<EOF'
+            echo "$NOTES"
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.VERSION }}
           files: app/build/outputs/apk/release/*.apk
-          generateReleaseNotes: true
+          body: ${{ steps.release_notes.outputs.notes }}
