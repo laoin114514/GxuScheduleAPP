@@ -121,6 +121,7 @@ class SettingsActivity : AppCompatActivity() {
         btnTimeTableSettings = findViewById(R.id.btn_time_table_settings)
         btnAppearanceSettings = findViewById(R.id.btn_appearance_settings)
         btnColorTheme = findViewById(R.id.btn_color_theme)
+        btnColorTheme.visibility = android.view.View.GONE
         btnCheckUpdate = findViewById(R.id.btn_check_update)
         btnPermissionGuide = findViewById(R.id.btn_permission_guide)
         btnFeedback = findViewById(R.id.btn_feedback)
@@ -213,24 +214,6 @@ class SettingsActivity : AppCompatActivity() {
 
         btnAppearanceSettings.setOnClickListener {
             showAppearanceSettingsDialog()
-        }
-
-        btnColorTheme.setOnClickListener {
-            val palettes = com.cherry.wakeupschedule.ui.theme.M3ColorPalette.LIGHT_PALETTES
-            val currentIndex = com.cherry.wakeupschedule.ui.theme.ThemeManager.getPaletteIndex(this)
-            val options = palettes.map { palette ->
-                SelectOption(label = palette.name, leadingColor = palette.primary)
-            }
-            SelectionDialog.show(
-                context = this,
-                title = "选择主题色板",
-                options = options,
-                selectedIndex = currentIndex,
-                onSelected = { index ->
-                    com.cherry.wakeupschedule.ui.theme.ThemeManager.setPaletteIndex(index, this)
-                    recreate()
-                }
-            )
         }
 
         btnAbout.setOnClickListener {

@@ -20,11 +20,7 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
-import com.cherry.wakeupschedule.ui.component.SelectOption
-import com.cherry.wakeupschedule.ui.component.SelectionDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
-import com.cherry.wakeupschedule.ui.theme.M3ColorPalette
-import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.gxu.jwxt.model.Term
 import kotlinx.coroutines.CoroutineScope
@@ -87,24 +83,7 @@ class ProfileFragment : Fragment() {
         }
 
 
-        view.findViewById<View>(R.id.item_theme_palette).setOnClickListener {
-            val palettes = M3ColorPalette.LIGHT_PALETTES
-            val currentIndex = ThemeManager.getPaletteIndex(requireContext())
-            val options = palettes.map { palette ->
-                SelectOption(label = palette.name, leadingColor = palette.primary)
-            }
-            SelectionDialog.show(
-                context = requireContext(),
-                title = "选择主题色板",
-                options = options,
-                selectedIndex = currentIndex,
-                onSelected = { index ->
-                    ThemeManager.setPaletteIndex(index, requireContext())
-                    Toast.makeText(requireContext(), "已选择: ${palettes[index].name}", Toast.LENGTH_SHORT).show()
-                    requireActivity().recreate()
-                }
-            )
-        }
+        view.findViewById<View>(R.id.item_theme_palette).visibility = View.GONE
 
         view.findViewById<View>(R.id.item_alarm).setOnClickListener {
             StyledDialog.Builder(requireContext())
