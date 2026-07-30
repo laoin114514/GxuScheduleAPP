@@ -20,6 +20,8 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
+import com.cherry.wakeupschedule.ui.component.SelectOption
+import com.cherry.wakeupschedule.ui.component.SelectionDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.gxu.jwxt.model.Term
