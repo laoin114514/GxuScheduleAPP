@@ -155,7 +155,7 @@ class ExactAlarmWorker(
     private fun shouldReschedule(course: Course): Boolean {
         val currentWeek = getCurrentWeek()
         // 只在本学期周范围内且未超过结束周时重新调度
-        return currentWeek in course.startWeek..course.endWeek
+        return course.isActiveInWeek(currentWeek)
     }
 
     /**
@@ -173,12 +173,8 @@ class ExactAlarmWorker(
 
             val currentWeek = getCurrentWeek()
             val targetWeek = currentWeek + 1
-            if (targetWeek !in course.startWeek..course.endWeek) {
-                Log.d(TAG, "下周已超出课程范围，跳过重调度")
-                return
-            }
-            if (!isWeekTypeMatched(course, targetWeek)) {
-                Log.d(TAG, "下周单双周不匹配，跳过重调度")
+            if (!course.isActiveInWeek(targetWeek)) {
+                Log.d(TAG, "下周已超出课程范围或单双周不匹配，跳过重调度")
                 return
             }
 
@@ -214,14 +210,6 @@ class ExactAlarmWorker(
             Log.d(TAG, "已为课程 ${course.name} 调度下周提醒，延迟 ${delayMinutes} 分钟")
         } catch (e: Exception) {
             Log.e(TAG, "调度下周提醒失败", e)
-        }
-    }
-
-    private fun isWeekTypeMatched(course: Course, week: Int): Boolean {
-        return when (course.weekType) {
-            1 -> week % 2 == 1
-            2 -> week % 2 == 0
-            else -> true
         }
     }
 

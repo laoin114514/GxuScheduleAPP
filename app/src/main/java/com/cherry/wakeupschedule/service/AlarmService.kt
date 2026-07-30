@@ -92,9 +92,7 @@ class AlarmService(private val context: Context) {
         val currentWeek = getCurrentWeek()
 
         // 检查课程是否在当前周范围内
-        if (currentWeek < course.startWeek || currentWeek > course.endWeek) return
-        // 检查单双周是否匹配
-        if (!isWeekTypeMatched(course, currentWeek)) return
+        if (!course.isActiveInWeek(currentWeek)) return
 
         // 使用学期开始日期精确计算闹钟时间
         var alarmTime = calculateAlarmTimeMillis(course, currentWeek, course.alarmMinutesBefore)
@@ -224,8 +222,7 @@ class AlarmService(private val context: Context) {
         val currentWeek = getCurrentWeek()
 
         // 检查周范围和单双周
-        if (currentWeek < course.startWeek || currentWeek > course.endWeek) return
-        if (!isWeekTypeMatched(course, currentWeek)) return
+        if (!course.isActiveInWeek(currentWeek)) return
 
         // 使用学期开始日期精确计算闹钟时间
         var alarmTime = calculateAlarmTimeMillis(course, currentWeek, course.alarmMinutesBefore)
@@ -482,7 +479,7 @@ class AlarmService(private val context: Context) {
         scheduleForegroundServiceIfNeeded()
 
         val allCourses = CourseDataManager.getInstance(context).getAllCourses()
-        val semesterEndWeek = allCourses.maxOfOrNull { it.endWeek } ?: 20
+        val semesterEndWeek = allCourses.maxOfOrNull { c -> Course.bitmapToWeekRange(c.weekBitmap)?.second ?: 0 } ?: 20
 
         val currentWeek = getCurrentWeek()
 
@@ -569,8 +566,8 @@ class AlarmService(private val context: Context) {
         val currentWeek = getCurrentWeek()
         val result = mutableListOf<Pair<Long, Int>>()
 
-        for (week in course.startWeek..Math.min(course.endWeek, semesterEndWeek)) {
-            if (!isWeekTypeMatched(course, week)) continue
+        for (week in Course.bitmapToWeekList(course.weekBitmap)) {
+            if (week > semesterEndWeek) break
 
             var alarmTime = calculateAlarmTimeMillis(course, week, course.alarmMinutesBefore)
             if (alarmTime == 0L) break
@@ -667,21 +664,6 @@ class AlarmService(private val context: Context) {
         val week = (diffDays / 7) + 1
 
         return week.coerceIn(1, settingsManager.getTotalWeeks())
-    }
-
-    /**
-     * 检查课程是否在当前单双周类型下应该显示
-     *
-     * @param course 课程
-     * @param week 周数
-     * @return true表示匹配
-     */
-    private fun isWeekTypeMatched(course: Course, week: Int): Boolean {
-        return when (course.weekType) {
-            1 -> week % 2 == 1   // 单周
-            2 -> week % 2 == 0   // 双周
-            else -> true          // 每周
-        }
     }
 
     /**

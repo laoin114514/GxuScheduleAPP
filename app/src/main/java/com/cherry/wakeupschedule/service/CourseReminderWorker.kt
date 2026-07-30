@@ -85,8 +85,7 @@ class CourseReminderWorker(
             val todayCourses = allCourses.filter { course ->
                 course.alarmEnabled &&
                 course.dayOfWeek == currentDayOfWeek &&
-                currentWeek in course.startWeek..course.endWeek &&
-                isWeekTypeMatched(course, currentWeek)
+                course.isActiveInWeek(currentWeek)
             }
 
             todayCourses.forEach { course ->
@@ -161,8 +160,7 @@ class CourseReminderWorker(
         val upcomingCourses = allCourses.filter { course ->
             course.alarmEnabled &&
             course.dayOfWeek == currentDayOfWeek &&
-            currentWeek in course.startWeek..course.endWeek &&
-            isWeekTypeMatched(course, currentWeek)
+            course.isActiveInWeek(currentWeek)
         }
 
         upcomingCourses.forEach { course ->
@@ -218,14 +216,3 @@ class CourseReminderWorker(
         return Pair(calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
     }
 
-    /**
-     * 检查课程的单双周类型是否匹配
-     */
-    private fun isWeekTypeMatched(course: Course, week: Int): Boolean {
-        return when (course.weekType) {
-            1 -> week % 2 == 1
-            2 -> week % 2 == 0
-            else -> true
-        }
-    }
-}
