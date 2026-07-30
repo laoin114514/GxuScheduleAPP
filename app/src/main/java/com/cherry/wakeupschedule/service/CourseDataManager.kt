@@ -109,14 +109,7 @@ class CourseDataManager private constructor(context: Context) {
 
     fun getCoursesForWeek(week: Int): List<Course> {
         return _coursesFlow.value.filter { course ->
-            val isInWeekRange = week in course.startWeek..course.endWeek
-            val isWeekTypeMatch = when (course.weekType) {
-                0 -> true
-                1 -> week % 2 == 1
-                2 -> week % 2 == 0
-                else -> true
-            }
-            isInWeekRange && isWeekTypeMatch
+            course.isActiveInWeek(week)
         }
     }
 
@@ -229,7 +222,7 @@ class CourseDataManager private constructor(context: Context) {
          * 同一「课程名+教师」组合始终返回同一颜色索引，保证跨页面一致。
          */
         fun assignColorIndex(name: String, teacher: String): Int {
-            val key = "$name|$teacher"
+            val key = name  // 只用课程名，同名课同色
             return (Math.abs(key.hashCode()) % COURSE_COLOR_COUNT) + 1
         }
     }
