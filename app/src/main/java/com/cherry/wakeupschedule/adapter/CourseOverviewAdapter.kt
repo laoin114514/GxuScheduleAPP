@@ -26,9 +26,7 @@ class CourseOverviewAdapter(
         val name: String,
         val teacher: String,
         val classroom: String,
-        val startWeek: Int,
-        val endWeek: Int,
-        val weekType: Int,
+        val weekBitmap: Long,
         val color: Int,
         val timeSlots: List<TimeSlot>
     ) {
@@ -70,12 +68,8 @@ class CourseOverviewAdapter(
                         course.endTime
                     )
                 )
-                // 更新周次范围
-                val newStartWeek = minOf(existing.startWeek, course.startWeek)
-                val newEndWeek = maxOf(existing.endWeek, course.endWeek)
                 map[key] = existing.copy(
-                    startWeek = newStartWeek,
-                    endWeek = newEndWeek,
+                    weekBitmap = existing.weekBitmap or course.weekBitmap,
                     timeSlots = newTimeSlots.sortedWith(compareBy({ it.dayOfWeek }, { it.startTime }))
                 )
             } else {
@@ -83,9 +77,7 @@ class CourseOverviewAdapter(
                     name = course.name,
                     teacher = course.teacher,
                     classroom = course.classroom,
-                    startWeek = course.startWeek,
-                    endWeek = course.endWeek,
-                    weekType = course.weekType,
+                    weekBitmap = course.weekBitmap,
                     color = color,
                     timeSlots = listOf(
                         MergedCourse.TimeSlot(
@@ -134,15 +126,28 @@ class CourseOverviewAdapter(
         holder.tvCourseLocation.text = if (course.classroom.isNotBlank()) course.classroom else "未设置地点"
 
         // 周次
-        holder.tvCourseWeeks.text = "第${course.startWeek}-${course.endWeek}周"
+        val weekList = Course.bitmapToWeekList(course.weekBitmap)
+        holder.tvCourseWeeks.text = if (weekList.isNotEmpty()) {
+            "第${weekList.first()}-${weekList.last()}周"
+        } else {
+            "周次未设置"
+        }
 
-        // 周类型标签
-        when (course.weekType) {
-            1 -> {
+        val allOdd = weekList.isNotEmpty() && weekList.all { it % 2 == 1 }
+        val allEven = weekList.isNotEmpty() && weekList.all { it % 2 == 0 }
+        val isContinuous = weekList.isNotEmpty() &&
+            weekList.zipWithNext().all { (a, b) -> b - a == 1 }
+
+        when {
+            !isContinuous && weekList.isNotEmpty() -> {
+                holder.tvWeekTypeBadge.text = "分散"
+                holder.tvWeekTypeBadge.visibility = View.VISIBLE
+            }
+            allOdd -> {
                 holder.tvWeekTypeBadge.text = "单周"
                 holder.tvWeekTypeBadge.visibility = View.VISIBLE
             }
-            2 -> {
+            allEven -> {
                 holder.tvWeekTypeBadge.text = "双周"
                 holder.tvWeekTypeBadge.visibility = View.VISIBLE
             }
