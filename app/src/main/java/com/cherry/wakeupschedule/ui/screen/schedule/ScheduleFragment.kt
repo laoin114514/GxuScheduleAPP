@@ -3,11 +3,19 @@ package com.cherry.wakeupschedule.ui.screen.schedule
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -87,6 +95,10 @@ class ScheduleFragment : Fragment() {
         view.findViewById<View>(R.id.btn_refresh).setOnClickListener {
             refreshScheduleFromJwxt(showError = true)
         }
+
+        view.findViewById<View>(R.id.btn_menu).setOnClickListener {
+            showMenuSheet()
+        }
     }
 
     /**
@@ -161,10 +173,27 @@ class ScheduleFragment : Fragment() {
         tvDate.text = dateFormat.format(cal.time)
         val displayWk = getDisplayWeek()
         val currentWk = getCurrentWeek()
-        val weekText = if (displayWk == currentWk) "第${displayWk}周 (本周)"
-        else "第${displayWk}周"
+
+        val isInRange = isCurrentDateInSemesterRange()
+        val weekText = if (!isInRange) {
+            "第${displayWk}周 该学期已结束"
+        } else if (displayWk == currentWk) {
+            "第${displayWk}周 (本周)"
+        } else {
+            "第${displayWk}周"
+        }
         tvWeekInfo.text = weekText
         updateDateHeaderRow(displayWk)
+    }
+
+    /** 当前日期是否在学期日期范围内 */
+    private fun isCurrentDateInSemesterRange(): Boolean {
+        val startDate = settingsManager.getSemesterStartDate()
+        if (startDate == 0L) return true // 未设置学期日期，不判定
+        val totalWeeks = settingsManager.getTotalWeeks()
+        val now = System.currentTimeMillis()
+        val endDate = startDate + totalWeeks * 7L * 86400000L
+        return now in startDate..endDate
     }
 
     private fun updateDateHeaderRow(week: Int) {
@@ -186,8 +215,8 @@ class ScheduleFragment : Fragment() {
 
         val root = view ?: return
 
-        val monthLabel = root.findViewById<TextView>(R.id.tv_month_value)
-        monthLabel?.text = "${cal.get(Calendar.MONTH) + 1}"
+        val yearLabel = root.findViewById<TextView>(R.id.tv_year_value)
+        yearLabel?.text = "${cal.get(Calendar.YEAR)}"
 
         dateViewIds.forEachIndexed { _, id ->
             val tv = root.findViewById<TextView>(id)
@@ -265,10 +294,6 @@ class ScheduleFragment : Fragment() {
 
                     val currentWk = calculateCurrentWeek()
                     courseViewModel.currentWeek = currentWk
-                    if (showError) {
-                        setDisplayWeek(currentWk)
-                        viewPager.setCurrentItem(currentWk - 1, false)
-                    }
                     allCourses = courses
                     adapter.updateData(allCourses)
                     updateDateTimeHeader()
@@ -287,6 +312,192 @@ class ScheduleFragment : Fragment() {
                 }
             }
         }
+    }
+
+    // ── 课表菜单 Bottom Sheet ─────────────────────────────
+
+    /**
+     * 显示课表菜单底部弹窗，包含周数滑块和学期选择。
+     * 参考 SchedulePageDetailDialog 的 BottomSheet 模式。
+     */
+    private fun showMenuSheet() {
+        val ctx = requireContext()
+        val dialog = Dialog(ctx, R.style.BottomSheetDialog)
+        val inflater = LayoutInflater.from(ctx)
+        val sheetView = inflater.inflate(R.layout.bottom_sheet_schedule_menu, null)
+        val density = ctx.resources.displayMetrics.density
+
+        // 顶部圆角背景
+        val topRadius = 20 * density
+        val sheetBg = GradientDrawable().apply {
+            cornerRadii = floatArrayOf(topRadius, topRadius, topRadius, topRadius, 0f, 0f, 0f, 0f)
+        }
+        val typedValue = android.util.TypedValue()
+        ctx.theme.resolveAttribute(
+            com.google.android.material.R.attr.colorSurface, typedValue, true
+        )
+        sheetBg.setColor(typedValue.data)
+        sheetView.background = sheetBg
+
+        val totalWeeks = settingsManager.getTotalWeeks()
+        val currentDisplayWeek = getDisplayWeek()
+        val currentWeek = getCurrentWeek()
+
+        // ── 周数滑块 ──
+        val tvWeekLabel = sheetView.findViewById<TextView>(R.id.tv_week_label)
+        val sbWeek = sheetView.findViewById<SeekBar>(R.id.sb_week)
+
+        tvWeekLabel.text = "第 $currentDisplayWeek 周" +
+                if (currentDisplayWeek == currentWeek) " (本周)" else ""
+        sbWeek.max = totalWeeks - 1
+        sbWeek.progress = currentDisplayWeek - 1
+
+        sbWeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val week = progress + 1
+                tvWeekLabel.text = "第 $week 周" +
+                        if (week == currentWeek) " (本周)" else ""
+                if (fromUser) {
+                    setDisplayWeek(week)
+                    viewPager.setCurrentItem(progress, false)
+                    updateDateTimeHeader()
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        // ── 学期选择（横向滑动） ──
+        val llSemesterList = sheetView.findViewById<LinearLayout>(R.id.ll_semester_list)
+        val semesters = SemesterManager.getAll()
+        val currentSemesterIndex = settingsManager.getCurrentSemesterIndex()
+
+        // 色块颜色跟随主题（浅色/深色自适应）
+        val blockColor = android.util.TypedValue().also { tv ->
+            ctx.theme.resolveAttribute(
+                com.google.android.material.R.attr.colorSurfaceVariant, tv, true
+            )
+        }.data
+
+        val blockSize = (52 * density).toInt()
+        val itemMarginEnd = (14 * density).toInt()
+        val blockRadius = (14 * density).toFloat()
+        val labelTextSize = 13f
+
+        semesters.forEachIndexed { index, sem ->
+            val isSelected = index == currentSemesterIndex
+
+            val item = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { marginEnd = itemMarginEnd }
+                isClickable = true
+                isFocusable = true
+            }
+
+            // 圆角色块
+            val block = View(ctx).apply {
+                layoutParams = LinearLayout.LayoutParams(blockSize, blockSize).apply {
+                    bottomMargin = (8 * density).toInt()
+                }
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = blockRadius
+                    setColor(blockColor)
+                    if (isSelected) {
+                        ctx.theme.resolveAttribute(
+                            com.google.android.material.R.attr.colorPrimary, typedValue, true
+                        )
+                        setStroke((2.5f * density).toInt(), typedValue.data)
+                    }
+                }
+            }
+            item.addView(block)
+
+            // 标签文字（只显示前三个字，如"大一上"）
+            val label = TextView(ctx).apply {
+                text = sem.label.take(3)
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, labelTextSize)
+                gravity = Gravity.CENTER
+                ctx.theme.resolveAttribute(
+                    com.google.android.material.R.attr.colorOnSurface, typedValue, true
+                )
+                setTextColor(typedValue.data)
+            }
+            item.addView(label)
+
+            // 选中标记
+            if (isSelected) {
+                val dot = View(ctx).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        (6 * density).toInt(), (6 * density).toInt()
+                    ).apply { topMargin = (4 * density).toInt() }
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        ctx.theme.resolveAttribute(
+                            com.google.android.material.R.attr.colorPrimary, typedValue, true
+                        )
+                        setColor(typedValue.data)
+                    }
+                }
+                item.addView(dot)
+            }
+
+            item.setOnClickListener {
+                if (isSelected) {
+                    dialog.dismiss()
+                    return@setOnClickListener
+                }
+                // 切换学期
+                settingsManager.setCurrentSemesterIndex(index)
+                CourseDataManager.getInstance(ctx).switchSemester(sem.id)
+                // 调到第一周
+                courseViewModel.currentWeek = calculateCurrentWeek()
+                setDisplayWeek(1)
+                viewPager.setCurrentItem(0, false)
+                updateDateTimeHeader()
+                dialog.dismiss()
+            }
+
+            llSemesterList.addView(item)
+        }
+
+        // ── 组装容器 ──
+        dialog.setContentView(sheetView)
+        val container = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+        (sheetView.parent as? ViewGroup)?.removeView(sheetView)
+        sheetView.layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        container.addView(View(ctx).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            )
+            setOnClickListener { dialog.dismiss() }
+        })
+        container.addView(sheetView)
+        dialog.setContentView(container)
+
+        dialog.window?.apply {
+            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+            setGravity(Gravity.BOTTOM)
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            setWindowAnimations(R.style.BottomSheetAnimation)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                setDimAmount(0.5f)
+            }
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        }
+        dialog.setCancelable(true)
+        dialog.setCanceledOnTouchOutside(true)
+        dialog.show()
     }
 
     private fun startCountdown() {
