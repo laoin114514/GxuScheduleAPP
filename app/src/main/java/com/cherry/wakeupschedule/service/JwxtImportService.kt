@@ -41,15 +41,17 @@ object JwxtImportService {
         val dayOfWeek = e.weekday?.toIntOrNull()?.coerceIn(1, 7) ?: return null
 
         val periodRange = parsePeriod(e.periodNum ?: e.period ?: return null) ?: return null
-        val weekList = parseWeeks(e.weeks ?: return null)
-        if (weekList.isEmpty()) return null
+        val bitmap = parseWeekBitmap(e.weeks ?: return null)
+        if (bitmap == 0L) return null
+
+        val category = e.courseCategory ?: ""
 
         return Course(
             name = name, teacher = teacher, classroom = classroom,
             dayOfWeek = dayOfWeek,
             startTime = periodRange.first, endTime = periodRange.second,
-            startWeek = weekList.first(), endWeek = weekList.last(),
-            weekType = 0,
+            weekBitmap = bitmap,
+            courseCategory = category,
             alarmEnabled = true, alarmMinutesBefore = 15
         )
     }
@@ -66,21 +68,43 @@ object JwxtImportService {
         return Pair(start, end)
     }
 
-    private fun parseWeeks(weeks: String): List<Int> {
-        val result = mutableListOf<Int>()
-        val cleaned = weeks.replace("周", "").trim()
+    /**
+     * 解析教务系统周次字符串为位图。
+     * 支持格式: "1-5周", "7-11周(单)", "6-8周(双)", "14周",
+     *           组合: "1-5周,7-11周(单),12-16周"
+     * bit 0 = 第1周
+     */
+    private fun parseWeekBitmap(weeks: String): Long {
+        var bitmap = 0L
+        val cleaned = weeks.replace(" ", "")
         for (part in cleaned.split(",")) {
             val t = part.trim()
-            if (t.contains("-")) {
-                val r = t.split("-")
-                val s = r[0].toIntOrNull() ?: continue
-                val e = r[1].toIntOrNull() ?: continue
-                for (w in s..e) result.add(w)
+            if (t.isEmpty()) continue
+
+            val oddOnly = t.contains("(单)")
+            val evenOnly = t.contains("(双)")
+            val clean = t.replace("周", "")
+                .replace("(单)", "")
+                .replace("(双)", "")
+                .replace("（单）", "")
+                .replace("（双）", "")
+                .trim()
+
+            if (clean.contains("-")) {
+                val parts = clean.split("-")
+                val s = parts[0].toIntOrNull() ?: continue
+                val e = parts[1].toIntOrNull() ?: continue
+                for (w in s..e) {
+                    if (oddOnly && w % 2 == 0) continue
+                    if (evenOnly && w % 2 == 1) continue
+                    if (w in 1..64) bitmap = bitmap or (1L shl (w - 1))
+                }
             } else {
-                t.toIntOrNull()?.let { result.add(it) }
+                val w = clean.toIntOrNull() ?: continue
+                if (w in 1..64) bitmap = bitmap or (1L shl (w - 1))
             }
         }
-        return result.sorted()
+        return bitmap
     }
 
     /**
@@ -97,14 +121,20 @@ object JwxtImportService {
         // 找今天的课程
         val todayCourses = courses.filter { it.dayOfWeek == adjustedToday }
         val currentWeek: Int = if (todayCourses.isNotEmpty()) {
-            todayCourses.minOf { it.startWeek }
+            todayCourses.minOf { c ->
+                val range = Course.bitmapToWeekRange(c.weekBitmap)
+                range?.first ?: 99
+            }
         } else {
             // 今天没课 → 往后找最近有课的一天
             for (offset in 1..7) {
                 val checkDow = ((adjustedToday + offset - 1) % 7) + 1
                 val checkCourses = courses.filter { it.dayOfWeek == checkDow }
                 if (checkCourses.isNotEmpty()) {
-                    return@calculateSemesterStart computeStart(cal, offset, checkCourses.minOf { it.startWeek })
+                    return@calculateSemesterStart computeStart(cal, offset, checkCourses.minOf { c ->
+                        val range = Course.bitmapToWeekRange(c.weekBitmap)
+                        range?.first ?: 99
+                    })
                 }
             }
             // 所有天都没课 → 默认第 1 周
