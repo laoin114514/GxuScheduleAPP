@@ -1,6 +1,7 @@
 package com.cherry.wakeupschedule.service
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.cherry.wakeupschedule.model.AppDatabase
 import com.cherry.wakeupschedule.model.SemesterEntity
 import com.gxu.jwxt.model.StudentProfile
@@ -15,11 +16,19 @@ object SemesterManager {
     @Volatile
     private var cached: List<SemesterEntity>? = null
 
+    private var prefs: SharedPreferences? = null
+
+    private const val KEY_CURRENT_SEMESTER_INDEX = "current_semester_index"
+
     fun init(context: Context) {
         dao = AppDatabase.getInstance(context).semesterDao()
+        prefs = context.applicationContext.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         runBlocking(Dispatchers.IO) {
             cached = dao.getAllSemesters()
         }
+        // 从持久化恢复当前学期索引
+        val idx = prefs?.getInt(KEY_CURRENT_SEMESTER_INDEX, -1) ?: -1
+        currentIndex = idx
     }
 
     // ── 计算 ──
@@ -110,7 +119,10 @@ object SemesterManager {
     @Volatile
     private var currentIndex: Int = -1
 
-    fun setCurrentIndex(index: Int) { currentIndex = index }
+    fun setCurrentIndex(index: Int) {
+        currentIndex = index
+        prefs?.edit()?.putInt(KEY_CURRENT_SEMESTER_INDEX, index)?.apply()
+    }
 
     fun getCurrentIndex(): Int = currentIndex
 }

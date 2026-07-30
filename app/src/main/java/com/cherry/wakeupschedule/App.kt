@@ -45,13 +45,8 @@ class App : Application() {
         // 初始化教务账号管理器
         com.cherry.wakeupschedule.service.JwxtAccountManager.init(this)
 
-        // 初始化学期管理器
+        // 初始化学期管理器（内部自动恢复当前学期索引）
         com.cherry.wakeupschedule.service.SemesterManager.init(this)
-
-        // 恢复当前学期索引
-        val idx = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-            .getInt("current_semester_index", -1)
-        com.cherry.wakeupschedule.service.SemesterManager.setCurrentIndex(idx)
 
         try {
             NotificationHelper(this).createNotificationChannels()
