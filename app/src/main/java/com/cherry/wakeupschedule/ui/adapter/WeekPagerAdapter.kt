@@ -134,7 +134,9 @@ class WeekPagerAdapter(
                 val primary = sorted[0]
 
                 val ci = if (primary.color > 0) (primary.color - 1) % colors.size else 0
-                val bgColor = ColorUtils.setAlphaComponent(colors[ci], 128)
+                val isDark = ThemeManager.isDarkMode(ctx)
+                val alpha = if (isDark) 191 else 128
+                val bgColor = ColorUtils.setAlphaComponent(colors[ci], alpha)
 
                 val rowStart = (primary.startTime - 1).coerceIn(0, maxNodes - 1)
                 val span = (primary.endTime - primary.startTime + 1).coerceAtLeast(1)
