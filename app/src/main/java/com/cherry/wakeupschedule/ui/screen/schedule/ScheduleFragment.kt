@@ -297,7 +297,7 @@ class ScheduleFragment : Fragment() {
                 cal.get(Calendar.MINUTE) * 60 + cal.get(Calendar.SECOND)
 
         val todayCourses = allCourses
-            .filter { it.dayOfWeek == adjustedDay && getCurrentWeek() in it.startWeek..it.endWeek }
+            .filter { it.dayOfWeek == adjustedDay && it.isActiveInWeek(getCurrentWeek()) }
             .sortedBy { getCourseStartMinutes(it) }
 
         val currentCourse = todayCourses.find {
