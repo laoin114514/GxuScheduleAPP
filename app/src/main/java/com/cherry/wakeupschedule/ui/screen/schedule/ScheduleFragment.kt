@@ -347,16 +347,14 @@ class ScheduleFragment : Fragment() {
         val tvWeekLabel = sheetView.findViewById<TextView>(R.id.tv_week_label)
         val sbWeek = sheetView.findViewById<SeekBar>(R.id.sb_week)
 
-        tvWeekLabel.text = "第 $currentDisplayWeek 周" +
-                if (currentDisplayWeek == currentWeek) " (本周)" else ""
+        tvWeekLabel.text = "第 $currentDisplayWeek 周"
         sbWeek.max = totalWeeks - 1
         sbWeek.progress = currentDisplayWeek - 1
 
         sbWeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val week = progress + 1
-                tvWeekLabel.text = "第 $week 周" +
-                        if (week == currentWeek) " (本周)" else ""
+                tvWeekLabel.text = "第 $week 周"
                 if (fromUser) {
                     setDisplayWeek(week)
                     viewPager.setCurrentItem(progress, false)
