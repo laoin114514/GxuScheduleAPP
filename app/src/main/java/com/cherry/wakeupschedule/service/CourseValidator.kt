@@ -101,7 +101,7 @@ object CourseValidator {
         if (course1.dayOfWeek != course2.dayOfWeek) return false
 
         // 周范围无交集 → 不重叠
-        if (course1.endWeek < course2.startWeek || course2.endWeek < course1.startWeek) return false
+        if ((course1.weekBitmap and course2.weekBitmap) == 0L) return false
 
         // 节次无交集 → 不重叠
         if (course1.endTime < course2.startTime || course2.endTime < course1.startTime) return false
@@ -158,11 +158,16 @@ object CourseValidator {
         if (course.endTime !in MIN_TIME_SLOT..MAX_TIME_SLOT) {
             results.add(ValidationResult.Error("结束节次必须在 $MIN_TIME_SLOT-$MAX_TIME_SLOT 范围内（当前: ${course.endTime}）"))
         }
-        if (course.startWeek !in MIN_WEEK..MAX_WEEK) {
-            results.add(ValidationResult.Error("开始周必须在 $MIN_WEEK-$MAX_WEEK 范围内（当前: ${course.startWeek}）"))
+        if (course.weekBitmap == 0L) {
+            results.add(ValidationResult.Error("周次不能为空"))
         }
-        if (course.endWeek !in MIN_WEEK..MAX_WEEK) {
-            results.add(ValidationResult.Error("结束周必须在 $MIN_WEEK-$MAX_WEEK 范围内（当前: ${course.endWeek}）"))
+        val weekList = Course.bitmapToWeekList(course.weekBitmap)
+        if (weekList.isNotEmpty()) {
+            if (weekList.first() < MIN_WEEK || weekList.last() > MAX_WEEK) {
+                results.add(ValidationResult.Error(
+                    "周次必须在 $MIN_WEEK-$MAX_WEEK 范围内（当前: ${weekList.first()}-${weekList.last()}）"
+                ))
+            }
         }
     }
 
@@ -170,11 +175,6 @@ object CourseValidator {
         // 结束节次必须 >= 开始节次
         if (course.endTime < course.startTime) {
             results.add(ValidationResult.Error("结束节次(${course.endTime})不能小于开始节次(${course.startTime})"))
-        }
-
-        // 结束周必须 >= 开始周
-        if (course.endWeek < course.startWeek) {
-            results.add(ValidationResult.Error("结束周(${course.endWeek})不能小于开始周(${course.startWeek})"))
         }
 
         // 单节课程合理性检查
@@ -190,14 +190,6 @@ object CourseValidator {
         // 跨天课程警告
         if (course.endTime - course.startTime > 10) {
             results.add(ValidationResult.Error("课程节次跨度异常（${course.endTime - course.startTime + 1} 节），可能数据有误"))
-        }
-
-        // 周类型与周范围一致性校验
-        if (course.weekType == 1 && course.startWeek % 2 == 0) {
-            results.add(ValidationResult.Warning("课程设为单周（weekType=1），但开始周 ${course.startWeek} 为双周"))
-        }
-        if (course.weekType == 2 && course.startWeek % 2 == 1) {
-            results.add(ValidationResult.Warning("课程设为双周（weekType=2），但开始周 ${course.startWeek} 为单周"))
         }
     }
 }
