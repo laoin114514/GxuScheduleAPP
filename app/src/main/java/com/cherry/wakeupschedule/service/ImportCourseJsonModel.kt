@@ -191,9 +191,11 @@ object ImportCourseProtocol {
             dayOfWeek = effectiveDayOfWeek.coerceIn(1, 7),
             startTime = startTime.coerceIn(1, 14),
             endTime = endTime.coerceIn(1, 14),
-            startWeek = effectiveStartWeek.coerceIn(1, 30),
-            endWeek = effectiveEndWeek.coerceIn(1, 30),
-            weekType = effectiveWeekType,
+            weekBitmap = Course.bitmapFromRange(
+                effectiveStartWeek.coerceIn(1, 30),
+                effectiveEndWeek.coerceIn(1, 30),
+                effectiveWeekType
+            ),
             alarmEnabled = alarmEnabled,
             alarmMinutesBefore = alarmMinutesBefore.coerceIn(0, 60),
             color = color,
@@ -218,6 +220,7 @@ object ImportCourseProtocol {
      */
     fun serialize(courses: List<Course>, source: String = "Schedule"): String {
         val importCourses = courses.map { course ->
+            val weekList = Course.bitmapToWeekList(course.weekBitmap)
             ImportCourseModel(
                 name = course.name,
                 teacher = course.teacher,
@@ -225,9 +228,9 @@ object ImportCourseProtocol {
                 dayOfWeek = course.dayOfWeek,
                 startTime = course.startTime,
                 endTime = course.endTime,
-                startWeek = course.startWeek,
-                endWeek = course.endWeek,
-                weekType = course.weekType,
+                startWeek = weekList.firstOrNull() ?: 1,
+                endWeek = weekList.lastOrNull() ?: 16,
+                weeks = weekList,
                 color = course.color,
                 alarmEnabled = course.alarmEnabled,
                 alarmMinutesBefore = course.alarmMinutesBefore,
