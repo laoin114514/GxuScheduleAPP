@@ -5,8 +5,10 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -165,6 +167,20 @@ class WeekPagerAdapter(
                         } else {
                             SchedulePageDetailDialog.show(ctx, primary, colors)
                         }
+                    }
+                    setOnTouchListener { v, event ->
+                        when (event.action) {
+                            MotionEvent.ACTION_DOWN -> {
+                                v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(100).start()
+                            }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                v.animate().scaleX(1f).scaleY(1f)
+                                    .setDuration(300)
+                                    .setInterpolator(OvershootInterpolator(2f))
+                                    .start()
+                            }
+                        }
+                        false
                     }
                 }
 
