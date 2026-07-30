@@ -105,6 +105,11 @@ class SettingsActivity : AppCompatActivity() {
         updateSettingsDisplay()
     }
 
+    override fun onResume() {
+        super.onResume()
+        updateSettingsDisplay()
+    }
+
     private fun initViews() {
         tvCurrentSemester = findViewById(R.id.tv_current_semester)
         tvDefaultWeek = findViewById(R.id.tv_default_week)

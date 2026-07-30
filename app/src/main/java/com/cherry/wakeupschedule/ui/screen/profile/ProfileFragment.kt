@@ -70,6 +70,7 @@ class ProfileFragment : Fragment() {
                 .positiveButton("解绑") {
                     JwxtAuthManager.unbind()
                     updateAccountSection()
+                    updateDisplay()
                     Toast.makeText(requireContext(), "已解绑教务账号", Toast.LENGTH_SHORT).show()
                 }
                 .negativeButton("取消")
@@ -257,6 +258,7 @@ class ProfileFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateAccountSection()
+        updateDisplay()
     }
 
     private fun updateAccountSection() {
