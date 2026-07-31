@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 底部导航栏背景：对齐课表渐变底端色 #DDE4ED，实现无缝衔接 -->
+<!-- 必须写成 selector 形式（NavigationBarView 的 backgroundTint 走
+     MaterialResources.getColorStateList，纯 <color> 会抛 NotFoundException） -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#DDE4ED" />
+</selector>

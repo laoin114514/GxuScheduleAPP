@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 底部导航栏背景（深色）：对齐课表深色渐变底端色 #0D1117，实现无缝衔接 -->
+<!-- 必须写成 selector 形式，原因同浅色 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#0D1117" />
+</selector>
