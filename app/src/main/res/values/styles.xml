@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="RoundedDialog" parent="Theme.MaterialComponents.Dialog">
+    <style name="RoundedDialog" parent="Theme.Material3.DayNight.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">true</item>
         <item name="android:windowContentOverlay">@null</item>
@@ -48,7 +48,7 @@
     </style>
 
     <!-- 课程详情 Bottom Sheet -->
-    <style name="BottomSheetDialog" parent="Theme.MaterialComponents.Light.Dialog">
+    <style name="BottomSheetDialog" parent="Theme.Material3.DayNight.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">false</item>
         <item name="android:windowContentOverlay">@null</item>
