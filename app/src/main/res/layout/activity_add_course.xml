@@ -2,23 +2,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <!-- 磨砂玻璃遮罩 -->
-    <View
-        android:id="@+id/glass_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CC000000" />
-
-    <!-- 背景图片 -->
-    <ImageView
-        android:id="@+id/iv_background"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:src="@drawable/home"
-        android:contentDescription="背景" />
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_page_gradient">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -39,7 +24,7 @@
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_arrow_back"
-                app:tint="@android:color/white"
+                app:tint="?attr/colorOnSurfaceVariant"
                 android:contentDescription="返回" />
 
             <TextView
@@ -50,7 +35,7 @@
                 android:text="添加课程"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"
+                android:textColor="?attr/colorOnSurface"
                 android:gravity="center" />
 
             <View
@@ -70,261 +55,269 @@
                 android:padding="16dp">
 
                 <!-- 课程信息卡片 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_card_transparent"
-                    android:padding="16dp"
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/ScheduleSectionCard"
                     android:layout_marginBottom="16dp">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="课程信息"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="@android:color/white"
-                        android:layout_marginBottom="16dp" />
-
-                    <!-- 课程名称 -->
-                    <EditText
-                        android:id="@+id/et_course_name"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="课程名称"
-                        android:textSize="16sp"
-                        android:textColor="@android:color/white"
-                        android:textColorHint="#80FFFFFF"
-                        android:background="@drawable/bg_input_transparent"
-                        android:padding="12dp"
-                        android:layout_marginBottom="12dp"
-                        android:maxLines="1" />
-
-                    <!-- 教师姓名 -->
-                    <EditText
-                        android:id="@+id/et_teacher"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="教师姓名"
-                        android:textSize="16sp"
-                        android:textColor="@android:color/white"
-                        android:textColorHint="#80FFFFFF"
-                        android:background="@drawable/bg_input_transparent"
-                        android:padding="12dp"
-                        android:layout_marginBottom="12dp"
-                        android:maxLines="1" />
-
-                    <!-- 上课地点 -->
-                    <EditText
-                        android:id="@+id/et_location"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="上课地点"
-                        android:textSize="16sp"
-                        android:textColor="@android:color/white"
-                        android:textColorHint="#80FFFFFF"
-                        android:background="@drawable/bg_input_transparent"
-                        android:padding="12dp"
-                        android:maxLines="1" />
-
-                    <!-- 颜色选择 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical">
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="课程颜色："
+                            android:text="课程信息"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorOnSurface"
+                            android:layout_marginBottom="16dp" />
+
+                        <!-- 课程名称 -->
+                        <EditText
+                            android:id="@+id/et_course_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="课程名称"
                             android:textSize="16sp"
-                            android:textColor="@android:color/white"
-                            android:layout_gravity="center_vertical" />
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOnSurfaceVariant"
+                            android:background="@drawable/bg_input_transparent"
+                            android:padding="12dp"
+                            android:layout_marginBottom="12dp"
+                            android:maxLines="1" />
 
-                        <View
-                            android:id="@+id/color_indicator"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_marginStart="12dp"
-                            android:background="@drawable/bg_color_indicator" />
-
-                        <TextView
-                            android:id="@+id/btn_select_color"
-                            android:layout_width="wrap_content"
+                        <!-- 教师姓名 -->
+                        <EditText
+                            android:id="@+id/et_teacher"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="选择颜色"
-                            android:textSize="14sp"
-                            android:textColor="#80FFFFFF"
-                            android:layout_marginStart="12dp"
-                            android:padding="8dp" />
+                            android:hint="教师姓名"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOnSurfaceVariant"
+                            android:background="@drawable/bg_input_transparent"
+                            android:padding="12dp"
+                            android:layout_marginBottom="12dp"
+                            android:maxLines="1" />
+
+                        <!-- 上课地点 -->
+                        <EditText
+                            android:id="@+id/et_location"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="上课地点"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOnSurfaceVariant"
+                            android:background="@drawable/bg_input_transparent"
+                            android:padding="12dp"
+                            android:maxLines="1" />
+
+                        <!-- 颜色选择 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="课程颜色："
+                                android:textSize="16sp"
+                                android:textColor="?attr/colorOnSurface"
+                                android:layout_gravity="center_vertical" />
+
+                            <View
+                                android:id="@+id/color_indicator"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:layout_marginStart="12dp"
+                                android:background="@drawable/bg_color_indicator" />
+
+                            <TextView
+                                android:id="@+id/btn_select_color"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="选择颜色"
+                                android:textSize="14sp"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:layout_marginStart="12dp"
+                                android:padding="8dp" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
-                </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- 时间安排卡片 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_card_transparent"
-                    android:padding="16dp"
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/ScheduleSectionCard"
                     android:layout_marginBottom="16dp">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="时间安排"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="@android:color/white"
-                        android:layout_marginBottom="16dp" />
-
-                    <!-- 星期选择 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="星期："
-                            android:textSize="16sp"
-                            android:textColor="@android:color/white"
-                            android:layout_gravity="center_vertical" />
+                            android:text="时间安排"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorOnSurface"
+                            android:layout_marginBottom="16dp" />
 
-                        <Spinner
-                            android:id="@+id/spinner_week_day"
-                            android:layout_width="0dp"
+                        <!-- 星期选择 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_spinner_transparent" />
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="星期："
+                                android:textSize="16sp"
+                                android:textColor="?attr/colorOnSurface"
+                                android:layout_gravity="center_vertical" />
+
+                            <Spinner
+                                android:id="@+id/spinner_week_day"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_spinner_transparent" />
+
+                        </LinearLayout>
+
+                        <!-- 节次选择 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="开始节次："
+                                android:textSize="16sp"
+                                android:textColor="?attr/colorOnSurface"
+                                android:layout_gravity="center_vertical" />
+
+                            <Spinner
+                                android:id="@+id/spinner_start_time"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_spinner_transparent" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="结束节次："
+                                android:textSize="16sp"
+                                android:textColor="?attr/colorOnSurface"
+                                android:layout_gravity="center_vertical" />
+
+                            <Spinner
+                                android:id="@+id/spinner_end_time"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_spinner_transparent" />
+
+                        </LinearLayout>
+
+                        <!-- 周次选择 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="开始周："
+                                android:textSize="16sp"
+                                android:textColor="?attr/colorOnSurface"
+                                android:layout_gravity="center_vertical" />
+
+                            <Spinner
+                                android:id="@+id/spinner_start_week"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_spinner_transparent" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="结束周："
+                                android:textSize="16sp"
+                                android:textColor="?attr/colorOnSurface"
+                                android:layout_gravity="center_vertical" />
+
+                            <Spinner
+                                android:id="@+id/spinner_end_week"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_spinner_transparent" />
+
+                        </LinearLayout>
+
+                        <!-- 单双周选择 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="周次类型："
+                                android:textSize="16sp"
+                                android:textColor="?attr/colorOnSurface"
+                                android:layout_gravity="center_vertical" />
+
+                            <Spinner
+                                android:id="@+id/spinner_week_type"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/bg_spinner_transparent" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
-                    <!-- 节次选择 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="开始节次："
-                            android:textSize="16sp"
-                            android:textColor="@android:color/white"
-                            android:layout_gravity="center_vertical" />
-
-                        <Spinner
-                            android:id="@+id/spinner_start_time"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_spinner_transparent" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="结束节次："
-                            android:textSize="16sp"
-                            android:textColor="@android:color/white"
-                            android:layout_gravity="center_vertical" />
-
-                        <Spinner
-                            android:id="@+id/spinner_end_time"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_spinner_transparent" />
-
-                    </LinearLayout>
-
-                    <!-- 周次选择 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="开始周："
-                            android:textSize="16sp"
-                            android:textColor="@android:color/white"
-                            android:layout_gravity="center_vertical" />
-
-                        <Spinner
-                            android:id="@+id/spinner_start_week"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_spinner_transparent" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="结束周："
-                            android:textSize="16sp"
-                            android:textColor="@android:color/white"
-                            android:layout_gravity="center_vertical" />
-
-                        <Spinner
-                            android:id="@+id/spinner_end_week"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_spinner_transparent" />
-
-                    </LinearLayout>
-
-                    <!-- 单双周选择 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="周次类型："
-                            android:textSize="16sp"
-                            android:textColor="@android:color/white"
-                            android:layout_gravity="center_vertical" />
-
-                        <Spinner
-                            android:id="@+id/spinner_week_type"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_spinner_transparent" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- 按钮 -->
                 <LinearLayout
@@ -332,29 +325,29 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <TextView
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_cancel"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="0dp"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
                         android:text="取消"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="16sp"
-                        android:textColor="@android:color/white"
-                        android:gravity="center"
-                        android:background="@drawable/bg_button_outline" />
+                        app:strokeColor="?attr/colorOutline" />
 
-                    <TextView
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_save"
+                        style="@style/Widget.Material3.Button"
                         android:layout_width="0dp"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="8dp"
                         android:text="保存"
+                        android:textColor="?attr/colorOnPrimary"
                         android:textSize="16sp"
-                        android:textColor="@android:color/white"
-                        android:gravity="center"
-                        android:background="@drawable/bg_button_primary" />
+                        app:backgroundTint="?attr/colorPrimary" />
 
                 </LinearLayout>
 
