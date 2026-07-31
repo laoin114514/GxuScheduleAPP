@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.cherry.wakeupschedule.service.BatteryOptimizationHelper
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 
 class PermissionGuideActivity : AppCompatActivity() {
 
@@ -36,6 +37,7 @@ class PermissionGuideActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_permission_guide)
 
         initViews()

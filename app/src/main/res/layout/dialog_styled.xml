@@ -128,7 +128,7 @@
             android:layout_height="wrap_content"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="@android:color/white"
+            android:textColor="?attr/colorOnPrimary"
             android:paddingStart="24dp"
             android:paddingEnd="24dp"
             android:paddingTop="10dp"

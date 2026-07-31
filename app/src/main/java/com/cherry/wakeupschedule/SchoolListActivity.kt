@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.adapter.SchoolAdapter
 import com.cherry.wakeupschedule.ui.component.StyledDialog
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 
 class SchoolListActivity : AppCompatActivity() {
 
@@ -349,6 +350,7 @@ class SchoolListActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_school_list)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)

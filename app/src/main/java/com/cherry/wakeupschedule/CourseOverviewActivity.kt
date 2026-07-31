@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.adapter.CourseOverviewAdapter
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.google.android.material.appbar.MaterialToolbar
 import java.util.Calendar
 
@@ -34,6 +35,7 @@ class CourseOverviewActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_course_overview)
 
         toolbar = findViewById(R.id.toolbar)

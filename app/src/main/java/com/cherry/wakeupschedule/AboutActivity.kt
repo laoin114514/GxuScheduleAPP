@@ -9,11 +9,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.cherry.wakeupschedule.BuildConfig
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
 
 class AboutActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_about)
 
         val btnBack = findViewById<ImageButton>(R.id.btn_back)

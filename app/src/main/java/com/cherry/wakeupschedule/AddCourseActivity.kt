@@ -44,6 +44,7 @@ class AddCourseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applyToTheme(this)
         try {
             setContentView(R.layout.activity_add_course)
             android.util.Log.d("AddCourseActivity", "布局设置完成")
