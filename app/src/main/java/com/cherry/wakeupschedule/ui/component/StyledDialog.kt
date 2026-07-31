@@ -2,7 +2,6 @@ package com.cherry.wakeupschedule.ui.component
 
 import android.app.Dialog
 import android.content.Context
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.TypedValue
@@ -60,6 +59,18 @@ class StyledDialog private constructor(
 
     private val primaryColor: Int by lazy {
         ThemeManager.currentPalette(context).primary
+    }
+
+    private fun onSurfaceColor(): Int {
+        val tv = android.util.TypedValue()
+        context.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, tv, true)
+        return tv.data
+    }
+
+    private fun onSurfaceVariantColor(): Int {
+        val tv = android.util.TypedValue()
+        context.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, tv, true)
+        return tv.data
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -183,7 +194,7 @@ class StyledDialog private constructor(
             val tv = TextView(context).apply {
                 text = label
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-                setTextColor(Color.WHITE)
+                setTextColor(onSurfaceColor())
                 layoutParams = LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
                 )
@@ -194,7 +205,7 @@ class StyledDialog private constructor(
             val arrow = TextView(context).apply {
                 text = "›"
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
-                setTextColor(Color.WHITE and 0x60FFFFFF.toInt())
+                setTextColor(onSurfaceVariantColor())
                 gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
