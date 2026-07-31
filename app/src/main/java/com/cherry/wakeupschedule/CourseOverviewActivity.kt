@@ -41,8 +41,10 @@ class CourseOverviewActivity : AppCompatActivity() {
         tvSummary = findViewById(R.id.tv_summary)
         tvThisWeek = findViewById(R.id.tv_this_week)
 
-        // 设置导航按钮颜色为深色
-        toolbar.navigationIcon?.setTint(Color.parseColor("#333333"))
+        // 设置导航按钮颜色为主题前景色
+        val tv = android.util.TypedValue()
+        theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, tv, true)
+        toolbar.navigationIcon?.setTint(tv.data)
         toolbar.setNavigationOnClickListener { finish() }
 
         val courses = CourseDataManager.getInstance(this).getAllCourses()
