@@ -2,21 +2,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <ImageView
-        android:id="@+id/iv_background"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:src="@drawable/bg_flower_pattern"
-        android:contentDescription="背景" />
-
-    <View
-        android:id="@+id/glass_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CC000000" />
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_page_gradient">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -36,7 +23,7 @@
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_arrow_back"
-                app:tint="@android:color/white"
+                app:tint="?attr/colorOnSurfaceVariant"
                 android:contentDescription="返回" />
 
             <TextView
@@ -46,7 +33,7 @@
                 android:text="关于"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"
+                android:textColor="?attr/colorOnSurface"
                 android:gravity="center" />
 
             <View
@@ -86,7 +73,7 @@
                         android:layout_height="wrap_content"
                         android:text="西大课栈"
                         android:textSize="24sp"
-                        android:textColor="@android:color/white"
+                        android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold"
                         android:layout_marginTop="16dp" />
 
@@ -96,16 +83,19 @@
                         android:layout_height="wrap_content"
                         android:text="版本: 1.6.5"
                         android:textSize="14sp"
-                        android:textColor="#80FFFFFF"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginTop="8dp" />
 
                 </LinearLayout>
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/ScheduleSectionCard"
+                    android:layout_marginBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:background="@drawable/bg_card_transparent"
                     android:padding="16dp">
 
                     <LinearLayout
@@ -125,13 +115,13 @@
                             android:layout_weight="1"
                             android:text="官网"
                             android:textSize="16sp"
-                            android:textColor="@android:color/white" />
+                            android:textColor="?attr/colorOnSurface" />
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
-                            app:tint="@android:color/white"
+                            app:tint="?attr/colorOnSurfaceVariant"
                             android:contentDescription="箭头" />
 
                     </LinearLayout>
@@ -139,7 +129,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#33FFFFFF"
+                        android:background="?attr/colorOutlineVariant"
                         android:layout_marginVertical="4dp" />
 
                     <LinearLayout
@@ -159,13 +149,13 @@
                             android:layout_weight="1"
                             android:text="本项目 GitHub 仓库"
                             android:textSize="16sp"
-                            android:textColor="@android:color/white" />
+                            android:textColor="?attr/colorOnSurface" />
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
-                            app:tint="@android:color/white"
+                            app:tint="?attr/colorOnSurfaceVariant"
                             android:contentDescription="箭头" />
 
                     </LinearLayout>
@@ -173,7 +163,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#33FFFFFF"
+                        android:background="?attr/colorOutlineVariant"
                         android:layout_marginVertical="4dp" />
 
                     <LinearLayout
@@ -193,13 +183,13 @@
                             android:layout_weight="1"
                             android:text="查看开源许可证"
                             android:textSize="16sp"
-                            android:textColor="@android:color/white" />
+                            android:textColor="?attr/colorOnSurface" />
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
-                            app:tint="@android:color/white"
+                            app:tint="?attr/colorOnSurfaceVariant"
                             android:contentDescription="箭头" />
 
                     </LinearLayout>
@@ -207,7 +197,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#33FFFFFF"
+                        android:background="?attr/colorOutlineVariant"
                         android:layout_marginVertical="4dp" />
 
                     <LinearLayout
@@ -227,18 +217,20 @@
                             android:layout_weight="1"
                             android:text="已适配的教务系统"
                             android:textSize="16sp"
-                            android:textColor="@android:color/white" />
+                            android:textColor="?attr/colorOnSurface" />
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
-                            app:tint="@android:color/white"
+                            app:tint="?attr/colorOnSurfaceVariant"
                             android:contentDescription="箭头" />
 
                     </LinearLayout>
 
                 </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
 
