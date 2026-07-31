@@ -4,16 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="@drawable/bg_page_gradient">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
+        android:background="@android:color/transparent"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:navigationIcon="@drawable/ic_arrow_back"
-        app:titleTextColor="@android:color/white" />
+        app:navigationIconTint="?attr/colorOnSurfaceVariant"
+        app:titleTextColor="?attr/colorOnSurface" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
@@ -39,13 +40,13 @@
             android:layout_weight="1"
             android:text="申请适配"
             android:textSize="16sp"
-            android:textColor="#4A3728" />
+            android:textColor="?attr/colorOnSurface" />
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_arrow_right"
-            app:tint="#8B7355"
+            app:tint="?attr/colorOnSurfaceVariant"
             android:contentDescription="箭头" />
 
     </LinearLayout>
@@ -53,7 +54,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E0E0E0" />
+        android:background="?attr/colorOutlineVariant" />
 
     <LinearLayout
         android:id="@+id/ll_custom_url"
@@ -72,13 +73,13 @@
             android:layout_weight="1"
             android:text="自定义教务系统"
             android:textSize="16sp"
-            android:textColor="#4A3728" />
+            android:textColor="?attr/colorOnSurface" />
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_arrow_right"
-            app:tint="#8B7355"
+            app:tint="?attr/colorOnSurfaceVariant"
             android:contentDescription="箭头" />
 
     </LinearLayout>
