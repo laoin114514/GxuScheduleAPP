@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@android:color/white"
+    android:background="@android:color/transparent"
     android:padding="16dp">
 
     <TextView
@@ -12,7 +12,7 @@
         android:text="发现新版本"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:paddingBottom="8dp" />
 
     <TextView
@@ -20,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="14sp"
-        android:textColor="@android:color/secondary_text_light"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:paddingBottom="16dp" />
 
     <WebView
@@ -36,7 +36,7 @@
         android:text="下载方式"
         android:textSize="14sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:paddingTop="16dp"
         android:paddingBottom="8dp" />
 
@@ -52,7 +52,7 @@
             android:layout_height="wrap_content"
             android:text="GitHub 原始下载"
             android:textSize="14sp"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
             android:padding="12dp"
             android:background="?attr/selectableItemBackground" />
 
@@ -62,7 +62,7 @@
             android:layout_height="wrap_content"
             android:text="GitCode 下载 (国内推荐)"
             android:textSize="14sp"
-            android:textColor="#2196F3"
+            android:textColor="?attr/colorPrimary"
             android:padding="12dp"
             android:background="?attr/selectableItemBackground" />
 
@@ -72,7 +72,7 @@
             android:layout_height="wrap_content"
             android:text="蓝奏云下载"
             android:textSize="14sp"
-            android:textColor="#2196F3"
+            android:textColor="?attr/colorPrimary"
             android:padding="12dp"
             android:background="?attr/selectableItemBackground" />
 
@@ -90,7 +90,7 @@
             android:layout_height="wrap_content"
             android:text="稍后"
             android:textSize="14sp"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:padding="8dp" />
 
     </LinearLayout>
