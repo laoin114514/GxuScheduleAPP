@@ -4,13 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?attr/colorSurface">
+    android:background="@drawable/bg_page_gradient">
 
     <!-- Toolbar -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/transparent"
         app:titleTextColor="?attr/colorOnSurface"
         app:navigationIcon="?attr/homeAsUpIndicator"
         app:navigationIconTint="?attr/colorOnSurfaceVariant" />
@@ -31,7 +32,7 @@
 
             <!-- Max nodes setting card -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/ProfileSection"
+                style="@style/ScheduleSectionCard"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
