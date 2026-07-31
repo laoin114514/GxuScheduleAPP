@@ -2,23 +2,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <!-- 背景图片 -->
-    <ImageView
-        android:id="@+id/iv_background"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:src="@drawable/bg_flower_pattern"
-        android:contentDescription="背景" />
-
-    <!-- 磨砂玻璃遮罩 -->
-    <View
-        android:id="@+id/glass_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CC000000" />
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_page_gradient">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -37,491 +22,505 @@
                 android:text="应用设置"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="24dp" />
 
             <!-- 学期与周次设置卡片 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_transparent"
-                android:padding="16dp"
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
                 android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="学期与周次"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginBottom="16dp" />
-
-                <!-- 当前学期 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="当前学期"
-                        android:textSize="16sp"
-                        android:textColor="@android:color/white" />
+                        android:text="学期与周次"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="16dp" />
 
-                    <TextView
-                        android:id="@+id/tv_current_semester"
-                        android:layout_width="wrap_content"
+                    <!-- 当前学期 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="2024-2025学年 第一学期"
-                        android:textSize="14sp"
-                        android:textColor="#4A90E2"
-                        android:layout_marginEnd="8dp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
-                    <TextView
-                        android:id="@+id/btn_modify_semester"
-                        android:layout_width="wrap_content"
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="当前学期"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:id="@+id/tv_current_semester"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2024-2025学年 第一学期"
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/btn_modify_semester"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="修改"
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:padding="8dp"
+                            android:background="?attr/selectableItemBackground" />
+
+                    </LinearLayout>
+
+                    <!-- 默认显示周 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="修改"
-                        android:textSize="14sp"
-                        android:textColor="#4A90E2"
-                        android:padding="8dp"
-                        android:background="?attr/selectableItemBackground" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="默认显示周"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:id="@+id/tv_default_week"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="第1周"
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/btn_modify_week"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="设置"
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:padding="8dp"
+                            android:background="?attr/selectableItemBackground" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
-                <!-- 默认显示周 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="默认显示周"
-                        android:textSize="16sp"
-                        android:textColor="@android:color/white" />
-
-                    <TextView
-                        android:id="@+id/tv_default_week"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="第1周"
-                        android:textSize="14sp"
-                        android:textColor="#4A90E2"
-                        android:layout_marginEnd="8dp" />
-
-                    <TextView
-                        android:id="@+id/btn_modify_week"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="设置"
-                        android:textSize="14sp"
-                        android:textColor="#4A90E2"
-                        android:padding="8dp"
-                        android:background="?attr/selectableItemBackground" />
-
-                </LinearLayout>
-
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 课表外观设置卡片 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_transparent"
-                android:padding="16dp"
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
                 android:layout_marginBottom="16dp">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="主题"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginBottom="16dp" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <!-- 背景设置 -->
-                <TextView
-                    android:id="@+id/btn_background_settings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="背景设置"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:layout_marginBottom="8dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="主题"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="16dp" />
 
-                <!-- 外观设置（透明度等） -->
-                <TextView
-                    android:id="@+id/btn_appearance_settings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="卡片外观设置"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical" />
+                    <!-- 背景设置 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_background_settings"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="背景设置"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:layout_marginBottom="8dp"
+                        app:strokeColor="?attr/colorOutline" />
 
-                <!-- 卡片配色 -->
-                <TextView
-                    android:id="@+id/btn_color_theme"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="卡片配色"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical"
-                    android:layout_marginTop="8dp" />
+                    <!-- 外观设置（透明度等） -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_appearance_settings"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="卡片外观设置"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        app:strokeColor="?attr/colorOutline" />
 
-                <!-- 主题模式 -->
-                <TextView
-                    android:id="@+id/btn_theme_mode"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="主题模式"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical" />
+                    <!-- 卡片配色 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_color_theme"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="卡片配色"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:layout_marginTop="8dp"
+                        app:strokeColor="?attr/colorOutline" />
 
-            </LinearLayout>
+                    <!-- 主题模式 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_theme_mode"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="主题模式"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:layout_marginTop="8dp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 时间表设置卡片 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_transparent"
-                android:padding="16dp"
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
                 android:layout_marginBottom="16dp">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="时间表设置"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginBottom="16dp" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/btn_time_table_settings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="编辑时间表"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="时间表设置"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="16dp" />
 
-            </LinearLayout>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_time_table_settings"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="编辑时间表"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 提醒设置卡片 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_transparent"
-                android:padding="16dp"
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
                 android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="提醒设置"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginBottom="16dp" />
-
-                <!-- 课前提醒 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="课前提醒"
-                        android:textSize="16sp"
-                        android:textColor="@android:color/white" />
+                        android:text="提醒设置"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="16dp" />
 
-                    <TextView
-                        android:id="@+id/tv_default_alarm"
-                        android:layout_width="wrap_content"
+                    <!-- 课前提醒 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="提前15分钟"
-                        android:textSize="14sp"
-                        android:textColor="#4A90E2"
-                        android:layout_marginEnd="8dp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
-                    <TextView
-                        android:id="@+id/btn_modify_alarm"
-                        android:layout_width="wrap_content"
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="课前提醒"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:id="@+id/tv_default_alarm"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="提前15分钟"
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/btn_modify_alarm"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="设置"
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorPrimary"
+                            android:padding="8dp"
+                            android:background="?attr/selectableItemBackground" />
+
+                    </LinearLayout>
+
+                    <!-- 提醒开关 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_alarm_settings"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="设置"
-                        android:textSize="14sp"
-                        android:textColor="#4A90E2"
-                        android:padding="8dp"
-                        android:background="?attr/selectableItemBackground" />
-
-                </LinearLayout>
-
-                <!-- 提醒开关 -->
-                <TextView
-                    android:id="@+id/btn_alarm_settings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="课前提醒开关"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical"
-                    android:layout_marginBottom="8dp" />
-
-                <!-- 权限检查 -->
-                <TextView
-                    android:id="@+id/btn_permission_guide"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="权限设置引导"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical"
-                    android:layout_marginBottom="8dp" />
-
-                <!-- 节假日隐藏课程 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="节假日隐藏课程"
+                        android:text="课前提醒开关"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp"
-                        android:textColor="@android:color/white" />
+                        android:layout_marginBottom="8dp"
+                        app:strokeColor="?attr/colorOutline" />
 
-                    <Switch
-                        android:id="@+id/switch_hide_holiday_courses"
-                        android:layout_width="wrap_content"
+                    <!-- 权限检查 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_permission_guide"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:theme="@style/SwitchTheme" />
+                        android:text="权限设置引导"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:layout_marginBottom="8dp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                    <!-- 节假日隐藏课程 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="12dp"
+                        android:background="@drawable/bg_button_outline">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="节假日隐藏课程"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <Switch
+                            android:id="@+id/switch_hide_holiday_courses"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:theme="@style/SwitchTheme" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 数据管理卡片 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_transparent"
-                android:padding="16dp"
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
                 android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="数据管理"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginBottom="16dp" />
-
-                <!-- 从教务系统导入 -->
-                <TextView
-                    android:id="@+id/btn_school_import"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="从教务系统导入"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_button_primary"
-                    android:gravity="center" />
-
-                <!-- 导入课程表 -->
-                <TextView
-                    android:id="@+id/btn_import_schedule"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="从文件导入"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical" />
-
-                <!-- 导出课程表 -->
-                <TextView
-                    android:id="@+id/btn_export_schedule"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="导出课程表"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical" />
-
-                <!-- 清除所有数据 -->
-                <TextView
-                    android:id="@+id/btn_clear_data"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="清除所有数据"
-                    android:textSize="15sp"
-                    android:textColor="#FF6B6B"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline_red"
-                    android:gravity="start|center_vertical" />
-
-            </LinearLayout>
-
-            <!-- 免责声明卡片 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_transparent"
-                android:padding="16dp"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="免责声明"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginBottom="12dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="1. 本应用所有课程数据均由用户自行导入或手动添加\n2. 教务系统导入功能仅供学习研究使用\n3. 所有数据均存储在本地设备上\n4. 使用本应用产生的风险由用户自行承担\n5. 本项目基于 WakeUp 课程表 3.612 版本进行魔改重构，遵循相同的开源原则"
-                    android:textSize="12sp"
-                    android:textColor="#CCFFFFFF"
-                    android:lineSpacingMultiplier="1.3" />
-
-            </LinearLayout>
-
-            <!-- 关于与更新卡片 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_transparent"
-                android:padding="16dp"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="关于与更新"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginBottom="16dp" />
-
-                <!-- 更新提醒开关 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:layout_marginBottom="12dp">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="接收更新提醒"
-                        android:textSize="15sp"
-                        android:textColor="@android:color/white" />
+                        android:text="数据管理"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="16dp" />
 
-                    <Switch
-                        android:id="@+id/switch_update_remind"
-                        android:layout_width="wrap_content"
+                    <!-- 从教务系统导入 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_school_import"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:theme="@style/SwitchTheme" />
+                        android:text="从教务系统导入"
+                        android:textColor="?attr/colorOnPrimary"
+                        android:textSize="15sp"
+                        android:layout_marginBottom="12dp"
+                        app:backgroundTint="?attr/colorPrimary" />
+
+                    <!-- 导入课程表 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_import_schedule"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="从文件导入"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:layout_marginBottom="12dp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                    <!-- 导出课程表 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_export_schedule"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="导出课程表"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:layout_marginBottom="12dp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                    <!-- 清除所有数据 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_clear_data"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="清除所有数据"
+                        android:textColor="?attr/colorError"
+                        android:textSize="15sp"
+                        app:strokeColor="?attr/colorError" />
 
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/btn_check_update"
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 免责声明卡片 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="检测更新"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_button_primary"
-                    android:gravity="center" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/btn_about"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="免责声明"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="1. 本应用所有课程数据均由用户自行导入或手动添加\n2. 教务系统导入功能仅供学习研究使用\n3. 所有数据均存储在本地设备上\n4. 使用本应用产生的风险由用户自行承担\n5. 本项目基于 WakeUp 课程表 3.612 版本进行魔改重构，遵循相同的开源原则"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:lineSpacingMultiplier="1.3" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 关于与更新卡片 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="关于应用"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/btn_feedback"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="反馈/建议"
-                    android:textSize="15sp"
-                    android:textColor="@android:color/white"
-                    android:padding="12dp"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_button_outline"
-                    android:gravity="start|center_vertical" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="关于与更新"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="16dp" />
 
-            </LinearLayout>
+                    <!-- 更新提醒开关 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="12dp"
+                        android:background="@drawable/bg_button_outline"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="接收更新提醒"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <Switch
+                            android:id="@+id/switch_update_remind"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:theme="@style/SwitchTheme" />
+
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_check_update"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="检测更新"
+                        android:textColor="?attr/colorOnPrimary"
+                        android:textSize="15sp"
+                        android:layout_marginBottom="12dp"
+                        app:backgroundTint="?attr/colorPrimary" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_about"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="关于应用"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_feedback"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="反馈/建议"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:layout_marginTop="8dp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
 
