@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.service.BatteryOptimizationHelper
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 
@@ -39,6 +40,7 @@ class PermissionGuideActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_permission_guide)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         initViews()
         setupClickListeners()

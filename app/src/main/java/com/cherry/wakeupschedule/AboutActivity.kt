@@ -8,6 +8,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 
@@ -17,6 +18,7 @@ class AboutActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_about)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val btnBack = findViewById<ImageButton>(R.id.btn_back)
         val tvVersion = findViewById<TextView>(R.id.tv_version)

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.service.ImportService
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
@@ -32,6 +33,7 @@ class SchoolImportActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_school_import)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // 设置工具栏
         val toolbar = findViewById<Toolbar>(R.id.toolbar)

@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
@@ -28,6 +29,7 @@ class BindJwxtActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_bind_jwxt)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         etUsername = findViewById(R.id.et_username)
         etPassword = findViewById(R.id.et_password)

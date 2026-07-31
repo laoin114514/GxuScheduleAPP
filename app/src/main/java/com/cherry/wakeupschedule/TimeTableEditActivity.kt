@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.databinding.ActivityTimeTableEditBinding
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.component.SelectOption
@@ -29,6 +30,7 @@ class TimeTableEditActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityTimeTableEditBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         timeTableManager = TimeTableManager.getInstance(this)
 

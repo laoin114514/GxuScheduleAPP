@@ -19,6 +19,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.model.Course
 import androidx.core.app.ActivityCompat
@@ -99,6 +100,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_settings)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         
         viewModel = ViewModelProvider(this)[CourseViewModel::class.java]
         settingsManager = SettingsManager(this)
