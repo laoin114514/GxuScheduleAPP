@@ -240,11 +240,12 @@ class UpdateService(private val context: Context) {
     // 简单的 Markdown 到 HTML 转换
     private fun markdownToHtml(markdown: String): String {
         if (markdown.isBlank()) {
+            val emptyColor = if (com.cherry.wakeupschedule.ui.theme.ThemeManager.isDarkMode(context)) "#D0D0D0" else "#333333"
             return """
                 <!DOCTYPE html>
                 <html>
                 <body>
-                    <p>暂无更新说明</p>
+                    <p style="color: $emptyColor">暂无更新说明</p>
                 </body>
                 </html>
             """.trimIndent()
@@ -267,30 +268,31 @@ class UpdateService(private val context: Context) {
             .replace(Regex("\\n\\n"), "</p><p>")
             .replace("\n", "<br>")
 
-        // 包裹 HTML 结构
+        // 包裹 HTML 结构（正文色跟随浅色/深色模式）
+        val bodyColor = if (com.cherry.wakeupschedule.ui.theme.ThemeManager.isDarkMode(context)) "#D0D0D0" else "#333333"
         html = """
             <!DOCTYPE html>
             <html>
             <head>
                 <meta charset="utf-8">
                 <style>
-                    body { 
-                        font-family: sans-serif; 
-                        font-size: 30px; 
-                        line-height: 1.6; 
-                        padding: 8px; 
-                        margin: 0; 
-                        color: #333;
+                    body {
+                        font-family: sans-serif;
+                        font-size: 30px;
+                        line-height: 1.6;
+                        padding: 8px;
+                        margin: 0;
+                        color: $bodyColor;
                     }
                     h1 { font-size: 36px; margin: 10px 0; }
                     h2 { font-size: 33px; margin: 10px 0; }
                     h3 { font-size: 31px; margin: 10px 0; }
                     p { margin: 8px 0; }
                     li { margin-left: 16px; margin-bottom: 6px; }
-                    code { 
-                        background: #f0f0f0; 
-                        padding: 2px 6px; 
-                        border-radius: 3px; 
+                    code {
+                        background: #f0f0f0;
+                        padding: 2px 6px;
+                        border-radius: 3px;
                         font-size: 28px;
                     }
                 </style>
