@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F5F5">
+    android:background="@drawable/bg_page_gradient">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,7 +12,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:padding="16dp"
-        android:background="@android:color/white"
+        android:background="@android:color/transparent"
         android:elevation="4dp">
 
         <ImageButton
@@ -29,7 +30,7 @@
             android:layout_marginStart="8dp"
             android:text="权限设置引导"
             android:textSize="20sp"
-            android:textColor="@color/black"
+            android:textColor="?attr/colorOnSurface"
             android:textStyle="bold" />
 
         <ImageButton
@@ -53,274 +54,303 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:background="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_notification" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="通知权限"
-                        android:textSize="16sp"
-                        android:textColor="@color/black"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="用于课前提醒推送"
-                        android:textSize="12sp"
-                        android:textColor="#888888" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tv_notification_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="未授权"
-                    android:textSize="14sp"
-                    android:textColor="#FF5252"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btn_notification"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="前往设置通知权限"
-                android:textSize="14sp"
-                android:background="@drawable/bg_toggle_button"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="12dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:background="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@android:drawable/ic_lock_idle_alarm"
-                    android:backgroundTint="#FF4081" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="精确闹钟"
-                        android:textSize="16sp"
-                        android:textColor="@color/black"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="确保闹钟在Doze模式下准时触发"
-                        android:textSize="12sp"
-                        android:textColor="#888888" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tv_exact_alarm_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="未授权"
-                    android:textSize="14sp"
-                    android:textColor="#FF5252"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btn_exact_alarm"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="前往开启精确闹钟"
-                android:textSize="14sp"
-                android:background="@drawable/bg_toggle_button"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="12dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:background="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@android:drawable/ic_dialog_info"
-                    android:backgroundTint="#FFB74D" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="电池优化"
-                        android:textSize="16sp"
-                        android:textColor="@color/black"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="关闭优化以保证提醒稳定"
-                        android:textSize="12sp"
-                        android:textColor="#888888" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tv_battery_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="未关闭"
-                    android:textSize="14sp"
-                    android:textColor="#FF5252"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btn_battery"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="前往关闭电池优化"
-                android:textSize="14sp"
-                android:background="@drawable/bg_toggle_button"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="12dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:background="@android:color/white"
-                android:layout_marginBottom="16dp"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_autostart" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="自启动管理"
-                        android:textSize="16sp"
-                        android:textColor="@color/black"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="允许应用开机自启动"
-                        android:textSize="12sp"
-                        android:textColor="#888888" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tv_autostart_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="未设置"
-                    android:textSize="14sp"
-                    android:textColor="#FF5252"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btn_autostart"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="前往设置自启动"
-                android:textSize="14sp"
-                android:background="@drawable/bg_toggle_button"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="24dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:background="@android:color/white"
+            <!-- 通知权限卡 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
                 android:layout_marginBottom="16dp">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="详细设置教程"
-                    android:textSize="16sp"
-                    android:textColor="@color/black"
-                    android:textStyle="bold" />
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/tv_instructions"
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_notification" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="通知权限"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="用于课前提醒推送"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_notification_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="未授权"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorError"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                style="@style/Widget.Material3.Button"
+                android:id="@+id/btn_notification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="前往设置通知权限"
+                android:textColor="?attr/colorOnPrimary"
+                android:textSize="14sp"
+                app:backgroundTint="?attr/colorPrimary"
+                android:layout_marginBottom="12dp" />
+
+            <!-- 精确闹钟卡 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:textSize="13sp"
-                    android:textColor="#444444"
-                    android:lineSpacingExtra="6dp" />
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
 
-            </LinearLayout>
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_lock_idle_alarm"
+                        android:backgroundTint="#FF4081" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="精确闹钟"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="确保闹钟在Doze模式下准时触发"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_exact_alarm_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="未授权"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorError"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                style="@style/Widget.Material3.Button"
+                android:id="@+id/btn_exact_alarm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="前往开启精确闹钟"
+                android:textColor="?attr/colorOnPrimary"
+                android:textSize="14sp"
+                app:backgroundTint="?attr/colorPrimary"
+                android:layout_marginBottom="12dp" />
+
+            <!-- 电池优化卡 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:backgroundTint="#FFB74D" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="电池优化"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="关闭优化以保证提醒稳定"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_battery_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="未关闭"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorError"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                style="@style/Widget.Material3.Button"
+                android:id="@+id/btn_battery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="前往关闭电池优化"
+                android:textColor="?attr/colorOnPrimary"
+                android:textSize="14sp"
+                app:backgroundTint="?attr/colorPrimary"
+                android:layout_marginBottom="12dp" />
+
+            <!-- 自启动管理卡 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_autostart" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="自启动管理"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="允许应用开机自启动"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_autostart_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="未设置"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorError"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                style="@style/Widget.Material3.Button"
+                android:id="@+id/btn_autostart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="前往设置自启动"
+                android:textColor="?attr/colorOnPrimary"
+                android:textSize="14sp"
+                app:backgroundTint="?attr/colorPrimary"
+                android:layout_marginBottom="24dp" />
+
+            <!-- 详细设置教程卡 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/ScheduleSectionCard"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="详细设置教程"
+                        android:textSize="16sp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_instructions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:lineSpacingExtra="6dp" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:layout_width="match_parent"
