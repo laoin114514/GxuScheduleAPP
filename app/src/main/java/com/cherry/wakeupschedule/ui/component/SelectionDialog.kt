@@ -55,6 +55,18 @@ class SelectionDialog private constructor(
         ThemeManager.currentPalette(context).primary
     }
 
+    private fun onSurfaceColor(): Int {
+        val tv = android.util.TypedValue()
+        context.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, tv, true)
+        return tv.data
+    }
+
+    private fun onSurfaceVariantColor(): Int {
+        val tv = android.util.TypedValue()
+        context.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, tv, true)
+        return tv.data
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.dialog_selection)
@@ -190,7 +202,7 @@ class SelectionDialog private constructor(
         val tvLabel = TextView(ctx).apply {
             text = option.label
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-            setTextColor(Color.WHITE)
+            setTextColor(onSurfaceColor())
         }
         textCol.addView(tvLabel)
 
@@ -198,7 +210,7 @@ class SelectionDialog private constructor(
             val tvSub = TextView(ctx).apply {
                 text = option.subtitle
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
-                setTextColor(Color.WHITE and 0x99FFFFFF.toInt())
+                setTextColor(onSurfaceVariantColor())
             }
             textCol.addView(tvSub)
         }
@@ -271,7 +283,7 @@ class SelectionDialog private constructor(
                 GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
                     setColor(Color.TRANSPARENT)
-                    setStroke(dp2px(1.5f), Color.WHITE and 0x60FFFFFF.toInt())
+                    setStroke(dp2px(1.5f), onSurfaceVariantColor())
                 }
             }
         }
