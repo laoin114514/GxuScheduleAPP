@@ -63,7 +63,7 @@ class ProfileFragment : Fragment() {
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
         }
 
-        // 编辑账号（重新登录）
+        // 更新登录密码
         view.findViewById<View>(R.id.btn_edit_account).setOnClickListener {
             startActivity(Intent(requireContext(), BindJwxtActivity::class.java))
         }

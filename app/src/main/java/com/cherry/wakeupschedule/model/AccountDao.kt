@@ -17,6 +17,9 @@ interface AccountDao {
     @Query("UPDATE account SET profile_json = :profileJson WHERE id = 1")
     suspend fun updateProfile(profileJson: String)
 
+    @Query("UPDATE account SET password = :password WHERE id = 1")
+    suspend fun updatePassword(password: String)
+
     @Query("UPDATE account SET username = '', password = '', is_bound = 0, profile_json = NULL WHERE id = 1")
     suspend fun clearAccount()
 }

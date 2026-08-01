@@ -81,28 +81,41 @@
                         <TextView android:id="@+id/tv_account_name"
                             android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:text=""
+                            android:maxLines="1"
+                            android:ellipsize="end"
                             android:textAppearance="?attr/textAppearanceBodyLarge"
                             android:textColor="?attr/colorOnSurface" />
 
                         <TextView android:id="@+id/tv_account_id"
                             android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:text=""
+                            android:maxLines="1"
+                            android:ellipsize="end"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
-                    <ImageView
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_edit_account"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_edit"
-                        app:tint="?attr/colorOnSurfaceVariant"
-                        android:contentDescription="编辑账号"
-                        android:background="?attr/selectableItemBackground"
-                        android:padding="2dp"
-                        android:clickable="true"
-                        android:focusable="true" />
+                        style="@style/Widget.Material3.Button.TextButton.Icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:minWidth="0dp"
+                        android:minHeight="40dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="更新密码"
+                        android:textAllCaps="false"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="14sp"
+                        android:contentDescription="更新登录密码"
+                        app:icon="@drawable/ic_edit"
+                        app:iconGravity="textStart"
+                        app:iconPadding="6dp"
+                        app:iconSize="18dp"
+                        app:iconTint="?attr/colorPrimary" />
 
                 </LinearLayout>
 

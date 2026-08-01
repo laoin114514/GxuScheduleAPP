@@ -65,6 +65,30 @@ object JwxtAuthManager {
     }
 
     /**
+     * 校验已绑定账号的新密码，并仅更新本地凭据。
+     * 不读取个人信息、不初始化学期，也不会变更已有课表数据。
+     */
+    suspend fun updatePassword(password: String): Result<String> = withContext(Dispatchers.IO) {
+        val username = JwxtAccountManager.getUsername()
+        if (!JwxtAccountManager.isBound() || username.isBlank()) {
+            return@withContext Result.failure(LoginException("请先绑定教务账号"))
+        }
+
+        try {
+            val c = JwxtClient(username, password)
+            c.login()
+            destroyClient()
+            client = c
+            JwxtAccountManager.updatePassword(password)
+            Result.success("密码已更新")
+        } catch (e: LoginException) {
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(LoginException("登录失败: ${e.message}"))
+        }
+    }
+
+    /**
      * 执行需要认证的操作，自动处理 session 过期。
      *
      * @param action 业务逻辑，接收已登录的 [JwxtClient]

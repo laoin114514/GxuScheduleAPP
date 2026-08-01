@@ -1,8 +1,6 @@
 package com.cherry.wakeupschedule
 
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -12,6 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.textfield.TextInputLayout
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
@@ -24,6 +23,10 @@ class BindJwxtActivity : AppCompatActivity() {
     private lateinit var btnLogin: Button
     private lateinit var tvStatus: TextView
     private lateinit var pbLoading: ProgressBar
+    private lateinit var tvTitle: TextView
+    private lateinit var inputLayoutPassword: TextInputLayout
+
+    private var isPasswordUpdateMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,61 +39,38 @@ class BindJwxtActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btn_login)
         tvStatus = findViewById(R.id.tv_status)
         pbLoading = findViewById(R.id.pb_loading)
+        tvTitle = findViewById(R.id.tv_title)
+        inputLayoutPassword = findViewById(R.id.input_layout_password)
+        findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
 
-        applyThemeBackgrounds()
-
-        // 如果已绑定，预填用户名
-        if (JwxtAccountManager.isBound()) {
+        isPasswordUpdateMode = JwxtAccountManager.isBound()
+        if (isPasswordUpdateMode) {
+            tvTitle.text = "更新登录密码"
             etUsername.setText(JwxtAccountManager.getUsername())
-            etPassword.setText(JwxtAccountManager.getPassword())
+            etUsername.isFocusable = false
+            etUsername.isFocusableInTouchMode = false
+            etUsername.isClickable = false
+            etUsername.isLongClickable = false
+            etUsername.setTextIsSelectable(false)
+            inputLayoutPassword.hint = "新密码"
+            btnLogin.text = "验证并更新"
         }
 
         btnLogin.setOnClickListener {
-            val username = etUsername.text.toString().trim()
             val password = etPassword.text.toString().trim()
+            val username = if (isPasswordUpdateMode) {
+                JwxtAccountManager.getUsername()
+            } else {
+                etUsername.text.toString().trim()
+            }
 
             if (username.isEmpty() || password.isEmpty()) {
-                tvStatus.text = "请输入学号和密码"
+                tvStatus.text = if (isPasswordUpdateMode) "请输入新密码" else "请输入学号和密码"
                 tvStatus.visibility = View.VISIBLE
                 return@setOnClickListener
             }
 
             doLogin(username, password)
-        }
-    }
-
-    private fun applyThemeBackgrounds() {
-        // 获取主题颜色
-        val surfaceVariant = TypedValue().let { tv ->
-            theme.resolveAttribute(com.google.android.material.R.attr.colorSurfaceVariant, tv, true)
-            tv.data
-        }
-        val outlineColor = TypedValue().let { tv ->
-            theme.resolveAttribute(com.google.android.material.R.attr.colorOutline, tv, true)
-            tv.data
-        }
-        val primaryColor = TypedValue().let { tv ->
-            theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, tv, true)
-            tv.data
-        }
-
-        // 输入框背景：圆角 + surfaceVariant 填充 + outline 描边
-        val density = resources.displayMetrics.density
-        etUsername.background = GradientDrawable().apply {
-            setColor(surfaceVariant)
-            cornerRadius = 8f * density
-            setStroke((1f * density).toInt(), outlineColor)
-        }
-        etPassword.background = GradientDrawable().apply {
-            setColor(surfaceVariant)
-            cornerRadius = 8f * density
-            setStroke((1f * density).toInt(), outlineColor)
-        }
-
-        // 按钮背景：primaryColor 填充 + 圆角
-        btnLogin.background = GradientDrawable().apply {
-            setColor(primaryColor)
-            cornerRadius = 8f * density
         }
     }
 
@@ -100,12 +80,17 @@ class BindJwxtActivity : AppCompatActivity() {
         btnLogin.isEnabled = false
 
         lifecycleScope.launch {
-            val result = JwxtAuthManager.login(username, password)
+            val result = if (isPasswordUpdateMode) {
+                JwxtAuthManager.updatePassword(password)
+            } else {
+                JwxtAuthManager.login(username, password)
+            }
             pbLoading.visibility = View.GONE
             btnLogin.isEnabled = true
 
             result.onSuccess {
-                Toast.makeText(this@BindJwxtActivity, "绑定成功！", Toast.LENGTH_SHORT).show()
+                val message = if (isPasswordUpdateMode) "密码已更新" else "绑定成功！"
+                Toast.makeText(this@BindJwxtActivity, message, Toast.LENGTH_SHORT).show()
                 finish()
             }.onFailure { e ->
                 tvStatus.text = e.message ?: "登录失败，请检查账号密码"

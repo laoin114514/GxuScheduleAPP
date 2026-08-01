@@ -60,6 +60,13 @@ object JwxtAccountManager {
         runBlocking(Dispatchers.IO) { dao.saveAccount(entity) }
     }
 
+    fun updatePassword(password: String) {
+        val account = checkNotNull(cached) { "教务账号未初始化" }
+        check(account.isBound) { "教务账号未绑定" }
+        cached = account.copy(password = password)
+        runBlocking(Dispatchers.IO) { dao.updatePassword(password) }
+    }
+
     fun clear() {
         cached = (cached ?: AccountEntity()).copy(
             username = "",
