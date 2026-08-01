@@ -10,10 +10,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.textfield.TextInputLayout
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import kotlinx.coroutines.launch
 
 class BindJwxtActivity : AppCompatActivity() {
@@ -23,7 +25,7 @@ class BindJwxtActivity : AppCompatActivity() {
     private lateinit var btnLogin: Button
     private lateinit var tvStatus: TextView
     private lateinit var pbLoading: ProgressBar
-    private lateinit var tvTitle: TextView
+    private lateinit var toolbar: MaterialToolbar
     private lateinit var inputLayoutPassword: TextInputLayout
 
     private var isPasswordUpdateMode = false
@@ -39,13 +41,13 @@ class BindJwxtActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btn_login)
         tvStatus = findViewById(R.id.tv_status)
         pbLoading = findViewById(R.id.pb_loading)
-        tvTitle = findViewById(R.id.tv_title)
+        toolbar = findViewById(R.id.toolbar)
         inputLayoutPassword = findViewById(R.id.input_layout_password)
-        findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
+        setupPageHeader(toolbar, "绑定教务系统")
 
         isPasswordUpdateMode = JwxtAccountManager.isBound()
         if (isPasswordUpdateMode) {
-            tvTitle.text = "更新登录密码"
+            toolbar.title = "更新登录密码"
             etUsername.setText(JwxtAccountManager.getUsername())
             etUsername.isFocusable = false
             etUsername.isFocusableInTouchMode = false

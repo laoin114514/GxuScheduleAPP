@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.gxu.jwxt.model.StudentProfile
 
 class ProfileActivity : AppCompatActivity() {
@@ -24,6 +25,8 @@ class ProfileActivity : AppCompatActivity() {
         ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_profile)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        setupPageHeader(findViewById(R.id.toolbar), "个人信息")
 
         scrollProfile = findViewById(R.id.scroll_profile)
         layoutProfile = findViewById(R.id.layout_profile)

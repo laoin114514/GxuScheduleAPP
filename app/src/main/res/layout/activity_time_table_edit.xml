@@ -14,7 +14,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@android:color/transparent"
         app:titleTextColor="?attr/colorOnSurface"
-        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:navigationIcon="@drawable/ic_arrow_back"
         app:navigationIconTint="?attr/colorOnSurfaceVariant" />
 
     <!-- Scroll content -->

@@ -3,7 +3,6 @@ package com.cherry.wakeupschedule
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -11,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.theme.setupPageHeader
+import com.google.android.material.appbar.MaterialToolbar
 
 class AboutActivity : AppCompatActivity() {
 
@@ -20,16 +21,15 @@ class AboutActivity : AppCompatActivity() {
         setContentView(R.layout.activity_about)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val btnBack = findViewById<ImageButton>(R.id.btn_back)
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         val tvVersion = findViewById<TextView>(R.id.tv_version)
         val llOfficialWebsite = findViewById<LinearLayout>(R.id.ll_official_website)
         val llGithub = findViewById<LinearLayout>(R.id.ll_github)
         val llLicense = findViewById<LinearLayout>(R.id.ll_license)
         val llUpdateAdapter = findViewById<LinearLayout>(R.id.ll_update_adapter)
 
+        setupPageHeader(toolbar, "关于")
         tvVersion.text = "版本: ${BuildConfig.VERSION_NAME}"
-
-        btnBack.setOnClickListener { finish() }
 
         llOfficialWebsite.setOnClickListener { openUrl("https://laoin114514.github.io/GxuScheduleAPP/") }
 

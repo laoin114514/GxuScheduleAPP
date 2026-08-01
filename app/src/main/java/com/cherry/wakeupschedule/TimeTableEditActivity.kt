@@ -14,6 +14,7 @@ import com.cherry.wakeupschedule.ui.component.SelectOption
 import com.cherry.wakeupschedule.ui.component.SelectionDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import java.util.Calendar
@@ -34,16 +35,9 @@ class TimeTableEditActivity : AppCompatActivity() {
 
         timeTableManager = TimeTableManager.getInstance(this)
 
-        setupToolbar()
+        setupPageHeader(binding.toolbar, "编辑时间表")
         setupButtons()
         loadAndDisplayTimeSlots()
-    }
-
-    private fun setupToolbar() {
-        binding.toolbar.apply {
-            title = "编辑时间表"
-            setNavigationOnClickListener { finish() }
-        }
     }
 
     private fun setupButtons() {

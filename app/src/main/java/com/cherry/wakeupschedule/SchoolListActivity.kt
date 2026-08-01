@@ -8,13 +8,14 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.adapter.SchoolAdapter
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.theme.setupPageHeader
+import com.google.android.material.appbar.MaterialToolbar
 
 class SchoolListActivity : AppCompatActivity() {
 
@@ -355,19 +356,12 @@ class SchoolListActivity : AppCompatActivity() {
         setContentView(R.layout.activity_school_list)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "选择学校"
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        setupPageHeader(toolbar, "选择学校")
 
         setupRecyclerView()
         setupApplyAdapter()
         setupCustomUrl()
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
     }
 
     private fun setupRecyclerView() {

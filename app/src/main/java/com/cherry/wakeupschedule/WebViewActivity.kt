@@ -20,10 +20,13 @@ import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.databinding.ActivityWebviewBinding
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.ImportService
+import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -55,15 +58,17 @@ class WebViewActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applyToTheme(this)
         binding = ActivityWebviewBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val url = intent.getStringExtra("url") ?: ""
         val schoolName = intent.getStringExtra("schoolName") ?: ""
         autoFillPassword = intent.getBooleanExtra("autoFillPassword", false)
 
-        // 设置标题
-        supportActionBar?.title = if (schoolName.isNotEmpty()) schoolName else "网页浏览"
+        // 设置标题 + 返回按钮
+        setupPageHeader(binding.toolbar, if (schoolName.isNotEmpty()) schoolName else "网页浏览")
 
         // 初始化
         courseDataManager = CourseDataManager.getInstance(this)
