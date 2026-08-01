@@ -3,6 +3,7 @@ package com.cherry.wakeupschedule
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -27,6 +28,7 @@ class AboutActivity : AppCompatActivity() {
         val llGithub = findViewById<LinearLayout>(R.id.ll_github)
         val llLicense = findViewById<LinearLayout>(R.id.ll_license)
         val llUpdateAdapter = findViewById<LinearLayout>(R.id.ll_update_adapter)
+        val vDividerUpdateAdapter = findViewById<View>(R.id.v_divider_update_adapter)
 
         setupPageHeader(toolbar, "关于")
         tvVersion.text = "版本: ${BuildConfig.VERSION_NAME}"
@@ -37,7 +39,9 @@ class AboutActivity : AppCompatActivity() {
 
         llLicense.setOnClickListener { openUrl("https://github.com/laoin114514/GxuScheduleAPP/blob/main/LICENSE") }
 
-        llUpdateAdapter.setOnClickListener { startActivity(Intent(this, SchoolListActivity::class.java)) }
+        // 隐藏"已适配的教务系统"入口及其上方的分割线
+        llUpdateAdapter.visibility = View.GONE
+        vDividerUpdateAdapter.visibility = View.GONE
     }
 
     private fun openUrl(url: String) {
