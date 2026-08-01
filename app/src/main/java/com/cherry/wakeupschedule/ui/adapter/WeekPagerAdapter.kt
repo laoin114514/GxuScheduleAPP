@@ -64,6 +64,9 @@ class WeekPagerAdapter(
         private var builtNodes = 0
         private val courseColors: IntArray get() = ThemeManager.getCourseColors()
 
+        /** 当前显示的重叠课程弹窗，防止连点叠加 */
+        private var overlapPickerDialog: android.app.Dialog? = null
+
         init {
             val root = itemView as LinearLayout
             scrollView = root.getChildAt(0) as VerticalScrollView
@@ -292,13 +295,18 @@ class WeekPagerAdapter(
                 "${c.name}\n${c.classroom} | ${c.teacher} | [$priority]"
             }
 
-            androidx.appcompat.app.AlertDialog.Builder(ctx)
+            // 防止连点打开多个重叠课程弹窗：先关闭已存在的
+            overlapPickerDialog?.dismiss()
+            val dialog = androidx.appcompat.app.AlertDialog.Builder(ctx)
                 .setTitle("重叠课程 (${courses.size}门)")
                 .setItems(items.toTypedArray()) { _, which ->
                     SchedulePageDetailDialog.show(ctx, courses[which], colors)
                 }
                 .setNegativeButton("取消", null)
-                .show()
+                .create()
+            overlapPickerDialog = dialog
+            dialog.setOnDismissListener { if (overlapPickerDialog === dialog) overlapPickerDialog = null }
+            dialog.show()
         }
     }
 

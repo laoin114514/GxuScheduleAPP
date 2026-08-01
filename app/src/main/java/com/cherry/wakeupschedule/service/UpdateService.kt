@@ -332,7 +332,7 @@ class UpdateService(private val context: Context) {
         val dialog = StyledDialog.Builder(context)
             .view(dialogView)
             .show()
-        
+
         dialogView.findViewById<TextView>(com.cherry.wakeupschedule.R.id.btn_download_original).setOnClickListener {
             openDownloadPage(url)
             dialog.dismiss()
@@ -340,8 +340,6 @@ class UpdateService(private val context: Context) {
         dialogView.findViewById<TextView>(com.cherry.wakeupschedule.R.id.btn_later).setOnClickListener {
             dialog.dismiss()
         }
-        
-        dialog.show()
     }
 
     private fun openDownloadPage(downloadUrl: String) {

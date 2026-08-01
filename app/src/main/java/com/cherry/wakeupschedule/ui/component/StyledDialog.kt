@@ -322,6 +322,14 @@ class StyledDialog private constructor(
             context.resources.displayMetrics
         ).toInt()
 
+    companion object {
+        /**
+         * 当前正在显示的弹窗。防止连点/重复调用导致多个弹窗叠加。
+         * 参照 SchedulePageDetailDialog 的防重模式。
+         */
+        private var activeDialog: StyledDialog? = null
+    }
+
     // ── Builder ─────────────────────────────────────────
 
     class Builder(private val context: Context) {
@@ -377,6 +385,10 @@ class StyledDialog private constructor(
                 hasAnyButton = positiveText != null || negativeText != null || neutralText != null
             )
             val dialog = StyledDialog(context, config)
+            // 防止连点打开多个弹窗：先关闭已存在的弹窗
+            activeDialog?.dismiss()
+            activeDialog = dialog
+            dialog.setOnDismissListener { if (activeDialog === dialog) activeDialog = null }
             dialog.show()
             return dialog
         }

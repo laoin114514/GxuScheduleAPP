@@ -383,6 +383,12 @@ class SelectionDialog private constructor(
 
     companion object {
         /**
+         * 当前正在显示的弹窗。防止连点/重复调用导致多个弹窗叠加。
+         * 参照 SchedulePageDetailDialog 的防重模式。
+         */
+        private var activeDialog: SelectionDialog? = null
+
+        /**
          * 显示选择器弹窗。
          *
          * @param context       Activity/Fragment context
@@ -408,6 +414,10 @@ class SelectionDialog private constructor(
                 onSelected = onSelected,
                 onCancel = onCancel
             )
+            // 防止连点打开多个弹窗：先关闭已存在的弹窗
+            activeDialog?.dismiss()
+            activeDialog = dialog
+            dialog.setOnDismissListener { if (activeDialog === dialog) activeDialog = null }
             dialog.show()
             return dialog
         }

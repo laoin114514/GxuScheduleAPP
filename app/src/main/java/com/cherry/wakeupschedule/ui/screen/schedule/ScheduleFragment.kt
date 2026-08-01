@@ -51,6 +51,9 @@ class ScheduleFragment : Fragment() {
 
     private var allCourses: List<Course> = emptyList()
 
+    /** 当前显示的课表菜单底部弹窗，防止连点叠加 */
+    private var activeMenuDialog: Dialog? = null
+
     private val dateFormat = SimpleDateFormat("yyyy/M/d", Locale.getDefault())
     private val countdownHandler = Handler(Looper.getMainLooper())
     private var countdownRunnable: Runnable? = null
@@ -274,7 +277,11 @@ class ScheduleFragment : Fragment() {
      */
     private fun showMenuSheet() {
         val ctx = requireContext()
+        // 防止连点打开多个底部弹窗：先关闭已存在的
+        activeMenuDialog?.dismiss()
         val dialog = Dialog(ctx, R.style.BottomSheetDialog)
+        activeMenuDialog = dialog
+        dialog.setOnDismissListener { if (activeMenuDialog === dialog) activeMenuDialog = null }
         val inflater = LayoutInflater.from(ctx)
         val sheetView = inflater.inflate(R.layout.bottom_sheet_schedule_menu, null)
         val density = ctx.resources.displayMetrics.density
