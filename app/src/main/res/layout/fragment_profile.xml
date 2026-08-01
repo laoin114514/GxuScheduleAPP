@@ -92,6 +92,18 @@
 
                     </LinearLayout>
 
+                    <ImageView
+                        android:id="@+id/btn_edit_account"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_edit"
+                        app:tint="?attr/colorOnSurfaceVariant"
+                        android:contentDescription="编辑账号"
+                        android:background="?attr/selectableItemBackground"
+                        android:padding="2dp"
+                        android:clickable="true"
+                        android:focusable="true" />
+
                 </LinearLayout>
 
                 <!-- 个人信息（仅已绑定时可点击） -->
