@@ -25,6 +25,7 @@ import com.cherry.wakeupschedule.model.Course
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.service.ImportService
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtImportService
@@ -39,6 +40,7 @@ import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -61,7 +63,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnModifyAlarm: TextView
     private lateinit var btnSchoolImport: TextView
     private lateinit var btnBackgroundSettings: TextView
-    private lateinit var btnAlarmSettings: TextView
+    private lateinit var btnBatterySettings: TextView
     private lateinit var btnAbout: TextView
     private lateinit var btnTimeTableSettings: TextView
     private lateinit var btnAppearanceSettings: TextView
@@ -72,6 +74,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnFeedback: TextView
     private lateinit var switchUpdateRemind: Switch
     private lateinit var switchHideHolidayCourses: Switch
+    private lateinit var switchAlarmEnabled: Switch
     private lateinit var timeTableManager: TimeTableManager
     private lateinit var updateService: com.cherry.wakeupschedule.service.UpdateService
     private var isUpdatingSwitchState = false
@@ -128,7 +131,7 @@ class SettingsActivity : AppCompatActivity() {
         btnModifyAlarm = findViewById(R.id.btn_modify_alarm)
         btnSchoolImport = findViewById(R.id.btn_school_import)
         btnBackgroundSettings = findViewById(R.id.btn_background_settings)
-        btnAlarmSettings = findViewById(R.id.btn_alarm_settings)
+        btnBatterySettings = findViewById(R.id.btn_battery_settings)
         btnAbout = findViewById(R.id.btn_about)
         btnTimeTableSettings = findViewById(R.id.btn_time_table_settings)
         btnAppearanceSettings = findViewById(R.id.btn_appearance_settings)
@@ -140,6 +143,7 @@ class SettingsActivity : AppCompatActivity() {
         btnFeedback = findViewById(R.id.btn_feedback)
         switchUpdateRemind = findViewById<Switch>(R.id.switch_update_remind)
         switchHideHolidayCourses = findViewById<Switch>(R.id.switch_hide_holiday_courses)
+        switchAlarmEnabled = findViewById<Switch>(R.id.switch_alarm_enabled)
 
         // 初始化更新服务
         updateService = com.cherry.wakeupschedule.service.UpdateService(this)
@@ -222,8 +226,14 @@ class SettingsActivity : AppCompatActivity() {
             showBackgroundDialog()
         }
 
-        btnAlarmSettings.setOnClickListener {
-            showAlarmSettingsDialog()
+        // 课前提醒开关：切换即生效
+        switchAlarmEnabled.setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
+            applyAlarmToggle(isChecked)
+        }
+
+        btnBatterySettings.setOnClickListener {
+            showBatteryOptimizationDialog()
         }
 
         btnAppearanceSettings.setOnClickListener {
@@ -459,7 +469,6 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             btnBackgroundSettings.text = "背景设置"
         }
-        btnAlarmSettings.text = "课前提醒 - ${if (settingsManager.isAlarmEnabled()) "开启" else "关闭"}"
 
         // 更新主题模式显示
         val themeModeLabel = when (settingsManager.getThemeMode()) {
@@ -473,6 +482,7 @@ class SettingsActivity : AppCompatActivity() {
         isUpdatingSwitchState = true
         switchUpdateRemind.isChecked = settingsManager.isUpdateRemindEnabled()
         switchHideHolidayCourses.isChecked = settingsManager.isHideHolidayCourses()
+        switchAlarmEnabled.isChecked = settingsManager.isAlarmEnabled()
         isUpdatingSwitchState = false
     }
     
@@ -804,27 +814,26 @@ class SettingsActivity : AppCompatActivity() {
         androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(nightMode)
     }
     
-    private fun showAlarmSettingsDialog() {
-        StyledDialog.Builder(this)
-            .title("课前提醒设置")
-            .items(arrayOf("开启课前提醒", "关闭课前提醒", "电池优化设置")) { which ->
-                when (which) {
-                    0 -> {
-                        settingsManager.setAlarmEnabled(true)
-                        applyAlarmSettings()
-                        Toast.makeText(this, "课前提醒已开启", Toast.LENGTH_SHORT).show()
-                    }
-                    1 -> {
-                        settingsManager.setAlarmEnabled(false)
-                        applyAlarmSettings()
-                        Toast.makeText(this, "课前提醒已关闭", Toast.LENGTH_SHORT).show()
-                    }
-                    2 -> showBatteryOptimizationDialog()
+    private fun applyAlarmToggle(enabled: Boolean) {
+        settingsManager.setAlarmEnabled(enabled)
+        // 注册/取消提醒涉及大量 PendingIntent + AlarmManager binder 调用，
+        // 放到 IO 线程执行，避免阻塞 UI 线程导致卡顿
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val app = com.cherry.wakeupschedule.App.instance
+                if (enabled) {
+                    app.registerAllCourseNotifications()
+                } else {
+                    app.alarmService?.cancelAllReminders()
                 }
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsActivity", "Failed to apply alarm settings", e)
             }
-            .positiveButton("确定")
-            .negativeButton("取消")
-            .show()
+            withContext(Dispatchers.Main) {
+                updateSettingsDisplay()
+            }
+        }
+        Toast.makeText(this, if (enabled) "课前提醒已开启" else "课前提醒已关闭", Toast.LENGTH_SHORT).show()
     }
 
     private fun showBatteryOptimizationDialog() {
@@ -937,21 +946,6 @@ class SettingsActivity : AppCompatActivity() {
     
     private fun applyFontSizeSettings() {
         // 字体大小功能已移除
-        updateSettingsDisplay()
-    }
-    
-    private fun applyAlarmSettings() {
-        val alarmEnabled = settingsManager.isAlarmEnabled()
-        try {
-            val app = com.cherry.wakeupschedule.App.instance
-            if (alarmEnabled) {
-                app.registerAllCourseNotifications()
-            } else {
-                app.alarmService?.cancelAllReminders()
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("SettingsActivity", "Failed to apply alarm settings", e)
-        }
         updateSettingsDisplay()
     }
     

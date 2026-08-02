@@ -106,10 +106,11 @@ class ProfileFragment : Fragment() {
             showThemeModeDialog()
         }
 
-        // 课前提醒：直接通过开关切换，不再进入二级选择
+        // 课前提醒：直接通过开关切换，切换即注册/取消真实提醒
         view.findViewById<Switch>(R.id.switch_alarm_enabled).setOnCheckedChangeListener { _, isChecked ->
             if (isUpdatingSwitchState) return@setOnCheckedChangeListener
             settingsManager.setAlarmEnabled(isChecked)
+            applyAlarmSettings()
             Toast.makeText(requireContext(),
                 if (isChecked) "课前提醒已开启" else "课前提醒已关闭",
                 Toast.LENGTH_SHORT).show()
@@ -133,6 +134,25 @@ class ProfileFragment : Fragment() {
                 startActivity(Intent.createChooser(intent, "发送邮件"))
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "未找到邮件应用", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * 应用课前提醒开关：开启时注册全部课程通知，关闭时取消所有提醒。
+     * 涉及大量 PendingIntent + AlarmManager binder 调用，放到 IO 线程执行避免卡顿。
+     */
+    private fun applyAlarmSettings() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val app = requireActivity().application as App
+                if (settingsManager.isAlarmEnabled()) {
+                    app.registerAllCourseNotifications()
+                } else {
+                    app.alarmService?.cancelAllReminders()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ProfileFragment", "Failed to apply alarm settings", e)
             }
         }
     }
