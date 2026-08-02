@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.TextView
+import android.widget.Switch
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.AboutActivity
@@ -37,6 +38,9 @@ import java.util.Locale
 class ProfileFragment : Fragment() {
 
     private lateinit var settingsManager: SettingsManager
+
+    // 程序刷新开关状态时置 true，避免误触发监听器提示
+    private var isUpdatingSwitchState = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -102,16 +106,13 @@ class ProfileFragment : Fragment() {
             showThemeModeDialog()
         }
 
-        view.findViewById<View>(R.id.item_alarm).setOnClickListener {
-            StyledDialog.Builder(requireContext())
-                .title("课前提醒")
-                .items(arrayOf("开启课前提醒", "关闭课前提醒")) { which ->
-                    settingsManager.setAlarmEnabled(which == 0)
-                    Toast.makeText(requireContext(),
-                        if (which == 0) "课前提醒已开启" else "课前提醒已关闭",
-                        Toast.LENGTH_SHORT).show()
-                }
-                .show()
+        // 课前提醒：直接通过开关切换，不再进入二级选择
+        view.findViewById<Switch>(R.id.switch_alarm_enabled).setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
+            settingsManager.setAlarmEnabled(isChecked)
+            Toast.makeText(requireContext(),
+                if (isChecked) "课前提醒已开启" else "课前提醒已关闭",
+                Toast.LENGTH_SHORT).show()
         }
 
         view.findViewById<View>(R.id.item_time_table).setOnClickListener {
@@ -225,6 +226,11 @@ class ProfileFragment : Fragment() {
     }
 
     private fun updateDisplay() {
+        // 同步开关状态（不触发监听器提示）
+        isUpdatingSwitchState = true
+        view?.findViewById<Switch>(R.id.switch_alarm_enabled)?.isChecked = settingsManager.isAlarmEnabled()
+        isUpdatingSwitchState = false
+
         val tv = view?.findViewById<TextView>(R.id.tv_semester_value)
         val current = SemesterManager.getCurrent()
         if (current != null) {
