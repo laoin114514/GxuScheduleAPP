@@ -154,40 +154,56 @@ class AppearanceActivity : AppCompatActivity() {
         val manualMode = settingsManager.getThemeMode()
         updateCardSelection(
             selected = !autoSwitchOn && manualMode == "light",
-            card = binding.cardLight
+            card = binding.cardLight,
+            palette = lightPalette
         )
         updateCardSelection(
             selected = !autoSwitchOn && manualMode == "dark",
-            card = binding.cardDark
+            card = binding.cardDark,
+            palette = darkPalette
         )
     }
 
-    private fun updateCardSelection(selected: Boolean, card: com.cherry.wakeupschedule.databinding.ItemAppearancePreviewCardBinding) {
+    private fun updateCardSelection(
+        selected: Boolean,
+        card: com.cherry.wakeupschedule.databinding.ItemAppearancePreviewCardBinding,
+        palette: M3ColorPalette
+    ) {
         val density = resources.displayMetrics.density
         card.root.strokeWidth = if (selected) (2 * density).toInt() else 1
         card.root.setStrokeColor(
-            if (selected) resolveThemeColor(com.google.android.material.R.attr.colorPrimary)
-            else resolveThemeColor(com.google.android.material.R.attr.colorOutlineVariant)
+            if (selected) palette.primary
+            else palette.outlineVariant
         )
         card.ivCheck.visibility = if (selected) View.VISIBLE else View.GONE
     }
 
-    /** 从当前主题解析颜色属性 */
-    private fun resolveThemeColor(attrRes: Int): Int {
-        val tv = android.util.TypedValue()
-        return if (theme.resolveAttribute(attrRes, tv, true)) tv.data else Color.TRANSPARENT
-    }
-
     // ==================== 主题预览卡绘制 ====================
+
+    /** 两张预览卡各自固定的配色（浅色卡始终用浅色主题色，深色卡始终用深色主题色） */
+    private lateinit var lightPalette: M3ColorPalette
+    private lateinit var darkPalette: M3ColorPalette
 
     private fun buildThemePreviewCards() {
         val paletteIndex = ThemeManager.getPaletteIndex(this)
-        val lightPalette = M3ColorPalette.LIGHT_PALETTES[paletteIndex]
-        val darkPalette = M3ColorPalette.DARK_PALETTES[paletteIndex]
+        lightPalette = M3ColorPalette.LIGHT_PALETTES[paletteIndex]
+        darkPalette = M3ColorPalette.DARK_PALETTES[paletteIndex]
         binding.cardLight.tvLabel.text = "浅色"
         binding.cardDark.tvLabel.text = "深色"
+
+        // 卡片自身配色固定为各自主题，不跟随当前应用主题
+        applyFixedCardTheme(binding.cardLight, lightPalette)
+        applyFixedCardTheme(binding.cardDark, darkPalette)
+
         buildPreview(binding.cardLight.previewContainer, lightPalette)
         buildPreview(binding.cardDark.previewContainer, darkPalette)
+    }
+
+    /** 将卡片背景/文字/勾标固定为指定主题的配色 */
+    private fun applyFixedCardTheme(card: com.cherry.wakeupschedule.databinding.ItemAppearancePreviewCardBinding, palette: M3ColorPalette) {
+        card.root.setCardBackgroundColor(palette.surfaceContainer)
+        card.tvLabel.setTextColor(palette.onSurface)
+        card.ivCheck.setColorFilter(palette.primary)
     }
 
     /**
