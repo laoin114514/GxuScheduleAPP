@@ -49,6 +49,7 @@
         <activity android:name=".SchoolImportActivity" />
         <activity android:name=".SchoolListActivity" />
         <activity android:name=".TimeTableEditActivity" />
+        <activity android:name=".AppearanceActivity" />
         <activity android:name=".ApplyAdapterActivity" />
         <activity android:name=".PermissionGuideActivity" />
         <activity android:name=".AboutActivity" />

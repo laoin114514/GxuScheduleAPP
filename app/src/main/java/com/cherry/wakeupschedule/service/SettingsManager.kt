@@ -41,8 +41,16 @@ class SettingsManager(context: Context) {
         private const val KEY_LAST_LOG_CLEAR = "last_log_clear"            // 上次清理日志日期
         private const val KEY_HIDE_HOLIDAY_COURSES = "hide_holiday_courses" // 是否在节假日隐藏课程
         private const val KEY_THEME_MODE = "theme_mode"                // 主题模式: light/dark/system
+        private const val KEY_AUTO_SWITCH_THEME = "auto_switch_theme"  // 是否自动切换深浅色
+        private const val KEY_AUTO_SWITCH_MODE = "auto_switch_mode"    // 自动切换方式: system/custom
+        private const val KEY_DARK_TIME = "theme_dark_time"            // 深色开始时间 HH:mm
+        private const val KEY_LIGHT_TIME = "theme_light_time"          // 浅色开始时间 HH:mm
         private const val DEFAULT_HIDE_HOLIDAY_COURSES = false              // 默认不隐藏
         private const val DEFAULT_THEME_MODE = "system"                  // 默认跟随系统
+        private const val DEFAULT_AUTO_SWITCH_THEME = false              // 默认不自动切换
+        private const val DEFAULT_AUTO_SWITCH_MODE = "system"            // 默认跟随系统
+        private const val DEFAULT_DARK_TIME = "18:00"                    // 默认深色时间
+        private const val DEFAULT_LIGHT_TIME = "07:00"                   // 默认浅色时间
         private const val DEFAULT_ENABLE_UPDATE_REMIND = true              // 默认开启更新提醒
         private const val DEFAULT_WEEK = 1                                     // 默认第1周
         private const val DEFAULT_ALARM_MINUTES = 15                           // 默认提前15分钟
@@ -457,5 +465,69 @@ class SettingsManager(context: Context) {
 
     fun setThemeMode(mode: String) {
         sharedPreferences.edit().putString(KEY_THEME_MODE, mode).apply()
+    }
+
+    // ==================== 深浅色自动切换相关 ====================
+
+    /**
+     * 是否开启深浅色自动切换
+     */
+    fun isAutoSwitchTheme(): Boolean {
+        return sharedPreferences.getBoolean(KEY_AUTO_SWITCH_THEME, DEFAULT_AUTO_SWITCH_THEME)
+    }
+
+    /**
+     * 设置是否开启深浅色自动切换
+     */
+    fun setAutoSwitchTheme(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_AUTO_SWITCH_THEME, enabled).apply()
+    }
+
+    /**
+     * 获取自动切换方式
+     * @return "system"跟随系统 / "custom"自定时间
+     */
+    fun getAutoSwitchMode(): String {
+        return sharedPreferences.getString(KEY_AUTO_SWITCH_MODE, DEFAULT_AUTO_SWITCH_MODE) ?: DEFAULT_AUTO_SWITCH_MODE
+    }
+
+    /**
+     * 设置自动切换方式
+     * @param mode "system"或"custom"
+     */
+    fun setAutoSwitchMode(mode: String) {
+        sharedPreferences.edit().putString(KEY_AUTO_SWITCH_MODE, mode).apply()
+    }
+
+    /**
+     * 获取深色开始时间
+     * @return "HH:mm"格式字符串
+     */
+    fun getDarkTime(): String {
+        return sharedPreferences.getString(KEY_DARK_TIME, DEFAULT_DARK_TIME) ?: DEFAULT_DARK_TIME
+    }
+
+    /**
+     * 设置深色开始时间
+     * @param time "HH:mm"格式字符串
+     */
+    fun setDarkTime(time: String) {
+        sharedPreferences.edit().putString(KEY_DARK_TIME, time).apply()
+    }
+
+    /**
+     * 获取浅色开始时间
+     * @return "HH:mm"格式字符串
+     */
+    fun getLightTime(): String {
+        return sharedPreferences.getString(KEY_LIGHT_TIME, DEFAULT_LIGHT_TIME) ?: DEFAULT_LIGHT_TIME
+    }
+
+    /**
+     * 设置浅色开始时间
+     * @param time "HH:mm"格式字符串
+     */
+    fun setLightTime(time: String) {
+        sharedPreferences.edit().putString(KEY_LIGHT_TIME, time).apply()
     }
 }

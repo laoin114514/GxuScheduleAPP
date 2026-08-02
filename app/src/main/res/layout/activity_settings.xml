@@ -155,15 +155,16 @@
                         android:layout_marginBottom="8dp"
                         app:strokeColor="?attr/colorOutline" />
 
-                    <!-- 外观设置（透明度等） -->
+                    <!-- 外观设置（主题与卡片外观） -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_appearance_settings"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="卡片外观设置"
+                        android:text="外观设置"
                         android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp"
+                        android:layout_marginBottom="8dp"
                         app:strokeColor="?attr/colorOutline" />
 
                     <!-- 卡片配色 -->
@@ -173,18 +174,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="卡片配色"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="15sp"
-                        android:layout_marginTop="8dp"
-                        app:strokeColor="?attr/colorOutline" />
-
-                    <!-- 主题模式 -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_theme_mode"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="主题模式"
                         android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp"
                         android:layout_marginTop="8dp"

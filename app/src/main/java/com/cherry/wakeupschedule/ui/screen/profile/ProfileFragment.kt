@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.AboutActivity
 import com.cherry.wakeupschedule.App
+import com.cherry.wakeupschedule.AppearanceActivity
 import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
@@ -22,6 +23,7 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
+import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.ui.component.SelectOption
 import com.cherry.wakeupschedule.ui.component.SelectionDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
@@ -99,11 +101,9 @@ class ProfileFragment : Fragment() {
 
         view.findViewById<View>(R.id.item_theme_palette).visibility = View.GONE
 
-        // 更新外观当前值
-        updateThemeModeDisplay(view)
-
+        // 外观：跳转到独立的外观设置页（浅色/深色主题 + 自动切换 + 卡片外观）
         view.findViewById<View>(R.id.item_theme_mode).setOnClickListener {
-            showThemeModeDialog()
+            startActivity(Intent(requireContext(), AppearanceActivity::class.java))
         }
 
         // 课前提醒：直接通过开关切换，切换即注册/取消真实提醒
@@ -251,6 +251,9 @@ class ProfileFragment : Fragment() {
         view?.findViewById<Switch>(R.id.switch_alarm_enabled)?.isChecked = settingsManager.isAlarmEnabled()
         isUpdatingSwitchState = false
 
+        // 主题模式展示（从外观页返回时刷新）
+        updateThemeModeDisplay(requireView())
+
         val tv = view?.findViewById<TextView>(R.id.tv_semester_value)
         val current = SemesterManager.getCurrent()
         if (current != null) {
@@ -314,44 +317,8 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    private fun showThemeModeDialog() {
-        val modes = listOf("浅色", "深色", "跟随系统")
-        val modeKeys = listOf("light", "dark", "system")
-        val currentMode = settingsManager.getThemeMode()
-        val currentIndex = modeKeys.indexOf(currentMode).coerceAtLeast(0)
-
-        val options = modes.map { SelectOption(label = it) }
-        SelectionDialog.show(
-            context = requireContext(),
-            title = "外观",
-            options = options,
-            selectedIndex = currentIndex,
-            onSelected = { index ->
-                val newMode = modeKeys[index]
-                settingsManager.setThemeMode(newMode)
-                applyThemeMode(newMode)
-                updateThemeModeDisplay(requireView())
-                Toast.makeText(requireContext(), "已切换至: ${modes[index]}", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-
-    private fun applyThemeMode(mode: String) {
-        val nightMode = when (mode) {
-            "light" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
-            "dark" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
-            else -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-        }
-        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(nightMode)
-    }
-
     private fun updateThemeModeDisplay(view: View) {
-        val label = when (settingsManager.getThemeMode()) {
-            "light" -> "浅色"
-            "dark" -> "深色"
-            else -> "跟随系统"
-        }
         val tv = view.findViewById<TextView>(R.id.tv_theme_mode_value)
-        tv?.text = label
+        tv?.text = ThemeModeManager.effectiveLabel(requireContext())
     }
 }

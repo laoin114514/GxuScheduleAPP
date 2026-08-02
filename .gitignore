@@ -77,3 +77,6 @@ reference_project/
 
 # agent
 superpowers
+# ZCode plans / debug screenshots
+.zcode/
+*.png

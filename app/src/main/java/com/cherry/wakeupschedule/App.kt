@@ -15,6 +15,7 @@ import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.CourseReminderWorker
 import com.cherry.wakeupschedule.service.NotificationHelper
 import com.cherry.wakeupschedule.service.SettingsManager
+import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
@@ -29,6 +30,22 @@ class App : Application() {
     private var secondTickRunnable: Runnable? = null
     @Volatile
     private var isScreenOn = true
+    private val autoThemeHandler = Handler(Looper.getMainLooper())
+    private val autoThemeRunnable = object : Runnable {
+        override fun run() {
+            try {
+                val target = ThemeModeManager.resolveNightMode(this@App)
+                if (target != AppCompatDelegate.getDefaultNightMode()) {
+                    AppCompatDelegate.setDefaultNightMode(target)
+                    Log.d("App", "Auto theme switched to mode=$target")
+                }
+            } catch (e: Exception) {
+                Log.e("App", "Auto theme check failed", e)
+            } finally {
+                autoThemeHandler.postDelayed(this, AUTO_THEME_CHECK_INTERVAL_MS)
+            }
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -96,6 +113,9 @@ class App : Application() {
             android.util.Log.e("App", "Failed to start per-second widget tick", e)
         }
 
+        // 周期检测自定时间模式的深浅色自动切换
+        startAutoThemeCheck()
+
         try {
             registerAllCourseNotifications()
         } catch (e: Exception) {
@@ -138,6 +158,20 @@ class App : Application() {
         }
         registerReceiver(screenStateReceiver, filter, RECEIVER_NOT_EXPORTED)
         Log.d("App", "Screen state receiver registered")
+    }
+
+    /**
+     * 周期检测深浅色自动切换（自定时间模式到点自动切换主题）。
+     * 仅当解析出的夜间模式与当前生效模式不同时才调用 setDefaultNightMode。
+     */
+    private fun startAutoThemeCheck() {
+        try {
+            ThemeModeManager.apply(this)
+            autoThemeHandler.post(autoThemeRunnable)
+            Log.d("App", "Auto theme check started")
+        } catch (e: Exception) {
+            Log.e("App", "Failed to start auto theme check", e)
+        }
     }
 
     private fun startSecondTick() {
@@ -184,16 +218,14 @@ class App : Application() {
     }
 
     private fun applyStoredThemeMode() {
-        val mode = SettingsManager(this).getThemeMode()
-        val nightMode = when (mode) {
-            "light" -> AppCompatDelegate.MODE_NIGHT_NO
-            "dark" -> AppCompatDelegate.MODE_NIGHT_YES
-            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-        }
-        AppCompatDelegate.setDefaultNightMode(nightMode)
+        // 统一由 ThemeModeManager 解析并应用深浅色/自动切换
+        ThemeModeManager.apply(this)
     }
 
     companion object {
+        /** 自定时间模式下的周期检测间隔（毫秒） */
+        private const val AUTO_THEME_CHECK_INTERVAL_MS = 30_000L
+
         lateinit var instance: App
             private set
     }
