@@ -88,7 +88,8 @@ class ProfileFragment : Fragment() {
         }
 
         view.findViewById<View>(R.id.item_week).setOnClickListener {
-            showWeekDialog()
+            // 一步直达周选择器，选中即设为当前周（自动反推学期开始日期）
+            showCurrentWeekPicker()
         }
 
 
@@ -171,21 +172,32 @@ class ProfileFragment : Fragment() {
         )
     }
 
-    private fun showWeekDialog() {
-        val options = listOf(
-            SelectOption(label = "设置学期开始日期（自动计算当前周）"),
-            SelectOption(label = "直接设置当前周")
-        )
+    private fun showCurrentWeekPicker() {
+        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
+        val semesterStartDate = settingsManager.getSemesterStartDate()
+        val currentWeek = if (semesterStartDate > 0) {
+            ((System.currentTimeMillis() - semesterStartDate) / 86400000L).toInt() / 7 + 1
+        } else settingsManager.getDefaultWeek()
+
+        // 周选择列表末尾附加「设置学期开始日期」入口，保留高级设置能力
+        val options = weeks + SelectOption(label = "设置学期开始日期…")
+
         SelectionDialog.show(
             context = requireContext(),
-            title = "周次设置",
+            title = "设置当前周",
             options = options,
-            selectedIndex = 0,
+            selectedIndex = currentWeek.coerceIn(1, 20) - 1,
             onSelected = { index ->
-                when (index) {
-                    0 -> showSemesterStartDatePicker()
-                    1 -> showCurrentWeekPicker()
+                // 末尾附加项：进入学期开始日期选择
+                if (index >= weeks.size) {
+                    showSemesterStartDatePicker()
+                    return@show
                 }
+                val selectedWeek = index + 1
+                val daysToSubtract = (selectedWeek - 1) * 7L
+                settingsManager.setSemesterStartDate(System.currentTimeMillis() - daysToSubtract * 86400000L)
+                settingsManager.setDefaultWeek(selectedWeek)
+                updateDisplay()
             }
         )
     }
@@ -210,28 +222,6 @@ class ProfileFragment : Fragment() {
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
         ).show()
-    }
-
-    private fun showCurrentWeekPicker() {
-        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
-        val semesterStartDate = settingsManager.getSemesterStartDate()
-        val currentWeek = if (semesterStartDate > 0) {
-            ((System.currentTimeMillis() - semesterStartDate) / 86400000L).toInt() / 7 + 1
-        } else settingsManager.getDefaultWeek()
-
-        SelectionDialog.show(
-            context = requireContext(),
-            title = "设置当前周（将调整学期开始日期）",
-            options = weeks,
-            selectedIndex = currentWeek.coerceIn(1, 20) - 1,
-            onSelected = { index ->
-                val selectedWeek = index + 1
-                val daysToSubtract = (selectedWeek - 1) * 7L
-                settingsManager.setSemesterStartDate(System.currentTimeMillis() - daysToSubtract * 86400000L)
-                settingsManager.setDefaultWeek(selectedWeek)
-                updateDisplay()
-            }
-        )
     }
 
     private fun updateDisplay() {

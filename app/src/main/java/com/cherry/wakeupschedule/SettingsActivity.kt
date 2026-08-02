@@ -210,7 +210,8 @@ class SettingsActivity : AppCompatActivity() {
         }
         
         btnModifyWeek.setOnClickListener {
-            showWeekDialog()
+            // 一步直达周选择器，选中即设为当前周（自动反推学期开始日期）
+            showDefaultWeekPicker()
         }
         
         btnModifyAlarm.setOnClickListener {
@@ -512,22 +513,38 @@ class SettingsActivity : AppCompatActivity() {
         )
     }
 
-    private fun showWeekDialog() {
-        val options = listOf(
-            SelectOption(label = "设置学期开始日期（自动计算当前周）"),
-            SelectOption(label = "直接设置当前周")
-        )
+    private fun showDefaultWeekPicker() {
+        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
+        val semesterStartDate = settingsManager.getSemesterStartDate()
+        val currentWeek = if (semesterStartDate > 0) {
+            val now = System.currentTimeMillis()
+            val diffDays = (now - semesterStartDate) / (1000 * 60 * 60 * 24)
+            (diffDays / 7).toInt() + 1
+        } else {
+            settingsManager.getDefaultWeek()
+        }
+
+        // 周选择列表末尾附加「设置学期开始日期」入口，保留高级设置能力
+        val options = weeks + SelectOption(label = "设置学期开始日期…")
 
         SelectionDialog.show(
             context = this,
-            title = "周次设置",
+            title = "设置当前周",
             options = options,
-            selectedIndex = 0,
+            selectedIndex = currentWeek.coerceIn(1, 20) - 1,
             onSelected = { index ->
-                when (index) {
-                    0 -> showSemesterStartDatePicker()
-                    1 -> showCurrentWeekPicker()
+                // 末尾附加项：进入学期开始日期选择
+                if (index >= weeks.size) {
+                    showSemesterStartDatePicker()
+                    return@show
                 }
+                val selectedWeek = index + 1
+                val daysToSubtract = (selectedWeek - 1) * 7L
+                settingsManager.setSemesterStartDate(System.currentTimeMillis() - daysToSubtract * 24 * 60 * 60 * 1000)
+                settingsManager.setDefaultWeek(selectedWeek)
+
+                updateSettingsDisplay()
+                Toast.makeText(this, "当前周已设置为第${selectedWeek}周", Toast.LENGTH_SHORT).show()
             }
         )
     }
@@ -563,54 +580,6 @@ class SettingsActivity : AppCompatActivity() {
         ).show()
     }
 
-    private fun showDefaultWeekPicker() {
-        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
-        val currentWeek = settingsManager.getDefaultWeek()
-
-        SelectionDialog.show(
-            context = this,
-            title = "选择默认显示周",
-            options = weeks,
-            selectedIndex = currentWeek - 1,
-            onSelected = { index ->
-                settingsManager.setDefaultWeek(index + 1)
-                Toast.makeText(this, "默认显示周已设置为第${index + 1}周", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-
-    private fun showCurrentWeekPicker() {
-        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
-
-        val semesterStartDate = settingsManager.getSemesterStartDate()
-        val currentWeek = if (semesterStartDate > 0) {
-            val now = System.currentTimeMillis()
-            val diffMillis = now - semesterStartDate
-            val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
-            (diffDays / 7) + 1
-        } else {
-            settingsManager.getDefaultWeek()
-        }
-
-        SelectionDialog.show(
-            context = this,
-            title = "设置当前周（将调整学期开始日期）",
-            options = weeks,
-            selectedIndex = currentWeek.coerceIn(1, 20) - 1,
-            onSelected = { index ->
-                val selectedWeek = index + 1
-                val daysToSubtract = (selectedWeek - 1) * 7L
-                val startDate = System.currentTimeMillis() - (daysToSubtract * 24 * 60 * 60 * 1000)
-
-                settingsManager.setSemesterStartDate(startDate)
-                settingsManager.setDefaultWeek(selectedWeek)
-
-                Toast.makeText(this, "当前周已设置为第${selectedWeek}周", Toast.LENGTH_SHORT).show()
-                updateSettingsDisplay()
-            }
-        )
-    }
-    
     private fun showAlarmDialog() {
         val alarmOptions = (0..4).map { i ->
             val minutes = when (i) { 0 -> 5; 1 -> 10; 2 -> 15; 3 -> 20; 4 -> 30; else -> 15 }
