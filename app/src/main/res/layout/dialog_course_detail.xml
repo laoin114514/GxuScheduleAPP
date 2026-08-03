@@ -144,13 +144,17 @@
                         android:background="?attr/colorOutlineVariant"
                         android:alpha="0.35" />
 
-                    <!-- QQ群 -->
+                    <!-- QQ群（点击跳转加群） -->
                     <LinearLayout
+                        android:id="@+id/row_detail_qq"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:paddingVertical="8dp">
+                        android:paddingVertical="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground">
 
                         <LinearLayout
                             android:layout_width="28dp"
@@ -184,6 +188,16 @@
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textStyle="bold"
                             android:textColor="?attr/colorOnSurface" />
+
+                        <ImageView
+                            android:id="@+id/iv_detail_qq_arrow"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="2dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            android:tint="?attr/colorOnSurfaceVariant"
+                            android:contentDescription="@null"
+                            android:visibility="gone" />
                     </LinearLayout>
 
                     <View

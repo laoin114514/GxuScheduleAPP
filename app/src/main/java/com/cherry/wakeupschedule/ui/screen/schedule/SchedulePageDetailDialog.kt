@@ -1,10 +1,13 @@
 package com.cherry.wakeupschedule.ui.screen.schedule
 
+import android.app.Activity
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +16,7 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
@@ -92,7 +96,7 @@ object SchedulePageDetailDialog {
         sheetView.findViewById<TextView>(R.id.tv_detail_time)?.text = "$dayText $timeText"
         sheetView.findViewById<TextView>(R.id.tv_detail_week)?.text = formatWeeks(course.weekBitmap)
         sheetView.findViewById<TextView>(R.id.tv_detail_credit)?.text = course.credits.trim().ifBlank { "未设置" }
-        sheetView.findViewById<TextView>(R.id.tv_detail_qq)?.text = course.qqGroup.trim().ifBlank { "未设置" }
+        setupQqGroupJump(sheetView, course)
 
         dialog.setContentView(sheetView)
         val container = LinearLayout(context).apply {
@@ -161,6 +165,52 @@ object SchedulePageDetailDialog {
         } catch (_: Exception) {
             // 窗口已解绑（Activity 已销毁/重建），忽略并清引用
             currentDialog = null
+        }
+    }
+
+    /**
+     * 设置 QQ 群行：有群号时显示跳转箭头，点击拉起 QQ 加群；
+     * 无群号时退化为纯展示。
+     *
+     * 群号取文本中第一段连续数字（≥5 位），兼容 "12345678" / "群号：12345678" 等格式。
+     * 跳转使用 QQ 官方 mqqapi scheme，未安装 QQ 时捕获异常并提示。
+     */
+    private fun setupQqGroupJump(view: View, course: Course) {
+        val row = view.findViewById<View>(R.id.row_detail_qq) ?: return
+        val tv = view.findViewById<TextView>(R.id.tv_detail_qq)
+        val arrow = view.findViewById<View>(R.id.iv_detail_qq_arrow)
+
+        val raw = course.qqGroup.trim()
+        val groupId = Regex("\\d{5,}").find(raw)?.value
+        tv?.text = raw.ifBlank { "未设置" }
+
+        if (groupId == null) {
+            arrow?.visibility = View.GONE
+            row.isClickable = false
+            row.setOnClickListener(null)
+            return
+        }
+
+        arrow?.visibility = View.VISIBLE
+        row.isClickable = true
+        row.setOnClickListener {
+            val ctx = view.context
+            try {
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(
+                        "mqqapi://card/show_pslcard?src_type=internal&version=1" +
+                            "&uin=$groupId&card_type=group&source=external"
+                    )
+                )
+                if (ctx is Activity) {
+                    ctx.startActivity(intent)
+                } else {
+                    ctx.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+            } catch (e: Exception) {
+                Toast.makeText(ctx, "未检测到 QQ，无法跳转加群", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
