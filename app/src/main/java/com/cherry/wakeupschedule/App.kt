@@ -62,6 +62,9 @@ class App : Application() {
         // 初始化教务账号管理器
         com.cherry.wakeupschedule.service.JwxtAccountManager.init(this)
 
+        // 初始化持久化 CookieJar（教务系统会话 cookie 存 Room，重启后复用）
+        com.cherry.wakeupschedule.service.RoomCookieJar.init(this)
+
         // 初始化学期管理器（内部自动恢复当前学期索引）
         com.cherry.wakeupschedule.service.SemesterManager.init(this)
 

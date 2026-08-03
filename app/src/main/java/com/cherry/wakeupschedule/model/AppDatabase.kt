@@ -7,12 +7,13 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Course::class, AccountEntity::class, SemesterEntity::class], version = 6, exportSchema = false)
+@Database(entities = [Course::class, AccountEntity::class, SemesterEntity::class, CookieEntity::class], version = 7, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun courseDao(): CourseDao
     abstract fun accountDao(): AccountDao
     abstract fun semesterDao(): SemesterDao
+    abstract fun cookieDao(): CookieDao
 
     companion object {
         @Volatile
@@ -102,6 +103,26 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 新增 cookies 表：持久化教务系统会话 cookie。
+                // 表结构与 CookieEntity 完全一致（主键 name,domain,path）。
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `cookies` (
+                        `name` TEXT NOT NULL,
+                        `value` TEXT NOT NULL,
+                        `domain` TEXT NOT NULL,
+                        `path` TEXT NOT NULL,
+                        `expires_at` INTEGER NOT NULL,
+                        `secure` INTEGER NOT NULL,
+                        `http_only` INTEGER NOT NULL,
+                        `host_only` INTEGER NOT NULL,
+                        PRIMARY KEY(`name`, `domain`, `path`)
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -109,7 +130,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "schedule.db"
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }

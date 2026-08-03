@@ -25,7 +25,7 @@ object JwxtAuthManager {
     suspend fun login(username: String, password: String): Result<String> = withContext(Dispatchers.IO) {
         try {
             // 步骤 1：验证凭据
-            val c = JwxtClient(username, password)
+            val c = JwxtClient(username, password, RoomCookieJar)
             c.login()
             destroyClient()
             this@JwxtAuthManager.client = c
@@ -75,7 +75,7 @@ object JwxtAuthManager {
         }
 
         try {
-            val c = JwxtClient(username, password)
+            val c = JwxtClient(username, password, RoomCookieJar)
             c.login()
             destroyClient()
             client = c
@@ -123,6 +123,8 @@ object JwxtAuthManager {
 
     fun unbind() {
         JwxtAccountManager.clear()
+        // 清除持久化会话，避免残留 cookie 影响下次绑定
+        RoomCookieJar.clear()
         kotlinx.coroutines.runBlocking {
             SemesterManager.clear()
         }
@@ -132,13 +134,23 @@ object JwxtAuthManager {
         destroyClient()
     }
 
+    /**
+     * 获取（或创建）带持久化 cookie 的客户端。
+     *
+     * 懒认证：先用 Room 中保存的 cookie 探测会话是否有效，
+     * 有效则免登录直接复用；无效（无 cookie/已过期）才走完整登录并刷新 cookie。
+     */
     private fun getOrCreateClient(): JwxtClient {
         return client ?: run {
             val c = JwxtClient(
                 JwxtAccountManager.getUsername(),
-                JwxtAccountManager.getPassword()
+                JwxtAccountManager.getPassword(),
+                RoomCookieJar
             )
-            c.login()
+            // 探测持久化会话；失败则完整登录（登录成功后 cookie 自动入库）
+            if (!c.resumeSession()) {
+                c.login()
+            }
             client = c
             c
         }
