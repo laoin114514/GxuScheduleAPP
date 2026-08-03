@@ -80,3 +80,6 @@ superpowers
 # ZCode plans / debug screenshots
 .zcode/
 *.png
+
+# website (independent repository GxuScheduleWebsite)
+website/
