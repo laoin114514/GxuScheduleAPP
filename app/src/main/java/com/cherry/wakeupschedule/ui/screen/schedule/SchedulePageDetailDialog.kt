@@ -24,8 +24,8 @@ object SchedulePageDetailDialog {
     private var currentDialog: Dialog? = null
 
     fun show(context: Context, course: Course, courseColors: IntArray) {
-        // 防止连点打开多个详情弹窗
-        currentDialog?.dismiss()
+        // 防止连点打开多个详情弹窗（旧弹窗可能已随 Activity 销毁，安全关闭）
+        dismissCurrent()
         val dialog = Dialog(context, R.style.BottomSheetDialog)
         currentDialog = dialog
         dialog.setOnDismissListener { currentDialog = null }
@@ -141,6 +141,27 @@ object SchedulePageDetailDialog {
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
         dialog.show()
+    }
+
+    /**
+     * 安全关闭当前弹窗。
+     *
+     * 承载弹窗的 Activity 销毁/重建后，旧弹窗的 DecorView 已脱离 WindowManager，
+     * 直接 dismiss() 会抛 "not attached to window manager" 崩溃（本单例持有旧引用，
+     * 属于 Activity 生命周期管理不到的对象）。这里先查 isShowing，再 try-catch 兜底。
+     */
+    private fun dismissCurrent() {
+        val d = currentDialog ?: return
+        if (!d.isShowing) {
+            currentDialog = null
+            return
+        }
+        try {
+            d.dismiss()
+        } catch (_: Exception) {
+            // 窗口已解绑（Activity 已销毁/重建），忽略并清引用
+            currentDialog = null
+        }
     }
 
     /**
