@@ -22,20 +22,27 @@ import java.net.URL
 
 /**
  * 更新服务
- * 检查GitHub最新版本并提示用户更新
+ * 从自建后端检查最新版本并提示用户更新
  */
 class UpdateService(private val context: Context) {
 
     companion object {
         private const val TAG = "UpdateService"
-        private const val GITHUB_API_URL = "https://api.github.com/repos/laoin114514/GxuScheduleAPP/releases"
+        // 自建后端地址；部署后把 DEFAULT_API_BASE 或 BuildConfig.API_BASE_URL 改为真实域名
+        private const val DEFAULT_API_BASE = "https://your-server.example.com"
+        private val API_BASE: String =
+            com.cherry.wakeupschedule.BuildConfig.API_BASE_URL
+                .takeIf { it.isNotBlank() && it != "http://localhost" }
+                ?: DEFAULT_API_BASE
+        private val UPDATE_API_URL = "$API_BASE/api/versions/latest"
     }
 
     private val currentVersion: String = com.cherry.wakeupschedule.BuildConfig.VERSION_NAME
+    private val currentVersionCode: Int = com.cherry.wakeupschedule.BuildConfig.VERSION_CODE
 
-    private var latestVersion: String = ""
-    private var downloadUrl: String = ""
-    private var releaseNotes: String = ""
+    // 设备 ABI（后端据此返回匹配的下载链接；缺失时后端回退 universal）
+    private val deviceAbi: String
+        get() = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
 
     // 静默检查更新（不显示任何提示，只在新版本时弹出对话框）
     fun checkForUpdateSilently() {
@@ -52,14 +59,9 @@ class UpdateService(private val context: Context) {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val result = fetchLatestRelease()
-                if (result.first) {
-                    val latestVer = result.second
-                    val latestUrl = result.third
-                    val notes = result.fourth
-                    if (isNewVersion(latestVer)) {
-                        withContext(Dispatchers.Main) {
-                            showUpdateDialog(latestVer, latestUrl, notes)
-                        }
+                if (result != null && isNewVersion(result.versionCode)) {
+                    withContext(Dispatchers.Main) {
+                        showUpdateDialog(result.versionName, result.downloadUrl, result.changelog)
                     }
                 }
                 settingsManager.markUpdateCheckedToday()
@@ -80,12 +82,9 @@ class UpdateService(private val context: Context) {
                 if (showNoUpdateToast) showToast("正在检查更新...")
                 val result = fetchLatestRelease()
                 withContext(Dispatchers.Main) {
-                    if (result.first) {
-                        val latestVer = result.second
-                        val latestUrl = result.third
-                        val notes = result.fourth
-                        if (isNewVersion(latestVer)) {
-                            showUpdateDialog(latestVer, latestUrl, notes)
+                    if (result != null) {
+                        if (isNewVersion(result.versionCode)) {
+                            showUpdateDialog(result.versionName, result.downloadUrl, result.changelog)
                         } else {
                             if (showNoUpdateToast) showToast("当前已是最新版本 ($currentVersion)")
                         }
@@ -102,140 +101,37 @@ class UpdateService(private val context: Context) {
         }
     }
 
-    // 获取最新发布信息（包括预发布版本）
-    private suspend fun fetchLatestRelease(): Quartet<Boolean, String, String, String> = withContext(Dispatchers.IO) {
+    // 从自建后端获取最新发布信息（携带设备 ABI）
+    private suspend fun fetchLatestRelease(): UpdateCheckResult? = withContext(Dispatchers.IO) {
         try {
-            val url = URL(GITHUB_API_URL)
+            val url = URL("$UPDATE_API_URL?abi=${java.net.URLEncoder.encode(deviceAbi, "UTF-8")}")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 15000
             connection.readTimeout = 15000
-            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
             connection.setRequestProperty("User-Agent", "Schedule-App")
 
             if (connection.responseCode == 200) {
                 val reader = BufferedReader(InputStreamReader(connection.inputStream))
                 val response = reader.readText()
                 reader.close()
-                
-                val releases = org.json.JSONArray(response)
-                if (releases.length() > 0) {
-                    // 遍历所有 release，找到最新的版本（包括预发布）
-                    for (i in 0 until releases.length()) {
-                        val json = releases.getJSONObject(i)
-                        val version = json.optString("tag_name", "").removePrefix("v")
-                        
-                        if (version.isNotEmpty()) {
-                            val assets = json.optJSONArray("assets")
-                            var apkUrl = ""
-                            if (assets != null) {
-                                for (j in 0 until assets.length()) {
-                                    val asset = assets.getJSONObject(j)
-                                    val name = asset.optString("name", "")
-                                    if (name.endsWith(".apk")) {
-                                        apkUrl = asset.optString("browser_download_url", "")
-                                        break
-                                    }
-                                }
-                            }
-                            if (apkUrl.isEmpty()) {
-                                apkUrl = json.optString("html_url", "")
-                            }
-                            
-                            // 检查这个版本是否比当前找到的更新
-                            if (isNewerVersion(version, latestVersion)) {
-                                latestVersion = version
-                                downloadUrl = apkUrl
-                                releaseNotes = json.optString("body", "")
-                            }
-                        }
-                    }
-                }
 
-                if (latestVersion.isNotEmpty() && downloadUrl.isNotEmpty()) {
-                    Quartet(true, latestVersion, downloadUrl, releaseNotes)
-                } else Quartet(false, "", "", "")
+                val info = UpdateResponseParser.parse(response)
+                if (info != null && info.downloadUrl.isNotEmpty()) {
+                    UpdateCheckResult(info.versionCode, info.versionName, info.downloadUrl, info.changelog)
+                } else null
             } else {
-                Quartet(false, "", "", "")
+                Log.w(TAG, "检查更新失败，HTTP ${connection.responseCode}")
+                null
             }
         } catch (e: Exception) {
             Log.e(TAG, "获取发布信息失败", e)
-            Quartet(false, "", "", "")
+            null
         }
     }
 
-    // 检查 serverVersion 是否比 currentLatest 更新
-    private fun isNewerVersion(serverVersion: String, currentLatest: String): Boolean {
-        if (currentLatest.isEmpty()) return true
-        return compareVersions(serverVersion, currentLatest) > 0
-    }
-
-    // 检查是否有新版本（比当前应用版本更新）
-    private fun isNewVersion(serverVersion: String): Boolean {
-        if (serverVersion.isEmpty()) return false
-        return compareVersions(serverVersion, currentVersion) > 0
-    }
-
-    // 比较两个版本号，返回：
-    // >0: version1 > version2
-    // =0: version1 = version2
-    // <0: version1 < version2
-    private fun compareVersions(version1: String, version2: String): Int {
-        val parts1 = parseVersion(version1)
-        val parts2 = parseVersion(version2)
-        
-        // 比较主版本号
-        for (i in 0 until maxOf(parts1.first.size, parts2.first.size)) {
-            val v1 = parts1.first.getOrElse(i) { 0 }
-            val v2 = parts2.first.getOrElse(i) { 0 }
-            if (v1 > v2) return 1
-            if (v1 < v2) return -1
-        }
-        
-        // 如果主版本相同，比较预发布标识符
-        // 没有预发布标识符的版本 > 有预发布标识符的版本（正式版 > 测试版）
-        if (parts1.second.isEmpty() && parts2.second.isNotEmpty()) return 1
-        if (parts1.second.isNotEmpty() && parts2.second.isEmpty()) return -1
-        
-        // 如果都有预发布标识符，逐部分比较
-        for (i in 0 until maxOf(parts1.second.size, parts2.second.size)) {
-            val p1 = parts1.second.getOrElse(i) { "" }
-            val p2 = parts2.second.getOrElse(i) { "" }
-            val compare = comparePreReleasePart(p1, p2)
-            if (compare != 0) return compare
-        }
-        
-        return 0
-    }
-
-    // 解析版本号，返回（数字部分，预发布标识符）
-    private fun parseVersion(version: String): Pair<List<Int>, List<String>> {
-        val hyphenIndex = version.indexOf('-')
-        val mainPart = if (hyphenIndex >= 0) version.substring(0, hyphenIndex) else version
-        val preReleasePart = if (hyphenIndex >= 0) version.substring(hyphenIndex + 1) else ""
-        
-        val mainNumbers = mainPart.split('.').map { it.toIntOrNull() ?: 0 }
-        val preReleaseParts = if (preReleasePart.isEmpty()) emptyList() else preReleasePart.split('.')
-        
-        return Pair(mainNumbers, preReleaseParts)
-    }
-
-    // 比较预发布标识符的单个部分
-    private fun comparePreReleasePart(p1: String, p2: String): Int {
-        // 数字比较
-        val num1 = p1.toIntOrNull()
-        val num2 = p2.toIntOrNull()
-        
-        return if (num1 != null && num2 != null) {
-            num1.compareTo(num2)
-        } else if (num1 != null) {
-            -1 // 数字 < 字母
-        } else if (num2 != null) {
-            1 // 字母 > 数字
-        } else {
-            p1.compareTo(p2)
-        }
-    }
+    // 检查是否有新版本（按 versionCode 数值比较，避免版本名格式差异）
+    private fun isNewVersion(serverVersionCode: Int): Boolean = serverVersionCode > currentVersionCode
 
     // 简单的 Markdown 到 HTML 转换
     private fun markdownToHtml(markdown: String): String {
@@ -373,7 +269,45 @@ class UpdateService(private val context: Context) {
             android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
         }
     }
+}
 
-    // 四元组数据类
-    data class Quartet<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+/** 后端返回的最新版本信息 */
+data class UpdateCheckResult(
+    val versionCode: Int,
+    val versionName: String,
+    val downloadUrl: String,
+    val changelog: String,
+)
+
+// ---- 新后端响应解析（供单元测试）----
+data class UpdateInfo(
+    val versionCode: Int,
+    val versionName: String,
+    val changelog: String,
+    val downloadUrl: String,
+)
+
+object UpdateResponseParser {
+
+    /** 解析后端 GET /api/versions/latest 响应；结构不符返回 null。 */
+    fun parse(raw: String): UpdateInfo? {
+        return try {
+            val json = org.json.JSONObject(raw)
+            if (json.optInt("code") != 0) return null
+            val data = json.getJSONObject("data")
+            val files = data.getJSONArray("files")
+            if (files.length() == 0) return null
+            val first = files.getJSONObject(0)
+            UpdateInfo(
+                versionCode = data.getInt("versionCode"),
+                versionName = data.optString("versionName", ""),
+                changelog = data.optString("changelog", ""),
+                downloadUrl = first.optString("url", ""),
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun isNewer(serverCode: Int, currentCode: Int): Boolean = serverCode > currentCode
 }

@@ -20,6 +20,8 @@ android {
         versionName = "1.7.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // 自建更新后端地址；"http://localhost" 表示未配置，运行时回退到 UpdateService 的默认常量
+        buildConfigField "String", "API_BASE_URL", "\"http://localhost\""
     }
 
     splits {
