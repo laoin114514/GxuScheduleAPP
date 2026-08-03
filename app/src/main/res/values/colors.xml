@@ -10,4 +10,7 @@
     <color name="m3_on_surface">#1C1B1F</color>
     <color name="m3_outline">#79747E</color>
     <color name="m3_error">#B3261E</color>
+
+    <!-- 危险操作专用色：浅色经典红（深色下各主题 colorError 偏粉，统一用鲜艳红保证警示感） -->
+    <color name="danger_color">#B3261E</color>
 </resources>

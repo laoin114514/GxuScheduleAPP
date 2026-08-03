@@ -150,7 +150,7 @@
                     android:layout_height="wrap_content"
                     android:text="解绑教务账号"
                     android:textSize="14sp"
-                    android:textColor="?attr/colorError"
+                    android:textColor="@color/danger_color"
                     android:padding="12dp"
                     android:gravity="center"
                     android:layout_marginHorizontal="12dp"

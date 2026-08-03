@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色模式危险操作色：饱和亮红，深色背景上醒目且明确是"红"（主题 colorError 深色下偏粉） -->
+    <color name="danger_color">#FF5449</color>
+</resources>

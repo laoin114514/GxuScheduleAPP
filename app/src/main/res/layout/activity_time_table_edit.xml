@@ -83,49 +83,32 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:layout_marginTop="24dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <com.cherry.wakeupschedule.ui.component.DangerButton
+                    android:id="@+id/btn_reset_to_default"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_reset_to_default"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        android:minHeight="48dp"
-                        android:text="重置默认"
-                        android:textColor="?attr/colorError"
-                        app:cornerRadius="14dp"
-                        app:icon="@drawable/ic_delete"
-                        app:iconTint="?attr/colorError"
-                        app:strokeColor="?attr/colorError" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_set_as_default"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:minHeight="48dp"
-                        android:text="设为默认"
-                        app:cornerRadius="14dp"
-                        app:icon="@drawable/ic_check" />
-
-                </LinearLayout>
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:minHeight="48dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="重置默认"
+                    app:dangerTitle="重置时间表"
+                    app:dangerMessage="确定要恢复为默认时间表吗？当前对作息时间的修改将丢失。"
+                    app:confirmText="重置" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_save"
                     style="@style/Widget.Material3.Button"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:minHeight="52dp"
+                    android:layout_weight="1"
+                    android:minHeight="48dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
                     android:text="保存"
                     android:textSize="16sp"
                     app:cornerRadius="14dp" />

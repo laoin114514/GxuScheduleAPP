@@ -45,22 +45,16 @@ class TimeTableEditActivity : AppCompatActivity() {
             showMaxNodesDialog()
         }
 
-        binding.btnResetToDefault.setOnClickListener {
-            showResetConfirmDialog()
-        }
-
-        binding.btnSetAsDefault.setOnClickListener {
-            setCurrentAsDefault()
+        binding.btnResetToDefault.setOnConfirmed {
+            timeTableManager.resetToDefault()
+            Toast.makeText(this, "已重置为默认时间表", Toast.LENGTH_SHORT).show()
+            loadAndDisplayTimeSlots()
+            App.instance.registerAllCourseNotifications()
         }
 
         binding.btnSave.setOnClickListener {
             saveTimeSlots()
         }
-    }
-
-    private fun setCurrentAsDefault() {
-        timeTableManager.setCurrentAsDefault()
-        Toast.makeText(this, "当前时间表已设为默认", Toast.LENGTH_SHORT).show()
     }
 
     private fun loadAndDisplayTimeSlots() {
@@ -166,20 +160,6 @@ class TimeTableEditActivity : AppCompatActivity() {
                 App.instance.registerAllCourseNotifications()
             }
         )
-    }
-
-    private fun showResetConfirmDialog() {
-        StyledDialog.Builder(this)
-            .title("确认重置")
-            .message("确定要重置为默认时间表吗？")
-            .positiveButton("重置") {
-                timeTableManager.resetToDefault()
-                Toast.makeText(this, "已重置为默认时间表", Toast.LENGTH_SHORT).show()
-                loadAndDisplayTimeSlots()
-                App.instance.registerAllCourseNotifications()
-            }
-            .negativeButton("取消")
-            .show()
     }
 
     private fun saveTimeSlots() {

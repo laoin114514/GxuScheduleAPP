@@ -121,17 +121,6 @@ class TimeTableManager private constructor(context: Context) {
     }
 
     /**
-     * 将当前设置的时间表设为默认
-     */
-    fun setCurrentAsDefault() {
-        val currentSlots = getTimeSlots()
-        val currentMaxNodes = getMaxNodes()
-        // 保存当前设置为默认（这里只是确保当前设置被正确保存）
-        saveTimeSlots(currentSlots)
-        setMaxNodes(currentMaxNodes)
-    }
-
-    /**
      * 添加一个时间段
      */
     fun addTimeSlot(node: Int, startTime: String, endTime: String) {

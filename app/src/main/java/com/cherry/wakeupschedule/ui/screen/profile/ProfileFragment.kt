@@ -79,7 +79,7 @@ class ProfileFragment : Fragment() {
             StyledDialog.Builder(requireContext())
                 .title("解绑教务账号")
                 .message("确定要解绑教务账号吗？解绑后个人信息将被清除。")
-                .positiveButton("解绑") {
+                .dangerButton("解绑") {
                     JwxtAuthManager.unbind()
                     updateAccountSection()
                     updateDisplay()

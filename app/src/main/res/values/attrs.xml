@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 危险操作按钮组件自定义属性 -->
+    <declare-styleable name="DangerButton">
+        <!-- 确认弹窗标题，默认使用按钮文字 -->
+        <attr name="dangerTitle" format="string" />
+        <!-- 确认弹窗消息 -->
+        <attr name="dangerMessage" format="string" />
+        <!-- 确认按钮文案，默认"确定" -->
+        <attr name="confirmText" format="string" />
+    </declare-styleable>
+</resources>

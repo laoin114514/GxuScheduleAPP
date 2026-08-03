@@ -199,7 +199,7 @@ class SettingsActivity : AppCompatActivity() {
             StyledDialog.Builder(this)
                 .title("确认清除数据")
                 .message("确定要清除所有课程数据吗？此操作不可恢复。")
-                .positiveButton("确定清除") {
+                .dangerButton("确定清除") {
                     viewModel.clearAllCourses()
                     Toast.makeText(this, "所有课程数据已清除", Toast.LENGTH_SHORT).show()
                 }

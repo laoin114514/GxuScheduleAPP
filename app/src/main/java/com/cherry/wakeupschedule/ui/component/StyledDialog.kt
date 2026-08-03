@@ -61,6 +61,10 @@ class StyledDialog private constructor(
         ThemeManager.currentPalette(context).primary
     }
 
+    private val dangerColor: Int by lazy {
+        context.getColor(R.color.danger_color)
+    }
+
     private fun onSurfaceColor(): Int {
         val tv = android.util.TypedValue()
         context.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, tv, true)
@@ -133,12 +137,14 @@ class StyledDialog private constructor(
 
     private fun setupAccentLine() {
         val vAccent = findViewById<View>(R.id.v_accent)
+        // 危险弹窗装饰线使用危险色，与红色确认按钮统一；普通弹窗沿用主题色
+        val accentBase = if (config.isDanger) dangerColor else primaryColor
         val gradient = GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
             intArrayOf(
-                primaryColor,
-                primaryColor and 0x40FFFFFF.toInt(),
-                primaryColor and 0x00FFFFFF.toInt()
+                accentBase,
+                accentBase and 0x40FFFFFF.toInt(),
+                accentBase and 0x00FFFFFF.toInt()
             )
         )
         vAccent.background = gradient
@@ -232,13 +238,18 @@ class StyledDialog private constructor(
         val btnNeutral = findViewById<TextView>(R.id.btn_neutral)
         val btnPositive = findViewById<TextView>(R.id.btn_positive)
 
-        // Positive → 主题色填充圆角 pill
+        // Positive → 主题色填充圆角 pill（危险操作时用红色）
         if (config.positiveText != null) {
             btnPositive.text = config.positiveText
             btnPositive.background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = dp2px(24).toFloat()
-                setColor(primaryColor)
+                setColor(if (config.isDanger) dangerColor else primaryColor)
+            }
+            // 危险按钮强制白色文字：danger_color 为固定红，配白字对比最佳；
+            // 避免主题 colorOnPrimary（如海洋蓝深色下的深藏蓝）与红色背景不搭
+            if (config.isDanger) {
+                btnPositive.setTextColor(android.graphics.Color.WHITE)
             }
             btnPositive.visibility = View.VISIBLE
             btnPositive.setOnClickListener {
@@ -344,6 +355,7 @@ class StyledDialog private constructor(
         private var negativeAction: (() -> Unit)? = null
         private var neutralText: String? = null
         private var neutralAction: (() -> Unit)? = null
+        private var isDanger = false
 
         fun title(text: String) = apply { title = text }
         fun message(text: String) = apply { message = text }
@@ -359,6 +371,14 @@ class StyledDialog private constructor(
         fun positiveButton(text: String, action: (() -> Unit)? = null) = apply {
             positiveText = text
             positiveAction = action
+        }
+        /**
+         * 危险操作的确认按钮（红色填充），用于清除/删除/解绑等破坏性操作。
+         */
+        fun dangerButton(text: String, action: (() -> Unit)? = null) = apply {
+            positiveText = text
+            positiveAction = action
+            isDanger = true
         }
         fun negativeButton(text: String, action: (() -> Unit)? = null) = apply {
             negativeText = text
@@ -382,7 +402,8 @@ class StyledDialog private constructor(
                 negativeAction = negativeAction,
                 neutralText = neutralText,
                 neutralAction = neutralAction,
-                hasAnyButton = positiveText != null || negativeText != null || neutralText != null
+                hasAnyButton = positiveText != null || negativeText != null || neutralText != null,
+                isDanger = isDanger
             )
             val dialog = StyledDialog(context, config)
             // 防止连点打开多个弹窗：先关闭已存在的弹窗
@@ -410,5 +431,6 @@ internal data class DialogConfig(
     val negativeAction: (() -> Unit)?,
     val neutralText: String?,
     val neutralAction: (() -> Unit)?,
-    val hasAnyButton: Boolean
+    val hasAnyButton: Boolean,
+    val isDanger: Boolean = false
 )
