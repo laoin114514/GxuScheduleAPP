@@ -115,6 +115,35 @@
                             android:padding="12dp"
                             android:maxLines="1" />
 
+                        <!-- 学分 -->
+                        <EditText
+                            android:id="@+id/et_credit"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="学分（选填，如 3.0）"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOnSurfaceVariant"
+                            android:background="@drawable/bg_input_transparent"
+                            android:padding="12dp"
+                            android:layout_marginTop="12dp"
+                            android:inputType="numberDecimal"
+                            android:maxLines="1" />
+
+                        <!-- QQ群 -->
+                        <EditText
+                            android:id="@+id/et_qq_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="QQ群（选填）"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOnSurfaceVariant"
+                            android:background="@drawable/bg_input_transparent"
+                            android:padding="12dp"
+                            android:layout_marginTop="12dp"
+                            android:maxLines="1" />
+
                         <!-- 颜色选择 -->
                         <LinearLayout
                             android:layout_width="match_parent"

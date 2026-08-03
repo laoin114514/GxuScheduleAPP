@@ -38,6 +38,12 @@ data class Course(
     @ColumnInfo(name = "course_category", defaultValue = "")
     val courseCategory: String = "",
 
+    @ColumnInfo(name = "credits", defaultValue = "")
+    val credits: String = "",                    // 学分
+
+    @ColumnInfo(name = "qq_group", defaultValue = "")
+    val qqGroup: String = "",                    // QQ群号
+
     @ColumnInfo(name = "alarm_enabled", defaultValue = "1")
     val alarmEnabled: Boolean = true,         // 是否启用闹钟提醒
 

@@ -48,6 +48,9 @@ object JwxtImportService {
         if (bitmap == 0L) return null
 
         val category = e.courseCategory ?: ""
+        val credits = e.getCredits() ?: ""
+        // 个人课表接口直接返回 QQ群号（qqqh），空值按无群处理
+        val qqGroup = e.getQqGroup()?.trim() ?: ""
 
         return Course(
             name = name, teacher = teacher, classroom = classroom,
@@ -55,6 +58,8 @@ object JwxtImportService {
             startTime = periodRange.first, endTime = periodRange.second,
             weekBitmap = bitmap,
             courseCategory = category,
+            credits = credits,
+            qqGroup = qqGroup,
             alarmEnabled = true, alarmMinutesBefore = 15
         )
     }

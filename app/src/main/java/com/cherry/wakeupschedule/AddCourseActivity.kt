@@ -23,6 +23,8 @@ class AddCourseActivity : AppCompatActivity() {
     private lateinit var etCourseName: EditText
     private lateinit var etTeacher: EditText
     private lateinit var etLocation: EditText
+    private lateinit var etCredit: EditText
+    private lateinit var etQqGroup: EditText
     private lateinit var spinnerWeekDay: Spinner
     private lateinit var spinnerStartTime: Spinner
     private lateinit var spinnerEndTime: Spinner
@@ -89,6 +91,8 @@ class AddCourseActivity : AppCompatActivity() {
         etCourseName.setText(course.name)
         etTeacher.setText(course.teacher)
         etLocation.setText(course.classroom)
+        etCredit.setText(course.credits)
+        etQqGroup.setText(course.qqGroup)
         spinnerWeekDay.setSelection(course.dayOfWeek - 1)
         spinnerStartTime.setSelection(course.startTime - 1)
         spinnerEndTime.setSelection(course.endTime - 1)
@@ -166,6 +170,8 @@ class AddCourseActivity : AppCompatActivity() {
             etCourseName = findViewById(R.id.et_course_name)
             etTeacher = findViewById(R.id.et_teacher)
             etLocation = findViewById(R.id.et_location)
+            etCredit = findViewById(R.id.et_credit)
+            etQqGroup = findViewById(R.id.et_qq_group)
             spinnerWeekDay = findViewById(R.id.spinner_week_day)
             spinnerStartTime = findViewById(R.id.spinner_start_time)
             spinnerEndTime = findViewById(R.id.spinner_end_time)
@@ -212,6 +218,8 @@ class AddCourseActivity : AppCompatActivity() {
         val courseName = etCourseName.text.toString().trim()
         val teacher = etTeacher.text.toString().trim()
         val location = etLocation.text.toString().trim()
+        val credit = etCredit.text.toString().trim()
+        val qqGroup = etQqGroup.text.toString().trim()
 
         if (courseName.isEmpty()) {
             Toast.makeText(this, "请输入课程名称", Toast.LENGTH_SHORT).show()
@@ -251,7 +259,9 @@ class AddCourseActivity : AppCompatActivity() {
                 startTime = startTime,
                 endTime = endTime,
                 weekBitmap = Course.bitmapFromRange(startWeek, endWeek, weekType),
-                color = selectedColor
+                color = selectedColor,
+                credits = credit,
+                qqGroup = qqGroup
             )
         } else {
             Course(
@@ -262,7 +272,9 @@ class AddCourseActivity : AppCompatActivity() {
                 startTime = startTime,
                 endTime = endTime,
                 weekBitmap = Course.bitmapFromRange(startWeek, endWeek, weekType),
-                color = selectedColor
+                color = selectedColor,
+                credits = credit,
+                qqGroup = qqGroup
             )
         }
 

@@ -87,6 +87,12 @@ object ImportCourseProtocol {
         @SerializedName("color")
         val color: Int = 0,
 
+        @SerializedName("credits")
+        val credits: String = "",  // 学分
+
+        @SerializedName("qq_group")
+        val qqGroup: String = "",  // QQ群号
+
         @SerializedName("notes")
         val notes: String = "",
 
@@ -199,6 +205,8 @@ object ImportCourseProtocol {
             alarmEnabled = alarmEnabled,
             alarmMinutesBefore = alarmMinutesBefore.coerceIn(0, 60),
             color = color,
+            credits = credits.trim(),
+            qqGroup = qqGroup.trim(),
             coverImagePath = coverImagePath
         )
     }
@@ -232,6 +240,8 @@ object ImportCourseProtocol {
                 endWeek = weekList.lastOrNull() ?: 16,
                 weeks = weekList,
                 color = course.color,
+                credits = course.credits,
+                qqGroup = course.qqGroup,
                 alarmEnabled = course.alarmEnabled,
                 alarmMinutesBefore = course.alarmMinutesBefore,
                 coverImagePath = course.coverImagePath
