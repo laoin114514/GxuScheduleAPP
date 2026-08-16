@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 打开新页面时旧页面轻微上滑变暗（200ms，视差效果） -->
-<set xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 打开新页面时旧页面向左让位（200ms，经典视差） -->
+<translate xmlns:android="http://schemas.android.com/apk/res/android"
     android:duration="200"
-    android:interpolator="@android:interpolator/fast_out_linear_in">
-    <alpha
-        android:fromAlpha="1.0"
-        android:toAlpha="0.7" />
-    <translate
-        android:fromYDelta="0%"
-        android:toYDelta="-6%" />
-</set>
+    android:fromXDelta="0%"
+    android:toXDelta="-25%"
+    android:interpolator="@android:interpolator/fast_out_linear_in" />

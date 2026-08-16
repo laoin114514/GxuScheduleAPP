@@ -64,12 +64,22 @@
         <item name="android:windowExitAnimation">@anim/slide_out_bottom</item>
     </style>
 
-    <!-- 全局页面跳转动画：快速淡入 + 轻微上滑，保证跳转干脆利落 -->
+    <!-- 全局页面跳转动画：经典水平右滑（新页从右滑入，返回时右滑退出） -->
     <style name="AppWindowAnimations" parent="android:Animation">
         <item name="android:activityOpenEnterAnimation">@anim/activity_open_enter</item>
         <item name="android:activityOpenExitAnimation">@anim/activity_open_exit</item>
         <item name="android:activityCloseEnterAnimation">@anim/activity_close_enter</item>
         <item name="android:activityCloseExitAnimation">@anim/activity_close_exit</item>
+    </style>
+
+    <!-- 紧凑型底部导航：缩小图标/内边距/字号，减少纵向占用（默认 80dp → 52dp） -->
+    <style name="BottomNavCompact" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:minHeight">52dp</item>
+        <item name="itemIconSize">22dp</item>
+        <item name="itemPaddingTop">5dp</item>
+        <item name="itemPaddingBottom">5dp</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.Material3.LabelSmall</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.Material3.LabelSmall</item>
     </style>
 
     <!-- 全局内容区块卡片（统一课表玻璃卡质感） -->
