@@ -8,14 +8,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.animation.OvershootInterpolator
 import android.widget.LinearLayout
-import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -31,10 +32,12 @@ import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
+import com.cherry.wakeupschedule.ui.widget.SemesterSceneryView
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -304,144 +307,213 @@ class ScheduleFragment : Fragment() {
         sheetBg.setStroke((1 * density).toInt(), typedValue.data)
         sheetView.background = sheetBg
 
-        val totalWeeks = settingsManager.getTotalWeeks()
-        val currentDisplayWeek = getDisplayWeek()
+        // ── 主题色取样（浅色/深色自适应） ──
+        fun resolveAttr(attr: Int): Int {
+            ctx.theme.resolveAttribute(attr, typedValue, true)
+            return typedValue.data
+        }
 
-        // ── 周数滑块 ──
+        val primaryColor = resolveAttr(com.google.android.material.R.attr.colorPrimary)
+        val primaryContainer = resolveAttr(com.google.android.material.R.attr.colorPrimaryContainer)
+        val secondaryContainer = resolveAttr(com.google.android.material.R.attr.colorSecondaryContainer)
+        val tertiaryContainer = resolveAttr(com.google.android.material.R.attr.colorTertiaryContainer)
+        val onSurfaceColor = resolveAttr(com.google.android.material.R.attr.colorOnSurface)
+        val blockColor = resolveAttr(com.google.android.material.R.attr.colorSurfaceVariant)
+
+        // 风景里的太阳固定暖色，浅色/深色模式下都醒目
+        val sunColor = 0xFFFFD54F.toInt()
+
+        // ── 周数滑块（Material Slider） ──
         val tvWeekLabel = sheetView.findViewById<TextView>(R.id.tv_week_label)
-        val sbWeek = sheetView.findViewById<SeekBar>(R.id.sb_week)
+        val sbWeek = sheetView.findViewById<com.google.android.material.slider.Slider>(R.id.sb_week)
 
-        tvWeekLabel.text = "第 $currentDisplayWeek 周"
-        sbWeek.max = totalWeeks - 1
-        sbWeek.progress = currentDisplayWeek - 1
+        /** 同步滑块：范围、当前值与两端周数标注。切换学期后可重复调用。 */
+        fun refreshWeekSlider() {
+            val totalWeeks = settingsManager.getTotalWeeks()
+            val week = getDisplayWeek().coerceIn(1, totalWeeks)
+            tvWeekLabel.text = "第 $week 周"
+            sbWeek.valueFrom = 1f
+            sbWeek.valueTo = totalWeeks.toFloat()
+            sbWeek.stepSize = 1f
+            sbWeek.value = week.toFloat()
+            // 胶囊轨道较粗，刻度会埋在轨道里，关闭刻度改用两端周数标注
+            sbWeek.isTickVisible = false
+            sheetView.findViewById<TextView>(R.id.tv_week_max)?.text = "第 $totalWeeks 周"
+        }
 
-        sbWeek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val week = progress + 1
-                tvWeekLabel.text = "第 $week 周"
-                if (fromUser) {
-                    setDisplayWeek(week)
-                    viewPager.setCurrentItem(progress, false)
-                    updateDateTimeHeader()
-                }
+        sbWeek.addOnChangeListener { _, value, fromUser ->
+            val totalWeeks = settingsManager.getTotalWeeks()
+            val week = value.roundToInt().coerceIn(1, totalWeeks)
+            tvWeekLabel.text = "第 $week 周"
+            if (fromUser) {
+                setDisplayWeek(week)
+                viewPager.setCurrentItem(week - 1, false)
+                updateDateTimeHeader()
             }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+        }
+        refreshWeekSlider()
 
         // ── 学期选择（横向滑动） ──
         val llSemesterList = sheetView.findViewById<LinearLayout>(R.id.ll_semester_list)
-        val semesters = SemesterManager.getAll()
-        val currentSemesterIndex = settingsManager.getCurrentSemesterIndex()
 
-        // 色块颜色跟随主题（浅色/深色自适应）
-        val blockColor = android.util.TypedValue().also { tv ->
-            ctx.theme.resolveAttribute(
-                com.google.android.material.R.attr.colorSurfaceVariant, tv, true
-            )
-        }.data
-
-        val blockSize = (52 * density).toInt()
+        val blockSize = (58 * density).toInt()
         val itemMarginEnd = (14 * density).toInt()
         val blockRadius = (14 * density).toFloat()
         val labelTextSize = 13f
+        val semesterItems = mutableListOf<View>()
 
-        semesters.forEachIndexed { index, sem ->
-            val isSelected = index == currentSemesterIndex
+        /**
+         * 重建学期色块列表：刷新选中描边、选中圆点与风景块。
+         * animateEntrance 为 true 时色块初始隐藏，等弹窗展示后波浪式入场；
+         * 切换学期后的重建直接可见。
+         */
+        fun refreshSemesterItems(animateEntrance: Boolean) {
+            val semesters = SemesterManager.getAll()
+            val currentSemesterIndex = settingsManager.getCurrentSemesterIndex()
+            val courseCounts = CourseDataManager.getInstance(ctx).getSemesterCourseCounts()
 
-            val item = LinearLayout(ctx).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply { marginEnd = itemMarginEnd }
-                isClickable = true
-                isFocusable = true
-            }
+            llSemesterList.removeAllViews()
+            semesterItems.clear()
 
-            // 圆角色块
-            val block = View(ctx).apply {
-                layoutParams = LinearLayout.LayoutParams(blockSize, blockSize).apply {
+            semesters.forEachIndexed { index, sem ->
+                val isSelected = index == currentSemesterIndex
+                val hasCourses = (courseCounts[sem.id] ?: 0) > 0
+
+                val item = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER_HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { marginEnd = itemMarginEnd }
+                    isClickable = true
+                    isFocusable = true
+                    if (animateEntrance) {
+                        // 初始隐藏，弹窗展示后按顺序波浪式入场
+                        alpha = 0f
+                        scaleX = 0.85f
+                        scaleY = 0.85f
+                    }
+                }
+
+                // 色块：已填充课表的学期画迷你风景，未填充保持素色块
+                val blockParams = LinearLayout.LayoutParams(blockSize, blockSize).apply {
                     bottomMargin = (8 * density).toInt()
                 }
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    cornerRadius = blockRadius
-                    setColor(blockColor)
-                    if (isSelected) {
-                        ctx.theme.resolveAttribute(
-                            com.google.android.material.R.attr.colorPrimary, typedValue, true
+                if (hasCourses) {
+                    val scenery = SemesterSceneryView(ctx).apply {
+                        layoutParams = blockParams
+                        setPalette(
+                            skyTop = primaryContainer,
+                            skyBottom = ColorUtils.blendARGB(primaryContainer, primaryColor, 0.35f),
+                            hillBack = tertiaryContainer,
+                            hillFront = secondaryContainer,
+                            sunColor = sunColor
                         )
-                        setStroke((2.5f * density).toInt(), typedValue.data)
+                        if (isSelected) {
+                            setSelectionStroke(primaryColor, 2.5f * density)
+                        }
                     }
-                }
-            }
-            item.addView(block)
-
-            // 标签文字（只显示前三个字，如"大一上"）
-            val label = TextView(ctx).apply {
-                text = sem.label.take(3)
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, labelTextSize)
-                gravity = Gravity.CENTER
-                ctx.theme.resolveAttribute(
-                    com.google.android.material.R.attr.colorOnSurface, typedValue, true
-                )
-                setTextColor(typedValue.data)
-            }
-            item.addView(label)
-
-            // 选中标记
-            if (isSelected) {
-                val dot = View(ctx).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        (6 * density).toInt(), (6 * density).toInt()
-                    ).apply { topMargin = (4 * density).toInt() }
-                    background = GradientDrawable().apply {
-                        shape = GradientDrawable.OVAL
-                        ctx.theme.resolveAttribute(
-                            com.google.android.material.R.attr.colorPrimary, typedValue, true
-                        )
-                        setColor(typedValue.data)
-                    }
-                }
-                item.addView(dot)
-            }
-
-            item.setOnClickListener {
-                if (isSelected) {
-                    dialog.dismiss()
-                    return@setOnClickListener
-                }
-                // 切换学期
-                settingsManager.setCurrentSemesterIndex(index)
-                CourseDataManager.getInstance(ctx).switchSemester(sem.id)
-
-                // 若该学期日期信息为空，从教务获取课表
-                if (sem.startDate == 0L || sem.totalWeeks == 0) {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        val result = JwxtImportService.fetchAndSaveScheduleForSemester(ctx, sem)
-                        withContext(Dispatchers.Main) {
-                            result.onSuccess { _ ->
-                                // 更新 ViewPager 总页数
-                                adapter = WeekPagerAdapter(settingsManager.getTotalWeeks())
-                                viewPager.adapter = adapter
-                                adapter.updateData(CourseDataManager.getInstance(ctx).getAllCourses())
-                            }.onFailure { e ->
-                                Toast.makeText(ctx, "获取课表失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                    item.addView(scenery)
+                } else {
+                    val block = View(ctx).apply {
+                        layoutParams = blockParams
+                        background = GradientDrawable().apply {
+                            shape = GradientDrawable.RECTANGLE
+                            cornerRadius = blockRadius
+                            setColor(blockColor)
+                            if (isSelected) {
+                                setStroke((2.5f * density).toInt(), primaryColor)
                             }
                         }
                     }
+                    item.addView(block)
                 }
 
-                // 调到第一周
-                courseViewModel.currentWeek = calculateCurrentWeek()
-                setDisplayWeek(1)
-                viewPager.setCurrentItem(0, false)
-                updateDateTimeHeader()
-                dialog.dismiss()
-            }
+                // 标签文字（只显示前三个字，如"大一上"）
+                val label = TextView(ctx).apply {
+                    text = sem.label.take(3)
+                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, labelTextSize)
+                    gravity = Gravity.CENTER
+                    setTextColor(onSurfaceColor)
+                }
+                item.addView(label)
 
-            llSemesterList.addView(item)
+                // 选中标记
+                if (isSelected) {
+                    val dot = View(ctx).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            (6 * density).toInt(), (6 * density).toInt()
+                        ).apply { topMargin = (4 * density).toInt() }
+                        background = GradientDrawable().apply {
+                            shape = GradientDrawable.OVAL
+                            setColor(primaryColor)
+                        }
+                    }
+                    item.addView(dot)
+                }
+
+                item.setOnClickListener {
+                    if (isSelected) {
+                        // 点击当前学期：作为"确认"快捷关闭
+                        dialog.dismiss()
+                        return@setOnClickListener
+                    }
+                    // 切换学期（菜单保持打开，下方课表与菜单内状态同步刷新）
+                    settingsManager.setCurrentSemesterIndex(index)
+                    CourseDataManager.getInstance(ctx).switchSemester(sem.id)
+
+                    // 若该学期日期信息为空，从教务获取课表
+                    if (sem.startDate == 0L || sem.totalWeeks == 0) {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            val result = JwxtImportService.fetchAndSaveScheduleForSemester(ctx, sem)
+                            withContext(Dispatchers.Main) {
+                                result.onSuccess { _ ->
+                                    // 更新 ViewPager 总页数
+                                    adapter = WeekPagerAdapter(settingsManager.getTotalWeeks())
+                                    viewPager.adapter = adapter
+                                    adapter.updateData(CourseDataManager.getInstance(ctx).getAllCourses())
+                                }.onFailure { e ->
+                                    Toast.makeText(ctx, "获取课表失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                                // 教务数据回来后刷新菜单（新学期的风景块/滑块范围）
+                                refreshWeekSlider()
+                                refreshSemesterItems(animateEntrance = false)
+                            }
+                        }
+                    }
+
+                    // 调到第一周
+                    courseViewModel.currentWeek = calculateCurrentWeek()
+                    setDisplayWeek(1)
+                    viewPager.setCurrentItem(0, false)
+                    updateDateTimeHeader()
+
+                    // 菜单保持打开，同步滑块与学期选中态
+                    refreshWeekSlider()
+                    refreshSemesterItems(animateEntrance = false)
+                }
+
+                llSemesterList.addView(item)
+                semesterItems.add(item)
+            }
+        }
+
+        refreshSemesterItems(animateEntrance = true)
+
+        // 弹窗展示后，学期色块按顺序波浪式入场
+        dialog.setOnShowListener {
+            llSemesterList.post {
+                semesterItems.forEachIndexed { i, v ->
+                    v.animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setStartDelay(i * 55L)
+                        .setDuration(240)
+                        .setInterpolator(OvershootInterpolator(1.05f))
+                        .start()
+                }
+            }
         }
 
         // ── 组装容器 ──

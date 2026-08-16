@@ -128,6 +128,13 @@ class CourseDataManager private constructor(context: Context) {
     /** 获取当前学期 ID */
     fun getCurrentSemesterId(): Long = currentSemesterId
 
+    /**
+     * 各学期课程数量统计（学期ID → 数量）。
+     * 供课表菜单标识"已填充课表"的学期（风景色块）。
+     */
+    fun getSemesterCourseCounts(): Map<Long, Int> =
+        executeDb { dao.getAllCourses() }.groupingBy { it.semesterId }.eachCount()
+
     // ── 读操作（内存缓存，不访问数据库） ──
 
     fun getAllCourses(): List<Course> = _coursesFlow.value
