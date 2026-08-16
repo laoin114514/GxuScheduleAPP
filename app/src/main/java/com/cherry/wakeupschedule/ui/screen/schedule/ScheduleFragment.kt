@@ -9,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.OvershootInterpolator
+import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -17,7 +19,9 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
@@ -48,6 +52,12 @@ class ScheduleFragment : Fragment() {
     private lateinit var tvDate: TextView
     private lateinit var tvWeekInfo: TextView
     private lateinit var tvCountdown: TextView
+    private lateinit var btnRefresh: ImageButton
+    private lateinit var progressRefresh: CircularProgressIndicator
+    private lateinit var overlayLoading: View
+    private lateinit var groupLoading: View
+    private lateinit var groupSuccess: View
+    private lateinit var tvLoadResult: TextView
     private lateinit var settingsManager: SettingsManager
     private lateinit var adapter: WeekPagerAdapter
     private lateinit var courseViewModel: CourseViewModel
@@ -57,9 +67,23 @@ class ScheduleFragment : Fragment() {
     /** 当前显示的课表菜单底部弹窗，防止连点叠加 */
     private var activeMenuDialog: Dialog? = null
 
+    /** 是否正在从教务加载课表（刷新按钮 + 菜单切学期共用，防止并发） */
+    private var isLoadingSchedule = false
+
+    /** 菜单中正在加载的学期索引（null = 无），色块显示转圈 */
+    private var loadingSemesterIndex: Int? = null
+
+    /** 菜单打开时注册的学期色块刷新回调（菜单关闭后置空） */
+    private var menuSemesterRefresher: (() -> Unit)? = null
+
     private val dateFormat = SimpleDateFormat("yyyy/M/d", Locale.getDefault())
     private val countdownHandler = Handler(Looper.getMainLooper())
     private var countdownRunnable: Runnable? = null
+
+    companion object {
+        /** 成功卡片展示时长 */
+        private const val SUCCESS_DISPLAY_MS = 1400L
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -90,8 +114,14 @@ class ScheduleFragment : Fragment() {
         tvDate = view.findViewById(R.id.tv_date)
         tvWeekInfo = view.findViewById(R.id.tv_week_info)
         tvCountdown = view.findViewById(R.id.tv_countdown)
+        btnRefresh = view.findViewById(R.id.btn_refresh)
+        progressRefresh = view.findViewById(R.id.progress_refresh)
+        overlayLoading = view.findViewById(R.id.overlay_loading)
+        groupLoading = view.findViewById(R.id.group_loading)
+        groupSuccess = view.findViewById(R.id.group_success)
+        tvLoadResult = view.findViewById(R.id.tv_load_result)
 
-        view.findViewById<View>(R.id.btn_refresh).setOnClickListener {
+        btnRefresh.setOnClickListener {
             refreshScheduleFromJwxt(showError = true)
         }
 
@@ -245,10 +275,75 @@ class ScheduleFragment : Fragment() {
         }
     }
 
+    /**
+     * 统一切换"教务加载课表"的 loading 状态：
+     * - 刷新按钮隐藏图标、只留转圈，且不可再点
+     * - 课表页全页蒙版（导航栏同款色，无缝衔接），中心卡片显示转圈 + 文案
+     * - 课表菜单中对应学期色块显示转圈（通过 menuSemesterRefresher 回调刷新）
+     */
+    private fun setScheduleLoading(loading: Boolean, semesterIndex: Int? = null) {
+        isLoadingSchedule = loading
+        loadingSemesterIndex = if (loading) semesterIndex else null
+
+        // 加载中刷新图标消失，只留转圈
+        btnRefresh.isEnabled = !loading
+        btnRefresh.visibility = if (loading) View.INVISIBLE else View.VISIBLE
+        progressRefresh.isVisible = loading
+
+        if (loading) {
+            showOverlayLoadingState()
+            overlayLoading.isVisible = true
+        } else {
+            overlayLoading.isVisible = false
+            resetOverlayState()
+        }
+
+        // 菜单打开时同步刷新学期色块（loading 转圈 ↔ 风景/素块）
+        menuSemesterRefresher?.invoke()
+    }
+
+    /** 遮罩切换为加载中状态（转圈 + "正在加载课表…"） */
+    private fun showOverlayLoadingState() {
+        groupLoading.isVisible = true
+        groupSuccess.isVisible = false
+    }
+
+    /** 遮罩切换为成功状态（对勾 + 结果文案），短暂展示后自动收起 */
+    private fun showLoadSuccess(count: Int) {
+        // 数据已就绪：色块转圈立即消失（新填充的学期出现风景），按钮恢复外观但仍禁用
+        loadingSemesterIndex = null
+        progressRefresh.isVisible = false
+        btnRefresh.visibility = View.VISIBLE
+        btnRefresh.isEnabled = false
+        menuSemesterRefresher?.invoke()
+
+        // 遮罩换成成功卡片
+        groupLoading.isVisible = false
+        tvLoadResult.text = "成功导入 $count 门课程"
+        groupSuccess.isVisible = true
+
+        // 短暂展示后收起遮罩，恢复交互
+        Handler(Looper.getMainLooper()).postDelayed({
+            isLoadingSchedule = false
+            btnRefresh.isEnabled = true
+            overlayLoading.isVisible = false
+            resetOverlayState()
+        }, SUCCESS_DISPLAY_MS)
+    }
+
+    /** 遮罩恢复默认的加载中布局（供下次加载复用） */
+    private fun resetOverlayState() {
+        groupLoading.isVisible = true
+        groupSuccess.isVisible = false
+    }
+
     private fun refreshScheduleFromJwxt(showError: Boolean) {
+        // 加载中不允许再次刷新
+        if (isLoadingSchedule) return
         if (!JwxtAuthManager.isBound()) return
         val curSem = SemesterManager.getCurrent() ?: return
 
+        setScheduleLoading(true, semesterIndex = settingsManager.getCurrentSemesterIndex())
         lifecycleScope.launch(Dispatchers.IO) {
             val result = JwxtImportService.fetchAndSaveScheduleForSemester(requireContext(), curSem)
             withContext(Dispatchers.Main) {
@@ -258,11 +353,10 @@ class ScheduleFragment : Fragment() {
                     adapter.updateData(allCourses)
                     updateDateTimeHeader()
                     (requireActivity().application as App).registerAllCourseNotifications()
-                    if (showError) {
-                        Toast.makeText(requireContext(),
-                            "成功导入 ${count} 门课程", Toast.LENGTH_SHORT).show()
-                    }
+                    // 成功：遮罩换成"成功导入 N 门课程"卡片，替代全局 toast
+                    showLoadSuccess(count)
                 }.onFailure { e ->
+                    setScheduleLoading(false)
                     if (showError) {
                         Toast.makeText(requireContext(),
                             "刷新失败: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -284,7 +378,11 @@ class ScheduleFragment : Fragment() {
         activeMenuDialog?.dismiss()
         val dialog = Dialog(ctx, R.style.BottomSheetDialog)
         activeMenuDialog = dialog
-        dialog.setOnDismissListener { if (activeMenuDialog === dialog) activeMenuDialog = null }
+        dialog.setOnDismissListener {
+            if (activeMenuDialog === dialog) activeMenuDialog = null
+            // 菜单关闭后注销色块刷新回调（全局 loading 不再尝试刷新已销毁的菜单）
+            menuSemesterRefresher = null
+        }
         val inflater = LayoutInflater.from(ctx)
         val sheetView = inflater.inflate(R.layout.bottom_sheet_schedule_menu, null)
         val density = ctx.resources.displayMetrics.density
@@ -395,13 +493,17 @@ class ScheduleFragment : Fragment() {
                     }
                 }
 
-                // 色块：已填充课表的学期画迷你风景，未填充保持素色块
-                val blockParams = LinearLayout.LayoutParams(blockSize, blockSize).apply {
-                    bottomMargin = (8 * density).toInt()
+                // 色块容器：已填充课表的学期画迷你风景，未填充保持素色块；
+                // 该学期正在从教务加载时，色块上叠加转圈
+                val isLoadingBlock = index == loadingSemesterIndex
+                val blockContainer = FrameLayout(ctx).apply {
+                    layoutParams = LinearLayout.LayoutParams(blockSize, blockSize).apply {
+                        bottomMargin = (8 * density).toInt()
+                    }
                 }
                 if (hasCourses) {
                     val scenery = SemesterSceneryView(ctx).apply {
-                        layoutParams = blockParams
+                        layoutParams = FrameLayout.LayoutParams(blockSize, blockSize)
                         setPalette(
                             skyTop = primaryContainer,
                             skyBottom = ColorUtils.blendARGB(primaryContainer, primaryColor, 0.35f),
@@ -413,10 +515,10 @@ class ScheduleFragment : Fragment() {
                             setSelectionStroke(primaryColor, 2.5f * density)
                         }
                     }
-                    item.addView(scenery)
+                    blockContainer.addView(scenery)
                 } else {
                     val block = View(ctx).apply {
-                        layoutParams = blockParams
+                        layoutParams = FrameLayout.LayoutParams(blockSize, blockSize)
                         background = GradientDrawable().apply {
                             shape = GradientDrawable.RECTANGLE
                             cornerRadius = blockRadius
@@ -426,8 +528,21 @@ class ScheduleFragment : Fragment() {
                             }
                         }
                     }
-                    item.addView(block)
+                    blockContainer.addView(block)
                 }
+                if (isLoadingBlock) {
+                    val spinnerSize = (26 * density).toInt()
+                    val spinner = CircularProgressIndicator(ctx).apply {
+                        layoutParams = FrameLayout.LayoutParams(
+                            spinnerSize, spinnerSize, Gravity.CENTER
+                        )
+                        isIndeterminate = true
+                        setIndicatorColor(primaryColor)
+                        trackThickness = (2.5f * density).toInt()
+                    }
+                    blockContainer.addView(spinner)
+                }
+                item.addView(blockContainer)
 
                 // 标签文字（只显示前三个字，如"大一上"）
                 val label = TextView(ctx).apply {
@@ -453,6 +568,8 @@ class ScheduleFragment : Fragment() {
                 }
 
                 item.setOnClickListener {
+                    // 加载中禁止并发切换学期
+                    if (isLoadingSchedule) return@setOnClickListener
                     if (isSelected) {
                         // 点击当前学期：作为"确认"快捷关闭
                         dialog.dismiss()
@@ -462,35 +579,39 @@ class ScheduleFragment : Fragment() {
                     settingsManager.setCurrentSemesterIndex(index)
                     CourseDataManager.getInstance(ctx).switchSemester(sem.id)
 
-                    // 若该学期日期信息为空，从教务获取课表
-                    if (sem.startDate == 0L || sem.totalWeeks == 0) {
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            val result = JwxtImportService.fetchAndSaveScheduleForSemester(ctx, sem)
-                            withContext(Dispatchers.Main) {
-                                result.onSuccess { _ ->
-                                    // 更新 ViewPager 总页数
-                                    adapter = WeekPagerAdapter(settingsManager.getTotalWeeks())
-                                    viewPager.adapter = adapter
-                                    adapter.updateData(CourseDataManager.getInstance(ctx).getAllCourses())
-                                }.onFailure { e ->
-                                    Toast.makeText(ctx, "获取课表失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
-                                // 教务数据回来后刷新菜单（新学期的风景块/滑块范围）
-                                refreshWeekSlider()
-                                refreshSemesterItems(animateEntrance = false)
-                            }
-                        }
-                    }
-
                     // 调到第一周
                     courseViewModel.currentWeek = calculateCurrentWeek()
                     setDisplayWeek(1)
                     viewPager.setCurrentItem(0, false)
                     updateDateTimeHeader()
 
-                    // 菜单保持打开，同步滑块与学期选中态
-                    refreshWeekSlider()
-                    refreshSemesterItems(animateEntrance = false)
+                    // 该学期日期信息为空 → 需要从教务拉取课表，进入 loading
+                    val needsFetch = sem.startDate == 0L || sem.totalWeeks == 0
+                    if (needsFetch) {
+                        // 全局 loading：刷新按钮转圈 + 课表页遮罩 + 色块转圈
+                        setScheduleLoading(true, semesterIndex = index)
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            val result = JwxtImportService.fetchAndSaveScheduleForSemester(ctx, sem)
+                            withContext(Dispatchers.Main) {
+                                result.onSuccess { count ->
+                                    // 更新 ViewPager 总页数
+                                    adapter = WeekPagerAdapter(settingsManager.getTotalWeeks())
+                                    viewPager.adapter = adapter
+                                    adapter.updateData(CourseDataManager.getInstance(ctx).getAllCourses())
+                                    refreshWeekSlider()
+                                    // 成功：色块转圈消失、新填充学期出现风景；遮罩短暂展示成功卡片
+                                    showLoadSuccess(count)
+                                }.onFailure { e ->
+                                    setScheduleLoading(false)
+                                    Toast.makeText(ctx, "获取课表失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    } else {
+                        // 本地已有课表，直接同步菜单状态
+                        refreshWeekSlider()
+                        refreshSemesterItems(animateEntrance = false)
+                    }
                 }
 
                 llSemesterList.addView(item)
@@ -499,6 +620,9 @@ class ScheduleFragment : Fragment() {
         }
 
         refreshSemesterItems(animateEntrance = true)
+
+        // 注册色块刷新回调：全局 loading 状态切换时（如刷新按钮触发）同步菜单色块
+        menuSemesterRefresher = { refreshSemesterItems(animateEntrance = false) }
 
         // 弹窗展示后，学期色块按顺序波浪式入场
         dialog.setOnShowListener {

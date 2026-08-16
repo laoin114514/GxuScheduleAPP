@@ -56,14 +56,31 @@
                 android:textColor="?attr/colorPrimary"
                 android:visibility="gone" />
 
-            <ImageButton
-                android:id="@+id/btn_refresh"
+            <FrameLayout
                 android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_mtrl_refresh"
-                android:contentDescription="刷新课表"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                android:layout_height="40dp">
+
+                <ImageButton
+                    android:id="@+id/btn_refresh"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_mtrl_refresh"
+                    android:contentDescription="刷新课表"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+
+                <!-- 刷新中的小转圈（覆盖在刷新图标上） -->
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progress_refresh"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    app:indicatorColor="?attr/colorPrimary"
+                    app:indicatorSize="22dp"
+                    app:trackThickness="2dp" />
+            </FrameLayout>
 
             <ImageButton
                 android:id="@+id/btn_menu"
@@ -170,5 +187,88 @@
             android:orientation="horizontal" />
 
     </LinearLayout>
+
+    <!-- 课表加载遮罩：全页覆盖；背景直接用底部导航栏同款色（浅色 #DDE4ED / 深色 #0D1117），
+         与导航栏连成一片无缝表面，消除硬边界；阻断页面点击 -->
+    <FrameLayout
+        android:id="@+id/overlay_loading"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bottom_nav_bg"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="?attr/colorOutlineVariant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingHorizontal="28dp"
+                        android:paddingVertical="20dp">
+
+                        <!-- 加载中：转圈 + 文案 -->
+                        <LinearLayout
+                            android:id="@+id/group_loading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <com.google.android.material.progressindicator.CircularProgressIndicator
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:indeterminate="true"
+                                app:indicatorColor="?attr/colorPrimary"
+                                app:indicatorSize="32dp"
+                                app:trackThickness="3dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="正在加载课表…"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
+
+                        <!-- 加载成功：对勾 + 结果文案（短暂展示后自动收起） -->
+                        <LinearLayout
+                            android:id="@+id/group_success"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:visibility="gone">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:src="@drawable/ic_check"
+                                android:contentDescription="@null"
+                                app:tint="?attr/colorPrimary" />
+
+                            <TextView
+                                android:id="@+id/tv_load_result"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="成功导入 0 门课程"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
 
 </FrameLayout>
