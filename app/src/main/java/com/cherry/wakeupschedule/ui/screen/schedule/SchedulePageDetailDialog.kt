@@ -42,10 +42,16 @@ object SchedulePageDetailDialog {
             cornerRadii = floatArrayOf(topRadius, topRadius, topRadius, topRadius, 0f, 0f, 0f, 0f)
         }
         val typedValue = android.util.TypedValue()
+        // 弹层底色提升一级到 colorSurfaceContainer：暗色模式下与蒙版压暗的背景拉开亮度差，
+        // 再配 1dp outlineVariant 描边勾出边界，避免弹层与背景糊成一片。
         context.theme.resolveAttribute(
-            com.google.android.material.R.attr.colorSurface, typedValue, true
+            com.google.android.material.R.attr.colorSurfaceContainer, typedValue, true
         )
         sheetBg.setColor(typedValue.data)
+        context.theme.resolveAttribute(
+            com.google.android.material.R.attr.colorOutlineVariant, typedValue, true
+        )
+        sheetBg.setStroke((1 * density).toInt(), typedValue.data)
         sheetView.background = sheetBg
 
         val ttm = TimeTableManager.getInstance(context)

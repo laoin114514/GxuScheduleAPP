@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="?attr/colorSurface"
+    android:background="?attr/colorSurfaceContainer"
     android:paddingTop="8dp"
     android:paddingBottom="16dp">
 
@@ -63,7 +63,6 @@
                         android:layout_height="wrap_content"
                         android:text="课程名称"
                         android:textAppearance="?attr/textAppearanceTitleLarge"
-                        android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface"
                         android:maxLines="2" />
 
@@ -75,8 +74,7 @@
                         android:paddingHorizontal="8dp"
                         android:paddingVertical="2dp"
                         android:text="课程类别"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
+                        android:textAppearance="?attr/textAppearanceLabelSmall"
                         android:visibility="gone" />
                 </LinearLayout>
             </LinearLayout>
@@ -309,8 +307,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="未设置"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textStyle="bold"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
                             android:textColor="?attr/colorOnSurface" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -367,8 +364,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="未设置"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textStyle="bold"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
                             android:textColor="?attr/colorOnSurface" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>

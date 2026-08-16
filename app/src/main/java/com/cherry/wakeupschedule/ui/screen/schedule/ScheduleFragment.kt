@@ -292,10 +292,16 @@ class ScheduleFragment : Fragment() {
             cornerRadii = floatArrayOf(topRadius, topRadius, topRadius, topRadius, 0f, 0f, 0f, 0f)
         }
         val typedValue = android.util.TypedValue()
+        // 弹层底色提升一级到 colorSurfaceContainer，并加 outlineVariant 描边，
+        // 保证暗色模式下与蒙版压暗的背景有明显边界。
         ctx.theme.resolveAttribute(
-            com.google.android.material.R.attr.colorSurface, typedValue, true
+            com.google.android.material.R.attr.colorSurfaceContainer, typedValue, true
         )
         sheetBg.setColor(typedValue.data)
+        ctx.theme.resolveAttribute(
+            com.google.android.material.R.attr.colorOutlineVariant, typedValue, true
+        )
+        sheetBg.setStroke((1 * density).toInt(), typedValue.data)
         sheetView.background = sheetBg
 
         val totalWeeks = settingsManager.getTotalWeeks()
