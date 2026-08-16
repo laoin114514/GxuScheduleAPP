@@ -174,12 +174,12 @@ class WeekPagerAdapter(
                     setOnTouchListener { v, event ->
                         when (event.action) {
                             MotionEvent.ACTION_DOWN -> {
-                                v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(100).start()
+                                v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).start()
                             }
                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                                 v.animate().scaleX(1f).scaleY(1f)
-                                    .setDuration(300)
-                                    .setInterpolator(OvershootInterpolator(2f))
+                                    .setDuration(160)
+                                    .setInterpolator(OvershootInterpolator(1.5f))
                                     .start()
                             }
                         }

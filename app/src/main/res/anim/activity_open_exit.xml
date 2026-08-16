@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 底部弹层退出：下滑 + 整体淡出（150ms），遮罩随窗口一起淡出，避免最后瞬间跳掉的卡顿感 -->
+<!-- 打开新页面时旧页面轻微上滑变暗（200ms，视差效果） -->
 <set xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="150"
+    android:duration="200"
     android:interpolator="@android:interpolator/fast_out_linear_in">
     <alpha
         android:fromAlpha="1.0"
-        android:toAlpha="0.0" />
+        android:toAlpha="0.7" />
     <translate
         android:fromYDelta="0%"
-        android:toYDelta="100%" />
+        android:toYDelta="-6%" />
 </set>

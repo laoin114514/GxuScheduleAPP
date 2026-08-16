@@ -64,6 +64,14 @@
         <item name="android:windowExitAnimation">@anim/slide_out_bottom</item>
     </style>
 
+    <!-- 全局页面跳转动画：快速淡入 + 轻微上滑，保证跳转干脆利落 -->
+    <style name="AppWindowAnimations" parent="android:Animation">
+        <item name="android:activityOpenEnterAnimation">@anim/activity_open_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/activity_open_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/activity_close_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/activity_close_exit</item>
+    </style>
+
     <!-- 全局内容区块卡片（统一课表玻璃卡质感） -->
     <style name="ScheduleSectionCard" parent="Widget.Material3.CardView.Elevated">
         <item name="android:layout_width">match_parent</item>

@@ -8,8 +8,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.OvershootInterpolator
+import android.view.animation.PathInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -288,35 +287,32 @@ class StyledDialog private constructor(
 
     private fun setupAnimations() {
         window?.decorView?.apply {
-            scaleX = 0.9f
-            scaleY = 0.9f
+            scaleX = 0.92f
+            scaleY = 0.92f
             alpha = 0f
             animate()
                 .scaleX(1f)
                 .scaleY(1f)
                 .alpha(1f)
-                .setDuration(300)
-                .setInterpolator(OvershootInterpolator(1.1f))
+                .setDuration(180)
+                .setInterpolator(PathInterpolator(0.4f, 0f, 0.2f, 1f))
                 .start()
         }
     }
 
+    /**
+     * 立即关闭，不播放退出动画。
+     * 原因：decorView 淡出只淡化内容、遮罩保持不透明，淡完窗口才被移除，
+     * "内容先淡、遮罩后跳"的两段式观感就是关闭时的卡顿来源。
+     * 内容与遮罩同帧消失更干脆。
+     */
     override fun dismiss() {
-        window?.decorView?.animate()
-            ?.scaleX(0.95f)
-            ?.scaleY(0.95f)
-            ?.alpha(0f)
-            ?.setDuration(100)
-            ?.setInterpolator(AccelerateInterpolator())
-            ?.withEndAction {
-                try {
-                    super.dismiss()
-                } catch (_: IllegalArgumentException) {
-                    // Activity already destroyed (e.g. via recreate()),
-                    // dialog window already removed — safe to ignore.
-                }
-            }
-            ?.start()
+        try {
+            super.dismiss()
+        } catch (_: IllegalArgumentException) {
+            // Activity already destroyed (e.g. via recreate()),
+            // dialog window already removed — safe to ignore.
+        }
     }
 
     // ── Utility ─────────────────────────────────────────
