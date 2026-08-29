@@ -8,6 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
+ * 登录流程的可上报阶段，用于绑定页展示分步进度。
+ */
+enum class JwxtLoginStep { LOGIN, PROFILE, SEMESTER, SCHEDULE }
+
+/**
  * 教务系统认证管理器。
  *
  * 所有需要认证的接口调用都通过 [doWithAuth]，自动处理 session 过期重登录。
@@ -19,20 +24,28 @@ object JwxtAuthManager {
 
     /**
      * 登录并获取个人信息（原子操作）。
-     * 步骤 1：验证凭据 → 步骤 2：获取个人信息
-     * 任一步骤失败则整体失败，成功则持久化到数据库。
+     * 步骤 1：验证凭据 → 步骤 2：获取个人信息 → 步骤 3：初始化学期 → 步骤 4：导入课表
+     * 任一前序步骤失败则整体失败，成功则持久化到数据库。
+     *
+     * @param onStep 每完成一个阶段回调一次（在 IO 线程触发，调用方自行切回主线程）
      */
-    suspend fun login(username: String, password: String): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun login(
+        username: String,
+        password: String,
+        onStep: (JwxtLoginStep) -> Unit = {}
+    ): Result<String> = withContext(Dispatchers.IO) {
         try {
             // 步骤 1：验证凭据
             val c = JwxtClient(username, password, RoomCookieJar)
             c.login()
             destroyClient()
             this@JwxtAuthManager.client = c
+            onStep(JwxtLoginStep.LOGIN)
 
             // 步骤 2：获取个人信息
             try {
                 val profile = c.profile().profile()
+                onStep(JwxtLoginStep.PROFILE)
                 // 两步都成功 → 持久化
                 JwxtAccountManager.saveCredentials(username, password)
                 JwxtAccountManager.saveProfile(profile)
@@ -45,11 +58,14 @@ object JwxtAuthManager {
                 // 通知 CourseDataManager 切换到新学期的课程
                 CourseDataManager.getInstance(App.instance)
                     .switchSemester(SemesterManager.getCurrent()?.id ?: 0L)
-                // 获取当前学期的课表
+                onStep(JwxtLoginStep.SEMESTER)
+                // 步骤 4：获取当前学期的课表；导入失败不影响绑定成功，仅不上报 SCHEDULE
                 val curSem = SemesterManager.getCurrent()
-                if (curSem != null) {
-                    JwxtImportService.fetchAndSaveScheduleForSemester(App.instance, curSem)
+                val scheduleImported = curSem != null &&
+                    JwxtImportService.fetchAndSaveScheduleForSemester(App.instance, curSem).isSuccess
+                if (scheduleImported) {
                     App.instance.registerAllCourseNotifications()
+                    onStep(JwxtLoginStep.SCHEDULE)
                 }
                 Result.success("登录成功")
             } catch (e: Exception) {
