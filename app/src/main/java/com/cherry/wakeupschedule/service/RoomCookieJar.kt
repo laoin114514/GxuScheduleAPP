@@ -4,6 +4,7 @@ import android.content.Context
 import com.cherry.wakeupschedule.model.AppDatabase
 import com.cherry.wakeupschedule.model.CookieEntity
 import com.cherry.wakeupschedule.model.CookieDao
+import com.gxu.jwxt.ClearableCookieJar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.Cookie
@@ -17,8 +18,11 @@ import okhttp3.HttpUrl
  * 会话 cookie（无过期时间）以 expires_at = 0 保存，视为长期有效，
  * 直到解绑账号时 [clear] 清空；服务器 session 过期后重新登录产生的
  * 新 cookie 会按 (name, domain, path) 覆盖旧值。
+ *
+ * 实现 [ClearableCookieJar] 供 Java 客户端在登录触发教务验证码
+ * 保护时抹除会话标识（清 Cookie + 换 UA）后重试。
  */
-object RoomCookieJar : CookieJar {
+object RoomCookieJar : ClearableCookieJar {
 
     private lateinit var dao: CookieDao
 
@@ -46,8 +50,8 @@ object RoomCookieJar : CookieJar {
         }
     }
 
-    /** 解绑账号时清空全部 cookie */
-    fun clear() {
+    /** 清空全部 cookie（解绑账号或登录触发验证码保护时） */
+    override fun clear() {
         runBlocking(Dispatchers.IO) { dao.deleteAll() }
     }
 

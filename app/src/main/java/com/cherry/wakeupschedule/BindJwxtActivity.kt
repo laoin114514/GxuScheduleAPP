@@ -16,6 +16,7 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtLoginStep
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
+import com.gxu.jwxt.exceptions.CaptchaRequiredException
 import kotlinx.coroutines.launch
 
 class BindJwxtActivity : AppCompatActivity() {
@@ -177,7 +178,12 @@ class BindJwxtActivity : AppCompatActivity() {
             cardSteps.visibility = View.GONE
             groupForm.visibility = View.VISIBLE
             btnLogin.isEnabled = true
-            tvStatus.text = e.message ?: "登录失败，请检查账号密码"
+            tvStatus.text = when (e) {
+                is CaptchaRequiredException ->
+                    "触发教务系统验证码保护，已自动重置登录环境仍无效。" +
+                        "请等约3分钟后再试，或先用浏览器登录一次教务系统"
+                else -> e.message ?: "登录失败，请检查账号密码"
+            }
             tvStatus.visibility = View.VISIBLE
         }
     }

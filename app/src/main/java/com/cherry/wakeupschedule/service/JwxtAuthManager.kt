@@ -2,6 +2,7 @@ package com.cherry.wakeupschedule.service
 
 import com.cherry.wakeupschedule.App
 import com.gxu.jwxt.JwxtClient
+import com.gxu.jwxt.exceptions.CaptchaRequiredException
 import com.gxu.jwxt.exceptions.LoginException
 import com.gxu.jwxt.exceptions.SessionExpiredException
 import kotlinx.coroutines.Dispatchers
@@ -119,6 +120,10 @@ object JwxtAuthManager {
                 // session 过期 → 重登录 → 重试
                 getOrCreateClient().relogin()
                 Result.success(action(getOrCreateClient()))
+            } catch (reloginError: CaptchaRequiredException) {
+                // 重登录触发教务验证码保护（重试与身份重置已在客户端内部完成）
+                destroyClient()
+                Result.failure(reloginError)
             } catch (reloginError: LoginException) {
                 // 重登录失败（可能是网络问题或凭据失效），不清除本地凭据
                 destroyClient()
