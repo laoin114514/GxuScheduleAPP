@@ -7,11 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.TextView
-import android.widget.Switch
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.AboutActivity
-import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.AppearanceActivity
 import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.ProfileActivity
@@ -40,9 +38,6 @@ import java.util.Locale
 class ProfileFragment : Fragment() {
 
     private lateinit var settingsManager: SettingsManager
-
-    // 程序刷新开关状态时置 true，避免误触发监听器提示
-    private var isUpdatingSwitchState = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -106,16 +101,6 @@ class ProfileFragment : Fragment() {
             startActivity(Intent(requireContext(), AppearanceActivity::class.java))
         }
 
-        // 课前提醒：直接通过开关切换，切换即注册/取消真实提醒
-        view.findViewById<Switch>(R.id.switch_alarm_enabled).setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            settingsManager.setAlarmEnabled(isChecked)
-            applyAlarmSettings()
-            Toast.makeText(requireContext(),
-                if (isChecked) "课前提醒已开启" else "课前提醒已关闭",
-                Toast.LENGTH_SHORT).show()
-        }
-
         view.findViewById<View>(R.id.item_time_table).setOnClickListener {
             startActivity(Intent(requireContext(), TimeTableEditActivity::class.java))
         }
@@ -134,25 +119,6 @@ class ProfileFragment : Fragment() {
                 startActivity(Intent.createChooser(intent, "发送邮件"))
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "未找到邮件应用", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    /**
-     * 应用课前提醒开关：开启时注册全部课程通知，关闭时取消所有提醒。
-     * 涉及大量 PendingIntent + AlarmManager binder 调用，放到 IO 线程执行避免卡顿。
-     */
-    private fun applyAlarmSettings() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val app = requireActivity().application as App
-                if (settingsManager.isAlarmEnabled()) {
-                    app.registerAllCourseNotifications()
-                } else {
-                    app.alarmService?.cancelAllReminders()
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("ProfileFragment", "Failed to apply alarm settings", e)
             }
         }
     }
@@ -247,9 +213,6 @@ class ProfileFragment : Fragment() {
 
     private fun updateDisplay() {
         // 同步开关状态（不触发监听器提示）
-        isUpdatingSwitchState = true
-        view?.findViewById<Switch>(R.id.switch_alarm_enabled)?.isChecked = settingsManager.isAlarmEnabled()
-        isUpdatingSwitchState = false
 
         // 主题模式展示（从外观页返回时刷新）
         updateThemeModeDisplay(requireView())

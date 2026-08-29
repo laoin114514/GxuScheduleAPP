@@ -49,7 +49,6 @@ class TimeTableEditActivity : AppCompatActivity() {
             timeTableManager.resetToDefault()
             Toast.makeText(this, "已重置为默认时间表", Toast.LENGTH_SHORT).show()
             loadAndDisplayTimeSlots()
-            App.instance.registerAllCourseNotifications()
         }
 
         binding.btnSave.setOnClickListener {
@@ -157,7 +156,6 @@ class TimeTableEditActivity : AppCompatActivity() {
                 }
 
                 loadAndDisplayTimeSlots()
-                App.instance.registerAllCourseNotifications()
             }
         )
     }
@@ -171,8 +169,6 @@ class TimeTableEditActivity : AppCompatActivity() {
             )
         }
         Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show()
-        // 作息时间变更后，重新注册所有课程闹钟，确保使用新的时间
-        App.instance.registerAllCourseNotifications()
         finish()
     }
 

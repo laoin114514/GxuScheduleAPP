@@ -279,16 +279,12 @@ class AddCourseActivity : AppCompatActivity() {
         }
 
         if (existingCourseExtra != null) {
-            // 先取消旧课程的闹钟与已展示的通知，避免改名/改信息后旧通知残留
-            App.instance.alarmService?.cancelCourseAlarm(existingCourseExtra)
             viewModel.updateCourse(course)
             Toast.makeText(this, "课程更新成功", Toast.LENGTH_SHORT).show()
         } else {
             viewModel.addCourse(course)
             Toast.makeText(this, "课程添加成功", Toast.LENGTH_SHORT).show()
         }
-        // updateCourse / addCourse 已在 ViewModel 内部同步调用 registerAllCourseNotifications，
-        // 此处不再重复调用，避免 DB 写入竞态导致新课程遗漏
         ScheduleWidgetUpdateService.triggerUpdate(this)
         finish()
     }

@@ -9,12 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
-import com.cherry.wakeupschedule.util.DebugLogger
-import com.cherry.wakeupschedule.service.AlarmService
 import com.cherry.wakeupschedule.service.CourseDataManager
-import com.cherry.wakeupschedule.service.CourseReminderWorker
-import com.cherry.wakeupschedule.service.NotificationHelper
-import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetProvider
@@ -23,7 +18,6 @@ import com.cherry.wakeupschedule.widget.WidgetMidnightReceiver
 
 class App : Application() {
 
-    var alarmService: AlarmService? = null
     private var timeTickReceiver: BroadcastReceiver? = null
     private var screenStateReceiver: BroadcastReceiver? = null
     private val secondTickHandler = Handler(Looper.getMainLooper())
@@ -56,9 +50,6 @@ class App : Application() {
 
         android.util.Log.d("App", "Application onCreate called")
 
-        // 初始化调试日志（在 Application 层，确保所有组件都能使用）
-        DebugLogger.init(this)
-
         // 初始化教务账号管理器
         com.cherry.wakeupschedule.service.JwxtAccountManager.init(this)
 
@@ -69,24 +60,10 @@ class App : Application() {
         com.cherry.wakeupschedule.service.SemesterManager.init(this)
 
         try {
-            NotificationHelper(this).createNotificationChannels()
-            android.util.Log.d("App", "Notification channels created")
-        } catch (e: Exception) {
-            android.util.Log.e("App", "Failed to create notification channels", e)
-        }
-
-        try {
             CourseDataManager.getInstance(this)
             android.util.Log.d("App", "CourseDataManager initialized successfully")
         } catch (e: Exception) {
             android.util.Log.e("App", "Failed to initialize CourseDataManager", e)
-        }
-
-        try {
-            alarmService = AlarmService(this)
-            android.util.Log.d("App", "AlarmService initialized successfully")
-        } catch (e: Exception) {
-            android.util.Log.e("App", "Failed to initialize AlarmService", e)
         }
 
         try {
@@ -118,12 +95,6 @@ class App : Application() {
 
         // 周期检测自定时间模式的深浅色自动切换
         startAutoThemeCheck()
-
-        try {
-            registerAllCourseNotifications()
-        } catch (e: Exception) {
-            android.util.Log.e("App", "Failed to restore course alarms on app init", e)
-        }
     }
 
     private fun registerTimeTickReceiver() {
@@ -194,30 +165,6 @@ class App : Application() {
     private fun stopSecondTick() {
         secondTickRunnable?.let { secondTickHandler.removeCallbacks(it) }
         secondTickRunnable = null
-    }
-
-    fun registerAllCourseNotifications() {
-        if (SettingsManager(this).isAlarmEnabled()) {
-            alarmService?.registerAllCourseNotifications()
-            // 启动前台服务，确保闹钟在国产 ROM 上不被杀
-            try {
-                com.cherry.wakeupschedule.service.CourseReminderForegroundService.start(this)
-            } catch (e: Exception) {
-                Log.e("App", "Failed to start foreground service", e)
-            }
-            // 检查精确闹钟权限
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                try {
-                    val am = getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
-                    if (!am.canScheduleExactAlarms()) {
-                        Log.w("App", "未授权精确闹钟权限，课前通知可能无法准时触发")
-                    }
-                } catch (e: Exception) {
-                    Log.e("App", "检查精确闹钟权限失败", e)
-                }
-            }
-            Log.d("App", "All course notifications have been re-registered")
-        }
     }
 
     private fun applyStoredThemeMode() {

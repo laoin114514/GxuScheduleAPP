@@ -54,26 +54,21 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var settingsManager: SettingsManager
     private lateinit var tvCurrentSemester: TextView
     private lateinit var tvDefaultWeek: TextView
-    private lateinit var tvDefaultAlarm: TextView
     private lateinit var btnImportSchedule: TextView
     private lateinit var btnExportSchedule: TextView
     private lateinit var btnClearData: TextView
     private lateinit var btnModifySemester: TextView
     private lateinit var btnModifyWeek: TextView
-    private lateinit var btnModifyAlarm: TextView
     private lateinit var btnSchoolImport: TextView
     private lateinit var btnBackgroundSettings: TextView
-    private lateinit var btnBatterySettings: TextView
     private lateinit var btnAbout: TextView
     private lateinit var btnTimeTableSettings: TextView
     private lateinit var btnAppearanceSettings: TextView
     private lateinit var btnColorTheme: TextView
     private lateinit var btnCheckUpdate: TextView
-    private lateinit var btnPermissionGuide: TextView
     private lateinit var btnFeedback: TextView
     private lateinit var switchUpdateRemind: Switch
     private lateinit var switchHideHolidayCourses: Switch
-    private lateinit var switchAlarmEnabled: Switch
     private lateinit var timeTableManager: TimeTableManager
     private lateinit var updateService: com.cherry.wakeupschedule.service.UpdateService
     private var isUpdatingSwitchState = false
@@ -121,27 +116,22 @@ class SettingsActivity : AppCompatActivity() {
     private fun initViews() {
         tvCurrentSemester = findViewById(R.id.tv_current_semester)
         tvDefaultWeek = findViewById(R.id.tv_default_week)
-        tvDefaultAlarm = findViewById(R.id.tv_default_alarm)
         btnImportSchedule = findViewById(R.id.btn_import_schedule)
         btnExportSchedule = findViewById(R.id.btn_export_schedule)
         btnClearData = findViewById(R.id.btn_clear_data)
         btnModifySemester = findViewById(R.id.btn_modify_semester)
         btnModifyWeek = findViewById(R.id.btn_modify_week)
-        btnModifyAlarm = findViewById(R.id.btn_modify_alarm)
         btnSchoolImport = findViewById(R.id.btn_school_import)
         btnBackgroundSettings = findViewById(R.id.btn_background_settings)
-        btnBatterySettings = findViewById(R.id.btn_battery_settings)
         btnAbout = findViewById(R.id.btn_about)
         btnTimeTableSettings = findViewById(R.id.btn_time_table_settings)
         btnAppearanceSettings = findViewById(R.id.btn_appearance_settings)
         btnColorTheme = findViewById(R.id.btn_color_theme)
         btnColorTheme.visibility = android.view.View.GONE
         btnCheckUpdate = findViewById(R.id.btn_check_update)
-        btnPermissionGuide = findViewById(R.id.btn_permission_guide)
         btnFeedback = findViewById(R.id.btn_feedback)
         switchUpdateRemind = findViewById<Switch>(R.id.switch_update_remind)
         switchHideHolidayCourses = findViewById<Switch>(R.id.switch_hide_holiday_courses)
-        switchAlarmEnabled = findViewById<Switch>(R.id.switch_alarm_enabled)
 
         // 初始化更新服务
         updateService = com.cherry.wakeupschedule.service.UpdateService(this)
@@ -216,22 +206,8 @@ class SettingsActivity : AppCompatActivity() {
             showDefaultWeekPicker()
         }
         
-        btnModifyAlarm.setOnClickListener {
-            showAlarmDialog()
-        }
-
         btnBackgroundSettings.setOnClickListener {
             showBackgroundDialog()
-        }
-
-        // 课前提醒开关：切换即生效
-        switchAlarmEnabled.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            applyAlarmToggle(isChecked)
-        }
-
-        btnBatterySettings.setOnClickListener {
-            showBatteryOptimizationDialog()
         }
 
         btnAppearanceSettings.setOnClickListener {
@@ -245,10 +221,6 @@ class SettingsActivity : AppCompatActivity() {
 
         btnCheckUpdate.setOnClickListener {
             updateService.manualUpdate()
-        }
-
-        btnPermissionGuide.setOnClickListener {
-            startActivity(Intent(this, PermissionGuideActivity::class.java))
         }
 
         btnFeedback.setOnClickListener {
@@ -286,7 +258,6 @@ class SettingsActivity : AppCompatActivity() {
                             .message("确定要重置为默认时间表吗？")
                             .positiveButton("确定") {
                                 timeTableManager.resetToDefault()
-                                App.instance.registerAllCourseNotifications()
                                 Toast.makeText(this, "已重置为默认时间表", Toast.LENGTH_SHORT).show()
                             }
                             .negativeButton("取消")
@@ -346,7 +317,6 @@ class SettingsActivity : AppCompatActivity() {
                     timeTableManager.removeTimeSlot(timeSlot.node)
                 }
                 timeTableManager.updateTimeSlot(node, startTime, endTime)
-                App.instance.registerAllCourseNotifications()
                 Toast.makeText(this, "第${node}节时间段已更新", Toast.LENGTH_SHORT).show()
 
                 showTimeSlotsEditor()
@@ -357,7 +327,6 @@ class SettingsActivity : AppCompatActivity() {
                     .message("确定要删除第${timeSlot.node}节吗？")
                     .positiveButton("删除") {
                         timeTableManager.removeTimeSlot(timeSlot.node)
-                        App.instance.registerAllCourseNotifications()
                         Toast.makeText(this, "第${timeSlot.node}节已删除", Toast.LENGTH_SHORT).show()
                     }
                     .negativeButton("取消")
@@ -405,7 +374,6 @@ class SettingsActivity : AppCompatActivity() {
                 }
 
                 timeTableManager.addTimeSlot(node, startTime, endTime)
-                App.instance.registerAllCourseNotifications()
                 Toast.makeText(this, "第${node}节时间段已添加", Toast.LENGTH_SHORT).show()
 
                 showTimeSlotsEditor()
@@ -443,7 +411,6 @@ class SettingsActivity : AppCompatActivity() {
                 }
 
                 Toast.makeText(this, "每天节数已设置为 $maxNodes 节", Toast.LENGTH_SHORT).show()
-                App.instance.registerAllCourseNotifications()
             }
         )
     }
@@ -455,7 +422,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun updateSettingsDisplay() {
         tvCurrentSemester.text = settingsManager.getCurrentSemester()
         tvDefaultWeek.text = "第${settingsManager.getDefaultWeek()}周"
-        tvDefaultAlarm.text = "提前${settingsManager.getDefaultAlarmMinutes()}分钟"
 
         // 更新背景设置状态显示
         val backgroundText = if (settingsManager.getCustomBackgroundPath().isNotEmpty()) "图片背景" else ""
@@ -469,7 +435,6 @@ class SettingsActivity : AppCompatActivity() {
         isUpdatingSwitchState = true
         switchUpdateRemind.isChecked = settingsManager.isUpdateRemindEnabled()
         switchHideHolidayCourses.isChecked = settingsManager.isHideHolidayCourses()
-        switchAlarmEnabled.isChecked = settingsManager.isAlarmEnabled()
         isUpdatingSwitchState = false
     }
     
@@ -577,34 +542,6 @@ class SettingsActivity : AppCompatActivity() {
         ).show()
     }
 
-    private fun showAlarmDialog() {
-        val alarmOptions = (0..4).map { i ->
-            val minutes = when (i) { 0 -> 5; 1 -> 10; 2 -> 15; 3 -> 20; 4 -> 30; else -> 15 }
-            SelectOption(label = "提前${minutes}分钟")
-        }
-        val currentMinutes = settingsManager.getDefaultAlarmMinutes()
-        val currentIndex = when (currentMinutes) {
-            5 -> 0; 10 -> 1; 15 -> 2; 20 -> 3; 30 -> 4
-            else -> 2
-        }
-
-        SelectionDialog.show(
-            context = this,
-            title = "选择默认闹钟提醒时间",
-            options = alarmOptions,
-            selectedIndex = currentIndex,
-            onSelected = { index ->
-                val minutes = when (index) {
-                    0 -> 5; 1 -> 10; 2 -> 15; 3 -> 20; 4 -> 30
-                    else -> 15
-                }
-                settingsManager.setDefaultAlarmMinutes(minutes)
-                updateSettingsDisplay()
-                Toast.makeText(this, "闹钟设置已更新", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-    
     private fun showBackgroundDialog() {
         StyledDialog.Builder(this)
             .title("选择应用背景")
@@ -708,63 +645,6 @@ class SettingsActivity : AppCompatActivity() {
             .show()
     }
     
-    private fun applyAlarmToggle(enabled: Boolean) {
-        settingsManager.setAlarmEnabled(enabled)
-        // 注册/取消提醒涉及大量 PendingIntent + AlarmManager binder 调用，
-        // 放到 IO 线程执行，避免阻塞 UI 线程导致卡顿
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val app = com.cherry.wakeupschedule.App.instance
-                if (enabled) {
-                    app.registerAllCourseNotifications()
-                } else {
-                    app.alarmService?.cancelAllReminders()
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("SettingsActivity", "Failed to apply alarm settings", e)
-            }
-            withContext(Dispatchers.Main) {
-                updateSettingsDisplay()
-            }
-        }
-        Toast.makeText(this, if (enabled) "课前提醒已开启" else "课前提醒已关闭", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun showBatteryOptimizationDialog() {
-        val status = if (com.cherry.wakeupschedule.service.BatteryOptimizationHelper.isIgnoringBatteryOptimizations(this))
-            "已关闭电池优化 ✓" else "未关闭电池优化（可能影响提醒）"
-
-        StyledDialog.Builder(this)
-            .title("电池优化设置")
-            .message("为了确保课前提醒稳定推送，建议关闭电池优化。\n\n当前状态：$status")
-            .items(arrayOf("请求关闭电池优化", "查看详细设置教程", "打开系统设置")) { which ->
-                when (which) {
-                    0 -> {
-                        if (!com.cherry.wakeupschedule.service.BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(this)) {
-                            Toast.makeText(this, "请求失败，请手动设置", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                    1 -> showBatteryOptimizationInstructions()
-                    2 -> com.cherry.wakeupschedule.service.BatteryOptimizationHelper.openBatteryOptimizationSettings(this)
-                }
-            }
-            .positiveButton("确定")
-            .show()
-    }
-
-    private fun showBatteryOptimizationInstructions() {
-        val instructions = com.cherry.wakeupschedule.service.BatteryOptimizationHelper.getDetailedInstructions(this)
-
-        StyledDialog.Builder(this)
-            .title("设置教程")
-            .message(instructions)
-            .positiveButton("打开设置") {
-                com.cherry.wakeupschedule.service.BatteryOptimizationHelper.openManufacturerPowerSettings(this)
-            }
-            .negativeButton("关闭")
-            .show()
-    }
-
     private fun showAboutDialog() {
         val message = """
             西大课栈

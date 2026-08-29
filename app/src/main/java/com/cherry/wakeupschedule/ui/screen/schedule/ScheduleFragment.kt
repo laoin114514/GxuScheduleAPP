@@ -210,7 +210,8 @@ class ScheduleFragment : Fragment() {
             displayWk == currentWk -> "第${displayWk}周 (本周)"
             else -> "第${displayWk}周"
         }
-        tvWeekInfo.text = weekText
+        val semesterLabel = SemesterManager.getCurrent()?.label?.takeIf { it.isNotBlank() }
+        tvWeekInfo.text = if (semesterLabel != null) "$weekText · $semesterLabel" else weekText
         updateDateHeaderRow(displayWk)
     }
 
@@ -352,7 +353,6 @@ class ScheduleFragment : Fragment() {
                     allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
                     adapter.updateData(allCourses)
                     updateDateTimeHeader()
-                    (requireActivity().application as App).registerAllCourseNotifications()
                     // 成功：遮罩换成"成功导入 N 门课程"卡片，替代全局 toast
                     showLoadSuccess(count)
                 }.onFailure { e ->

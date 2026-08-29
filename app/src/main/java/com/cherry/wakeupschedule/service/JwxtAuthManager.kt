@@ -65,7 +65,6 @@ object JwxtAuthManager {
                 val scheduleImported = curSem != null &&
                     JwxtImportService.fetchAndSaveScheduleForSemester(App.instance, curSem).isSuccess
                 if (scheduleImported) {
-                    App.instance.registerAllCourseNotifications()
                     onStep(JwxtLoginStep.SCHEDULE)
                 }
                 Result.success("登录成功")

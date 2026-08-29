@@ -23,11 +23,9 @@ class SettingsManager(context: Context) {
         // SharedPreferences键名常量
         private const val KEY_CURRENT_SEMESTER_INDEX = "current_semester_index"
         private const val KEY_DEFAULT_WEEK = "default_week"                    // 默认显示周
-        private const val KEY_DEFAULT_ALARM_MINUTES = "default_alarm_minutes" // 默认闹钟提前时间
         private const val KEY_AUTO_SWITCH_WEEK = "auto_switch_week"           // 是否自动切换周
         private const val KEY_THEME = "theme"                                  // 主题设置
         private const val KEY_FONT_SIZE = "font_size"                          // 字体大小
-        private const val KEY_ALARM_ENABLED = "alarm_enabled"                  // 闹钟是否启用
         private const val KEY_CUSTOM_BACKGROUND_PATH = "custom_background_path"// 自定义背景图片路径
         private const val KEY_COURSE_CARD_ALPHA = "course_card_alpha"         // 课程卡片透明度
         private const val KEY_SHOW_NON_CURRENT_WEEK_COURSES = "show_non_current_week_courses" // 是否显示非本周课程
@@ -38,7 +36,6 @@ class SettingsManager(context: Context) {
         private const val KEY_FLOAT_BUTTON_Y = "float_button_y"             // 悬浮球Y位置
         private const val KEY_VIEW_STATE = "view_state"                     // 视图状态（week/day/overview）
         private const val KEY_ENABLE_UPDATE_REMIND = "enable_update_remind"  // 是否允许更新提醒
-        private const val KEY_LAST_LOG_CLEAR = "last_log_clear"            // 上次清理日志日期
         private const val KEY_HIDE_HOLIDAY_COURSES = "hide_holiday_courses" // 是否在节假日隐藏课程
         private const val KEY_THEME_MODE = "theme_mode"                // 主题模式: light/dark/system
         private const val KEY_AUTO_SWITCH_THEME = "auto_switch_theme"  // 是否自动切换深浅色
@@ -53,11 +50,9 @@ class SettingsManager(context: Context) {
         private const val DEFAULT_LIGHT_TIME = "07:00"                   // 默认浅色时间
         private const val DEFAULT_ENABLE_UPDATE_REMIND = true              // 默认开启更新提醒
         private const val DEFAULT_WEEK = 1                                     // 默认第1周
-        private const val DEFAULT_ALARM_MINUTES = 15                           // 默认提前15分钟
         private const val DEFAULT_AUTO_SWITCH = true                           // 默认自动切换
         private const val DEFAULT_THEME = "light"                              // 默认浅色主题
         private const val DEFAULT_FONT_SIZE = "normal"                         // 默认字体大小
-        private const val DEFAULT_ALARM_ENABLED = true                         // 默认启用闹钟
         private const val DEFAULT_COURSE_CARD_ALPHA = 0.85f                    // 默认卡片透明度85%
         private const val DEFAULT_SHOW_NON_CURRENT_WEEK_COURSES = true         // 默认显示非本周课程
         private const val DEFAULT_NON_CURRENT_WEEK_ALPHA = 0.3f                // 非本周课程默认30%透明度
@@ -101,38 +96,6 @@ class SettingsManager(context: Context) {
     }
 
     // ==================== 闹钟相关 ====================
-
-    /**
-     * 获取默认闹钟提前时间
-     * @return 分钟数（5/10/15/20/30）
-     */
-    fun getDefaultAlarmMinutes(): Int {
-        return sharedPreferences.getInt(KEY_DEFAULT_ALARM_MINUTES, DEFAULT_ALARM_MINUTES)
-    }
-
-    /**
-     * 设置默认闹钟提前时间
-     * @param minutes 分钟数（5/10/15/20/30）
-     */
-    fun setDefaultAlarmMinutes(minutes: Int) {
-        sharedPreferences.edit().putInt(KEY_DEFAULT_ALARM_MINUTES, minutes).apply()
-    }
-
-    /**
-     * 获取是否启用课前提醒
-     * @return true表示启用
-     */
-    fun isAlarmEnabled(): Boolean {
-        return sharedPreferences.getBoolean(KEY_ALARM_ENABLED, DEFAULT_ALARM_ENABLED)
-    }
-
-    /**
-     * 设置是否启用课前提醒
-     * @param enabled true启用，false禁用
-     */
-    fun setAlarmEnabled(enabled: Boolean) {
-        sharedPreferences.edit().putBoolean(KEY_ALARM_ENABLED, enabled).apply()
-    }
 
     /**
      * 获取是否自动切换周
@@ -392,53 +355,6 @@ class SettingsManager(context: Context) {
      */
     fun setUpdateRemindEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_ENABLE_UPDATE_REMIND, enabled).apply()
-    }
-
-    // ==================== 日志清理相关 ====================
-
-    /**
-     * 获取上次清理日志的日期
-     * @return 上次清理的日期（格式：yyyy-MM-dd），null表示从未清理
-     */
-    fun getLastLogClearDate(): String? {
-        return sharedPreferences.getString(KEY_LAST_LOG_CLEAR, null)
-    }
-
-    /**
-     * 设置上次清理日志的日期
-     * @param date 日期字符串（格式：yyyy-MM-dd）
-     */
-    fun setLastLogClearDate(date: String) {
-        sharedPreferences.edit().putString(KEY_LAST_LOG_CLEAR, date).apply()
-    }
-
-    /**
-     * 检查是否需要清理日志（每周清理一次）
-     * @return true表示需要清理
-     */
-    fun needClearLogs(): Boolean {
-        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-        val lastClear = getLastLogClearDate() ?: return true
-        
-        // 计算两个日期之间的天数差
-        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-        try {
-            val d1 = sdf.parse(lastClear)
-            val d2 = sdf.parse(today)
-            val diff = d2.time - d1.time
-            val days = diff / (1000 * 60 * 60 * 24)
-            return days >= 7 // 7天或更久未清理
-        } catch (e: Exception) {
-            return true
-        }
-    }
-
-    /**
-     * 标记今天已清理日志
-     */
-    fun markLogClearedToday() {
-        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-        setLastLogClearDate(today)
     }
 
     // ==================== 节假日相关 ====================

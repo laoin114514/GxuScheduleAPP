@@ -5,22 +5,18 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.model.Course
-import com.cherry.wakeupschedule.service.AlarmService
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.HolidayManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Calendar
 
 /**
  * 课程ViewModel
- * 管理课程数据的增删改查和闹钟设置
+ * 管理课程数据的增删改查
  */
 class CourseViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -35,7 +31,6 @@ class CourseViewModel(application: Application) : AndroidViewModel(application) 
     private val courseDataManager = CourseDataManager.getInstance(application)
     private val settingsManager = SettingsManager(application)
     private val holidayManager = HolidayManager.getInstance(application)
-    private val alarmService = App.instance.alarmService
     @Volatile
     private var activeWeek: Int = calculateCurrentWeek()
 
@@ -122,30 +117,14 @@ class CourseViewModel(application: Application) : AndroidViewModel(application) 
     // 添加课程
     fun addCourse(course: Course) {
         viewModelScope.launch {
-            val newCourse = courseDataManager.addCourse(course)  // addCourse 返回带正确 ID 的 Course
-            alarmService?.setCourseAlarm(newCourse)
-            // 确保全学期闹钟矩阵注册在 DB 写入完成后执行，避免 AddCourseActivity
-            // 中的 GlobalScope 协程在 DB 写入完成前就开始注册闹钟导致新课程遗漏
-            withContext(Dispatchers.IO) {
-                App.instance.registerAllCourseNotifications()
-            }
+            courseDataManager.addCourse(course)
         }
     }
 
     // 批量添加课程
     fun addCourses(courses: List<Course>) {
         viewModelScope.launch {
-            // addCourses 内部生成 ID，需先传给 DataManager，再读取回来以获取正确 ID
-            val beforeAdd = courseDataManager.getAllCourses()
             courseDataManager.addCourses(courses)
-            val afterAdd = courseDataManager.getAllCourses()
-            val addedCourses = afterAdd.filter { after -> beforeAdd.none { it.id == after.id } }
-            addedCourses.forEach { course ->
-                alarmService?.setCourseAlarm(course)
-            }
-            withContext(Dispatchers.IO) {
-                App.instance.registerAllCourseNotifications()
-            }
         }
     }
 
@@ -153,10 +132,6 @@ class CourseViewModel(application: Application) : AndroidViewModel(application) 
     fun updateCourse(course: Course) {
         viewModelScope.launch {
             courseDataManager.updateCourse(course)
-            alarmService?.setCourseAlarm(course)
-            withContext(Dispatchers.IO) {
-                App.instance.registerAllCourseNotifications()
-            }
         }
     }
 
@@ -164,7 +139,6 @@ class CourseViewModel(application: Application) : AndroidViewModel(application) 
     fun deleteCourse(course: Course) {
         viewModelScope.launch {
             courseDataManager.deleteCourse(course)
-            alarmService?.cancelCourseAlarm(course)
         }
     }
 
