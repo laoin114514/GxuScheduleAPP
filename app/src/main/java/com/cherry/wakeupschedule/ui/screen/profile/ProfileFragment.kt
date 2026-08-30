@@ -94,8 +94,6 @@ class ProfileFragment : Fragment() {
         }
 
 
-        view.findViewById<View>(R.id.item_theme_palette).visibility = View.GONE
-
         // 外观：跳转到独立的外观设置页（浅色/深色主题 + 自动切换 + 卡片外观）
         view.findViewById<View>(R.id.item_theme_mode).setOnClickListener {
             startActivity(Intent(requireContext(), AppearanceActivity::class.java))

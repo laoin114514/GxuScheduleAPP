@@ -1,478 +1,540 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:fitsSystemWindows="true"
     android:background="@drawable/bg_page_gradient">
 
-    <LinearLayout
+    <!-- 顶栏：与工具页同款居中主色标题 -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="52dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:text="我的"
-            android:textAppearance="?attr/textAppearanceHeadlineMedium"
-            android:textColor="?attr/colorOnSurface"
-            android:layout_marginBottom="24dp" />
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary" />
+    </FrameLayout>
 
-        <!-- 账号 -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/ScheduleSectionCard"
-            android:layout_marginBottom="16dp">
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:paddingBottom="24dp">
 
-            <LinearLayout android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp">
 
-                <TextView style="@style/SectionTitle" android:text="账号" />
+            <!-- ═══ 账号 ═══ -->
+            <TextView style="@style/AppSectionHeader"
+                android:paddingTop="10dp"
+                android:text="账号" />
 
-                <!-- 未绑定状态：绑定教务 -->
-                <LinearLayout android:id="@+id/item_bind_jwxt"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
+            <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_link"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical">
 
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical"
-                        android:layout_marginStart="16dp">
+                    <!-- 未绑定状态：绑定教务 -->
+                    <LinearLayout android:id="@+id/item_bind_jwxt"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true">
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="绑定教务"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="广西大学教务系统"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_link"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
 
-                    </LinearLayout>
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical"
+                            android:layout_marginStart="14dp">
 
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="绑定教务"
+                                android:textSize="15sp"
+                                android:textColor="?attr/colorOnSurface" />
 
-                </LinearLayout>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="广西大学教务系统"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
-                <!-- 已绑定状态：账号信息展示 -->
-                <LinearLayout android:id="@+id/item_account_info"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:visibility="gone">
+                        </LinearLayout>
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_link"
-                        app:tint="?attr/colorPrimary" />
-
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical"
-                        android:layout_marginStart="16dp">
-
-                        <TextView android:id="@+id/tv_account_name"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text=""
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
-
-                        <TextView android:id="@+id/tv_account_id"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text=""
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_edit_account"
-                        style="@style/Widget.Material3.Button.TextButton.Icon"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:layout_marginStart="8dp"
-                        android:minWidth="0dp"
-                        android:minHeight="40dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="更新密码"
-                        android:textAllCaps="false"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="14sp"
-                        android:contentDescription="更新登录密码"
-                        app:icon="@drawable/ic_edit"
-                        app:iconGravity="textStart"
-                        app:iconPadding="6dp"
-                        app:iconSize="18dp"
-                        app:iconTint="?attr/colorPrimary" />
+                    <!-- 已绑定状态：账号信息展示 -->
+                    <LinearLayout android:id="@+id/item_account_info"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
+                        android:visibility="gone">
 
-                </LinearLayout>
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
 
-                <!-- 个人信息（仅已绑定时可点击） -->
-                <LinearLayout android:id="@+id/item_profile"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_person"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_badge"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical"
+                            android:layout_marginStart="14dp">
 
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="16dp"
-                        android:text="个人信息"
-                        android:textAppearance="?attr/textAppearanceBodyLarge"
-                        android:textColor="?attr/colorOnSurface" />
+                            <TextView android:id="@+id/tv_account_name"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text=""
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:textSize="15sp"
+                                android:textColor="?attr/colorOnSurface" />
 
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                            <TextView android:id="@+id/tv_account_id"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text=""
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
-                </LinearLayout>
+                        </LinearLayout>
 
-                <!-- 解绑按钮（仅已绑定时显示） -->
-                <TextView
-                    android:id="@+id/btn_unbind"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="解绑教务账号"
-                    android:textSize="14sp"
-                    android:textColor="@color/danger_color"
-                    android:padding="12dp"
-                    android:gravity="center"
-                    android:layout_marginHorizontal="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:visibility="gone" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 学期 -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/ScheduleSectionCard"
-            android:layout_marginBottom="16dp">
-
-            <LinearLayout android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:orientation="vertical">
-
-                <TextView style="@style/SectionTitle" android:text="学期" />
-
-                <LinearLayout android:id="@+id/item_semester"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
-
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_school"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical"
-                        android:layout_marginStart="16dp">
-
-                        <TextView android:id="@+id/tv_semester_label"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="当前学期"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
-
-                        <TextView android:id="@+id/tv_semester_value"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="2024-2025学年 第一学期"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_edit_account"
+                            style="@style/Widget.Material3.Button.TextButton.Icon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="8dp"
+                            android:minWidth="0dp"
+                            android:minHeight="40dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="更新密码"
+                            android:textAllCaps="false"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="13sp"
+                            android:contentDescription="更新登录密码"
+                            app:icon="@drawable/ic_edit"
+                            app:iconGravity="textStart"
+                            app:iconPadding="6dp"
+                            app:iconSize="16dp"
+                            app:iconTint="?attr/colorPrimary" />
 
                     </LinearLayout>
 
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <!-- 个人信息（仅已绑定时可点击） -->
+                    <LinearLayout android:id="@+id/item_profile"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true">
 
-                </LinearLayout>
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
 
-                <LinearLayout android:id="@+id/item_week"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_badge"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_today"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical"
-                        android:layout_marginStart="16dp">
-
-                        <TextView android:id="@+id/tv_week_label"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="默认周次"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:layout_marginStart="14dp"
+                            android:text="个人信息"
+                            android:textSize="15sp"
                             android:textColor="?attr/colorOnSurface" />
 
-                        <TextView android:id="@+id/tv_week_value"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="第5周"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <!-- 解绑按钮（仅已绑定时显示） -->
+                    <TextView
+                        android:id="@+id/btn_unbind"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="解绑教务账号"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorError"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp"
+                        android:gravity="center"
+                        android:layout_marginHorizontal="12dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_danger_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 
-                <!-- 学期日期范围 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp">
+            </com.google.android.material.card.MaterialCardView>
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_date_range"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+            <!-- ═══ 学期 ═══ -->
+            <TextView style="@style/AppSectionHeader" android:text="学期" />
 
-                    <TextView android:id="@+id/tv_semester_date_range"
-                        android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="16dp"
-                        android:text="未获取"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+            <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
-                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical">
 
-                <!-- 学期总周数 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp">
+                    <LinearLayout android:id="@+id/item_semester"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true">
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_schedule"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
 
-                    <TextView android:id="@+id/tv_total_weeks"
-                        android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="16dp"
-                        android:text="20周"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_school"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
 
-                </LinearLayout>
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical"
+                            android:layout_marginStart="14dp">
 
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="当前学期"
+                                android:textSize="15sp"
+                                android:textColor="?attr/colorOnSurface" />
 
-            </LinearLayout>
+                            <TextView android:id="@+id/tv_semester_value"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="未设置"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
-        </com.google.android.material.card.MaterialCardView>
+                        </LinearLayout>
 
-        <!-- 课表 -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/ScheduleSectionCard"
-            android:layout_marginBottom="16dp">
-
-            <LinearLayout android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:orientation="vertical">
-
-                <TextView style="@style/SectionTitle" android:text="主题" />
-
-                <LinearLayout android:id="@+id/item_theme_palette"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
-
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_palette"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical"
-                        android:layout_marginStart="16dp">
-
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="主题色板"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
-
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="经典紫"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <LinearLayout android:id="@+id/item_week"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true">
 
-                </LinearLayout>
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
 
-                <!-- 外观（主题模式） -->
-                <LinearLayout android:id="@+id/item_theme_mode"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_today"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_opacity"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical"
+                            android:layout_marginStart="14dp">
 
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:orientation="vertical"
-                        android:layout_marginStart="16dp">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="默认周次"
+                                android:textSize="15sp"
+                                android:textColor="?attr/colorOnSurface" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="外观"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:textColor="?attr/colorOnSurface" />
+                            <TextView android:id="@+id/tv_week_value"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="第1周"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
-                        <TextView android:id="@+id/tv_theme_mode_value"
-                            android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="跟随系统"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
+
+                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <!-- 学期日期范围（信息行） -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="12dp">
+
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
+
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_date_range"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
+
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical"
+                            android:layout_marginStart="14dp">
+
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="学期周期"
+                                android:textSize="15sp"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <TextView android:id="@+id/tv_semester_date_range"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="刷新课表后获取"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- 学期总周数（信息行） -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="16dp">
+
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
+
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_schedule"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
+
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical"
+                            android:layout_marginStart="14dp">
+
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="学期周数"
+                                android:textSize="15sp"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <TextView android:id="@+id/tv_total_weeks"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="—"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-        </com.google.android.material.card.MaterialCardView>
+            <!-- ═══ 主题 ═══ -->
+            <TextView style="@style/AppSectionHeader" android:text="主题" />
 
-        <!-- 通用 -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/ScheduleSectionCard"
-            android:layout_marginBottom="16dp">
+            <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
-            <LinearLayout android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:orientation="vertical">
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical">
 
-                <TextView style="@style/SectionTitle" android:text="通用" />
+                    <!-- 外观（主题模式） -->
+                    <LinearLayout android:id="@+id/item_theme_mode"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true">
 
-                <LinearLayout android:id="@+id/item_time_table"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_schedule"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_opacity"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
 
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="16dp"
-                        android:text="时间表设置"
-                        android:textAppearance="?attr/textAppearanceBodyLarge"
-                        android:textColor="?attr/colorOnSurface" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical"
+                            android:layout_marginStart="14dp">
 
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="外观"
+                                android:textSize="15sp"
+                                android:textColor="?attr/colorOnSurface" />
 
-                </LinearLayout>
+                            <TextView android:id="@+id/tv_theme_mode_value"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="跟随系统"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
-            </LinearLayout>
+                        </LinearLayout>
 
-        </com.google.android.material.card.MaterialCardView>
+                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
 
-        <!-- 关于 -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/ScheduleSectionCard"
-            android:layout_marginBottom="16dp">
-
-            <LinearLayout android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:orientation="vertical">
-
-                <TextView style="@style/SectionTitle" android:text="关于" />
-
-                <LinearLayout android:id="@+id/item_about"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
-
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_info"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="16dp"
-                        android:text="关于应用"
-                        android:textAppearance="?attr/textAppearanceBodyLarge"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
 
                 </LinearLayout>
 
-                <LinearLayout android:id="@+id/item_feedback"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="horizontal" android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp" android:paddingVertical="14dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true" android:focusable="true">
+            </com.google.android.material.card.MaterialCardView>
 
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
-                        android:src="@drawable/ic_mtrl_feedback"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+            <!-- ═══ 通用 ═══ -->
+            <TextView style="@style/AppSectionHeader" android:text="通用" />
 
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="16dp"
-                        android:text="反馈建议"
-                        android:textAppearance="?attr/textAppearanceBodyLarge"
-                        android:textColor="?attr/colorOnSurface" />
+            <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                        android:src="@drawable/ic_mtrl_chevron_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical">
+
+                    <LinearLayout android:id="@+id/item_time_table"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true">
+
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
+
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_schedule"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
+
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:layout_marginStart="14dp"
+                            android:text="时间表设置"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-        </com.google.android.material.card.MaterialCardView>
+            <!-- ═══ 关于 ═══ -->
+            <TextView style="@style/AppSectionHeader" android:text="关于" />
 
-    </LinearLayout>
+            <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
-</ScrollView>
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical">
+
+                    <LinearLayout android:id="@+id/item_about"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true">
+
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
+
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_info"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
+
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:layout_marginStart="14dp"
+                            android:text="关于应用"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                    </LinearLayout>
+
+                    <LinearLayout android:id="@+id/item_feedback"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true">
+
+                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_circle">
+
+                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_mtrl_feedback"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
+
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:layout_marginStart="14dp"
+                            android:text="反馈建议"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
+                            android:src="@drawable/ic_mtrl_chevron_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>
