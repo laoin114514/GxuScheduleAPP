@@ -13,7 +13,6 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@android:color/transparent"
-        app:titleTextColor="?attr/colorOnSurface"
         app:navigationIcon="@drawable/ic_arrow_back"
         app:navigationIconTint="?attr/colorOnSurfaceVariant" />
 
@@ -33,7 +32,7 @@
 
             <!-- Max nodes setting card -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/ScheduleSectionCard"
+                style="@style/AppSectionCard"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout

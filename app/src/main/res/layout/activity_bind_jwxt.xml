@@ -15,7 +15,8 @@
         app:navigationIcon="@drawable/ic_arrow_back"
         app:navigationIconTint="?attr/colorOnSurfaceVariant"
         app:title="绑定教务系统"
-        app:titleTextColor="?attr/colorOnSurface" />
+        app:titleCentered="true"
+        app:titleTextAppearance="@style/AppToolbarTitle" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -146,10 +147,10 @@
                 android:layout_marginTop="28dp"
                 android:visibility="gone"
                 app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
-                app:cardCornerRadius="16dp"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
                 app:strokeColor="?attr/colorOutlineVariant"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"

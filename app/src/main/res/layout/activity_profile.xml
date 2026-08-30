@@ -16,7 +16,8 @@
         app:navigationIcon="@drawable/ic_arrow_back"
         app:navigationIconTint="?attr/colorOnSurfaceVariant"
         app:title="个人信息"
-        app:titleTextColor="?attr/colorOnSurface" />
+        app:titleCentered="true"
+        app:titleTextAppearance="@style/AppToolbarTitle" />
 
     <ScrollView
         android:id="@+id/scroll_profile"

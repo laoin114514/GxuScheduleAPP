@@ -19,7 +19,8 @@
             app:navigationIcon="@drawable/ic_arrow_back"
             app:navigationIconTint="?attr/colorOnSurfaceVariant"
             app:title="关于"
-            app:titleTextColor="?attr/colorOnSurface" />
+        app:titleCentered="true"
+        app:titleTextAppearance="@style/AppToolbarTitle" />
 
         <ScrollView
             android:layout_width="match_parent"
@@ -68,7 +69,7 @@
                 </LinearLayout>
 
                 <com.google.android.material.card.MaterialCardView
-                    style="@style/ScheduleSectionCard"
+                    style="@style/AppSectionCard"
                     android:layout_marginBottom="16dp">
 
                 <LinearLayout

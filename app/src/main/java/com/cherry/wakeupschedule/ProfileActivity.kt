@@ -20,6 +20,9 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var layoutProfile: LinearLayout
     private lateinit var tvError: TextView
 
+    /** 当前分组的卡片内容容器，addRow 塞进这里 */
+    private var sectionContent: LinearLayout? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
@@ -103,27 +106,46 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun addSection(title: String) {
+        // 分组标题（卡外，18sp 加粗，对齐工具页分组标题）
         val tv = TextView(this).apply {
             text = title
-            textSize = 16f
+            textSize = 18f
             setTypeface(null, Typeface.BOLD)
             val typedValue = android.util.TypedValue()
-            theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+            theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)
             setTextColor(typedValue.data)
-            setPadding(0, 16, 0, 8)
+            setPadding(dp(4), dp(22), 0, dp(10))
         }
         layoutProfile.addView(tv)
+
+        // 白色大圆角卡片承载该组信息行（对齐工具页卡片）
+        val card = com.google.android.material.card.MaterialCardView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            radius = dp(24).toFloat()
+            cardElevation = dp(1).toFloat()
+            strokeWidth = 0
+            val bg = android.util.TypedValue()
+            theme.resolveAttribute(
+                com.google.android.material.R.attr.colorSurfaceContainerLowest, bg, true
+            )
+            setCardBackgroundColor(bg.data)
+        }
+        sectionContent = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        card.addView(sectionContent)
+        layoutProfile.addView(card)
     }
 
     private fun addRow(label: String, value: String?) {
         val displayValue = if (value.isNullOrBlank()) "—" else value
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, 6, 0, 6)
+            setPadding(dp(16), dp(9), dp(16), dp(9))
         }
         val tvLabel = TextView(this).apply {
             text = label
-            textSize = 14f
+            textSize = 13f
             val typedValue = android.util.TypedValue()
             theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
             setTextColor(typedValue.data)
@@ -139,8 +161,10 @@ class ProfileActivity : AppCompatActivity() {
         }
         row.addView(tvLabel)
         row.addView(tvValue)
-        layoutProfile.addView(row)
+        (sectionContent ?: layoutProfile).addView(row)
     }
+
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     private fun maskIdCard(id: String): String {
         if (id.length < 8) return id
