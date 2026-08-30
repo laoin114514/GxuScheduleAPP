@@ -112,6 +112,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
         hero.removeAllViews()
 
         val primary = attr(ctx, com.google.android.material.R.attr.colorPrimary)
+        val onPrimary = attr(ctx, com.google.android.material.R.attr.colorOnPrimary)
         hero.background = GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
             intArrayOf(
@@ -133,26 +134,28 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                     text = item.badge
                     textSize = 10f
                     setTypeface(Typeface.DEFAULT_BOLD)
-                    setTextColor(Color.WHITE)
+                    setTextColor(onPrimary)
                     background = GradientDrawable().apply {
                         cornerRadius = dp(ctx, 99).toFloat()
                         setColor(0x33FFFFFF)
                     }
                     setPadding(dp(ctx, 10), dp(ctx, 3), dp(ctx, 10), dp(ctx, 4))
-                })
+                }, LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ))
             }
             addView(TextView(ctx).apply {
                 text = item.title
                 textSize = 19f
                 setTypeface(Typeface.DEFAULT_BOLD)
-                setTextColor(Color.WHITE)
+                setTextColor(onPrimary)
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(ctx, 8) })
             addView(TextView(ctx).apply {
                 text = item.subtitle ?: ""
                 textSize = 12f
-                setTextColor(0xCCFFFFFF.toInt())
+                setTextColor(ColorUtils.setAlphaComponent(onPrimary, 204))
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(ctx, 3) })
@@ -170,7 +173,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
             addView(ImageView(ctx).apply {
                 layoutParams = FrameLayout.LayoutParams(dp(ctx, 20), dp(ctx, 20), Gravity.CENTER)
                 setImageResource(R.drawable.ic_mtrl_arrow_forward)
-                setColorFilter(Color.WHITE)
+                setColorFilter(onPrimary)
             })
         }
         hero.addView(arrow)
@@ -279,7 +282,9 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                     textSize = 15f
                     setTypeface(Typeface.DEFAULT_BOLD)
                     setTextColor(attr(ctx, com.google.android.material.R.attr.colorOnSurface))
-                })
+                }, LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ))
                 if (!item.subtitle.isNullOrBlank()) {
                     addView(TextView(ctx).apply {
                         text = item.subtitle

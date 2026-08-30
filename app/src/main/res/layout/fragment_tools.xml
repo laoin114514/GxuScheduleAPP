@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="@drawable/bg_page_gradient">
 
     <LinearLayout
@@ -88,44 +89,47 @@
                 android:textSize="14sp" />
         </FrameLayout>
 
-        <!-- 内容列表 -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_tools"
+        <!-- 内容区：列表 + 搜索无结果空状态（只覆盖列表区，保留顶栏与搜索框） -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="8dp"
-            android:clipToPadding="false"
-            android:paddingBottom="20dp"
-            android:overScrollMode="never"
-            android:scrollbars="none" />
+            android:layout_marginTop="8dp">
 
-    </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="20dp"
+                android:overScrollMode="never"
+                android:scrollbars="none" />
 
-    <!-- 搜索无结果空状态 -->
-    <LinearLayout
-        android:id="@+id/layout_tools_empty"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/bg_page_gradient"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone">
+            <LinearLayout
+                android:id="@+id/layout_tools_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
 
-        <ImageView
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:alpha="0.3"
-            android:src="@drawable/ic_mtrl_search"
-            app:tint="?attr/colorOnSurfaceVariant" />
+                <ImageView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:alpha="0.3"
+                    android:src="@drawable/ic_mtrl_search"
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="未找到相关工具"
-            android:textAppearance="?attr/textAppearanceBodyLarge"
-            android:textColor="?attr/colorOnSurfaceVariant" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="未找到相关工具"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+        </FrameLayout>
+
     </LinearLayout>
 
 </FrameLayout>
