@@ -7,8 +7,8 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.setupWithNavController
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
 import com.cherry.wakeupschedule.service.ImportService
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
@@ -36,7 +36,18 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHostFragment.navController
 
-        binding.bottomNav.setupWithNavController(navController)
+        // 自定义底部导航：点击 → 顶层页签式跳转（保留各页状态）；目的地变化 → 同步高亮
+        binding.bottomNav.onItemSelected = { tabId ->
+            navController.navigate(tabId) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            binding.bottomNav.select(destination.id)
+        }
+        binding.bottomNav.select(R.id.nav_schedule)
     }
 
     override fun onResume() {

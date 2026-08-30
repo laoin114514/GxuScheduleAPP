@@ -14,17 +14,11 @@
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_graph" />
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
+    <com.cherry.wakeupschedule.ui.widget.PillBottomNavView
         android:id="@+id/bottom_nav"
-        style="@style/BottomNavCompact"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:menu="@menu/bottom_nav_menu"
-        app:labelVisibilityMode="labeled"
-        app:itemIconTint="@color/bottom_nav_color"
-        app:itemTextColor="@color/bottom_nav_color"
-        app:backgroundTint="@color/bottom_nav_bg"
-        app:compatShadowEnabled="false"
-        app:elevation="0dp" />
+        android:background="@color/bottom_nav_bg"
+        android:elevation="6dp" />
 
 </LinearLayout>
