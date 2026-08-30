@@ -14,9 +14,10 @@ import com.google.android.material.color.MaterialColors
 /**
  * 小圆形图标按钮（统一组件）。
  *
- * 视觉：圆形色块底 + 居中主色图标（与工具页图标圆底同语言）。
- * 手感：与底部导航一致——按压整颗缩放并轻微变色，松手回弹，
- * 不使用涟漪/阴影反馈。凡是这类小圆形按钮一律用它。
+ * 视觉：圆形色块底 + 居中图标，图标为主题标准图标色（浅色灰/深色白，
+ * 即 colorOnSurfaceVariant），跟随主题与配色切换。
+ * 手感：与底部导航一致——按压整颗缩放、松手回弹；不变色、无涟漪阴影。
+ * 凡是这类小圆形按钮一律用它。
  *
  * 图标用 android:src 指定；XML 里的子 View 会叠在图标上方
  * （如刷新按钮的转圈指示器）。
@@ -28,14 +29,6 @@ class CircleIconButton @JvmOverloads constructor(
 
     private val iconView: ImageView
 
-    /** 常态图标色（主色），按压时变浅灰表示按下 */
-    private val normalTint: Int by lazy {
-        MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary)
-    }
-    private val pressedTint: Int by lazy {
-        MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurfaceVariant)
-    }
-
     init {
         isClickable = true
         isFocusable = true
@@ -45,6 +38,12 @@ class CircleIconButton @JvmOverloads constructor(
             layoutParams = LayoutParams(
                 LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER
             )
+            setColorFilter(
+                MaterialColors.getColor(
+                    this@CircleIconButton,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant
+                )
+            )
         }
         addView(iconView)
 
@@ -53,19 +52,15 @@ class CircleIconButton @JvmOverloads constructor(
         a.recycle()
         if (src != 0) iconView.setImageResource(src)
 
-        // 按压缩放 + 变色，松手回弹（同底部导航手感）
+        // 按压整颗缩放，松手回弹（同底部导航手感，不变色）
         setOnTouchListener { v, event ->
             when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
+                MotionEvent.ACTION_DOWN ->
                     v.animate().scaleX(0.88f).scaleY(0.88f).setDuration(80).start()
-                    iconView.setColorFilter(pressedTint)
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
                     v.animate().scaleX(1f).scaleY(1f).setDuration(160)
                         .setInterpolator(OvershootInterpolator(1.4f))
                         .start()
-                    iconView.setColorFilter(normalTint)
-                }
             }
             false
         }
