@@ -258,9 +258,11 @@ class ScheduleFragment : Fragment() {
                 cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) &&
                 cal.get(Calendar.YEAR) == today.get(Calendar.YEAR)) {
                 tv.setBackgroundResource(R.drawable.bg_date_selected)
+                // 今天方块底色是 colorPrimary（浅色主题为深色、深色主题为亮色），
+                // 字体用 colorOnPrimary 与之反色：浅色主题白字、深色主题深字
                 val typedValue = android.util.TypedValue()
                 root.context.theme.resolveAttribute(
-                    com.google.android.material.R.attr.colorOnSurface, typedValue, true
+                    com.google.android.material.R.attr.colorOnPrimary, typedValue, true
                 )
                 tv.setTextColor(typedValue.data)
             } else {
