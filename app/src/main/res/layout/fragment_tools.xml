@@ -36,24 +36,14 @@
                 android:textStyle="bold"
                 android:textColor="?attr/colorPrimary" />
 
-            <FrameLayout
+            <com.cherry.wakeupschedule.ui.widget.CircleIconButton
                 android:id="@+id/btn_tools_avatar"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_gravity="center_vertical|end"
                 android:layout_marginEnd="16dp"
-                android:background="@drawable/bg_tools_avatar"
-                android:clickable="true"
-                android:focusable="true"
-                android:contentDescription="我的">
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_mtrl_person"
-                    app:tint="?attr/colorPrimary" />
-            </FrameLayout>
+                android:src="@drawable/ic_mtrl_person"
+                android:contentDescription="我的" />
         </FrameLayout>
 
         <!-- 搜索框 -->

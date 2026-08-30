@@ -10,7 +10,6 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -52,7 +51,7 @@ class ScheduleFragment : Fragment() {
     private lateinit var tvDate: TextView
     private lateinit var tvWeekInfo: TextView
     private lateinit var tvCountdown: TextView
-    private lateinit var btnRefresh: ImageButton
+    private lateinit var btnRefresh: View
     private lateinit var progressRefresh: CircularProgressIndicator
     private lateinit var overlayLoading: View
     private lateinit var groupLoading: View

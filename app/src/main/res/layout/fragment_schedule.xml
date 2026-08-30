@@ -58,20 +58,12 @@
                 android:textColor="?attr/colorPrimary"
                 android:visibility="gone" />
 
-            <FrameLayout
+            <com.cherry.wakeupschedule.ui.widget.CircleIconButton
+                android:id="@+id/btn_refresh"
                 android:layout_width="32dp"
-                android:layout_height="32dp">
-
-                <ImageButton
-                    android:id="@+id/btn_refresh"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="@drawable/bg_icon_circle"
-                    android:foreground="?attr/selectableItemBackgroundBorderless"
-                    android:padding="7dp"
-                    android:src="@drawable/ic_mtrl_refresh"
-                    android:contentDescription="刷新课表"
-                    app:tint="?attr/colorPrimary" />
+                android:layout_height="32dp"
+                android:src="@drawable/ic_mtrl_refresh"
+                android:contentDescription="刷新课表">
 
                 <!-- 刷新中的小转圈（覆盖在刷新图标上） -->
                 <com.google.android.material.progressindicator.CircularProgressIndicator
@@ -84,19 +76,15 @@
                     app:indicatorColor="?attr/colorPrimary"
                     app:indicatorSize="20dp"
                     app:trackThickness="2dp" />
-            </FrameLayout>
+            </com.cherry.wakeupschedule.ui.widget.CircleIconButton>
 
-            <ImageButton
+            <com.cherry.wakeupschedule.ui.widget.CircleIconButton
                 android:id="@+id/btn_menu"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_icon_circle"
-                android:foreground="?attr/selectableItemBackgroundBorderless"
-                android:padding="7dp"
                 android:src="@drawable/ic_mtrl_menu"
-                android:contentDescription="课表菜单"
-                app:tint="?attr/colorPrimary" />
+                android:contentDescription="课表菜单" />
 
         </LinearLayout>
 
