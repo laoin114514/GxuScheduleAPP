@@ -397,7 +397,7 @@ class WeekPagerAdapter(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
-                overScrollMode = View.OVER_SCROLL_NEVER
+                // 保留默认 overScrollMode：纵向拉到尽头触发系统拉伸回弹，与 ViewPager2 横向一致
                 isVerticalScrollBarEnabled = false
                 isFillViewport = true
                 addView(contentLayout)
