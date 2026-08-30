@@ -388,21 +388,17 @@ class ScheduleFragment : Fragment() {
         val density = ctx.resources.displayMetrics.density
 
         // 顶部圆角背景
-        val topRadius = 20 * density
+        val topRadius = 24 * density
         val sheetBg = GradientDrawable().apply {
             cornerRadii = floatArrayOf(topRadius, topRadius, topRadius, topRadius, 0f, 0f, 0f, 0f)
         }
         val typedValue = android.util.TypedValue()
-        // 弹层底色提升一级到 colorSurfaceContainer，并加 outlineVariant 描边，
+        // 弹层底色提升一级到 colorSurfaceContainer，
         // 保证暗色模式下与蒙版压暗的背景有明显边界。
         ctx.theme.resolveAttribute(
             com.google.android.material.R.attr.colorSurfaceContainer, typedValue, true
         )
         sheetBg.setColor(typedValue.data)
-        ctx.theme.resolveAttribute(
-            com.google.android.material.R.attr.colorOutlineVariant, typedValue, true
-        )
-        sheetBg.setStroke((1 * density).toInt(), typedValue.data)
         sheetView.background = sheetBg
 
         // ── 主题色取样（浅色/深色自适应） ──

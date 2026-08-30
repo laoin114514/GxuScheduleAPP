@@ -124,4 +124,15 @@
     <item name="android:textStyle">bold</item>
     <item name="android:textColor">?attr/colorPrimary</item>
 </style>
+
+<!-- 弹层（课程详情 / 课表菜单）内部卡片：大圆角、无描边（对齐工具页语言） -->
+<style name="DetailSheetCard" parent="Widget.Material3.CardView.Elevated">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="cardCornerRadius">20dp</item>
+    <item name="cardElevation">0dp</item>
+    <item name="strokeWidth">0dp</item>
+    <item name="cardBackgroundColor">?attr/colorSurfaceContainerHigh</item>
+    <item name="contentPadding">0dp</item>
+</style>
 </resources>

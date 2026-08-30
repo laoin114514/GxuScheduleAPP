@@ -81,10 +81,7 @@
 
             <!-- ── 主信息卡：时间 / QQ群 / 教师 ── -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/ScheduleSectionCard"
-                app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
-                app:cardElevation="0dp"
-                app:contentPadding="0dp">
+                style="@style/DetailSheetCard">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -258,13 +255,10 @@
 
                 <!-- 学分 -->
                 <com.google.android.material.card.MaterialCardView
-                    style="@style/ScheduleSectionCard"
+                    style="@style/DetailSheetCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
-                    app:cardElevation="0dp"
-                    app:contentPadding="0dp">
+                    android:layout_weight="1">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -314,14 +308,11 @@
 
                 <!-- 教室 -->
                 <com.google.android.material.card.MaterialCardView
-                    style="@style/ScheduleSectionCard"
+                    style="@style/DetailSheetCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="10dp"
-                    app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
-                    app:cardElevation="0dp"
-                    app:contentPadding="0dp">
+                    android:layout_marginStart="10dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -372,13 +363,10 @@
 
             <!-- ── 周次卡 ── -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/ScheduleSectionCard"
+                style="@style/DetailSheetCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
-                app:cardElevation="0dp"
-                app:contentPadding="0dp">
+                android:layout_marginTop="10dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
