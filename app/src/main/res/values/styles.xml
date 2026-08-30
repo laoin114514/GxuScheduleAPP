@@ -32,7 +32,7 @@
     <style name="ProfileSection" parent="Widget.Material3.CardView.Elevated">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="cardCornerRadius">16dp</item>
+        <item name="cardCornerRadius">20dp</item>
         <item name="cardElevation">1dp</item>
         <item name="contentPadding">4dp</item>
     </style>
@@ -92,4 +92,36 @@
         <item name="strokeWidth">1dp</item>
         <item name="contentPadding">4dp</item>
     </style>
+
+
+<!-- ===== 我的 / 设置系列页面：与工具页统一的设计语言 ===== -->
+
+<!-- 分组卡片：24dp 大圆角、无描边、1dp 软阴影（对齐工具页卡片） -->
+<style name="AppSectionCard" parent="Widget.Material3.CardView.Elevated">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="cardCornerRadius">24dp</item>
+    <item name="cardElevation">1dp</item>
+    <item name="strokeWidth">0dp</item>
+    <item name="cardBackgroundColor">?attr/colorSurfaceContainerLowest</item>
+</style>
+
+<!-- 卡片外分组标题（对齐工具页的分组标题） -->
+<style name="AppSectionHeader">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textSize">18sp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:textColor">?attr/colorOnSurface</item>
+    <item name="android:paddingStart">4dp</item>
+    <item name="android:paddingTop">22dp</item>
+    <item name="android:paddingBottom">10dp</item>
+</style>
+
+<!-- 详情页 Toolbar 标题：居中、主色、加粗（对齐工具页顶栏标题） -->
+<style name="AppToolbarTitle" parent="TextAppearance.Material3.TitleLarge">
+    <item name="android:textSize">18sp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:textColor">?attr/colorPrimary</item>
+</style>
 </resources>
