@@ -11,6 +11,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.R
@@ -121,10 +122,10 @@ class ToolsFragment : Fragment() {
     /** 顶层页签式跳转（与底部导航一致的栈行为） */
     private fun goTab(id: Int) {
         val nav = findNavController()
-        nav.navigate(id) {
+        nav.navigate(id, null, navOptions {
             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
             restoreState = true
-        }
+        })
     }
 }

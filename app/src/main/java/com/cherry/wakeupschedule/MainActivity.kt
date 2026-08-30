@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.navOptions
 import androidx.navigation.fragment.NavHostFragment
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
 import com.cherry.wakeupschedule.service.ImportService
@@ -37,12 +38,15 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
 
         // 自定义底部导航：点击 → 顶层页签式跳转（保留各页状态）；目的地变化 → 同步高亮
+        // 注意：必须用 (id, null, navOptions) 三参形式走 int 重载。Navigation 2.8 新增的
+        // 类型安全重载 navigate(route: T, NavOptions) 与 (Int, NavOptions) 调用形状完全匹配，
+        // 两参写法会把资源 id 当路由对象，抛 "Destination with route Int" 崩溃
         binding.bottomNav.onItemSelected = { tabId ->
-            navController.navigate(tabId) {
+            navController.navigate(tabId, null, navOptions {
                 popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                 launchSingleTop = true
                 restoreState = true
-            }
+            })
         }
         navController.addOnDestinationChangedListener { _, destination, _ ->
             binding.bottomNav.select(destination.id)
