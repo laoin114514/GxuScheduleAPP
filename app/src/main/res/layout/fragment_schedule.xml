@@ -34,16 +34,18 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="第5周 (本周)"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <TextView
                     android:id="@+id/tv_date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
                     android:text="2026/7/28"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary" />
 
             </LinearLayout>
 
@@ -57,39 +59,44 @@
                 android:visibility="gone" />
 
             <FrameLayout
-                android:layout_width="40dp"
-                android:layout_height="40dp">
+                android:layout_width="32dp"
+                android:layout_height="32dp">
 
                 <ImageButton
                     android:id="@+id/btn_refresh"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_icon_circle"
+                    android:foreground="?attr/selectableItemBackgroundBorderless"
+                    android:padding="7dp"
                     android:src="@drawable/ic_mtrl_refresh"
                     android:contentDescription="刷新课表"
-                    app:tint="?attr/colorOnSurfaceVariant" />
+                    app:tint="?attr/colorPrimary" />
 
                 <!-- 刷新中的小转圈（覆盖在刷新图标上） -->
                 <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/progress_refresh"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:indeterminate="true"
                     android:visibility="gone"
                     app:indicatorColor="?attr/colorPrimary"
-                    app:indicatorSize="22dp"
+                    app:indicatorSize="20dp"
                     app:trackThickness="2dp" />
             </FrameLayout>
 
             <ImageButton
                 android:id="@+id/btn_menu"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_icon_circle"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:padding="7dp"
                 android:src="@drawable/ic_mtrl_menu"
                 android:contentDescription="课表菜单"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                app:tint="?attr/colorPrimary" />
 
         </LinearLayout>
 
