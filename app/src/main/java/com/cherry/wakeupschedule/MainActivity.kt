@@ -51,12 +51,20 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             binding.bottomNav.select(destination.id)
         }
-        binding.bottomNav.select(R.id.nav_schedule)
+        // 主题切换等场景会重建 Activity，NavController 恢复的目的地不一定是首页签，
+        // 必须以当前目的地为准（首启动时 currentDestination 为空，回落到课表）
+        binding.bottomNav.select(navController.currentDestination?.id ?: R.id.nav_schedule)
     }
 
     override fun onResume() {
         super.onResume()
         handlePendingImport()
+        // 主题切换等场景重建后，Fragment 恢复时序不定，此处兜底校准导航栏高亮
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment ?: return
+        navHostFragment.navController.currentDestination?.let {
+            binding.bottomNav.select(it.id)
+        }
     }
 
     /**
