@@ -102,7 +102,6 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:paddingBottom="20dp"
-                android:overScrollMode="never"
                 android:scrollbars="none" />
 
             <LinearLayout
