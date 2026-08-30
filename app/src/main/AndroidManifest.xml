@@ -29,7 +29,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".MainActivity" />
+        <activity
+            android:name=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- 其他Activity声明 -->
         <activity android:name=".ScheduleActivity" />

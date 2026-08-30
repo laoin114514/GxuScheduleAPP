@@ -173,14 +173,21 @@ class PillBottomNavView @JvmOverloads constructor(
         }
     }
 
-    /** 吸底的同时避让手势条：把导航栏 inset 转成自身的下内边距 */
+    /** 吸底避让手势条；键盘弹出时整条隐藏，避免导航板被顶到键盘上方遮住内容 */
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
-        val bars = WindowInsetsCompat.toWindowInsetsCompat(insets, this)
-            .getInsets(WindowInsetsCompat.Type.navigationBars())
+        val compat = WindowInsetsCompat.toWindowInsetsCompat(insets, this)
+        val bars = compat.getInsets(WindowInsetsCompat.Type.navigationBars())
         val density = resources.displayMetrics.density
         val bottom = bars.bottom.coerceAtLeast((4 * density).toInt())
         setPadding(paddingLeft, paddingTop, paddingRight, bottom)
         // 不消费，保持既有页面的 inset 派发行为不变
         return super.onApplyWindowInsets(insets)
+    }
+
+    override fun dispatchApplyWindowInsets(insets: WindowInsets): WindowInsets {
+        val compat = WindowInsetsCompat.toWindowInsetsCompat(insets, this)
+        val target = if (compat.isVisible(WindowInsetsCompat.Type.ime())) View.GONE else View.VISIBLE
+        if (visibility != target) visibility = target
+        return super.dispatchApplyWindowInsets(insets)
     }
 }
