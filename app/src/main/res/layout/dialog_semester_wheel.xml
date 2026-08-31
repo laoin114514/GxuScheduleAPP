@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="16dp">
+
+    <!-- 标题 -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="选择当前学期"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface"
+        android:gravity="center"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 主题色渐变装饰线 -->
+    <View
+        android:id="@+id/v_accent"
+        android:layout_width="48dp"
+        android:layout_height="1.5dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 滚轮区域：上下留出两个行高的透明滑道，配合中心吸附实现车轮滚动 -->
+    <FrameLayout
+        android:id="@+id/wheel_container"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginHorizontal="16dp">
+
+        <!-- 中心选中行高亮带 -->
+        <View
+            android:id="@+id/center_band"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_gravity="center_vertical" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_semester_wheel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="none"
+            android:overScrollMode="never"
+            android:clipToPadding="false"
+            android:paddingTop="120dp"
+            android:paddingBottom="120dp" />
+
+        <!-- 上下渐隐，突出中心行 -->
+        <View
+            android:id="@+id/fade_top"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:layout_gravity="top" />
+
+        <View
+            android:id="@+id/fade_bottom"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:layout_gravity="bottom" />
+    </FrameLayout>
+
+    <!-- 底部按钮区 -->
+    <TextView
+        android:id="@+id/btn_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="取消"
+        android:textSize="14sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:minWidth="72dp"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:layout_gravity="end" />
+
+</LinearLayout>

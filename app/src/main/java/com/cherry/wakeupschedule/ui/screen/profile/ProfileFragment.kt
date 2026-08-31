@@ -8,29 +8,22 @@ import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import com.cherry.wakeupschedule.AboutActivity
 import com.cherry.wakeupschedule.AppearanceActivity
 import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.TimeTableEditActivity
-import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
-import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.ThemeModeManager
-import com.cherry.wakeupschedule.ui.component.SelectOption
-import com.cherry.wakeupschedule.ui.component.SelectionDialog
+import com.cherry.wakeupschedule.ui.component.SemesterWheelDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.gxu.jwxt.model.Term
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -123,33 +116,8 @@ class ProfileFragment : Fragment() {
             return
         }
 
-        val currentIndex = settingsManager.getCurrentSemesterIndex()
-        val options = semesters.map { s ->
-            SelectOption(
-                label = "${s.label}  (${s.academicYear}学年 ${s.termName})",
-                subtitle = if (s.sortOrder == currentIndex) "← 当前" else null
-            )
-        }
-
-        SelectionDialog.show(
-            context = requireContext(),
-            title = "选择当前学期",
-            options = options,
-            selectedIndex = currentIndex.coerceAtLeast(0),
-            onSelected = { index ->
-                settingsManager.setCurrentSemesterIndex(index)
-                // 切换学期后重新加载对应课表
-                CourseDataManager.getInstance(requireContext()).switchSemester(semesters[index].id)
-                // 若该学期日期信息为空，从教务获取课表
-                val sem = semesters[index]
-                if (sem.startDate == 0L || sem.totalWeeks == 0) {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        JwxtImportService.fetchAndSaveScheduleForSemester(requireContext(), sem)
-                    }
-                }
-                updateDisplay()
-            }
-        )
+        // 循环滚轮式学期选择：已导入有风景图案、未导入点击即导入并显示 loading
+        SemesterWheelDialog(requireContext()) { updateDisplay() }.show()
     }
 
     private fun updateDisplay() {
