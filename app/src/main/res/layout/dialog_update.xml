@@ -33,50 +33,22 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="下载方式"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:textColor="?attr/colorOnSurface"
+        android:text="下载后自动校验并引导安装"
+        android:textSize="13sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:paddingTop="16dp"
         android:paddingBottom="8dp" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/btn_update_now"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:id="@+id/btn_download_original"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="GitHub 原始下载"
-            android:textSize="14sp"
-            android:textColor="?attr/colorOnSurface"
-            android:padding="12dp"
-            android:background="?attr/selectableItemBackground" />
-
-        <TextView
-            android:id="@+id/btn_download_gitcode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="GitCode 下载 (国内推荐)"
-            android:textSize="14sp"
-            android:textColor="?attr/colorPrimary"
-            android:padding="12dp"
-            android:background="?attr/selectableItemBackground" />
-
-        <TextView
-            android:id="@+id/btn_download_lanzou"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="蓝奏云下载"
-            android:textSize="14sp"
-            android:textColor="?attr/colorPrimary"
-            android:padding="12dp"
-            android:background="?attr/selectableItemBackground" />
-
-    </LinearLayout>
+        android:text="立即更新"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorPrimary"
+        android:padding="12dp"
+        android:background="?attr/selectableItemBackground" />
 
     <LinearLayout
         android:layout_width="match_parent"
