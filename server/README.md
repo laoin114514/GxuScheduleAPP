@@ -37,7 +37,7 @@ GRANT ALL PRIVILEGES ON schedule.* TO 'schedule'@'%';
 curl -X POST https://your-domain/api/v1/releases/upload \
   -H "X-API-Key: ${UPLOAD_API_KEY}" \
   -F "appKey=schedule" \
-  -F "versionCode=10706" \
+  -F "versionCode=107060" \
   -F "versionName=1.7.6" \
   -F "name=西大课栈" \
   -F "changelog=$(cat changelog.txt)" \
@@ -81,13 +81,15 @@ curl -X POST https://your-domain/api/v1/releases/upload \
 }
 ```
 
-### versionCode 口径（重要约定）
+### versionCode 口径（重要约定，已在模拟器实测）
 
-`app/build.gradle` 的 ABI splits 会把最终 APK 的 versionCode 乘 10（universal：`base*10`）。
-**上传与 App 上报使用同一个值**，两者必须一致，否则"检查更新"永远判成已是最新：
+`app/build.gradle` 的 ABI splits 会把 versionCode 乘 10：APK manifest 里为 `base*10 + abi 码`
+（universal = base*10），**且实测 AGP 8.7.3 生成的 `BuildConfig.VERSION_CODE` 也是 base*10**
+（各 ABI 相同）。App 上报的就是 BuildConfig 的值，因此 Workflow 上传也必须用同一个数，
+否则 App 的 versionCode（如 107060）永远大于库里存的 10706，"检查更新"永远判成已是最新：
 
-- Workflow 传 `VERSION_CODE`（tag 派生值，如 v1.7.6 → 10706）
-- App 侧上报 `BuildConfig.VERSION_CODE`（与 workflow 同源，同为 10706）
+- Workflow 上传 `VERSION_CODE * 10`（universal 口径，如 tag v1.7.6 → 10706×10 = 107060）
+- App 侧上报 `BuildConfig.VERSION_CODE`，与上面同值（107060）
 
 ## 最新版查询接口（App 调用）
 
@@ -134,10 +136,12 @@ curl "https://your-domain/api/v1/apps/schedule/latest?versionCode=10706"
             echo "universal apk not found, skip"
             exit 0
           fi
+          # versionCode 口径见下方说明：必须是 tag 派生值的 10 倍（universal 口径）
+          UNIVERSAL_VERSION_CODE=$(( ${{ steps.version.outputs.VERSION_CODE }} * 10 ))
           curl -sS -X POST "${UPDATE_SERVER_URL}/api/v1/releases/upload" \
             -H "X-API-Key: ${UPDATE_SERVER_API_KEY}" \
             -F "appKey=schedule" \
-            -F "versionCode=${{ steps.version.outputs.VERSION_CODE }}" \
+            -F "versionCode=${UNIVERSAL_VERSION_CODE}" \
             -F "versionName=${{ steps.version.outputs.VERSION }}" \
             -F "name=西大课栈" \
             -F "changelog=${{ steps.release_notes.outputs.notes }}" \
