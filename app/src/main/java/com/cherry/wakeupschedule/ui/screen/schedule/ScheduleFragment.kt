@@ -33,7 +33,6 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtImportService
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
-import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
 import com.cherry.wakeupschedule.ui.widget.SemesterSceneryView
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
@@ -50,7 +49,6 @@ class ScheduleFragment : Fragment() {
     private lateinit var viewPager: ViewPager2
     private lateinit var tvDate: TextView
     private lateinit var tvWeekInfo: TextView
-    private lateinit var tvCountdown: TextView
     private lateinit var btnRefresh: View
     private lateinit var progressRefresh: CircularProgressIndicator
     private lateinit var overlayLoading: View
@@ -76,8 +74,6 @@ class ScheduleFragment : Fragment() {
     private var menuSemesterRefresher: (() -> Unit)? = null
 
     private val dateFormat = SimpleDateFormat("yyyy/M/d", Locale.getDefault())
-    private val countdownHandler = Handler(Looper.getMainLooper())
-    private var countdownRunnable: Runnable? = null
 
     companion object {
         /** 成功卡片展示时长 */
@@ -99,7 +95,6 @@ class ScheduleFragment : Fragment() {
         setupViewPager()
         setupObservers()
         updateDateTimeHeader()
-        startCountdown()
     }
 
     override fun onResume() {
@@ -112,7 +107,6 @@ class ScheduleFragment : Fragment() {
         viewPager = view.findViewById(R.id.view_pager)
         tvDate = view.findViewById(R.id.tv_date)
         tvWeekInfo = view.findViewById(R.id.tv_week_info)
-        tvCountdown = view.findViewById(R.id.tv_countdown)
         btnRefresh = view.findViewById(R.id.btn_refresh)
         progressRefresh = view.findViewById(R.id.progress_refresh)
         overlayLoading = view.findViewById(R.id.overlay_loading)
@@ -673,85 +667,4 @@ class ScheduleFragment : Fragment() {
         dialog.show()
     }
 
-    private fun startCountdown() {
-        countdownRunnable = object : Runnable {
-            override fun run() {
-                updateCountdown()
-                countdownHandler.postDelayed(this, 1000)
-            }
-        }
-        countdownHandler.post(countdownRunnable!!)
-    }
-
-    private fun updateCountdown() {
-        val cal = Calendar.getInstance()
-        val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-        val adjustedDay = if (dayOfWeek == Calendar.SUNDAY) 7 else dayOfWeek - 1
-        val currentSeconds = cal.get(Calendar.HOUR_OF_DAY) * 3600 +
-                cal.get(Calendar.MINUTE) * 60 + cal.get(Calendar.SECOND)
-
-        val todayCourses = allCourses
-            .filter { it.dayOfWeek == adjustedDay && it.isActiveInWeek(getCurrentWeek()) }
-            .sortedBy { getCourseStartMinutes(it) }
-
-        val currentCourse = todayCourses.find {
-            val start = getCourseStartMinutes(it)
-            val end = getCourseEndMinutes(it)
-            cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE) in start..end
-        }
-        val nextCourse = todayCourses.find {
-            cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE) < getCourseStartMinutes(it)
-        }
-
-        when {
-            currentCourse != null -> {
-                val endSeconds = getCourseEndMinutes(currentCourse) * 60
-                val remaining = (endSeconds - currentSeconds).coerceAtLeast(0)
-                tvCountdown.visibility = View.VISIBLE
-                tvCountdown.text = "距下课: ${formatDuration(remaining)}"
-            }
-            nextCourse != null -> {
-                val startSeconds = getCourseStartMinutes(nextCourse) * 60
-                val remaining = (startSeconds - currentSeconds).coerceAtLeast(0)
-                tvCountdown.visibility = View.VISIBLE
-                tvCountdown.text = "下节课: ${formatDuration(remaining)}"
-            }
-            todayCourses.isNotEmpty() -> {
-                tvCountdown.visibility = View.VISIBLE
-                tvCountdown.text = "今日课程已结束"
-            }
-            else -> tvCountdown.visibility = View.GONE
-        }
-    }
-
-    private fun getCourseStartMinutes(course: Course): Int {
-        val slots = TimeTableManager.getInstance(requireContext()).getTimeSlots()
-        val slot = slots.find { it.node == course.startTime }
-        return if (slot != null) {
-            val parts = slot.startTime.split(":")
-            parts[0].toInt() * 60 + parts[1].toInt()
-        } else (8 + course.startTime) * 60
-    }
-
-    private fun getCourseEndMinutes(course: Course): Int {
-        val slots = TimeTableManager.getInstance(requireContext()).getTimeSlots()
-        val slot = slots.find { it.node == course.endTime }
-        return if (slot != null) {
-            val parts = slot.endTime.split(":")
-            parts[0].toInt() * 60 + parts[1].toInt()
-        } else (8 + course.endTime) * 60 + 45
-    }
-
-    private fun formatDuration(totalSeconds: Int): String {
-        return when {
-            totalSeconds >= 3600 -> "${totalSeconds / 3600}小时${(totalSeconds % 3600) / 60}分钟"
-            totalSeconds >= 60 -> "${totalSeconds / 60}分${totalSeconds % 60}秒"
-            else -> "${totalSeconds}秒"
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        countdownRunnable?.let { countdownHandler.removeCallbacks(it) }
-    }
 }

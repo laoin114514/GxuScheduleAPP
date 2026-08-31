@@ -88,11 +88,6 @@ class ProfileFragment : Fragment() {
             showSemesterDialog()
         }
 
-        view.findViewById<View>(R.id.item_week).setOnClickListener {
-            // 一步直达周选择器，选中即设为当前周（自动反推学期开始日期）
-            showCurrentWeekPicker()
-        }
-
 
         // 外观：跳转到独立的外观设置页（浅色/深色主题 + 自动切换 + 卡片外观）
         view.findViewById<View>(R.id.item_theme_mode).setOnClickListener {
@@ -157,58 +152,6 @@ class ProfileFragment : Fragment() {
         )
     }
 
-    private fun showCurrentWeekPicker() {
-        val weeks = (1..20).map { SelectOption(label = "第${it}周") }
-        val semesterStartDate = settingsManager.getSemesterStartDate()
-        val currentWeek = if (semesterStartDate > 0) {
-            ((System.currentTimeMillis() - semesterStartDate) / 86400000L).toInt() / 7 + 1
-        } else settingsManager.getDefaultWeek()
-
-        // 周选择列表末尾附加「设置学期开始日期」入口，保留高级设置能力
-        val options = weeks + SelectOption(label = "设置学期开始日期…")
-
-        SelectionDialog.show(
-            context = requireContext(),
-            title = "设置当前周",
-            options = options,
-            selectedIndex = currentWeek.coerceIn(1, 20) - 1,
-            onSelected = { index ->
-                // 末尾附加项：进入学期开始日期选择
-                if (index >= weeks.size) {
-                    showSemesterStartDatePicker()
-                    return@show
-                }
-                val selectedWeek = index + 1
-                val daysToSubtract = (selectedWeek - 1) * 7L
-                settingsManager.setSemesterStartDate(System.currentTimeMillis() - daysToSubtract * 86400000L)
-                settingsManager.setDefaultWeek(selectedWeek)
-                updateDisplay()
-            }
-        )
-    }
-
-    private fun showSemesterStartDatePicker() {
-        val calendar = Calendar.getInstance()
-        val currentStartDate = settingsManager.getSemesterStartDate()
-        if (currentStartDate > 0) calendar.timeInMillis = currentStartDate
-
-        android.app.DatePickerDialog(requireContext(),
-            { _, year, month, dayOfMonth ->
-                val sel = Calendar.getInstance()
-                sel.set(year, month, dayOfMonth, 0, 0, 0)
-                sel.set(Calendar.MILLISECOND, 0)
-                settingsManager.setSemesterStartDate(sel.timeInMillis)
-                val diffDays = ((System.currentTimeMillis() - sel.timeInMillis) / 86400000L).toInt()
-                val week = (diffDays / 7 + 1).coerceIn(1, 20)
-                Toast.makeText(requireContext(), "学期开始日期已设置，当前为第${week}周", Toast.LENGTH_LONG).show()
-                updateDisplay()
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        ).show()
-    }
-
     private fun updateDisplay() {
         // 同步开关状态（不触发监听器提示）
 
@@ -223,16 +166,7 @@ class ProfileFragment : Fragment() {
             tv?.text = "未设置"
         }
 
-        val tvWeek = view?.findViewById<TextView>(R.id.tv_week_value)
         val startMs = settingsManager.getSemesterStartDate()
-        val currentWeek = if (startMs > 0) {
-            val diffDays = ((System.currentTimeMillis() - startMs) / 86400000L).toInt()
-            (diffDays / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks().coerceAtLeast(1))
-        } else {
-            settingsManager.getDefaultWeek()
-        }
-        tvWeek?.text = "第${currentWeek}周"
-
         val totalWeeks = settingsManager.getTotalWeeks()
         val tvRange = view?.findViewById<TextView>(R.id.tv_semester_date_range)
         val tvWeeks = view?.findViewById<TextView>(R.id.tv_total_weeks)

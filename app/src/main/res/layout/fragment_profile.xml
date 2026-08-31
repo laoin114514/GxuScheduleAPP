@@ -246,46 +246,6 @@
 
                     </LinearLayout>
 
-                    <LinearLayout android:id="@+id/item_week"
-                        android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:orientation="horizontal" android:gravity="center_vertical"
-                        android:paddingHorizontal="16dp" android:paddingVertical="12dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true" android:focusable="true">
-
-                        <FrameLayout android:layout_width="40dp" android:layout_height="40dp"
-                            android:background="@drawable/bg_icon_circle">
-
-                            <ImageView android:layout_width="20dp" android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_mtrl_today"
-                                app:tint="?attr/colorPrimary" />
-                        </FrameLayout>
-
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                            android:layout_weight="1" android:orientation="vertical"
-                            android:layout_marginStart="14dp">
-
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="默认周次"
-                                android:textSize="15sp"
-                                android:textColor="?attr/colorOnSurface" />
-
-                            <TextView android:id="@+id/tv_week_value"
-                                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="第1周"
-                                android:textSize="12sp"
-                                android:textColor="?attr/colorOnSurfaceVariant" />
-
-                        </LinearLayout>
-
-                        <ImageView android:layout_width="18dp" android:layout_height="18dp"
-                            android:src="@drawable/ic_mtrl_chevron_right"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-
-                    </LinearLayout>
-
                     <!-- 学期日期范围（信息行） -->
                     <LinearLayout
                         android:layout_width="match_parent"

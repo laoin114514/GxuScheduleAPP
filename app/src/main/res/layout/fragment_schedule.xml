@@ -49,15 +49,6 @@
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/tv_countdown"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorPrimary"
-                android:visibility="gone" />
-
             <com.cherry.wakeupschedule.ui.widget.CircleIconButton
                 android:id="@+id/btn_refresh"
                 android:layout_width="32dp"
