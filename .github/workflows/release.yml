@@ -80,6 +80,33 @@ jobs:
             echo EOF
           } >> $GITHUB_OUTPUT
 
+      # 上传 universal 包到更新服务器（软失败：后端临时故障不阻断 GitHub Release）
+      - name: Upload universal APK to update server
+        env:
+          UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
+          UPDATE_SERVER_API_KEY: ${{ secrets.UPDATE_SERVER_API_KEY }}
+          RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
+        run: |
+          if [ -z "$UPDATE_SERVER_URL" ] || [ -z "$UPDATE_SERVER_API_KEY" ]; then
+            echo "::warning::未配置 UPDATE_SERVER_URL / UPDATE_SERVER_API_KEY secrets，跳过上传更新服务器"
+            exit 0
+          fi
+          UNIVERSAL_APK=$(ls app/build/outputs/apk/release/*-universal.apk 2>/dev/null | head -1 || true)
+          if [ -z "$UNIVERSAL_APK" ]; then
+            echo "::warning::未找到 universal APK，跳过上传更新服务器"
+            exit 0
+          fi
+          printf '%s' "$RELEASE_NOTES" > /tmp/changelog.txt
+          curl -sS --retry 3 --retry-delay 2 -f -X POST "${UPDATE_SERVER_URL}/api/v1/releases/upload" \
+            -H "X-API-Key: ${UPDATE_SERVER_API_KEY}" \
+            -F "appKey=schedule" \
+            -F "versionCode=${{ steps.version.outputs.VERSION_CODE }}" \
+            -F "versionName=${{ steps.version.outputs.VERSION }}" \
+            -F "name=西大课栈" \
+            -F "changelog=</tmp/changelog.txt" \
+            -F "file=@${UNIVERSAL_APK}" \
+            || echo "::warning::上传更新服务器失败（已忽略，GitHub Release 正常发布）"
+
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
         with:
