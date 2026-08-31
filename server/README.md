@@ -10,13 +10,25 @@
 
 ```bash
 cp .env.example .env
-# 编辑 .env：填 OSS 密钥、改 API Key、数据库密码、CDN_BASE_URL
+# 编辑 .env：填 OSS 密钥、数据库地址、改 API Key、CDN_BASE_URL
 docker compose up -d --build
 ```
 
 镜像源：基础镜像走 `m.daocloud.io`，Go 依赖走 `goproxy.cn`，alpine apk 走阿里云镜像。
 
-服务启动时自动建表（GORM AutoMigrate）。数据库只存 OSS 对象 key（`release/{appKey}/{versionCode}/{file}`），
+**MySQL 用外部实例**（如阿里云 RDS），compose 只起 app 服务。首次部署需要在数据库中建库建用户：
+
+```sql
+CREATE DATABASE schedule CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'schedule'@'%' IDENTIFIED BY 'change-me';
+GRANT ALL PRIVILEGES ON schedule.* TO 'schedule'@'%';
+```
+
+- RDS 白名单需放行服务器 IP；`DB_HOST` 填 RDS 内网/公网地址
+- 若本地已有 MySQL 容器，Docker Desktop 下 `DB_HOST` 填 `host.docker.internal`
+- 服务启动时自动建表（GORM AutoMigrate）
+
+数据库只存 OSS 对象 key（`release/{appKey}/{versionCode}/{file}`），
 下载地址由响应时生成：`CDN_BASE_URL` 非空时拼 base URL；留空时返回 OSS 预签名 URL（桶私有场景）。
 
 ## 上传接口（Workflow 调用）
@@ -147,6 +159,4 @@ copy .env.example .env   # 填好本地 MySQL/OSS 配置
 go run .
 ```
 
-只跑接口调试（不依赖 MySQL/OSS）时，可将 DB_HOST 指向本地 MySQL 并启动 OSS 反向代理，
-或暂时注释 `main.go` 中的 `database.New` / `oss.New`（不建议），
-更省事的方式是直接 `docker compose up -d mysql` 后用本机 Go 跑。
+本地起一个 MySQL（docker 或本机安装均可），`DB_HOST=127.0.0.1`，建好库后 `go run .` 即可。

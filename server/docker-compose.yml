@@ -1,3 +1,4 @@
+# 只起 app 服务，MySQL 为外部数据库（如阿里云 RDS），通过 .env 的 DB_HOST 连接。
 services:
   app:
     build: .
@@ -12,36 +13,8 @@ services:
       # 容器内监听固定 8080，避免和宿主映射端口混淆
       SERVER_PORT: "8080"
       TZ: ${TZ:-Asia/Shanghai}
-    depends_on:
-      mysql:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
       interval: 15s
       timeout: 3s
       retries: 3
-
-  mysql:
-    # 国内镜像加速
-    image: m.daocloud.io/docker.io/library/mysql:8.0
-    container_name: schedule-mysql
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ:-Asia/Shanghai}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$${MYSQL_ROOT_PASSWORD}"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
-volumes:
-  mysql_data:
