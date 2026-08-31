@@ -97,10 +97,13 @@ jobs:
             exit 0
           fi
           printf '%s' "$RELEASE_NOTES" > /tmp/changelog.txt
+          # versionCode 口径：AGP 的 ABI splits 会把 BuildConfig.VERSION_CODE 生成为 base*10（universal 口径），
+          # App 上报的就是这个值，因此上传时也必须传 base*10，否则更新检查永远判成已是最新。
+          UNIVERSAL_VERSION_CODE=$(( ${{ steps.version.outputs.VERSION_CODE }} * 10 ))
           curl -sS --retry 3 --retry-delay 2 -f -X POST "${UPDATE_SERVER_URL}/api/v1/releases/upload" \
             -H "X-API-Key: ${UPDATE_SERVER_API_KEY}" \
             -F "appKey=schedule" \
-            -F "versionCode=${{ steps.version.outputs.VERSION_CODE }}" \
+            -F "versionCode=${UNIVERSAL_VERSION_CODE}" \
             -F "versionName=${{ steps.version.outputs.VERSION }}" \
             -F "name=西大课栈" \
             -F "changelog=</tmp/changelog.txt" \
