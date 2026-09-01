@@ -325,13 +325,11 @@ class SettingsManager(context: Context) {
 
     /**
      * 是否有未处理的新版本更新提示（红色小圆点）。
-     * 条件：检查到的最新版本高于当前安装版本，且该版本未被用户跳过；
+     * 条件：检查到的最新版本高于当前安装版本（"跳过此版本"只抑制每日静默提醒，不影响红点）；
      * 安装新版本后当前版本号追平记录值，红点自然熄灭。
      */
-    fun hasNewUpdateHint(): Boolean {
-        val lastSeen = getLastSeenLatestVersionCode()
-        return lastSeen > BuildConfig.VERSION_CODE && lastSeen != getSkippedUpdateVersionCode()
-    }
+    fun hasNewUpdateHint(): Boolean =
+        getLastSeenLatestVersionCode() > BuildConfig.VERSION_CODE
 
     // ==================== 悬浮球相关 ====================
 

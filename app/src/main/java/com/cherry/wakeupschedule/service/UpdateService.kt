@@ -190,13 +190,10 @@ class UpdateService(private val context: Context) {
                         info == null -> {
                             if (showNoUpdateToast) showToast("检查更新失败，请稍后重试")
                         }
+                        // 手动检查不受"跳过此版本"影响：跳过的只是每日静默提醒
                         info.hasUpdate -> {
                             recordLatestSeen(info, settingsManager)
-                            if (info.latestVersionCode == settingsManager.getSkippedUpdateVersionCode()) {
-                                if (showNoUpdateToast) showToast("当前版本已跳过，等待新版本发布")
-                            } else {
-                                showUpdateDialog(info)
-                            }
+                            showUpdateDialog(info)
                         }
                         showNoUpdateToast -> showToast("当前已是最新版本 (v$currentVersionName)")
                     }
@@ -302,12 +299,11 @@ class UpdateService(private val context: Context) {
         btnLater.setOnClickListener {
             dialog.dismiss()
         }
-        // 跳过此版本：本版本不再提醒，记录后红点同步熄灭
+        // 跳过此版本：仅不再弹出每日静默提醒，手动检查更新仍可查看
         btnSkipVersion.setOnClickListener {
             dialog.dismiss()
             SettingsManager(context).setSkippedUpdateVersionCode(info.latestVersionCode)
-            notifyHintChanged()
-            showToast("已跳过 v${info.latestVersionName}，有新版本时会再提醒")
+            showToast("已跳过 v${info.latestVersionName}，仅不再每日提醒，仍可在检查更新中查看")
         }
     }
 
