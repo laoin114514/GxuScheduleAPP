@@ -19,6 +19,7 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.ThemeModeManager
+import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.component.SemesterWheelDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
@@ -156,6 +157,20 @@ class ProfileFragment : Fragment() {
         super.onResume()
         updateAccountSection()
         updateDisplay()
+        refreshUpdateHint(requireView())
+        // 静默检查完成后红点即时刷新（同一时刻仅本页面在前台注册）
+        UpdateService.hintChangedListener = { refreshUpdateHint(requireView()) }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        UpdateService.hintChangedListener = null
+    }
+
+    /** 有未处理的新版本更新时，在"关于应用"行右侧显示红点 */
+    private fun refreshUpdateHint(view: View) {
+        view.findViewById<View>(R.id.dot_update_hint).visibility =
+            if (settingsManager.hasNewUpdateHint()) View.VISIBLE else View.GONE
     }
 
     private fun updateAccountSection() {

@@ -12,6 +12,7 @@ import androidx.navigation.navOptions
 import androidx.navigation.fragment.NavHostFragment
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
 import com.cherry.wakeupschedule.service.ImportService
+import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -54,6 +55,9 @@ class MainActivity : AppCompatActivity() {
         // 主题切换等场景会重建 Activity，NavController 恢复的目的地不一定是首页签，
         // 必须以当前目的地为准（首启动时 currentDestination 为空，回落到课表）
         binding.bottomNav.select(navController.currentDestination?.id ?: R.id.nav_schedule)
+
+        // 每日更新检查：今日已检查则直接返回，有新版本时静默弹窗提示
+        UpdateService(this).checkForUpdateSilently()
     }
 
     override fun onResume() {

@@ -2,6 +2,7 @@ package com.cherry.wakeupschedule.service
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.cherry.wakeupschedule.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.util.Calendar
@@ -32,6 +33,8 @@ class SettingsManager(context: Context) {
         private const val KEY_NON_CURRENT_WEEK_ALPHA = "non_current_week_alpha"// 非本周课程透明度
         private const val KEY_VIEW_MODE = "view_mode"                          // 视图模式（周视图/日视图）
         private const val KEY_LAST_UPDATE_CHECK = "last_update_check"        // 上次检查更新日期
+        private const val KEY_SKIPPED_UPDATE_VERSION = "skipped_update_version"      // 跳过的更新版本(versionCode)，-1 表示无
+        private const val KEY_LAST_SEEN_LATEST_VERSION = "last_seen_latest_version"  // 最近一次检查到的服务器最新版本(versionCode)，-1 表示无
         private const val KEY_FLOAT_BUTTON_X = "float_button_x"             // 悬浮球X位置
         private const val KEY_FLOAT_BUTTON_Y = "float_button_y"             // 悬浮球Y位置
         private const val KEY_VIEW_STATE = "view_state"                     // 视图状态（week/day/overview）
@@ -292,6 +295,42 @@ class SettingsManager(context: Context) {
     fun markUpdateCheckedToday() {
         val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
         setLastUpdateCheckDate(today)
+    }
+
+    /**
+     * 获取用户跳过的更新版本号（versionCode），-1 表示没有跳过任何版本
+     */
+    fun getSkippedUpdateVersionCode(): Long =
+        sharedPreferences.getLong(KEY_SKIPPED_UPDATE_VERSION, -1L)
+
+    /**
+     * 记录用户跳过的更新版本号（versionCode）
+     */
+    fun setSkippedUpdateVersionCode(versionCode: Long) {
+        sharedPreferences.edit().putLong(KEY_SKIPPED_UPDATE_VERSION, versionCode).apply()
+    }
+
+    /**
+     * 获取最近一次检查到的服务器最新版本号（versionCode），-1 表示从未检查到更新
+     */
+    fun getLastSeenLatestVersionCode(): Long =
+        sharedPreferences.getLong(KEY_LAST_SEEN_LATEST_VERSION, -1L)
+
+    /**
+     * 记录最近一次检查到的服务器最新版本号（versionCode）
+     */
+    fun setLastSeenLatestVersionCode(versionCode: Long) {
+        sharedPreferences.edit().putLong(KEY_LAST_SEEN_LATEST_VERSION, versionCode).apply()
+    }
+
+    /**
+     * 是否有未处理的新版本更新提示（红色小圆点）。
+     * 条件：检查到的最新版本高于当前安装版本，且该版本未被用户跳过；
+     * 安装新版本后当前版本号追平记录值，红点自然熄灭。
+     */
+    fun hasNewUpdateHint(): Boolean {
+        val lastSeen = getLastSeenLatestVersionCode()
+        return lastSeen > BuildConfig.VERSION_CODE && lastSeen != getSkippedUpdateVersionCode()
     }
 
     // ==================== 悬浮球相关 ====================

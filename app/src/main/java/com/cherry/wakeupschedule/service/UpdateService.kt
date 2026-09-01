@@ -87,6 +87,18 @@ class UpdateService(private val context: Context) {
         @Volatile
         private var activeJob: Job? = null
 
+        /**
+         * 更新提示（红点）状态变化回调，主线程回调。
+         * 同一时刻仅允许一个前台页面注册（ProfileFragment / AboutActivity）。
+         */
+        @Volatile
+        var hintChangedListener: (() -> Unit)? = null
+
+        /** 通知已注册的页面刷新更新红点 */
+        private fun notifyHintChanged() {
+            Handler(Looper.getMainLooper()).post { hintChangedListener?.invoke() }
+        }
+
         /** 下载用 OkHttp 客户端单例：大文件下载读超时给足余量 */
         private val httpClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
@@ -132,7 +144,7 @@ class UpdateService(private val context: Context) {
         data class Failed(val reason: String) : DownloadResult()
     }
 
-    // 静默检查更新（不显示任何提示，只在新版本时弹出对话框）
+    // 静默检查更新（不显示任何提示，只在新版本时弹出对话框；用户跳过的版本不再提示）
     fun checkForUpdateSilently() {
         val settingsManager = SettingsManager(context)
         // 检查是否允许更新提醒
@@ -148,8 +160,11 @@ class UpdateService(private val context: Context) {
             try {
                 val info = fetchUpdateInfo()
                 if (info?.hasUpdate == true) {
-                    withContext(Dispatchers.Main) {
-                        showUpdateDialog(info)
+                    recordLatestSeen(info, settingsManager)
+                    if (info.latestVersionCode != settingsManager.getSkippedUpdateVersionCode()) {
+                        withContext(Dispatchers.Main) {
+                            showUpdateDialog(info)
+                        }
                     }
                 }
                 settingsManager.markUpdateCheckedToday()
@@ -167,6 +182,7 @@ class UpdateService(private val context: Context) {
     fun checkForUpdate(showNoUpdateToast: Boolean = true) {
         CoroutineScope(Dispatchers.Main).launch {
             try {
+                val settingsManager = SettingsManager(context)
                 if (showNoUpdateToast) showToast("正在检查更新...")
                 val info = fetchUpdateInfo()
                 withContext(Dispatchers.Main) {
@@ -175,8 +191,12 @@ class UpdateService(private val context: Context) {
                             if (showNoUpdateToast) showToast("检查更新失败，请稍后重试")
                         }
                         info.hasUpdate -> {
-                            cleanupStaleFiles(keep = apkFileName(info))
-                            showUpdateDialog(info)
+                            recordLatestSeen(info, settingsManager)
+                            if (info.latestVersionCode == settingsManager.getSkippedUpdateVersionCode()) {
+                                if (showNoUpdateToast) showToast("当前版本已跳过，等待新版本发布")
+                            } else {
+                                showUpdateDialog(info)
+                            }
                         }
                         showNoUpdateToast -> showToast("当前已是最新版本 (v$currentVersionName)")
                     }
@@ -188,6 +208,14 @@ class UpdateService(private val context: Context) {
                 }
             }
         }
+    }
+
+    /**
+     * 记录最近检查到的最新版本并通知界面刷新红点（有新版本可更新提示）。
+     */
+    private fun recordLatestSeen(info: UpdateInfo, settingsManager: SettingsManager) {
+        settingsManager.setLastSeenLatestVersionCode(info.latestVersionCode)
+        notifyHintChanged()
     }
 
     /**
@@ -240,11 +268,13 @@ class UpdateService(private val context: Context) {
         val webViewNotes = dialogView.findViewById<WebView>(R.id.webview_notes)
         val btnUpdateNow = dialogView.findViewById<TextView>(R.id.btn_update_now)
         val btnLater = dialogView.findViewById<TextView>(R.id.btn_later)
+        val btnSkipVersion = dialogView.findViewById<TextView>(R.id.btn_skip_version)
 
         tvVersionInfo.text = "发现新版本: v${info.latestVersionName}\n当前版本: v$currentVersionName"
 
-        // 强制更新时隐藏"稍后"
+        // 强制更新时隐藏"跳过此版本"和"稍后"
         btnLater.visibility = if (info.forced) android.view.View.GONE else android.view.View.VISIBLE
+        btnSkipVersion.visibility = if (info.forced) android.view.View.GONE else android.view.View.VISIBLE
 
         // 配置 WebView 确保内容能正常显示
         webViewNotes.settings.javaScriptEnabled = false
@@ -271,6 +301,13 @@ class UpdateService(private val context: Context) {
         }
         btnLater.setOnClickListener {
             dialog.dismiss()
+        }
+        // 跳过此版本：本版本不再提醒，记录后红点同步熄灭
+        btnSkipVersion.setOnClickListener {
+            dialog.dismiss()
+            SettingsManager(context).setSkippedUpdateVersionCode(info.latestVersionCode)
+            notifyHintChanged()
+            showToast("已跳过 v${info.latestVersionName}，有新版本时会再提醒")
         }
     }
 

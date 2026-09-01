@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.BuildConfig
+import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
@@ -56,6 +57,20 @@ class AboutActivity : AppCompatActivity() {
         super.onResume()
         // 从"安装未知应用"设置页返回后，如果授权完成则继续安装
         updateService.retryPendingInstall()
+        refreshUpdateHint()
+        // 静默检查完成后红点即时刷新（同一时刻仅本页面在前台注册）
+        UpdateService.hintChangedListener = { refreshUpdateHint() }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        UpdateService.hintChangedListener = null
+    }
+
+    /** 有未处理的新版本更新时，在"检查更新"行右侧显示红点 */
+    private fun refreshUpdateHint() {
+        findViewById<View>(R.id.dot_update_hint).visibility =
+            if (SettingsManager(this).hasNewUpdateHint()) View.VISIBLE else View.GONE
     }
 
     private fun openUrl(url: String) {
