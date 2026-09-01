@@ -739,7 +739,7 @@ class UpdateService(private val context: Context) {
                 <!DOCTYPE html>
                 <html>
                 <body>
-                    <p style="color: $emptyColor">暂无更新说明</p>
+                    <p style="color: $emptyColor;font-size: 30px;line-height: 1.6;padding: 8px;margin: 8px 0;">暂无更新说明</p>
                 </body>
                 </html>
             """.trimIndent()
