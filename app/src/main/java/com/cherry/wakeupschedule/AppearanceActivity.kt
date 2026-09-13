@@ -14,7 +14,6 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.databinding.ActivityAppearanceBinding
 import com.cherry.wakeupschedule.service.SettingsManager
@@ -35,7 +34,7 @@ import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
  * - 自定时间：分别设置深色/浅色切换时间，两时间冲突时自动计算规避（间隔≥60分钟）
  * - 卡片外观分区：课程卡片透明度 / 显示非本周课程 / 非本周课程透明度
  */
-class AppearanceActivity : AppCompatActivity() {
+class AppearanceActivity : BaseActivity() {
 
     private lateinit var binding: ActivityAppearanceBinding
     private lateinit var settingsManager: SettingsManager

@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -17,7 +16,7 @@ import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.google.android.material.appbar.MaterialToolbar
 
-class SchoolListActivity : AppCompatActivity() {
+class SchoolListActivity : BaseActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: SchoolAdapter

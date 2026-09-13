@@ -5,7 +5,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
@@ -15,7 +14,7 @@ import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import android.graphics.drawable.GradientDrawable
 
-class AddCourseActivity : AppCompatActivity() {
+class AddCourseActivity : BaseActivity() {
 
     private lateinit var viewModel: CourseViewModel
     private lateinit var settingsManager: SettingsManager

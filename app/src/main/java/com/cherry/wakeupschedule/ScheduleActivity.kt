@@ -1,10 +1,9 @@
 package com.cherry.wakeupschedule
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import com.cherry.wakeupschedule.databinding.ActivityScheduleBinding
 
-class ScheduleActivity : AppCompatActivity() {
+class ScheduleActivity : BaseActivity() {
     
     private lateinit var binding: ActivityScheduleBinding
     

@@ -52,12 +52,16 @@ class GridBackgroundView @JvmOverloads constructor(
             invalidate()
         }
 
+    private val density = resources.displayMetrics.density
+
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 1f
+        strokeWidth = 1f * density
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
-        pathEffect = DashPathEffect(floatArrayOf(8f, 4f), 0f)
+        // 线宽与虚线节奏按 dp 换算：写死 px 的话，全局 UI 缩放档位调大时
+        // 网格线相对放大的格子会显得又细又密
+        pathEffect = DashPathEffect(floatArrayOf(8f * density, 4f * density), 0f)
         color = gridColor
     }
 

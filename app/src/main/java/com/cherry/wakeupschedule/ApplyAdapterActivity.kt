@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
 import com.cherry.wakeupschedule.databinding.ActivityApplyAdapterBinding
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import kotlinx.coroutines.CoroutineScope
@@ -12,7 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 
-class ApplyAdapterActivity : AppCompatActivity() {
+class ApplyAdapterActivity : BaseActivity() {
 
     private lateinit var binding: ActivityApplyAdapterBinding
 

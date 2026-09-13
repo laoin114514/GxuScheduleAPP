@@ -6,7 +6,6 @@ import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.databinding.ActivityTimeTableEditBinding
 import com.cherry.wakeupschedule.service.TimeTableManager
@@ -19,7 +18,7 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import java.util.Calendar
 
-class TimeTableEditActivity : AppCompatActivity() {
+class TimeTableEditActivity : BaseActivity() {
 
     private lateinit var binding: ActivityTimeTableEditBinding
     private lateinit var timeTableManager: TimeTableManager

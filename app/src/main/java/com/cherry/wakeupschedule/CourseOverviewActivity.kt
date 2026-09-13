@@ -3,7 +3,6 @@ package com.cherry.wakeupschedule
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -14,7 +13,7 @@ import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.google.android.material.appbar.MaterialToolbar
 import java.util.Calendar
 
-class CourseOverviewActivity : AppCompatActivity() {
+class CourseOverviewActivity : BaseActivity() {
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var rvCourses: RecyclerView

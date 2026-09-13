@@ -7,7 +7,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
@@ -21,7 +20,7 @@ import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.gxu.jwxt.exceptions.CaptchaRequiredException
 import kotlinx.coroutines.launch
 
-class BindJwxtActivity : AppCompatActivity() {
+class BindJwxtActivity : BaseActivity() {
 
     /** 步骤卡片里一行（图标 + 文案）的三态：未开始灰点 → 转圈 → 打勾/叉号 */
     private class StepRow(

@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.service.SettingsManager
@@ -16,7 +15,7 @@ import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.google.android.material.appbar.MaterialToolbar
 
-class AboutActivity : AppCompatActivity() {
+class AboutActivity : BaseActivity() {
 
     private lateinit var updateService: UpdateService
 

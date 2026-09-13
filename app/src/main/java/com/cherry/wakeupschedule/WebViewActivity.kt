@@ -19,7 +19,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.databinding.ActivityWebviewBinding
 import com.cherry.wakeupschedule.model.Course
@@ -36,7 +35,7 @@ import okhttp3.Request
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-class WebViewActivity : AppCompatActivity() {
+class WebViewActivity : BaseActivity() {
 
     private lateinit var binding: ActivityWebviewBinding
     private lateinit var courseDataManager: CourseDataManager

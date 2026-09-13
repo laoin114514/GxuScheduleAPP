@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
@@ -15,7 +14,7 @@ import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.gxu.jwxt.model.StudentProfile
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
-class ProfileActivity : AppCompatActivity() {
+class ProfileActivity : BaseActivity() {
 
     private lateinit var scrollProfile: ScrollView
     private lateinit var layoutProfile: LinearLayout

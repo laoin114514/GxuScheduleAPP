@@ -18,7 +18,6 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.model.Course
@@ -48,7 +47,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : BaseActivity() {
     
     private lateinit var viewModel: CourseViewModel
     private lateinit var settingsManager: SettingsManager
