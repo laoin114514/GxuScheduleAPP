@@ -76,28 +76,14 @@
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
 
-            <!-- Material 3 滑块：宽胶囊轨道 + 白色圆球在轨道内滑动。
-                 M3 默认手柄是 4dp×44dp 的竖条，必须显式把 thumbWidth/thumbHeight
-                 设为相等并配 thumbRadius，才能得到圆形滚球。 -->
+            <!-- 周数滑块：外观见 @style/AppSlider（与字体大小页共用同一套样式） -->
             <com.google.android.material.slider.Slider
                 android:id="@+id/sb_week"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                style="@style/AppSlider"
                 android:valueFrom="1"
                 android:valueTo="20"
                 android:stepSize="1"
-                android:value="1"
-                app:labelBehavior="withinBounds"
-                app:thumbColor="#FFFFFF"
-                app:thumbWidth="18dp"
-                app:thumbHeight="18dp"
-                app:thumbRadius="9dp"
-                app:thumbStrokeColor="?attr/colorPrimary"
-                app:thumbStrokeWidth="2dp"
-                app:thumbElevation="4dp"
-                app:trackColorActive="?attr/colorPrimary"
-                app:trackColorInactive="?attr/colorOutlineVariant"
-                app:trackHeight="20dp" />
+                android:value="1" />
 
             <!-- 起止周数标注 -->
             <LinearLayout

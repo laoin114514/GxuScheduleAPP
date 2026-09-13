@@ -135,4 +135,23 @@
     <item name="cardBackgroundColor">?attr/colorSurfaceContainerHigh</item>
     <item name="contentPadding">0dp</item>
 </style>
+
+<!-- 全局滑块：宽胶囊轨道 + 白色圆球在轨道内滑动（课表菜单周数 / 字体大小共用）。
+     M3 默认手柄是 4dp×44dp 的竖条，必须显式把 thumbWidth/thumbHeight 设为相等
+     并配 thumbRadius，才能得到圆形滚球。轨道较粗会埋住刻度，用时请关闭 isTickVisible。 -->
+<style name="AppSlider" parent="Widget.Material3.Slider">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="labelBehavior">withinBounds</item>
+    <item name="thumbColor">#FFFFFF</item>
+    <item name="thumbWidth">18dp</item>
+    <item name="thumbHeight">18dp</item>
+    <item name="thumbRadius">9dp</item>
+    <item name="thumbStrokeColor">?attr/colorPrimary</item>
+    <item name="thumbStrokeWidth">2dp</item>
+    <item name="thumbElevation">4dp</item>
+    <item name="trackColorActive">?attr/colorPrimary</item>
+    <item name="trackColorInactive">?attr/colorOutlineVariant</item>
+    <item name="trackHeight">20dp</item>
+</style>
 </resources>
