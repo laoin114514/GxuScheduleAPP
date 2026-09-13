@@ -1,5 +1,6 @@
 package com.cherry.wakeupschedule
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -10,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputLayout
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
@@ -42,7 +44,6 @@ class BindJwxtActivity : AppCompatActivity() {
     private lateinit var inputLayoutPassword: TextInputLayout
     private lateinit var groupForm: View
     private lateinit var cardSteps: View
-    private lateinit var tvBrandTitle: TextView
     private lateinit var tvBrandSubtitle: TextView
     private lateinit var stepRows: List<StepRow>
 
@@ -65,7 +66,6 @@ class BindJwxtActivity : AppCompatActivity() {
         inputLayoutPassword = findViewById(R.id.input_layout_password)
         groupForm = findViewById(R.id.group_form)
         cardSteps = findViewById(R.id.card_steps)
-        tvBrandTitle = findViewById(R.id.tv_brand_title)
         tvBrandSubtitle = findViewById(R.id.tv_brand_subtitle)
         stepRows = listOf(
             StepRow(
@@ -94,11 +94,11 @@ class BindJwxtActivity : AppCompatActivity() {
             )
         )
         setupPageHeader(toolbar, "绑定教务系统")
+        setupFieldFocusFeedback()
 
         isPasswordUpdateMode = JwxtAccountManager.isBound()
         if (isPasswordUpdateMode) {
             toolbar.title = "更新登录密码"
-            tvBrandTitle.text = "更新登录密码"
             tvBrandSubtitle.text = "验证新密码后，本机保存的凭据将同步更新"
             etUsername.setText(JwxtAccountManager.getUsername())
             etUsername.isFocusable = false
@@ -125,6 +125,32 @@ class BindJwxtActivity : AppCompatActivity() {
             }
 
             doLogin(username, password)
+        }
+    }
+
+    /**
+     * 输入框聚焦时把前置图标染成主色。输入框是无描边色块，
+     * 靠这个染色补充聚焦反馈（光标之外的可视提示）。
+     */
+    private fun setupFieldFocusFeedback() {
+        val layouts = listOf(
+            findViewById<TextInputLayout>(R.id.input_layout_username),
+            inputLayoutPassword
+        )
+        layouts.forEach { layout ->
+            val editText = layout.editText ?: return@forEach
+            fun iconTint(focused: Boolean): ColorStateList {
+                val attr = if (focused) {
+                    com.google.android.material.R.attr.colorPrimary
+                } else {
+                    com.google.android.material.R.attr.colorOnSurfaceVariant
+                }
+                return ColorStateList.valueOf(MaterialColors.getColor(layout, attr))
+            }
+            layout.setStartIconTintList(iconTint(editText.isFocused))
+            editText.setOnFocusChangeListener { _, focused ->
+                layout.setStartIconTintList(iconTint(focused))
+            }
         }
     }
 

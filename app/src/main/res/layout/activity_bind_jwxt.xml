@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:gravity="center"
-                android:text="绑定教务系统"
+                android:text="广西大学教务系统"
                 android:textAppearance="?attr/textAppearanceTitleLarge"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -84,14 +84,20 @@
                     android:id="@+id/input_layout_username"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="28dp"
-                    android:layout_marginBottom="20dp"
+                    android:layout_marginTop="32dp"
+                    android:layout_marginBottom="14dp"
                     android:hint="账号"
-                    app:boxBackgroundMode="outline"
+                    app:boxBackgroundMode="filled"
+                    app:boxBackgroundColor="?attr/colorSurfaceContainerHigh"
                     app:boxCornerRadiusTopStart="16dp"
                     app:boxCornerRadiusTopEnd="16dp"
                     app:boxCornerRadiusBottomStart="16dp"
-                    app:boxCornerRadiusBottomEnd="16dp">
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxStrokeColor="@android:color/transparent"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp"
+                    app:startIconDrawable="@drawable/ic_person"
+                    app:startIconTint="?attr/colorOnSurfaceVariant">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_username"
@@ -109,11 +115,17 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="32dp"
                     android:hint="密码"
-                    app:boxBackgroundMode="outline"
+                    app:boxBackgroundMode="filled"
+                    app:boxBackgroundColor="?attr/colorSurfaceContainerHigh"
                     app:boxCornerRadiusTopStart="16dp"
                     app:boxCornerRadiusTopEnd="16dp"
                     app:boxCornerRadiusBottomStart="16dp"
                     app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxStrokeColor="@android:color/transparent"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp"
+                    app:startIconDrawable="@drawable/ic_lock"
+                    app:startIconTint="?attr/colorOnSurfaceVariant"
                     app:endIconMode="password_toggle">
 
                     <com.google.android.material.textfield.TextInputEditText
