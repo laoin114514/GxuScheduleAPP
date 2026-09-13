@@ -63,6 +63,7 @@ class SettingsActivity : BaseActivity() {
     private lateinit var btnAbout: TextView
     private lateinit var btnTimeTableSettings: TextView
     private lateinit var btnAppearanceSettings: TextView
+    private lateinit var btnFontSize: TextView
     private lateinit var btnColorTheme: TextView
     private lateinit var btnCheckUpdate: TextView
     private lateinit var btnFeedback: TextView
@@ -125,6 +126,7 @@ class SettingsActivity : BaseActivity() {
         btnAbout = findViewById(R.id.btn_about)
         btnTimeTableSettings = findViewById(R.id.btn_time_table_settings)
         btnAppearanceSettings = findViewById(R.id.btn_appearance_settings)
+        btnFontSize = findViewById(R.id.btn_font_size)
         btnColorTheme = findViewById(R.id.btn_color_theme)
         btnColorTheme.visibility = android.view.View.GONE
         btnCheckUpdate = findViewById(R.id.btn_check_update)
@@ -212,6 +214,11 @@ class SettingsActivity : BaseActivity() {
         btnAppearanceSettings.setOnClickListener {
             // 跳转到独立的外观设置页（浅色/深色主题 + 自动切换 + 卡片外观）
             startActivity(Intent(this, AppearanceActivity::class.java))
+        }
+
+        btnFontSize.setOnClickListener {
+            // 跳转到字体大小页（整体 UI 缩放档位）
+            startActivity(Intent(this, FontSizeActivity::class.java))
         }
 
         btnAbout.setOnClickListener {
@@ -714,11 +721,6 @@ class SettingsActivity : BaseActivity() {
     
     private fun applyBackgroundSettings() {
         // 这里可以实现背景切换逻辑
-        updateSettingsDisplay()
-    }
-    
-    private fun applyFontSizeSettings() {
-        // 字体大小功能已移除
         updateSettingsDisplay()
     }
     

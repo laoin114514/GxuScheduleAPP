@@ -167,6 +167,18 @@
                         android:layout_marginBottom="8dp"
                         app:strokeColor="?attr/colorOutline" />
 
+                    <!-- 字体大小（整体 UI 缩放档位） -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_font_size"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="字体大小"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="@dimen/text_body"
+                        android:layout_marginBottom="8dp"
+                        app:strokeColor="?attr/colorOutline" />
+
                     <!-- 卡片配色 -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_color_theme"

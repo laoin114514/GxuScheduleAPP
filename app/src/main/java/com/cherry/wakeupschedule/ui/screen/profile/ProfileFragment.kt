@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import com.cherry.wakeupschedule.AboutActivity
 import com.cherry.wakeupschedule.AppearanceActivity
 import com.cherry.wakeupschedule.BindJwxtActivity
+import com.cherry.wakeupschedule.FontSizeActivity
 import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.TimeTableEditActivity
@@ -19,6 +20,7 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.ThemeModeManager
+import com.cherry.wakeupschedule.service.UiScaleManager
 import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.component.SemesterWheelDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
@@ -88,6 +90,11 @@ class ProfileFragment : Fragment() {
             startActivity(Intent(requireContext(), AppearanceActivity::class.java))
         }
 
+        // 字体大小：整体 UI 缩放档位（字体与界面尺寸一起变）
+        view.findViewById<View>(R.id.item_font_size).setOnClickListener {
+            startActivity(Intent(requireContext(), FontSizeActivity::class.java))
+        }
+
         view.findViewById<View>(R.id.item_time_table).setOnClickListener {
             startActivity(Intent(requireContext(), TimeTableEditActivity::class.java))
         }
@@ -126,6 +133,9 @@ class ProfileFragment : Fragment() {
 
         // 主题模式展示（从外观页返回时刷新）
         updateThemeModeDisplay(requireView())
+
+        // 字体大小档位展示（从字体大小页返回时刷新）
+        updateFontSizeDisplay(requireView())
 
         val tv = view?.findViewById<TextView>(R.id.tv_semester_value)
         val current = SemesterManager.getCurrent()
@@ -198,5 +208,10 @@ class ProfileFragment : Fragment() {
     private fun updateThemeModeDisplay(view: View) {
         val tv = view.findViewById<TextView>(R.id.tv_theme_mode_value)
         tv?.text = ThemeModeManager.effectiveLabel(requireContext())
+    }
+
+    private fun updateFontSizeDisplay(view: View) {
+        val tv = view.findViewById<TextView>(R.id.tv_font_size_value)
+        tv?.text = UiScaleManager.labelOf(requireContext())
     }
 }
