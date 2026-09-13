@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="节次"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorPrimary"
         android:layout_marginBottom="4dp" />
 
@@ -26,7 +26,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="开始时间"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorPrimary"
         android:layout_marginBottom="4dp" />
 
@@ -62,7 +62,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="结束时间"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorPrimary"
         android:layout_marginBottom="4dp" />
 

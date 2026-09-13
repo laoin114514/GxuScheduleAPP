@@ -143,7 +143,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:text="登录"
-                    android:textSize="16sp"
+                    android:textSize="@dimen/text_subtitle"
                     android:textColor="?attr/colorOnPrimary"
                     android:textAllCaps="false"
                     android:insetTop="0dp"
@@ -424,7 +424,7 @@
                 android:gravity="center"
                 android:text=""
                 android:textColor="?attr/colorError"
-                android:textSize="14sp"
+                android:textSize="@dimen/text_body_small"
                 android:visibility="gone" />
 
             <!-- 隐私提示 -->
@@ -448,7 +448,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:text="账号密码仅保存在本机，用于登录教务系统"
-                    android:textSize="12sp"
+                    android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>

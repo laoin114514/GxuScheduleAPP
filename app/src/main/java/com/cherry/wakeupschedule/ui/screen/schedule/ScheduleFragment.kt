@@ -44,6 +44,7 @@ import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 class ScheduleFragment : Fragment() {
 
@@ -454,7 +455,7 @@ class ScheduleFragment : Fragment() {
         val blockSize = (58 * density).toInt()
         val itemMarginEnd = (14 * density).toInt()
         val blockRadius = (14 * density).toFloat()
-        val labelTextSize = 13f
+
         val semesterItems = mutableListOf<View>()
 
         /**
@@ -544,7 +545,7 @@ class ScheduleFragment : Fragment() {
                 // 标签文字（只显示前三个字，如"大一上"）
                 val label = TextView(ctx).apply {
                     text = sem.label.take(3)
-                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, labelTextSize)
+                    setTextSizeRes(R.dimen.text_body_small)
                     gravity = Gravity.CENTER
                     setTextColor(onSurfaceColor)
                 }

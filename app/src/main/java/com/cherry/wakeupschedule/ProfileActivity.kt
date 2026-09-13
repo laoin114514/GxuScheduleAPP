@@ -13,6 +13,7 @@ import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.gxu.jwxt.model.StudentProfile
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 class ProfileActivity : AppCompatActivity() {
 
@@ -85,7 +86,7 @@ class ProfileActivity : AppCompatActivity() {
     private fun addHeader(name: String, studentId: String) {
         val tvName = TextView(this).apply {
             text = name
-            textSize = 26f
+            setTextSizeRes(R.dimen.text_display)
             setTypeface(null, Typeface.BOLD)
             val typedValue = android.util.TypedValue()
             theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
@@ -94,7 +95,7 @@ class ProfileActivity : AppCompatActivity() {
         }
         val tvId = TextView(this).apply {
             text = "学号: $studentId"
-            textSize = 14f
+            setTextSizeRes(R.dimen.text_body_small)
             val typedValue = android.util.TypedValue()
             theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
             setTextColor(typedValue.data)
@@ -109,7 +110,7 @@ class ProfileActivity : AppCompatActivity() {
         // 分组标题（卡外，18sp 加粗，对齐工具页分组标题）
         val tv = TextView(this).apply {
             text = title
-            textSize = 18f
+            setTextSizeRes(R.dimen.text_title)
             setTypeface(null, Typeface.BOLD)
             val typedValue = android.util.TypedValue()
             theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)
@@ -145,7 +146,7 @@ class ProfileActivity : AppCompatActivity() {
         }
         val tvLabel = TextView(this).apply {
             text = label
-            textSize = 13f
+            setTextSizeRes(R.dimen.text_body_small)
             val typedValue = android.util.TypedValue()
             theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
             setTextColor(typedValue.data)
@@ -153,7 +154,7 @@ class ProfileActivity : AppCompatActivity() {
         }
         val tvValue = TextView(this).apply {
             text = displayValue
-            textSize = 14f
+            setTextSizeRes(R.dimen.text_body_small)
             val typedValue = android.util.TypedValue()
             theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)
             setTextColor(typedValue.data)

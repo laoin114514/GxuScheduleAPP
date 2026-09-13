@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="课程表"
-        android:textSize="24sp"
+        android:textSize="@dimen/text_display"
         android:gravity="center"
         android:padding="16dp" />
 

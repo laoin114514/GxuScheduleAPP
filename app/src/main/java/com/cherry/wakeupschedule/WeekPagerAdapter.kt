@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.model.Course
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * ViewPager2 适配器，用于左右滑动切换周次
@@ -127,7 +128,7 @@ class WeekPagerAdapter(
 
                 addView(TextView(context).apply {
                     text = course.name
-                    textSize = 10f
+                    setTextSizeRes(R.dimen.text_label)
                     setTextColor(android.graphics.Color.WHITE)
                     maxLines = 3
                     ellipsize = android.text.TextUtils.TruncateAt.END
@@ -136,7 +137,7 @@ class WeekPagerAdapter(
 
                 addView(TextView(context).apply {
                     text = "@${course.classroom}"
-                    textSize = 8f
+                    setTextSizeRes(R.dimen.text_label)
                     setTextColor(android.graphics.Color.WHITE)
                     maxLines = 2
                     ellipsize = android.text.TextUtils.TruncateAt.END

@@ -33,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="添加课程"
-                android:textSize="20sp"
+                android:textSize="@dimen/text_headline"
                 android:textStyle="bold"
                 android:textColor="?attr/colorOnSurface"
                 android:gravity="center" />
@@ -69,7 +69,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="课程信息"
-                            android:textSize="18sp"
+                            android:textSize="@dimen/text_title"
                             android:textStyle="bold"
                             android:textColor="?attr/colorOnSurface"
                             android:layout_marginBottom="16dp" />
@@ -80,7 +80,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="课程名称"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
                             android:textColorHint="?attr/colorOnSurfaceVariant"
                             android:background="@drawable/bg_input_transparent"
@@ -94,7 +94,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="教师姓名"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
                             android:textColorHint="?attr/colorOnSurfaceVariant"
                             android:background="@drawable/bg_input_transparent"
@@ -108,7 +108,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="上课地点"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
                             android:textColorHint="?attr/colorOnSurfaceVariant"
                             android:background="@drawable/bg_input_transparent"
@@ -121,7 +121,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="学分（选填，如 3.0）"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
                             android:textColorHint="?attr/colorOnSurfaceVariant"
                             android:background="@drawable/bg_input_transparent"
@@ -136,7 +136,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="QQ群（选填）"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
                             android:textColorHint="?attr/colorOnSurfaceVariant"
                             android:background="@drawable/bg_input_transparent"
@@ -156,7 +156,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="课程颜色："
-                                android:textSize="16sp"
+                                android:textSize="@dimen/text_subtitle"
                                 android:textColor="?attr/colorOnSurface"
                                 android:layout_gravity="center_vertical" />
 
@@ -172,7 +172,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="选择颜色"
-                                android:textSize="14sp"
+                                android:textSize="@dimen/text_body_small"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 android:layout_marginStart="12dp"
                                 android:padding="8dp" />
@@ -198,7 +198,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="时间安排"
-                            android:textSize="18sp"
+                            android:textSize="@dimen/text_title"
                             android:textStyle="bold"
                             android:textColor="?attr/colorOnSurface"
                             android:layout_marginBottom="16dp" />
@@ -214,7 +214,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="星期："
-                                android:textSize="16sp"
+                                android:textSize="@dimen/text_subtitle"
                                 android:textColor="?attr/colorOnSurface"
                                 android:layout_gravity="center_vertical" />
 
@@ -238,7 +238,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="开始节次："
-                                android:textSize="16sp"
+                                android:textSize="@dimen/text_subtitle"
                                 android:textColor="?attr/colorOnSurface"
                                 android:layout_gravity="center_vertical" />
 
@@ -261,7 +261,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="结束节次："
-                                android:textSize="16sp"
+                                android:textSize="@dimen/text_subtitle"
                                 android:textColor="?attr/colorOnSurface"
                                 android:layout_gravity="center_vertical" />
 
@@ -285,7 +285,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="开始周："
-                                android:textSize="16sp"
+                                android:textSize="@dimen/text_subtitle"
                                 android:textColor="?attr/colorOnSurface"
                                 android:layout_gravity="center_vertical" />
 
@@ -308,7 +308,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="结束周："
-                                android:textSize="16sp"
+                                android:textSize="@dimen/text_subtitle"
                                 android:textColor="?attr/colorOnSurface"
                                 android:layout_gravity="center_vertical" />
 
@@ -331,7 +331,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="周次类型："
-                                android:textSize="16sp"
+                                android:textSize="@dimen/text_subtitle"
                                 android:textColor="?attr/colorOnSurface"
                                 android:layout_gravity="center_vertical" />
 
@@ -363,7 +363,7 @@
                         android:layout_marginEnd="8dp"
                         android:text="取消"
                         android:textColor="?attr/colorOnSurface"
-                        android:textSize="16sp"
+                        android:textSize="@dimen/text_subtitle"
                         app:strokeColor="?attr/colorOutline" />
 
                     <com.google.android.material.button.MaterialButton
@@ -375,7 +375,7 @@
                         android:layout_marginStart="8dp"
                         android:text="保存"
                         android:textColor="?attr/colorOnPrimary"
-                        android:textSize="16sp"
+                        android:textSize="@dimen/text_subtitle"
                         app:backgroundTint="?attr/colorPrimary" />
 
                 </LinearLayout>

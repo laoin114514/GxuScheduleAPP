@@ -21,7 +21,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="跟随系统"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:textColor="?attr/colorOnSurface" />
 
         <ImageView
@@ -55,7 +55,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="自定时间"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:textColor="?attr/colorOnSurface" />
 
         <ImageView

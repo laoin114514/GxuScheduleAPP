@@ -15,6 +15,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * 通用风格化弹窗组件 — 统一 App 内所有对话框的视觉风格。
@@ -198,7 +199,7 @@ class StyledDialog private constructor(
 
             val tv = TextView(context).apply {
                 text = label
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                setTextSizeRes(R.dimen.text_body)
                 setTextColor(onSurfaceColor())
                 layoutParams = LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
@@ -209,7 +210,7 @@ class StyledDialog private constructor(
             // 右箭头提示可点击
             val arrow = TextView(context).apply {
                 text = "›"
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+                setTextSizeRes(R.dimen.text_title)
                 setTextColor(onSurfaceVariantColor())
                 gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(

@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * 工具页列表适配器：推荐大卡 + 分组标题 + 4 列图标网格 / 双列大卡。
@@ -77,7 +78,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
             layoutParams = RecyclerView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { setMargins(dp(ctx, 24), dp(ctx, 24), dp(ctx, 20), dp(ctx, 10)) }
-            textSize = 18f
+            setTextSizeRes(R.dimen.text_title)
             setTypeface(Typeface.DEFAULT_BOLD)
             setTextColor(attr(ctx, com.google.android.material.R.attr.colorOnSurface))
         }
@@ -132,7 +133,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
             if (!item.badge.isNullOrBlank()) {
                 addView(TextView(ctx).apply {
                     text = item.badge
-                    textSize = 10f
+                    setTextSizeRes(R.dimen.text_label)
                     setTypeface(Typeface.DEFAULT_BOLD)
                     setTextColor(onPrimary)
                     background = GradientDrawable().apply {
@@ -146,7 +147,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
             }
             addView(TextView(ctx).apply {
                 text = item.title
-                textSize = 19f
+                setTextSizeRes(R.dimen.text_headline)
                 setTypeface(Typeface.DEFAULT_BOLD)
                 setTextColor(onPrimary)
             }, LinearLayout.LayoutParams(
@@ -154,7 +155,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
             ).apply { topMargin = dp(ctx, 8) })
             addView(TextView(ctx).apply {
                 text = item.subtitle ?: ""
-                textSize = 12f
+                setTextSizeRes(R.dimen.text_caption)
                 setTextColor(ColorUtils.setAlphaComponent(onPrimary, 204))
             }, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
@@ -226,7 +227,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                 addView(box)
                 addView(TextView(ctx).apply {
                     text = item.title
-                    textSize = 10f
+                    setTextSizeRes(R.dimen.text_label)
                     gravity = Gravity.CENTER
                     includeFontPadding = false
                     setTextColor(attr(ctx, com.google.android.material.R.attr.colorOnSurfaceVariant))
@@ -279,7 +280,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                 orientation = LinearLayout.VERTICAL
                 addView(TextView(ctx).apply {
                     text = item.title
-                    textSize = 15f
+                    setTextSizeRes(R.dimen.text_body)
                     setTypeface(Typeface.DEFAULT_BOLD)
                     setTextColor(attr(ctx, com.google.android.material.R.attr.colorOnSurface))
                 }, LinearLayout.LayoutParams(
@@ -288,7 +289,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                 if (!item.subtitle.isNullOrBlank()) {
                     addView(TextView(ctx).apply {
                         text = item.subtitle
-                        textSize = 10f
+                        setTextSizeRes(R.dimen.text_label)
                         setTextColor(outlineColor)
                     }, LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT

@@ -10,14 +10,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="大二上"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="#666666" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="3.27 第4周"
-        android:textSize="11sp"
+        android:textSize="@dimen/text_label"
         android:textColor="#666666"
         android:layout_marginTop="2dp" />
 
@@ -39,7 +39,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="今日"
-                android:textSize="11sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#333333"
                 android:textStyle="bold" />
 
@@ -47,7 +47,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="● 数据可视化"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#E57373"
                 android:layout_marginTop="4dp" />
 
@@ -55,14 +55,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="  5阶101"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="● 软件工程实验"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#FF9800"
                 android:layout_marginTop="4dp" />
 
@@ -70,7 +70,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="  多媒体实验室"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
         </LinearLayout>
 
@@ -91,7 +91,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="明日"
-                android:textSize="11sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#333333"
                 android:textStyle="bold" />
 
@@ -99,7 +99,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="● 数据可视化"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#E57373"
                 android:layout_marginTop="4dp" />
 
@@ -107,14 +107,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="  多媒体实验室"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="● 无人机技术"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#9C27B0"
                 android:layout_marginTop="4dp" />
 
@@ -122,7 +122,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="  实验楼203"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
         </LinearLayout>
     </LinearLayout>
@@ -131,7 +131,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="近日课程"
-        android:textSize="9sp"
+        android:textSize="@dimen/text_label"
         android:textColor="#999999"
         android:layout_marginTop="4dp" />
 

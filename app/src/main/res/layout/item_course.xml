@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="课程名称"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end" />
@@ -29,7 +29,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="教师"
-            android:textSize="10sp"
+            android:textSize="@dimen/text_label"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -38,7 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="时间"
-            android:textSize="10sp"
+            android:textSize="@dimen/text_label"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -47,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="地点"
-            android:textSize="10sp"
+            android:textSize="@dimen/text_label"
             android:maxLines="1"
             android:ellipsize="end" />
 

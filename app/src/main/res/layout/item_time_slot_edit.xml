@@ -21,7 +21,7 @@
             android:layout_height="wrap_content"
             android:text="第1节"
             android:textColor="@android:color/white"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:textStyle="bold" />
 
         <TextView
@@ -31,7 +31,7 @@
             android:layout_weight="1"
             android:text="08:00 - 08:45"
             android:textColor="#CCFFFFFF"
-            android:textSize="14sp" />
+            android:textSize="@dimen/text_body_small" />
 
         <ImageButton
             android:id="@+id/btn_edit"

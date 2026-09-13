@@ -60,7 +60,7 @@
                             android:layout_height="wrap_content"
                             android:text="学校名称"
                             android:textColor="@android:color/white"
-                            android:textSize="14sp"
+                            android:textSize="@dimen/text_body_small"
                             android:layout_marginBottom="8dp" />
 
                         <EditText
@@ -97,7 +97,7 @@
                             android:layout_height="wrap_content"
                             android:text="教务系统网址"
                             android:textColor="@android:color/white"
-                            android:textSize="14sp"
+                            android:textSize="@dimen/text_body_small"
                             android:layout_marginBottom="8dp" />
 
                         <LinearLayout
@@ -151,7 +151,7 @@
                             android:layout_height="wrap_content"
                             android:text="联系邮箱"
                             android:textColor="@android:color/white"
-                            android:textSize="14sp"
+                            android:textSize="@dimen/text_body_small"
                             android:layout_marginBottom="8dp" />
 
                         <EditText

@@ -17,6 +17,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * 统一选择器弹窗组件 — 居中自定义对话框。
@@ -200,7 +201,7 @@ class SelectionDialog private constructor(
 
         val tvLabel = TextView(ctx).apply {
             text = option.label
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            setTextSizeRes(R.dimen.text_body)
             setTextColor(onSurfaceColor())
         }
         textCol.addView(tvLabel)
@@ -208,7 +209,7 @@ class SelectionDialog private constructor(
         if (option.subtitle != null) {
             val tvSub = TextView(ctx).apply {
                 text = option.subtitle
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+                setTextSizeRes(R.dimen.text_caption)
                 setTextColor(onSurfaceVariantColor())
             }
             textCol.addView(tvSub)
@@ -294,7 +295,7 @@ class SelectionDialog private constructor(
             frame.addView(circle)
             val check = TextView(context).apply {
                 text = "✓"
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+                setTextSizeRes(R.dimen.text_label)
                 setTextColor(Color.WHITE)
                 gravity = Gravity.CENTER
                 layoutParams = FrameLayout.LayoutParams(size, size)

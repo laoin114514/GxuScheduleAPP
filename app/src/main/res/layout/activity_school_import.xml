@@ -46,7 +46,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="从教务系统导入"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="?attr/colorPrimary"
                     android:layout_marginBottom="8dp" />
@@ -55,7 +55,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="支持新乡地区主要高校的教务系统导入"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body_small"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:layout_marginBottom="16dp" />
 
@@ -90,7 +90,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="从文件导入"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="?attr/colorPrimary"
                     android:layout_marginBottom="8dp" />
@@ -99,7 +99,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="支持Excel(.xls/.xlsx)和CSV文件格式导入"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body_small"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:layout_marginBottom="16dp" />
 

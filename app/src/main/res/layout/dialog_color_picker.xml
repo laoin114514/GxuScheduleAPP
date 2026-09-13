@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="选择课程颜色"
-        android:textSize="16sp"
+        android:textSize="@dimen/text_subtitle"
         android:textColor="#333333"
         android:textStyle="bold"
         android:gravity="center"

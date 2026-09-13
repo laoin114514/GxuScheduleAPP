@@ -40,7 +40,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="课程名称"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textColor="#333333"
                     android:textStyle="bold" />
 
@@ -52,7 +52,7 @@
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="2dp"
                     android:text="单周"
-                    android:textSize="12sp"
+                    android:textSize="@dimen/text_caption"
                     android:textColor="#FFFFFF"
                     android:background="@drawable/bg_week_type_badge"
                     android:visibility="gone" />
@@ -85,7 +85,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="教师姓名"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#666666" />
 
                 </LinearLayout>
@@ -110,7 +110,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="地点"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#666666" />
 
                 </LinearLayout>
@@ -135,7 +135,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="第1-16周"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#666666" />
 
                 </LinearLayout>

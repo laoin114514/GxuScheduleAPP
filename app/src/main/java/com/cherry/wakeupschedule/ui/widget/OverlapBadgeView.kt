@@ -6,6 +6,8 @@ import android.util.AttributeSet
 import android.view.Gravity
 import android.widget.TextView
 import androidx.core.graphics.ColorUtils
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
+import com.cherry.wakeupschedule.R
 
 class OverlapBadgeView @JvmOverloads constructor(
     context: Context,
@@ -19,7 +21,7 @@ class OverlapBadgeView @JvmOverloads constructor(
         setWidth(size)
         setHeight(size)
         gravity = Gravity.CENTER
-        textSize = 9f
+        setTextSizeRes(R.dimen.text_label)
         setTextColor(Color.WHITE)
         setBackgroundColor(ColorUtils.setAlphaComponent(Color.BLACK, 192))
         isClickable = true

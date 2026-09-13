@@ -23,7 +23,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="课表菜单"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_title"
         android:textStyle="bold"
         android:textColor="?attr/colorOnSurface"
         android:layout_marginBottom="16dp" />
@@ -33,7 +33,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="周数选择"
-        android:textSize="13sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorPrimary"
         android:layout_marginBottom="4dp" />
 
@@ -63,7 +63,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="第 1 周"
-                    android:textSize="22sp"
+                    android:textSize="@dimen/text_headline"
                     android:textStyle="bold"
                     android:textColor="?attr/colorOnSurface" />
 
@@ -72,7 +72,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="拖动选择"
-                    android:textSize="12sp"
+                    android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
 
@@ -111,7 +111,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="第1周"
-                    android:textSize="11sp"
+                    android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <TextView
@@ -121,7 +121,7 @@
                     android:layout_weight="1"
                     android:gravity="end"
                     android:text="第20周"
-                    android:textSize="11sp"
+                    android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
         </LinearLayout>
@@ -132,7 +132,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="学期选择"
-        android:textSize="13sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorPrimary"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="8dp" />

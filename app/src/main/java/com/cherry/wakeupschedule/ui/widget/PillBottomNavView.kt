@@ -18,6 +18,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowInsetsCompat
 import com.cherry.wakeupschedule.R
 import com.google.android.material.color.MaterialColors
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * 设计稿风格的底部导航：激活页签为「圆形色块 + 白色图标 + 主色文字」，
@@ -81,7 +82,7 @@ class PillBottomNavView @JvmOverloads constructor(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
                 ).apply { topMargin = dp(2) }
                 text = tab.title
-                textSize = 10f
+                setTextSizeRes(R.dimen.text_label)
                 includeFontPadding = false
             }
 

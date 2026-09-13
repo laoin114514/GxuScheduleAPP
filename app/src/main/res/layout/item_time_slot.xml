@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:text="1"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="12sp"
+        android:textSize="@dimen/text_caption"
         android:textStyle="bold" />
 
     <TextView
@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:text="08:00"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="9sp"
+        android:textSize="@dimen/text_label"
         android:layout_marginTop="2dp" />
 
     <TextView
@@ -30,6 +30,6 @@
         android:layout_height="wrap_content"
         android:text="08:45"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="9sp" />
+        android:textSize="@dimen/text_label" />
 
 </LinearLayout>

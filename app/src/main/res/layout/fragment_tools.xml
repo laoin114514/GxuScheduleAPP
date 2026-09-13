@@ -32,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="工具"
-                android:textSize="20sp"
+                android:textSize="@dimen/text_headline"
                 android:textStyle="bold"
                 android:textColor="?attr/colorPrimary" />
 
@@ -76,7 +76,7 @@
                 android:maxLines="1"
                 android:textColor="?attr/colorOnSurface"
                 android:textColorHint="?attr/colorOutline"
-                android:textSize="14sp" />
+                android:textSize="@dimen/text_body_small" />
         </FrameLayout>
 
         <!-- 内容区：列表 + 搜索无结果空状态（只覆盖列表区，保留顶栏与搜索框） -->

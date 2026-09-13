@@ -52,7 +52,7 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:text="手动导入"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             app:icon="@drawable/ic_import"
             app:iconGravity="textStart"
             style="@style/Widget.MaterialComponents.Button" />
@@ -63,7 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="自动解析"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             app:icon="@drawable/ic_add"
             app:iconGravity="textStart"
             style="@style/Widget.MaterialComponents.Button" />

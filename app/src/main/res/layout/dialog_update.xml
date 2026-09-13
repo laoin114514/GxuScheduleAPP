@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="发现新版本"
-        android:textSize="20sp"
+        android:textSize="@dimen/text_headline"
         android:textStyle="bold"
         android:textColor="?attr/colorOnSurface"
         android:paddingBottom="8dp" />
@@ -19,7 +19,7 @@
         android:id="@+id/tv_version_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:paddingBottom="16dp" />
 
@@ -34,7 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="下载后自动校验并引导安装"
-        android:textSize="13sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:paddingTop="16dp"
         android:paddingBottom="8dp" />
@@ -51,7 +51,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="跳过此版本"
-            android:textSize="13sp"
+            android:textSize="@dimen/text_body_small"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:padding="8dp"
             android:background="?attr/selectableItemBackground" />
@@ -61,7 +61,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="稍后"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body_small"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:padding="8dp"
             android:layout_marginEnd="8dp"
@@ -72,7 +72,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="立即更新"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body_small"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary"
             android:padding="8dp"

@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.util.AttributeSet
 import com.cherry.wakeupschedule.R
 import com.google.android.material.button.MaterialButton
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * 危险操作按钮组件 — Material 3 Outlined 危险样式，与主按钮同高同排版。
@@ -77,7 +78,7 @@ class DangerButton @JvmOverloads constructor(
         minimumHeight = dp(48)
         gravity = android.view.Gravity.CENTER
         setPadding(dp(24), 0, dp(24), 0)
-        setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+        setTextSizeRes(R.dimen.text_subtitle)
         isAllCaps = false
 
         // 描边红字

@@ -23,6 +23,7 @@ import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.widget.GridBackgroundView
 import com.cherry.wakeupschedule.ui.widget.OverlapBadgeView
 import com.cherry.wakeupschedule.ui.widget.VerticalScrollView
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * ViewPager2 适配器。
@@ -193,7 +194,7 @@ class WeekPagerAdapter(
 
                 val tv = TextView(ctx).apply {
                     text = parts.joinToString("\n")
-                    textSize = 10f
+                    setTextSizeRes(R.dimen.text_label)
                     setTextColor(textColor)
                     gravity = Gravity.CENTER
                     setPadding((4 * density).toInt(), (2 * density).toInt(),
@@ -235,7 +236,7 @@ class WeekPagerAdapter(
 
                 addView(TextView(ctx).apply {
                     text = node.toString()
-                    textSize = 12f
+                    setTextSizeRes(R.dimen.text_caption)
                     setTypeface(null, Typeface.BOLD)
                     val typedValue = android.util.TypedValue()
                     ctx.theme.resolveAttribute(
@@ -245,7 +246,7 @@ class WeekPagerAdapter(
                 })
                 addView(TextView(ctx).apply {
                     text = start?.takeIf { it.isNotBlank() } ?: "--:--"
-                    textSize = 9f
+                    setTextSizeRes(R.dimen.text_label)
                     val typedValue = android.util.TypedValue()
                     ctx.theme.resolveAttribute(
                         com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
@@ -254,7 +255,7 @@ class WeekPagerAdapter(
                 })
                 addView(TextView(ctx).apply {
                     text = end?.takeIf { it.isNotBlank() } ?: "--:--"
-                    textSize = 9f
+                    setTextSizeRes(R.dimen.text_label)
                     val typedValue = android.util.TypedValue()
                     ctx.theme.resolveAttribute(
                         com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
@@ -348,7 +349,7 @@ class WeekPagerAdapter(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
                 ).apply { topMargin = (16 * density).toInt() }
                 text = "暂无课程"
-                textSize = 16f
+                setTextSizeRes(R.dimen.text_subtitle)
                 val typedValue = android.util.TypedValue()
                 context.theme.resolveAttribute(
                     com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true

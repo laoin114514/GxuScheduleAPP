@@ -52,7 +52,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="西大课栈"
-                        android:textSize="24sp"
+                        android:textSize="@dimen/text_display"
                         android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold"
                         android:layout_marginTop="16dp" />
@@ -62,7 +62,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="版本: 1.6.5"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginTop="8dp" />
 
@@ -94,7 +94,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="检查更新"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface" />
 
                         <ImageView
@@ -136,7 +136,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="官网"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface" />
 
                         <ImageView
@@ -170,7 +170,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="本项目 GitHub 仓库"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface" />
 
                         <ImageView
@@ -204,7 +204,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="查看开源许可证"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface" />
 
                         <ImageView
@@ -239,7 +239,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="已适配的教务系统"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface" />
 
                         <ImageView

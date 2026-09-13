@@ -44,7 +44,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="卡片配色"
-                android:textSize="20sp"
+                android:textSize="@dimen/text_headline"
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
                 android:gravity="center" />

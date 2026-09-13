@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * 学期滚轮选择弹窗。
@@ -333,7 +334,7 @@ class SemesterWheelDialog(
                 layoutParams = LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
                 ).apply { marginStart = dp2px(14) }
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                setTextSizeRes(R.dimen.text_body)
                 setTextColor(onSurfaceColor)
             }
             row.addView(label)

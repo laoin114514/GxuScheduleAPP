@@ -25,6 +25,7 @@ import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.cherry.wakeupschedule.ui.widget.GridBackgroundView
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
  * 外观设置页
@@ -235,13 +236,13 @@ class AppearanceActivity : AppCompatActivity() {
         }
         headerRow.addView(TextView(this).apply {
             text = "05月20日"
-            textSize = 10f
+            setTextSizeRes(R.dimen.text_label)
             setTextColor(palette.onSurface)
             typeface = Typeface.DEFAULT_BOLD
         })
         headerRow.addView(TextView(this).apply {
             text = " 第12周"
-            textSize = 8f
+            setTextSizeRes(R.dimen.text_micro)
             setTextColor(palette.onSurfaceVariant)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -273,7 +274,7 @@ class AppearanceActivity : AppCompatActivity() {
             // 周几表头
             column.addView(TextView(this).apply {
                 text = weekLabels[day]
-                textSize = 9f
+                setTextSizeRes(R.dimen.text_label)
                 gravity = Gravity.CENTER
                 setTextColor(palette.onSurfaceVariant)
                 layoutParams = LinearLayout.LayoutParams(
@@ -296,7 +297,7 @@ class AppearanceActivity : AppCompatActivity() {
                 }
                 column.addView(TextView(this).apply {
                     text = name
-                    textSize = 8f
+                    setTextSizeRes(R.dimen.text_micro)
                     gravity = Gravity.CENTER
                     setTextColor(Color.WHITE)
                     typeface = Typeface.DEFAULT_BOLD

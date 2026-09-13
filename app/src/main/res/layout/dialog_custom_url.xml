@@ -9,7 +9,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="请输入学校名称"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="#666666"
         android:layout_marginBottom="8dp" />
 
@@ -26,7 +26,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="请输入教务系统登录网址"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="#666666"
         android:layout_marginBottom="8dp" />
 
@@ -42,7 +42,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="提示：输入学校教务系统的登录页面地址，应用将自动尝试解析课程表。"
-        android:textSize="12sp"
+        android:textSize="@dimen/text_caption"
         android:textColor="#999999"
         android:layout_marginTop="8dp" />
 

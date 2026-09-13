@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="05月20日"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="#333333"
         android:textStyle="bold" />
 
@@ -18,7 +18,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="2024-2025学年第二学期 · 第12周"
-        android:textSize="11sp"
+        android:textSize="@dimen/text_label"
         android:textColor="#666666"
         android:layout_marginTop="2dp" />
 
@@ -41,21 +41,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="一"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#4A90E2" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="20"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#4A90E2" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="高数"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -66,7 +66,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="英语"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -86,21 +86,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="二"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="21"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="大物"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -111,7 +111,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="毛概"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -131,21 +131,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="三"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="22"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="数构"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -156,7 +156,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="操作"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -176,21 +176,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="四"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="23"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="马原"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -210,21 +210,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="五"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="24"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="计网"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -244,21 +244,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="六"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="25"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="活动"
-                android:textSize="7sp"
+                android:textSize="@dimen/text_micro"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:padding="2dp"
@@ -278,14 +278,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="日"
-                android:textSize="10sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="26"
-                android:textSize="9sp"
+                android:textSize="@dimen/text_label"
                 android:textColor="#888888" />
         </LinearLayout>
     </LinearLayout>
@@ -294,7 +294,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="一周课程"
-        android:textSize="9sp"
+        android:textSize="@dimen/text_label"
         android:textColor="#999999"
         android:layout_marginTop="4dp" />
 

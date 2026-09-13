@@ -3,4 +3,20 @@
     <dimen name="course_cell_height">68dp</dimen>
     <dimen name="card_elevation_normal">1dp</dimen>
     <dimen name="card_elevation_highlight">12dp</dimen>
+
+    <!--
+      全局字号刻度（统一入口）。
+      数值用 sp，因此会随系统字体缩放与 App 内 UI 缩放档位（改 densityDpi）一同变化。
+      布局里一律引用这里，不要再写死 android:textSize="NNsp"；
+      代码里取 px 用 resources.getDimension(...) + setTextSize(COMPLEX_UNIT_PX, ...)。
+    -->
+    <dimen name="text_display">24sp</dimen>      <!-- 页面超大标题 -->
+    <dimen name="text_headline">20sp</dimen>     <!-- 区块大标题 -->
+    <dimen name="text_title">18sp</dimen>        <!-- 分组标题 / 卡片标题 -->
+    <dimen name="text_subtitle">16sp</dimen>     <!-- 主要正文 / 按钮 -->
+    <dimen name="text_body">15sp</dimen>         <!-- 常规正文 / 设置项名 -->
+    <dimen name="text_body_small">14sp</dimen>   <!-- 次要正文 / 说明 -->
+    <dimen name="text_caption">12sp</dimen>      <!-- 辅助说明 / 值 -->
+    <dimen name="text_label">10sp</dimen>        <!-- 极小标签 / 课程卡片 -->
+    <dimen name="text_micro">9sp</dimen>         <!-- widget 专用极小字 -->
 </resources>

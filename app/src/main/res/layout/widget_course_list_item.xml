@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="13sp"
+            android:textSize="@dimen/text_caption"
             android:textColor="#333333"
             android:textStyle="bold"
             android:maxLines="1"
@@ -38,7 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="10sp"
+            android:textSize="@dimen/text_label"
             android:textColor="#888888"
             android:maxLines="1"
             android:ellipsize="end" />
@@ -48,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="9sp"
+            android:textSize="@dimen/text_label"
             android:textColor="#AAAAAA"
             android:maxLines="1"
             android:ellipsize="end" />

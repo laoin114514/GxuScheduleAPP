@@ -13,7 +13,7 @@
         android:gravity="center"
         android:text="导出课程"
         android:textColor="@android:color/black"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_title"
         android:textStyle="bold" />
 
     <!-- 说明文字 -->
@@ -24,7 +24,7 @@
         android:gravity="center"
         android:text="需要自行选择一个位置保存\n不要修改扩展名\n日历提醒时间跟随高级功能里的提醒时间\n长按第二个按钮科普 ics 格式妙用"
         android:textColor="#666666"
-        android:textSize="12sp" />
+        android:textSize="@dimen/text_caption" />
 
     <!-- 导出选项列表 -->
     <LinearLayout
@@ -40,7 +40,7 @@
             android:gravity="center"
             android:text="导出为备份（可导入）文件"
             android:textColor="?attr/colorPrimary"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:background="?attr/selectableItemBackground" />
 
         <View
@@ -55,7 +55,7 @@
             android:gravity="center"
             android:text="导出为 ics（日历用）格式"
             android:textColor="?attr/colorPrimary"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:background="?attr/selectableItemBackground" />
 
         <View
@@ -70,7 +70,7 @@
             android:gravity="center"
             android:text="分享 App"
             android:textColor="?attr/colorPrimary"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:background="?attr/selectableItemBackground" />
 
         <View
@@ -85,7 +85,7 @@
             android:gravity="center"
             android:text="取消导出"
             android:textColor="?attr/colorPrimary"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:background="?attr/selectableItemBackground" />
 
     </LinearLayout>

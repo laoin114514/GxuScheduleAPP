@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="周一"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="#333333"
         android:textStyle="bold" />
 
@@ -31,7 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="第1-2节 08:00-09:40"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body_small"
         android:textColor="#666666" />
 
 </LinearLayout>

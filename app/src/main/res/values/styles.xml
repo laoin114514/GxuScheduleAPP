@@ -17,7 +17,7 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:gravity">center</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">@dimen/text_body_small</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
@@ -25,7 +25,7 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:gravity">center</item>
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">@dimen/text_caption</item>
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
@@ -110,7 +110,7 @@
 <style name="AppSectionHeader">
     <item name="android:layout_width">match_parent</item>
     <item name="android:layout_height">wrap_content</item>
-    <item name="android:textSize">18sp</item>
+    <item name="android:textSize">@dimen/text_title</item>
     <item name="android:textStyle">bold</item>
     <item name="android:textColor">?attr/colorOnSurface</item>
     <item name="android:paddingStart">4dp</item>
@@ -120,7 +120,7 @@
 
 <!-- 详情页 Toolbar 标题：居中、主色、加粗（对齐工具页顶栏标题） -->
 <style name="AppToolbarTitle" parent="TextAppearance.Material3.TitleLarge">
-    <item name="android:textSize">18sp</item>
+    <item name="android:textSize">@dimen/text_title</item>
     <item name="android:textStyle">bold</item>
     <item name="android:textColor">?attr/colorPrimary</item>
 </style>

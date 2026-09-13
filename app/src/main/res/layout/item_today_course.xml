@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="课程名称"
-                android:textSize="18sp"
+                android:textSize="@dimen/text_title"
                 android:textColor="#333333"
                 android:textStyle="bold" />
 
@@ -57,7 +57,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="第1-2节"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#666666" />
 
                 </LinearLayout>
@@ -81,7 +81,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="教室"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#666666" />
 
                 </LinearLayout>

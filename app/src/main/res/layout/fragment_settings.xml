@@ -32,7 +32,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="应用设置"
-                android:textSize="24sp"
+                android:textSize="@dimen/text_display"
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
                 android:layout_marginBottom="24dp" />
@@ -49,7 +49,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="学期与周次"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="16dp" />
@@ -66,7 +66,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="当前学期"
-                        android:textSize="16sp"
+                        android:textSize="@dimen/text_subtitle"
                         android:textColor="@android:color/white" />
 
                     <TextView
@@ -74,7 +74,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="2024-2025学年 第一学期"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#4A90E2"
                         android:layout_marginEnd="8dp" />
 
@@ -83,7 +83,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="修改"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#4A90E2"
                         android:padding="8dp"
                         android:background="?attr/selectableItemBackground" />
@@ -101,7 +101,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="默认显示周"
-                        android:textSize="16sp"
+                        android:textSize="@dimen/text_subtitle"
                         android:textColor="@android:color/white" />
 
                     <TextView
@@ -109,7 +109,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="第1周"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#4A90E2"
                         android:layout_marginEnd="8dp" />
 
@@ -118,7 +118,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="设置"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#4A90E2"
                         android:padding="8dp"
                         android:background="?attr/selectableItemBackground" />
@@ -138,7 +138,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="学期日期"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#AAAAAA" />
 
                     <TextView
@@ -146,7 +146,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="未获取"
-                        android:textSize="13sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#4A90E2" />
 
                 </LinearLayout>
@@ -164,7 +164,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="学期周数"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#AAAAAA" />
 
                     <TextView
@@ -172,7 +172,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="20周"
-                        android:textSize="13sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#4A90E2" />
 
                 </LinearLayout>
@@ -183,7 +183,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="从教务获取学期日期和总周数"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body_small"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_primary"
@@ -203,7 +203,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="主题"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="16dp" />
@@ -213,7 +213,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="背景设置"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:layout_marginBottom="8dp"
@@ -225,7 +225,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="清空图片背景"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="#FF6B6B"
                     android:padding="12dp"
                     android:layout_marginBottom="8dp"
@@ -237,7 +237,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="卡片外观设置"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_outline"
@@ -248,7 +248,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="卡片配色"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_outline"
@@ -269,7 +269,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="时间表设置"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="16dp" />
@@ -279,7 +279,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="编辑时间表"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_outline"
@@ -299,7 +299,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="提醒设置"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="16dp" />
@@ -316,7 +316,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="课前提醒"
-                        android:textSize="16sp"
+                        android:textSize="@dimen/text_subtitle"
                         android:textColor="@android:color/white" />
 
                     <TextView
@@ -324,7 +324,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="提前15分钟"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#4A90E2"
                         android:layout_marginEnd="8dp" />
 
@@ -333,7 +333,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="设置"
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_body_small"
                         android:textColor="#4A90E2"
                         android:padding="8dp"
                         android:background="?attr/selectableItemBackground" />
@@ -345,7 +345,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="课前提醒开关"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_outline"
@@ -357,7 +357,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="权限设置引导"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_outline"
@@ -377,7 +377,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="节假日隐藏课程"
-                        android:textSize="15sp"
+                        android:textSize="@dimen/text_body"
                         android:textColor="@android:color/white" />
 
                     <Switch
@@ -403,7 +403,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="账号管理"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="16dp" />
@@ -413,7 +413,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="绑定教务"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:layout_marginBottom="8dp"
@@ -425,7 +425,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="个人信息"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_outline"
@@ -445,7 +445,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="数据管理"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="16dp" />
@@ -455,7 +455,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="从教务系统导入"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:layout_marginBottom="12dp"
@@ -467,7 +467,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="从文件导入"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:layout_marginBottom="12dp"
@@ -479,7 +479,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="导出课程表"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:layout_marginBottom="12dp"
@@ -491,7 +491,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="清除所有数据"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="#FF6B6B"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_outline_red"
@@ -511,7 +511,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="免责声明"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="12dp" />
@@ -520,7 +520,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="1. 本应用所有课程数据均由用户自行导入或手动添加\n2. 教务系统导入功能仅供学习研究使用\n3. 所有数据均存储在本地设备上\n4. 使用本应用产生的风险由用户自行承担\n5. 本项目基于 WakeUp 课程表 3.612 版本进行魔改重构，遵循相同的开源原则"
-                    android:textSize="12sp"
+                    android:textSize="@dimen/text_caption"
                     android:textColor="#CCFFFFFF"
                     android:lineSpacingMultiplier="1.3" />
 
@@ -538,7 +538,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="关于与更新"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="16dp" />
@@ -557,7 +557,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="接收更新提醒"
-                        android:textSize="15sp"
+                        android:textSize="@dimen/text_body"
                         android:textColor="@android:color/white" />
 
                     <Switch
@@ -573,7 +573,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="检测更新"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:layout_marginBottom="12dp"
@@ -585,7 +585,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="关于应用"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:background="@drawable/bg_button_outline"
@@ -596,7 +596,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="反馈/建议"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/text_body"
                     android:textColor="@android:color/white"
                     android:padding="12dp"
                     android:layout_marginTop="8dp"

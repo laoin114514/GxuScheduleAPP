@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="本学期  今日  第1周"
-        android:textSize="11sp"
+        android:textSize="@dimen/text_label"
         android:textColor="#666666" />
 
     <LinearLayout
@@ -23,7 +23,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="● 高等数学"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             android:textColor="#E57373"
             android:paddingTop="4dp" />
 
@@ -31,14 +31,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="  教学楼A101"
-            android:textSize="10sp"
+            android:textSize="@dimen/text_label"
             android:textColor="#888888" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="● 大学英语"
-            android:textSize="12sp"
+            android:textSize="@dimen/text_caption"
             android:textColor="#64B5F6"
             android:paddingTop="4dp" />
 
@@ -46,7 +46,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="  教学楼B205"
-            android:textSize="10sp"
+            android:textSize="@dimen/text_label"
             android:textColor="#888888" />
     </LinearLayout>
 
@@ -54,7 +54,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="今日课程"
-        android:textSize="9sp"
+        android:textSize="@dimen/text_label"
         android:textColor="#999999" />
 
 </LinearLayout>

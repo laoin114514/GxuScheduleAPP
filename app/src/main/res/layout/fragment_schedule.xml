@@ -34,7 +34,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="第5周 (本周)"
-                    android:textSize="12sp"
+                    android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <TextView
@@ -43,7 +43,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="2026/7/28"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_title"
                     android:textStyle="bold"
                     android:textColor="?attr/colorPrimary" />
 
@@ -115,7 +115,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="年"
-                        android:textSize="10sp"
+                        android:textSize="@dimen/text_label"
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
@@ -152,7 +152,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:text="2026"
-                    android:textSize="11sp"
+                    android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <TextView android:id="@+id/tv_date_1" style="@style/DateNumberText"
