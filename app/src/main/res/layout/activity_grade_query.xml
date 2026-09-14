@@ -16,6 +16,7 @@
         app:navigationIconTint="?attr/colorOnSurfaceVariant" />
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_content"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -75,14 +76,7 @@
                             android:contentDescription="@null" />
                     </LinearLayout>
 
-                    <!-- 学期列表：点击字段后在此就地展开 -->
-                    <LinearLayout
-                        android:id="@+id/ll_semester_options"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginTop="4dp"
-                        android:visibility="gone" />
+                    <!-- 学期列表由 SemesterExpandPicker 以浮层下拉展示，不占页内空间 -->
 
                     <LinearLayout
                         android:id="@+id/btn_query"
@@ -213,40 +207,47 @@
                     android:paddingEnd="2dp" />
             </HorizontalScrollView>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_grades"
+            <!-- ===== 列表 + 状态覆盖层 =====
+                 状态层与列表同区叠放：loading 时整块盖住列表（列表为空时则占据该区域），
+                 置顶对齐保证不随列表变长把指示器顶到屏幕外 -->
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:nestedScrollingEnabled="false"
-                android:overScrollMode="never" />
+                android:layout_marginTop="10dp">
 
-            <!-- ===== 状态区：加载中 / 空 / 未绑定 ===== -->
-            <LinearLayout
-                android:id="@+id/ll_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:paddingTop="36dp"
-                android:paddingBottom="36dp"
-                android:visibility="gone">
-
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/pb_loading"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginBottom="12dp"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/tv_status"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_grades"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textSize="@dimen/text_body_small"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never" />
+
+                <LinearLayout
+                    android:id="@+id/ll_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="top|center_horizontal"
+                    android:paddingTop="36dp"
+                    android:paddingBottom="36dp"
+                    android:visibility="gone">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/pb_loading"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginBottom="12dp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_body_small"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+            </FrameLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

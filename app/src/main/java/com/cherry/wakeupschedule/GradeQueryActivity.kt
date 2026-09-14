@@ -39,8 +39,9 @@ import kotlin.math.roundToInt
 /**
  * 成绩查询页。
  *
- * - 学期选择：页内下拉展开（[SemesterExpandPicker]），**只筛选本页**，不改课表的当前学期
- * - 查询：从教务拉取所选学期成绩，**整学期覆盖**写入本地（[GradeImportService]）
+ * - 学期选择：浮层下拉（[SemesterExpandPicker]），**只筛选本页**，不改课表的当前学期
+ * - 查询：从教务拉取所选学期成绩，**整学期覆盖**写入本地（[GradeImportService]）；
+ *   查询期间「查询」按钮置灰禁用，loading 覆盖层盖住整个成绩列表
  * - 列表：筛选（全部/必修/选修/不及格）+ 按分数排序；点条目看平时/期末详情
  */
 class GradeQueryActivity : BaseActivity() {
@@ -56,6 +57,7 @@ class GradeQueryActivity : BaseActivity() {
     private lateinit var gpaText: TextView
     private lateinit var creditsText: TextView
     private lateinit var filterRow: LinearLayout
+    private lateinit var btnQuery: View
 
     private var currentFilter = GradeFilter.ALL
     private var sortDescending = true
@@ -98,11 +100,15 @@ class GradeQueryActivity : BaseActivity() {
             blockContainer = findViewById(R.id.fl_semester_block),
             labelView = findViewById(R.id.tv_semester_value),
             arrow = findViewById(R.id.iv_expand),
-            optionsContainer = findViewById(R.id.ll_semester_options),
             onSelected = { semester -> onSemesterSelected(semester) }
         )
 
-        findViewById<View>(R.id.btn_query).apply {
+        // 下拉是独立窗口，页面滚动后不会跟着字段走，滚动时直接收起
+        findViewById<View>(R.id.scroll_content).setOnScrollChangeListener { _, _, _, _, _ ->
+            picker.collapse()
+        }
+
+        btnQuery = findViewById<View>(R.id.btn_query).apply {
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = dp(12).toFloat()
@@ -347,14 +353,56 @@ class GradeQueryActivity : BaseActivity() {
     private fun currentSemester(): SemesterEntity? =
         SemesterManager.getAll().firstOrNull { it.id == gradeDataManager.selectedSemesterId }
 
+    /** 盖住成绩列表的 loading 遮罩：与列表卡片同色的圆角块 */
+    private val loadingScrim: GradientDrawable by lazy {
+        GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(16).toFloat()
+            setColor(
+                ColorUtils.setAlphaComponent(
+                    attr(com.google.android.material.R.attr.colorSurfaceContainerLowest), 0xF5
+                )
+            )
+        }
+    }
+
     private fun showStatus(text: String, loading: Boolean) {
         statusContainer.visibility = View.VISIBLE
         loadingIndicator.visibility = if (loading) View.VISIBLE else View.GONE
         statusText.text = text
+        // loading 遮罩：盖住旧成绩并吃掉点击，避免误点条目进详情
+        setStatusHeight(if (loading && recycler.height > 0) recycler.height else null)
+        statusContainer.isClickable = loading
+        statusContainer.background = if (loading) loadingScrim else null
+        setQueryLoading(loading)
     }
 
     private fun hideStatus() {
         statusContainer.visibility = View.GONE
+        statusContainer.isClickable = false
+        statusContainer.background = null
+        setStatusHeight(null)
+        setQueryLoading(false)
+    }
+
+    /**
+     * 指定状态层高度：null 表示按内容自适应。
+     *
+     * 铺满列表要显式给高度——FrameLayout 只会在**多于一个** MATCH_PARENT 子项时
+     * 二次测量，单个 match_parent 子项在 wrap_content 容器里量不出来列表高度。
+     */
+    private fun setStatusHeight(height: Int?) {
+        val lp = statusContainer.layoutParams
+        val target = height ?: ViewGroup.LayoutParams.WRAP_CONTENT
+        if (lp.height == target) return
+        lp.height = target
+        statusContainer.layoutParams = lp
+    }
+
+    /** 查询期间禁用「查询」并压暗，避免重复触发 */
+    private fun setQueryLoading(loading: Boolean) {
+        btnQuery.isEnabled = !loading
+        btnQuery.alpha = if (loading) 0.5f else 1f
     }
 
     private fun toast(text: String) =

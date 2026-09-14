@@ -10,20 +10,23 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupWindow
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.SemesterEntity
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 import com.cherry.wakeupschedule.ui.widget.SemesterSceneryView
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * 成绩页的学期选择器：**页内下拉展开**，不是滚轮。
+ * 成绩页的学期选择器：点击字段后以**浮层下拉**展开（不是滚轮，也不在页内撑开把下方顶走）。
  *
  * 视觉沿用「我的」里的学期选择（[com.cherry.wakeupschedule.ui.component.SemesterWheelDialog]）：
  * 左侧迷你色块（该学期已有成绩 → 风景块，否则素色块）+ 右侧「大二上  2024-2025学年 第一学期」，
- * 区别只是改用就地展开的列表、选中项用对勾标记。
+ * 选中项用对勾标记。选项挂在 PopupWindow 上覆盖在下方内容之上，浮层内可滚动。
  *
  * 选择结果只回调给调用方用于本页筛选，不写回全局当前学期。
  */
@@ -33,11 +36,14 @@ class SemesterExpandPicker(
     private val blockContainer: FrameLayout,
     private val labelView: TextView,
     private val arrow: ImageView,
-    private val optionsContainer: LinearLayout,
     private val onSelected: (SemesterEntity) -> Unit
 ) {
 
     private val density = context.resources.displayMetrics.density
+
+    /** 浮层最高不超过屏幕一半多一点，超出部分在浮层内滚动 */
+    private val maxPopupHeight =
+        (context.resources.displayMetrics.heightPixels * 0.55f).roundToInt()
 
     private fun resolveAttr(attr: Int): Int {
         val tv = TypedValue()
@@ -53,12 +59,24 @@ class SemesterExpandPicker(
     private val blockColor = resolveAttr(com.google.android.material.R.attr.colorSurfaceVariant)
     private val sunColor = 0xFFFFD54F.toInt()
 
+    private val optionsContainer = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(8), dp(8), dp(8), dp(8))
+    }
+
+    private val optionsScroll = ScrollView(context).apply {
+        isVerticalScrollBarEnabled = false
+        overScrollMode = View.OVER_SCROLL_NEVER
+        addView(optionsContainer)
+    }
+
+    private var popup: PopupWindow? = null
     private var semesters: List<SemesterEntity> = emptyList()
     private var gradeCounts: Map<Long, Int> = emptyMap()
     private var selectedId: Long = 0L
 
     val isExpanded: Boolean
-        get() = optionsContainer.visibility == View.VISIBLE
+        get() = popup?.isShowing == true
 
     init {
         field.setOnClickListener { toggle() }
@@ -71,6 +89,7 @@ class SemesterExpandPicker(
         this.selectedId = selectedId
         renderField()
         rebuildOptions()
+        resizePopupIfShowing()
     }
 
     fun toggle() {
@@ -78,13 +97,62 @@ class SemesterExpandPicker(
     }
 
     fun expand() {
-        optionsContainer.visibility = View.VISIBLE
-        arrow.animate().rotation(180f).setDuration(160).start()
+        if (semesters.isEmpty() || field.width <= 0) return
+        rebuildOptions()
+        val popup = ensurePopup()
+        popup.width = field.width
+        popup.height = min(measureOptionsHeight(), maxPopupHeight)
+        popup.showAsDropDown(field, 0, dp(4))
+        animateArrow(expanded = true)
     }
 
     fun collapse() {
-        optionsContainer.visibility = View.GONE
-        arrow.animate().rotation(0f).setDuration(160).start()
+        popup?.takeIf { it.isShowing }?.dismiss()
+    }
+
+    // ── 浮层 ──────────────────────────────────────────────
+
+    private fun ensurePopup(): PopupWindow {
+        popup?.let { return it }
+        return PopupWindow(
+            optionsScroll,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            setBackgroundDrawable(popupBackground())
+            elevation = dp(8).toFloat()
+            isOutsideTouchable = true
+            setOnDismissListener { animateArrow(expanded = false) }
+            popup = this
+        }
+    }
+
+    /** 按字段宽度量一次内容高度（行高固定，量的是行数与内边距） */
+    private fun measureOptionsHeight(): Int {
+        if (field.width <= 0) return 0
+        optionsContainer.measure(
+            View.MeasureSpec.makeMeasureSpec(field.width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        return optionsContainer.measuredHeight
+    }
+
+    private fun resizePopupIfShowing() {
+        val popup = popup ?: return
+        if (!popup.isShowing) return
+        popup.height = min(measureOptionsHeight(), maxPopupHeight)
+    }
+
+    private fun popupBackground(): GradientDrawable = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = dp(16).toFloat()
+        setColor(resolveAttr(com.google.android.material.R.attr.colorSurfaceContainerLowest))
+        setStroke(dp(1), resolveAttr(com.google.android.material.R.attr.colorOutlineVariant))
+    }
+
+    private fun animateArrow(expanded: Boolean) {
+        arrow.animate().rotation(if (expanded) 180f else 0f).setDuration(160).start()
     }
 
     // ── 字段区 ────────────────────────────────────────────
@@ -99,7 +167,7 @@ class SemesterExpandPicker(
         setBlock(blockContainer, 36, selected != null && (gradeCounts[selected.id] ?: 0) > 0, false)
     }
 
-    // ── 展开列表 ──────────────────────────────────────────
+    // ── 浮层列表 ──────────────────────────────────────────
 
     private fun rebuildOptions() {
         optionsContainer.removeAllViews()
@@ -142,6 +210,8 @@ class SemesterExpandPicker(
             setTextSizeRes(R.dimen.text_body)
             setTextColor(onSurfaceColor)
             if (isSelected) setTypeface(null, Typeface.BOLD)
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
             layoutParams = LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
             ).apply { marginStart = dp(12) }
