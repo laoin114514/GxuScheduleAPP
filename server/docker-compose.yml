@@ -1,9 +1,48 @@
-# 只起 app 服务，MySQL 为外部数据库（如阿里云 RDS），通过 .env 的 DB_HOST 连接。
+# app + MySQL 一键起：数据落在命名卷 mysql-data，容器重建不丢。
+# 库名/账号/密码复用 .env 的 DB_* 配置，容器内 app 用服务名 mysql 连库。
+#
+# 改用外部数据库（如阿里云 RDS）时：在 .env 里设 COMPOSE_DB_HOST=<RDS 地址>，
+# 并只起 app：docker compose up -d --no-deps app
 services:
+  mysql:
+    # 基础镜像走 daocloud 国内镜像加速，与 Dockerfile 保持一致
+    image: m.daocloud.io/docker.io/library/mysql:8.0
+    container_name: schedule-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      # 复用 .env 的库名与密码，保证 app 和 mysql 两边口径一致
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?请先在 .env 中设置 DB_PASSWORD}
+      # 默认只建 root@localhost，放开 % 让 app 容器能连
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: ${DB_NAME:-schedule}
+      # 供初始化脚本按 .env 的 DB_USER 建业务账号（DB_USER=root 时不建）
+      DB_NAME: ${DB_NAME:-schedule}
+      DB_USER: ${DB_USER:-schedule}
+      DB_PASSWORD: ${DB_PASSWORD:?请先在 .env 中设置 DB_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 仅在数据卷为空（首次启动）时执行
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      # 需要宿主用 Navicat 等工具直连时用；3306 被占用可改 MYSQL_HOST_PORT
+      - "${MYSQL_HOST_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   app:
     build: .
     container_name: schedule-server
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports:
       # 宿主暴露端口（.env 的 HOST_PORT），容器内固定 8080
       - "${HOST_PORT:-8080}:8080"
@@ -13,8 +52,14 @@ services:
       # 容器内监听固定 8080，避免和宿主映射端口混淆
       SERVER_PORT: "8080"
       TZ: ${TZ:-Asia/Shanghai}
+      # environment 优先级高于 env_file，这里把数据源指向 compose 内的 mysql 服务
+      DB_HOST: ${COMPOSE_DB_HOST:-mysql}
+      DB_PORT: ${COMPOSE_DB_PORT:-3306}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
       interval: 15s
       timeout: 3s
       retries: 3
+
+volumes:
+  mysql-data:
