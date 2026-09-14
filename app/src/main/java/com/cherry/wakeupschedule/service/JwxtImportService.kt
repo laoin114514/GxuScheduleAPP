@@ -44,7 +44,9 @@ object JwxtImportService {
         val dayOfWeek = e.weekday?.toIntOrNull()?.coerceIn(1, 7) ?: return null
 
         val periodRange = parsePeriod(e.periodNum ?: e.period ?: return null) ?: return null
-        val bitmap = parseWeekBitmap(e.weeks ?: return null)
+        var bitmap = e.weeks?.let { parseWeekBitmap(it) } ?: 0L
+        // zcd 缺失或解析不出时，回退到周次位掩码 oldzc，避免整门课被丢弃
+        if (bitmap == 0L) bitmap = parseWeekMask(e.weekMask)
         if (bitmap == 0L) return null
 
         val category = e.courseCategory ?: ""
@@ -78,31 +80,33 @@ object JwxtImportService {
 
     /**
      * 解析教务系统周次字符串为位图。
-     * 支持格式: "1-5周", "7-11周(单)", "6-8周(双)", "14周",
-     *           组合: "1-5周,7-11周(单),12-16周"
      * bit 0 = 第1周
+     *
+     * 兼容写法（部分教务系统返回带「第」前缀、全角符号或用其他分隔符）：
+     *   "1-5周"、"7-11周(单)"、"6-8周(双)"、"14周"
+     *   "第1-16周"、"第3周"
+     *   "1－5周"、"1~5周"、"1至5周"、"1—5周"
+     *   "1、3、5周"、"1，3，5周"、"３-５周"
+     * 组合示例："第1-5周,第7-11周(单),第12-16周"
      */
-    private fun parseWeekBitmap(weeks: String): Long {
+    internal fun parseWeekBitmap(weeks: String): Long {
         var bitmap = 0L
-        val cleaned = weeks.replace(" ", "")
-        for (part in cleaned.split(",")) {
-            val t = part.trim()
-            if (t.isEmpty()) continue
+        for (part in normalizeWeekText(weeks).split(',')) {
+            if (part.isEmpty()) continue
 
-            val oddOnly = t.contains("(单)")
-            val evenOnly = t.contains("(双)")
-            val clean = t.replace("周", "")
-                .replace("(单)", "")
-                .replace("(双)", "")
-                .replace("（单）", "")
-                .replace("（双）", "")
+            val oddOnly = part.contains('单')
+            val evenOnly = part.contains('双')
+            val clean = part.replace("单", "")
+                .replace("双", "")
+                .replace("(", "")
+                .replace(")", "")
                 .trim()
 
-            if (clean.contains("-")) {
-                val parts = clean.split("-")
-                val s = parts[0].toIntOrNull() ?: continue
-                val e = parts[1].toIntOrNull() ?: continue
-                for (w in s..e) {
+            if (clean.contains('-')) {
+                val bounds = clean.split('-')
+                val s = bounds.getOrNull(0)?.toIntOrNull() ?: continue
+                val e = bounds.getOrNull(1)?.toIntOrNull() ?: continue
+                for (w in minOf(s, e)..maxOf(s, e)) {
                     if (oddOnly && w % 2 == 0) continue
                     if (evenOnly && w % 2 == 1) continue
                     if (w in 1..64) bitmap = bitmap or (1L shl (w - 1))
@@ -110,6 +114,49 @@ object JwxtImportService {
             } else {
                 val w = clean.toIntOrNull() ?: continue
                 if (w in 1..64) bitmap = bitmap or (1L shl (w - 1))
+            }
+        }
+        return bitmap
+    }
+
+    /**
+     * 归一化周次文本：全角数字转半角、分隔符统一、去掉「第/周/次」等修饰字和空白。
+     * 归一化后形如 "1-5,7-11(单),12-16"。
+     */
+    private fun normalizeWeekText(raw: String): String {
+        val sb = StringBuilder(raw.length)
+        for (ch in raw) {
+            sb.append(
+                when (ch) {
+                    in '０'..'９' -> '0' + (ch - '０')          // 全角数字
+                    '，', '、', '；', ';' -> ','                 // 统一为半角逗号
+                    '～', '〜', '~', '—', '–', '－', '─', '至', '到' -> '-'
+                    '（' -> '('
+                    '）' -> ')'
+                    else -> ch
+                }
+            )
+        }
+        return sb.toString()
+            .replace(" ", "")
+            .replace("第", "")
+            .replace("周", "")
+            .replace("次", "")
+    }
+
+    /**
+     * 回退解析周次位掩码（oldzc）：如 "1111000000000000"，从左起第 n 位为 1 表示第 n 周有课。
+     * 仅在 zcd 缺失或解析不出时兜底；非 0/1 组成的串视为格式未知，返回 0。
+     */
+    internal fun parseWeekMask(mask: String?): Long {
+        val s = mask?.trim().orEmpty()
+        if (s.isEmpty() || s.length > 64) return 0L
+        var bitmap = 0L
+        for ((i, ch) in s.withIndex()) {
+            when (ch) {
+                '1' -> bitmap = bitmap or (1L shl i)
+                '0' -> Unit
+                else -> return 0L
             }
         }
         return bitmap
