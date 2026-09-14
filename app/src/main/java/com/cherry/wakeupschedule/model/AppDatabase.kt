@@ -7,13 +7,14 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Course::class, AccountEntity::class, SemesterEntity::class, CookieEntity::class], version = 7, exportSchema = false)
+@Database(entities = [Course::class, AccountEntity::class, SemesterEntity::class, CookieEntity::class, GradeEntity::class], version = 9, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun courseDao(): CourseDao
     abstract fun accountDao(): AccountDao
     abstract fun semesterDao(): SemesterDao
     abstract fun cookieDao(): CookieDao
+    abstract fun gradeDao(): GradeDao
 
     companion object {
         @Volatile
@@ -123,6 +124,58 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 新增 grades 表：外键关联 semesters.id，学期清理时级联删除成绩。
+                // 建表 SQL 必须与 Room 依 GradeEntity 生成的完全一致，否则启动表结构校验失败。
+                createGradesTable(db)
+            }
+        }
+
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 8 是早期未发布的成绩表实验版本（拼音列名，含 pscj/qmcj 等）。
+                // 该结构从未提交到仓库，却可能残留在开发机的数据库里，
+                // 导致版本号相同但 identity hash 不符而启动崩溃。
+                // 这里统一重建为当前结构；此时该表必然为空，不需要保留数据。
+                db.execSQL("DROP TABLE IF EXISTS `grades`")
+                createGradesTable(db)
+            }
+        }
+
+        /** grades 表建表 + 索引，7→8 与 8→9 共用，保证两处结构永远一致。 */
+        private fun createGradesTable(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS `grades` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `semester_id` INTEGER NOT NULL,
+                    `course_name` TEXT NOT NULL,
+                    `class_id` TEXT NOT NULL,
+                    `student_id` TEXT NOT NULL,
+                    `score` TEXT NOT NULL,
+                    `percentage_score` TEXT NOT NULL,
+                    `grade_point` TEXT NOT NULL,
+                    `credit_grade_point` TEXT NOT NULL,
+                    `credits` TEXT NOT NULL,
+                    `course_nature` TEXT NOT NULL,
+                    `course_category` TEXT NOT NULL,
+                    `course_type` TEXT NOT NULL,
+                    `course_mark` TEXT NOT NULL,
+                    `assessment_method` TEXT NOT NULL,
+                    `exam_nature` TEXT NOT NULL,
+                    `teacher_name` TEXT NOT NULL,
+                    `school_year` TEXT NOT NULL,
+                    `term` TEXT NOT NULL,
+                    `score_voided` TEXT NOT NULL,
+                    `published_at` TEXT NOT NULL,
+                    `updated_at` INTEGER NOT NULL,
+                    FOREIGN KEY(`semester_id`) REFERENCES `semesters`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_grades_semester_id` ON `grades` (`semester_id`)")
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -130,7 +183,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "schedule.db"
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }

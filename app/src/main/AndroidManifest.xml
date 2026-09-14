@@ -50,6 +50,7 @@
         <activity android:name=".CourseOverviewActivity" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".BindJwxtActivity" />
+        <activity android:name=".GradeQueryActivity" />
 
         <!-- 桌面小部件 - 今日课程 -->
         <receiver
