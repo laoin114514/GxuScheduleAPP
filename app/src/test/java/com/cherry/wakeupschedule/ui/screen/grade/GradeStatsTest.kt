@@ -189,4 +189,13 @@ class GradeStatsTest {
         assertEquals("4.5 学分", GradeStats.formatCreditBadge(grade(credits = "4.5")))
         assertEquals("学分未知", GradeStats.formatCreditBadge(grade(credits = "")))
     }
+
+    @Test
+    fun `详情弹窗的学分行用不带单位的数值`() {
+        assertEquals("4", GradeStats.formatCreditValue(grade(credits = "4.0")))
+        assertEquals("4.5", GradeStats.formatCreditValue(grade(credits = "4.5")))
+        // 解析不到返回 null，弹窗跳过该行
+        assertNull(GradeStats.formatCreditValue(grade(credits = "")))
+        assertNull(GradeStats.formatCreditValue(grade(credits = "学分未知")))
+    }
 }

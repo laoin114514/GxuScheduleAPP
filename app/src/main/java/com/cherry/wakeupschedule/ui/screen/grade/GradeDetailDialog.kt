@@ -11,7 +11,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.model.GradeEntity
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -22,10 +24,13 @@ import com.gxu.jwxt.model.GradeDetail
  *
  * 详情接口返回 HTML 且字段随教务版本变化，解析结果可能不完整，
  * 因此这里既能展示结构化字段，也能在拿不到拆分时退回原始明细行。
+ *
+ * 学分/绩点/教师/发布时间不在详情接口里（该接口只回分项成绩），
+ * 取成绩列表条目 [GradeEntity] 上已有的字段补在分项下方。
  */
 class GradeDetailDialog private constructor(
     context: Context,
-    private val courseName: String
+    private val grade: GradeEntity
 ) : Dialog(context, R.style.RoundedDialog) {
 
     private val primaryColor: Int by lazy { ThemeManager.currentPalette(context).primary }
@@ -45,7 +50,7 @@ class GradeDetailDialog private constructor(
             setLayout(minOf(width, dp(380)), ViewGroup.LayoutParams.WRAP_CONTENT)
         }
 
-        findViewById<TextView>(R.id.tv_title).text = courseName
+        findViewById<TextView>(R.id.tv_title).text = grade.courseName
         findViewById<View>(R.id.v_accent).background = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = dp(2).toFloat()
@@ -92,13 +97,23 @@ class GradeDetailDialog private constructor(
 
         // 没有解析出任何结构化成绩时，退回原始明细行
         if (detail.totalScore == null && !hasBreakdown) {
-            val rows = detail.rows
-            if (rows.isEmpty()) {
-                showMessage("该课程没有更多成绩明细")
-            } else {
-                rows.forEach { addRow(it.label, null, it.value) }
-            }
+            detail.rows.forEach { addRow(it.label, null, it.value) }
         }
+
+        // 学分/绩点/教师/发布时间来自成绩列表条目，详情接口不返回
+        val info = listOf(
+            "学分" to GradeStats.formatCreditValue(grade),
+            "绩点" to grade.gradePoint.trim().ifBlank { null },
+            "教师" to grade.teacherName.trim().ifBlank { null },
+            "成绩发布时间" to grade.publishedAt.trim().ifBlank { null }
+        ).filter { !it.second.isNullOrBlank() }
+
+        if (info.isNotEmpty()) {
+            if (content.childCount > 0) content.addView(buildDivider())
+            info.forEach { addRow(it.first, null, it.second) }
+        }
+
+        if (content.childCount == 0) showMessage("该课程没有更多成绩明细")
     }
 
     /** 拉取失败 */
@@ -163,6 +178,19 @@ class GradeDetailDialog private constructor(
         content.addView(row)
     }
 
+    /** 成绩分项与课程信息之间的细分隔线 */
+    private fun buildDivider(): View = View(context).apply {
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1).apply {
+            topMargin = dp(6)
+            bottomMargin = dp(6)
+        }
+        setBackgroundColor(
+            ColorUtils.setAlphaComponent(
+                resolveAttr(com.google.android.material.R.attr.colorOutlineVariant), 0x66
+            )
+        )
+    }
+
     private fun resolveAttr(attr: Int): Int {
         val tv = TypedValue()
         context.theme.resolveAttribute(attr, tv, true)
@@ -189,8 +217,8 @@ class GradeDetailDialog private constructor(
         private var activeDialog: GradeDetailDialog? = null
 
         /** 显示并立即进入 loading 态，返回实例供调用方回填数据 */
-        fun show(context: Context, courseName: String): GradeDetailDialog {
-            val dialog = GradeDetailDialog(context, courseName)
+        fun show(context: Context, grade: GradeEntity): GradeDetailDialog {
+            val dialog = GradeDetailDialog(context, grade)
             activeDialog?.dismiss()
             activeDialog = dialog
             dialog.setOnDismissListener { if (activeDialog === dialog) activeDialog = null }

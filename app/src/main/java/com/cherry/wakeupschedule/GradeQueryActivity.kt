@@ -335,7 +335,7 @@ class GradeQueryActivity : BaseActivity() {
             return
         }
 
-        val dialog = GradeDetailDialog.show(this, grade.courseName)
+        val dialog = GradeDetailDialog.show(this, grade)
         lifecycleScope.launch {
             val result = JwxtAuthManager.doWithAuth { client ->
                 client.grades().detail(

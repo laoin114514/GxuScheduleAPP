@@ -152,6 +152,10 @@ object GradeStats {
         return if (credit == null || credit <= 0) "学分未知" else "${formatCredits(credit)} 学分"
     }
 
+    /** 学分数值文案（不带单位，4.0 → 4）；解析不到返回 null，由调用方决定是否展示该行 */
+    fun formatCreditValue(grade: GradeEntity): String? =
+        parseNumber(grade.credits)?.let { formatCredits(it) }
+
     private fun parseNumber(raw: String?): Double? {
         if (raw.isNullOrBlank()) return null
         val match = NUMERIC.find(raw.trim()) ?: return null
