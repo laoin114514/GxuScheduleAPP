@@ -9,7 +9,7 @@ import java.util.Locale
  * 主题模式中心逻辑
  *
  * 统一负责「深浅色 + 自动切换」的最终夜间模式解析与生效，
- * 替代原先散落在 App / SettingsActivity / ProfileFragment 三处的重复映射逻辑。
+ * 替代原先散落在各页面与 App 中的重复映射逻辑。
  *
  * 模式结构：
  * - 自动切换关闭：直接使用 theme_mode（light/dark/system 兼容旧值）

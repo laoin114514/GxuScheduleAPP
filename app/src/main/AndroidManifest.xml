@@ -35,19 +35,12 @@
             android:name=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- 其他Activity声明 -->
-        <activity android:name=".ScheduleActivity" />
-        <activity android:name=".AddCourseActivity" />
-        <activity android:name=".SettingsActivity" />
+        <!-- 独立页面：入口均在「我的」页签与工具页，见 ProfileFragment / ToolsFragment -->
         <activity android:name=".WebViewActivity" />
-        <activity android:name=".SchoolImportActivity" />
-        <activity android:name=".SchoolListActivity" />
         <activity android:name=".TimeTableEditActivity" />
         <activity android:name=".AppearanceActivity" />
         <activity android:name=".FontSizeActivity" />
-        <activity android:name=".ApplyAdapterActivity" />
         <activity android:name=".AboutActivity" />
-        <activity android:name=".CourseOverviewActivity" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".BindJwxtActivity" />
         <activity android:name=".GradeQueryActivity" />
@@ -100,28 +93,6 @@
                 android:resource="@xml/widget_upcoming_days_info" />
         </receiver>
 
-        <!-- 桌面小部件 - 一周课程（已禁用）
-        <receiver
-            android:name=".widget.WeekViewWidgetProvider"
-            android:exported="true"
-            android:label="一周课程">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
-                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
-                <action android:name="com.cherry.wakeupschedule.widget.weekview.ACTION_REFRESH" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_week_view_info" />
-        </receiver> -->
-
-        <!-- 一周课程周期性更新接收器（已禁用）
-        <receiver
-            android:name=".widget.WeekViewPeriodicReceiver"
-            android:exported="false" />
-         -->
-
         <!-- 小组件定时更新接收器 -->
         <receiver
             android:name=".widget.WidgetUpdateReceiver"
@@ -170,12 +141,6 @@
         <receiver
             android:name=".widget.UpcomingDaysPeriodicReceiver"
             android:exported="false" />
-
-        <!-- 一周课程小组件周期性更新接收器（已禁用）
-        <receiver
-            android:name=".widget.WeekViewPeriodicReceiver"
-            android:exported="false" />
-         -->
 
         <!-- 时间变化监听接收器 -->
         <receiver
