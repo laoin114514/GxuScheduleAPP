@@ -1,10 +1,12 @@
 package com.cherry.wakeupschedule
 
+import android.app.Activity
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -15,6 +17,7 @@ import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.cherry.wakeupschedule.widget.WidgetMidnightReceiver
+import java.lang.ref.WeakReference
 
 class App : Application() {
 
@@ -41,9 +44,31 @@ class App : Application() {
         }
     }
 
+    /** 当前前台（resumed）页面，供更新引导等全局弹窗选择宿主，避免弹在被销毁/不可见的页面上 */
+    @Volatile
+    private var currentActivityRef: WeakReference<Activity>? = null
+
+    private val activityTracker = object : Application.ActivityLifecycleCallbacks {
+        override fun onActivityResumed(activity: Activity) {
+            currentActivityRef = WeakReference(activity)
+        }
+
+        override fun onActivityPaused(activity: Activity) {
+            // 只有暂停的正是当前记录的页面才清空，避免切换页面时误清
+            if (currentActivityRef?.get() === activity) currentActivityRef = null
+        }
+
+        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+        override fun onActivityStarted(activity: Activity) = Unit
+        override fun onActivityStopped(activity: Activity) = Unit
+        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+        override fun onActivityDestroyed(activity: Activity) = Unit
+    }
+
     override fun onCreate() {
         super.onCreate()
         instance = this
+        registerActivityLifecycleCallbacks(activityTracker)
 
         // 应用主题模式（浅色/深色/跟随系统）
         applyStoredThemeMode()
@@ -178,5 +203,15 @@ class App : Application() {
 
         lateinit var instance: App
             private set
+
+        /**
+         * 当前前台页面；应用处于后台、或正处于页面切换间隙时返回 null。
+         * 仅用于给全局弹窗（如更新安装引导）挑选可用宿主页面。
+         */
+        fun currentActivity(): Activity? {
+            if (!::instance.isInitialized) return null
+            val activity = instance.currentActivityRef?.get() ?: return null
+            return activity.takeIf { !it.isFinishing && !it.isDestroyed }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.cherry.wakeupschedule.service
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -17,6 +18,7 @@ import android.view.LayoutInflater
 import android.webkit.WebView
 import android.widget.TextView
 import androidx.core.content.FileProvider
+import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.ui.component.StyledDialog
@@ -53,6 +55,10 @@ import java.util.concurrent.TimeUnit
  * - 先写 <name>.apk.part，完成并校验（SHA256 + 应用签名一致）后改为正式文件名
  * - 同版本已下载完全时跳过下载直接安装；版本/校验不一致则删除旧包与记录重下
  * - 取消/中断时保留 .part 与元数据，下次 Range 续传
+ *
+ * 安装引导：下载完成后记录"待安装更新包"（内存 + 下载目录记录文件），缺少安装权限时
+ * 引导去系统设置；用户从设置页返回（BaseActivity.onResume）后继续引导安装，
+ * 页面重建或进程被回收也不会把用户丢在"没有任何安装入口"的状态。
  */
 class UpdateService(private val context: Context) {
 
@@ -74,6 +80,9 @@ class UpdateService(private val context: Context) {
         /** 下载中的临时文件后缀 */
         private const val PART_SUFFIX = ".part"
 
+        /** 待安装记录的落盘文件名（与安装包同目录，不参与旧文件清理） */
+        private const val PENDING_INSTALL_FILE = ".pending_install.json"
+
         /** 清理下载目录中超过该年龄的 apk/记录/临时文件 */
         private const val STALE_FILE_MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
 
@@ -86,6 +95,25 @@ class UpdateService(private val context: Context) {
         /** 当前进行中的下载任务（跨 UpdateService 实例共享） */
         @Volatile
         private var activeJob: Job? = null
+
+        /**
+         * 待安装的更新包（下载完成、安装引导尚未展示）。
+         * 静态共享，避免各页面各自 new 出来的实例互相看不到状态。
+         */
+        @Volatile
+        private var pendingInstall: PendingInstall? = null
+
+        /** 正在展示的安装引导弹窗，防止 onResume 反复触发时叠出多个弹窗 */
+        @Volatile
+        private var installPromptDialog: StyledDialog? = null
+
+        /** 安装引导弹窗是否在展示；已关闭的弹窗顺手释放引用 */
+        private fun isInstallPromptShowing(): Boolean {
+            val dialog = installPromptDialog ?: return false
+            if (dialog.isShowing) return true
+            installPromptDialog = null
+            return false
+        }
 
         /**
          * 更新提示（红点）状态变化回调，主线程回调。
@@ -110,9 +138,6 @@ class UpdateService(private val context: Context) {
 
     private val currentVersionName: String = BuildConfig.VERSION_NAME
     private val currentVersionCode: Int = BuildConfig.VERSION_CODE
-
-    /** 下载完成但缺少安装权限时暂存的文件，等从设置页返回后重试安装 */
-    private var pendingInstallFile: File? = null
 
     /** 最新版本信息 */
     data class UpdateInfo(
@@ -143,6 +168,13 @@ class UpdateService(private val context: Context) {
         object Canceled : DownloadResult()
         data class Failed(val reason: String) : DownloadResult()
     }
+
+    /** 已下载完成、等待引导安装的更新包 */
+    private data class PendingInstall(
+        val filePath: String,
+        val versionCode: Long,
+        val versionName: String,
+    )
 
     // 静默检查更新（不显示任何提示，只在新版本时弹出对话框；用户跳过的版本不再提示）
     fun checkForUpdateSilently() {
@@ -259,7 +291,12 @@ class UpdateService(private val context: Context) {
 
     // 显示更新对话框
     private fun showUpdateDialog(info: UpdateInfo) {
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_update, null)
+        val activity = activityOrNull()
+        if (activity == null) {
+            Log.w(TAG, "无可用页面展示更新弹窗，跳过本次提示")
+            return
+        }
+        val dialogView = LayoutInflater.from(activity).inflate(R.layout.dialog_update, null)
 
         val tvVersionInfo = dialogView.findViewById<TextView>(R.id.tv_version_info)
         val webViewNotes = dialogView.findViewById<WebView>(R.id.webview_notes)
@@ -288,7 +325,7 @@ class UpdateService(private val context: Context) {
         val htmlContent = markdownToHtml(info.changelog)
         webViewNotes.loadDataWithBaseURL(null, htmlContent, "text/html; charset=UTF-8", "UTF-8", null)
 
-        val dialog = StyledDialog.Builder(context)
+        val dialog = StyledDialog.Builder(activity)
             .view(dialogView)
             .show()
 
@@ -319,7 +356,7 @@ class UpdateService(private val context: Context) {
         // 本地已有同版本完整安装包：跳过下载直接安装
         cachedApkFor(info)?.let {
             Log.i(TAG, "本地已有同版本完整安装包，跳过下载: ${it.name}")
-            promptInstall(it, info.latestVersionName)
+            promptInstall(it, info)
             return
         }
 
@@ -456,7 +493,7 @@ class UpdateService(private val context: Context) {
             withContext(Dispatchers.Main) {
                 if (dialog.isShowing) dialog.dismiss()
                 when (result) {
-                    is DownloadResult.Success -> promptInstall(result.file, info.latestVersionName)
+                    is DownloadResult.Success -> promptInstall(result.file, info)
                     DownloadResult.Canceled -> showToast("已取消下载，进度已保留")
                     is DownloadResult.Failed -> showToast("下载失败: ${result.reason}")
                 }
@@ -691,54 +728,165 @@ class UpdateService(private val context: Context) {
 
     // ========== 安装 ==========
 
-    private fun promptInstall(file: File, newVersionName: String) {
+    /**
+     * 下载完成后的安装引导。
+     * 已有安装权限 → 询问是否立即安装；缺少权限 → 记下待安装包并引导去开启，
+     * 用户从设置页返回后由 [retryPendingInstall] 接着引导，安装入口不会凭空消失。
+     */
+    private fun promptInstall(file: File, info: UpdateInfo) {
         Log.i(TAG, "promptInstall: canRequestPackageInstalls=${canRequestPackageInstalls()}")
-        if (canRequestPackageInstalls()) {
-            StyledDialog.Builder(context)
-                .title("更新完成")
-                .message("已下载新版本 v$newVersionName 的安装包，是否立即安装？")
-                .positiveButton("立即安装") { installApk(file) }
-                .negativeButton("稍后")
-                .show()
-        } else {
-            pendingInstallFile = file
+        // 先落记录：引导弹窗因页面不可用没弹出来时，回到前台再补上
+        rememberPendingInstall(file, info)
+        if (!canRequestPackageInstalls()) {
             showInstallPermissionPrompt()
+            return
         }
+        showInstallReadyDialog(file, info.latestVersionName)
     }
 
-    private fun showInstallPermissionPrompt() {
-        StyledDialog.Builder(context)
-            .title("需要授权")
-            .message("安装应用需要开启\"安装未知应用\"权限")
-            .positiveButton("去设置") {
-                try {
-                    val intent = Intent(
-                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                        Uri.parse("package:${context.packageName}")
-                    )
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    Log.e(TAG, "open install permission settings failed", e)
-                }
+    /**
+     * 安装包已就绪，询问是否立即安装。
+     * 记录在用户做出选择时才清除：弹窗随页面一起被销毁（如页面重建）时还能再引导一次。
+     */
+    private fun showInstallReadyDialog(file: File, newVersionName: String, host: Activity? = null) {
+        // 只在应用前台弹：否则弹窗会落在不可见的页面上，用户回来时又"什么都没看到"
+        val activity = dialogHost(host) ?: return
+        installPromptDialog = StyledDialog.Builder(activity)
+            .title("更新完成")
+            .message("已下载新版本 v$newVersionName 的安装包，是否立即安装？")
+            .positiveButton("立即安装") {
+                installPromptDialog = null
+                clearPendingInstall()
+                installApk(file)
             }
-            .negativeButton("取消") { pendingInstallFile = null }
+            .negativeButton("稍后") {
+                installPromptDialog = null
+                clearPendingInstall()
+            }
+            .show()
+    }
+
+    /** 缺少安装权限：引导去系统设置开启，开通返回后继续安装 */
+    private fun showInstallPermissionPrompt(host: Activity? = null) {
+        if (isInstallPromptShowing()) return
+        val activity = dialogHost(host) ?: return
+        installPromptDialog = StyledDialog.Builder(activity)
+            .title("需要授权")
+            .message("安装新版本需要开启「安装未知应用」权限，开启后返回即可继续安装。")
+            .positiveButton("去设置") {
+                installPromptDialog = null
+                openInstallPermissionSettings(activity)
+            }
+            .negativeButton("取消") {
+                installPromptDialog = null
+                clearPendingInstall()
+                showToast("已取消安装，可稍后在「关于 - 检查更新」中继续")
+            }
             .show()
     }
 
     /**
-     * 从"安装未知应用"设置页返回后调用（如 AboutActivity.onResume），
-     * 权限就绪则自动继续安装。
+     * 安装引导弹窗的宿主：优先调用方传入的页面（onResume 触发时用的就是当前页），
+     * 否则取当前前台页面；都拿不到（应用不在前台）返回 null，由调用方延后到下次回到前台。
      */
-    fun retryPendingInstall() {
-        val file = pendingInstallFile ?: return
-        Log.i(TAG, "retryPendingInstall: file=$file canRequest=${canRequestPackageInstalls()}")
-        if (canRequestPackageInstalls()) {
-            pendingInstallFile = null
-            installApk(file)
-        } else {
-            showInstallPermissionPrompt()
+    private fun dialogHost(host: Activity?): Activity? {
+        (host ?: App.currentActivity())?.let { return it }
+        Log.i(TAG, "应用不在前台，安装引导延后到回到前台时展示")
+        return null
+    }
+
+    private fun openInstallPermissionSettings(activity: Activity) {
+        try {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                Uri.parse("package:${activity.packageName}")
+            )
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "open install permission settings failed", e)
+            showToast("无法打开权限设置页，请到系统设置中开启安装权限")
         }
+    }
+
+    /**
+     * 回到前台时继续安装引导（由 BaseActivity.onResume 调用，[host] 即当前页面）。
+     * 有待安装记录时：权限已开启 → 询问是否立即安装；仍未开启 → 再次提示去开启，
+     * 避免用户从设置页返回后弹窗消失、找不到继续安装的入口。
+     */
+    fun retryPendingInstall(host: Activity? = null) {
+        val pending = readPendingInstall() ?: return
+        if (isInstallPromptShowing()) return
+        // 新版本已装上（用户自行安装或系统装完）或安装包被清理：记录作废
+        if (pending.versionCode <= currentVersionCode) {
+            Log.i(TAG, "待安装版本(${pending.versionCode})不高于当前版本，清除记录")
+            clearPendingInstall()
+            return
+        }
+        val file = File(pending.filePath)
+        if (!file.exists()) {
+            Log.w(TAG, "待安装包已不存在: ${pending.filePath}")
+            clearPendingInstall()
+            return
+        }
+        Log.i(TAG, "retryPendingInstall: canRequestPackageInstalls=${canRequestPackageInstalls()}")
+        if (canRequestPackageInstalls()) {
+            showInstallReadyDialog(file, pending.versionName, host)
+        } else {
+            showInstallPermissionPrompt(host)
+        }
+    }
+
+    // ========== 待安装记录 ==========
+
+    private fun pendingInstallFile(): File = File(downloadDir(), PENDING_INSTALL_FILE)
+
+    /** 记下"已下载、待安装"的更新包，页面重建或进程被回收后仍能继续引导 */
+    private fun rememberPendingInstall(file: File, info: UpdateInfo) {
+        pendingInstall = PendingInstall(file.absolutePath, info.latestVersionCode, info.latestVersionName)
+        try {
+            pendingInstallFile().writeText(
+                JSONObject()
+                    .put("path", file.absolutePath)
+                    .put("versionCode", info.latestVersionCode)
+                    .put("versionName", info.latestVersionName)
+                    .toString()
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "save pending install failed", e)
+        }
+    }
+
+    private fun clearPendingInstall() {
+        pendingInstall = null
+        pendingInstallFile().delete()
+    }
+
+    /** 读取待安装记录：优先内存，进程被回收后回落到下载目录里的记录文件 */
+    private fun readPendingInstall(): PendingInstall? {
+        pendingInstall?.let { return it }
+        val file = pendingInstallFile()
+        if (!file.exists()) return null
+        return try {
+            val json = JSONObject(file.readText())
+            val path = json.optString("path", "")
+            if (path.isBlank()) return null
+            PendingInstall(
+                filePath = path,
+                versionCode = json.optLong("versionCode", 0),
+                versionName = json.optString("versionName", ""),
+            ).also { pendingInstall = it }
+        } catch (e: Exception) {
+            Log.w(TAG, "load pending install failed", e)
+            null
+        }
+    }
+
+    /** 弹窗宿主页面：优先当前前台页面，其次构造时持有的页面；都不可用返回 null（调用方延后处理） */
+    private fun activityOrNull(): Activity? {
+        App.currentActivity()?.let { return it }
+        val own = context as? Activity
+        return own?.takeIf { !it.isFinishing && !it.isDestroyed }
     }
 
     private fun canRequestPackageInstalls(): Boolean =

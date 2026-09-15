@@ -54,8 +54,7 @@ class AboutActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 从"安装未知应用"设置页返回后，如果授权完成则继续安装
-        updateService.retryPendingInstall()
+        // 从"安装未知应用"设置页返回后的安装续接由 BaseActivity 统一处理
         refreshUpdateHint()
         // 静默检查完成后红点即时刷新（同一时刻仅本页面在前台注册）
         UpdateService.hintChangedListener = { refreshUpdateHint() }
