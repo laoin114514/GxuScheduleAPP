@@ -1,18 +1,12 @@
 package com.cherry.wakeupschedule
 
-import android.graphics.Color
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.util.TypedValue
-import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.AttrRes
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
@@ -24,13 +18,15 @@ import com.cherry.wakeupschedule.service.GradeDataManager
 import com.cherry.wakeupschedule.service.GradeImportService
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SemesterManager
+import com.cherry.wakeupschedule.ui.component.createAppChip
+import com.cherry.wakeupschedule.ui.component.createChipDivider
+import com.cherry.wakeupschedule.ui.component.themeColor
 import com.cherry.wakeupschedule.ui.screen.grade.GradeAdapter
 import com.cherry.wakeupschedule.ui.screen.grade.GradeDetailDialog
 import com.cherry.wakeupschedule.ui.screen.grade.GradeFilter
 import com.cherry.wakeupschedule.ui.screen.grade.GradeStats
 import com.cherry.wakeupschedule.ui.screen.grade.SemesterExpandPicker
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
-import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
@@ -87,7 +83,7 @@ class GradeQueryActivity : BaseActivity() {
         (loadingIndicator as? com.google.android.material.progressindicator.CircularProgressIndicator)
             ?.apply {
                 isIndeterminate = true
-                setIndicatorColor(attr(com.google.android.material.R.attr.colorPrimary))
+                setIndicatorColor(themeColor(com.google.android.material.R.attr.colorPrimary))
             }
 
         adapter = GradeAdapter { showDetail(it) }
@@ -112,7 +108,7 @@ class GradeQueryActivity : BaseActivity() {
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = dp(12).toFloat()
-                setColor(attr(com.google.android.material.R.attr.colorPrimary))
+                setColor(themeColor(com.google.android.material.R.attr.colorPrimary))
             }
             setOnClickListener { querySelectedSemester() }
         }
@@ -217,11 +213,11 @@ class GradeQueryActivity : BaseActivity() {
         filterRow.removeAllViews()
         GradeFilter.values().forEach { filter ->
             filterRow.addView(
-                createChip(
+                createAppChip(
                     label = filter.label,
                     selected = filter == currentFilter,
                     accent = if (filter == GradeFilter.FAILED) {
-                        attr(com.google.android.material.R.attr.colorError)
+                        themeColor(com.google.android.material.R.attr.colorError)
                     } else null,
                     leadingIcon = null
                 ) {
@@ -232,10 +228,10 @@ class GradeQueryActivity : BaseActivity() {
             )
         }
 
-        filterRow.addView(createDivider())
+        filterRow.addView(createChipDivider())
 
         filterRow.addView(
-            createChip(
+            createAppChip(
                 label = if (sortDescending) "成绩从高到低" else "成绩从低到高",
                 selected = false,
                 accent = null,
@@ -246,81 +242,6 @@ class GradeQueryActivity : BaseActivity() {
                 lifecycleScope.launch { renderGrades() }
             }
         )
-    }
-
-    private fun createChip(
-        label: String,
-        selected: Boolean,
-        accent: Int?,
-        leadingIcon: Int?,
-        onClick: () -> Unit
-    ): View {
-        val primary = attr(com.google.android.material.R.attr.colorPrimary)
-        val onPrimary = attr(com.google.android.material.R.attr.colorOnPrimary)
-        val onError = attr(com.google.android.material.R.attr.colorOnError)
-        val outline = attr(com.google.android.material.R.attr.colorOutlineVariant)
-        val surface = attr(com.google.android.material.R.attr.colorSurfaceContainerLowest)
-        val onSurfaceVariant = attr(com.google.android.material.R.attr.colorOnSurfaceVariant)
-
-        val chip = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            isClickable = true
-            isFocusable = true
-            setPadding(dp(12), dp(6), dp(12), dp(6))
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { marginEnd = dp(8) }
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = dp(999).toFloat()
-                when {
-                    selected -> setColor(accent ?: primary)
-                    accent != null -> {
-                        setColor(surface)
-                        setStroke(dp(1), ColorUtils.setAlphaComponent(accent, 0x4D))
-                    }
-                    else -> {
-                        setColor(surface)
-                        setStroke(dp(1), outline)
-                    }
-                }
-            }
-            setOnClickListener { onClick() }
-        }
-
-        val textColor = when {
-            selected -> if (accent != null) onError else onPrimary
-            accent != null -> accent
-            else -> onSurfaceVariant
-        }
-
-        if (leadingIcon != null) {
-            chip.addView(ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(6) }
-                setImageResource(leadingIcon)
-                setColorFilter(textColor)
-            })
-        }
-
-        chip.addView(TextView(this).apply {
-            text = label
-            setTextSizeRes(R.dimen.text_caption)
-            setTextColor(textColor)
-            typeface = Typeface.DEFAULT_BOLD
-        })
-
-        return chip
-    }
-
-    private fun createDivider(): View = View(this).apply {
-        layoutParams = LinearLayout.LayoutParams(dp(1), dp(16)).apply {
-            marginStart = dp(2)
-            marginEnd = dp(10)
-        }
-        setBackgroundColor(ColorUtils.setAlphaComponent(
-            attr(com.google.android.material.R.attr.colorOutlineVariant), 0x66
-        ))
     }
 
     // ── 成绩详情 ──────────────────────────────────────────
@@ -360,7 +281,7 @@ class GradeQueryActivity : BaseActivity() {
             cornerRadius = dp(16).toFloat()
             setColor(
                 ColorUtils.setAlphaComponent(
-                    attr(com.google.android.material.R.attr.colorSurfaceContainerLowest), 0xF5
+                    themeColor(com.google.android.material.R.attr.colorSurfaceContainerLowest), 0xF5
                 )
             )
         }
@@ -407,19 +328,6 @@ class GradeQueryActivity : BaseActivity() {
 
     private fun toast(text: String) =
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
-
-    /**
-     * 解析当前主题色。
-     *
-     * 必须用 Activity 自己的 theme：调色板 overlay 是 [ThemeManager.applyToTheme] 在
-     * setContentView 之前 applyStyle 到 activity.theme 上的，而
-     * `window.decorView.context.theme` 是另一个没叠加 overlay 的 Theme 实例，
-     * 从它解析会拿到 M3 基线色（紫 #6750A4）而不是当前调色板的主色。
-     */
-    private fun attr(@AttrRes attribute: Int): Int {
-        val tv = TypedValue()
-        return if (theme.resolveAttribute(attribute, tv, true)) tv.data else Color.TRANSPARENT
-    }
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).roundToInt()
