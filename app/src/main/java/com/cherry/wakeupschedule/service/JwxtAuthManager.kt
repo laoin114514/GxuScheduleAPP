@@ -151,6 +151,8 @@ object JwxtAuthManager {
         SemesterManager.setCurrentIndex(-1)
         // 清空课程显示
         CourseDataManager.getInstance(App.instance).switchSemester(0L)
+        // 清空上次绩点计算结果：学期表重建后旧结果已失效，且换账号后不应展示上一个账号的绩点
+        GpaResultStore(App.instance).clear()
         destroyClient()
     }
 

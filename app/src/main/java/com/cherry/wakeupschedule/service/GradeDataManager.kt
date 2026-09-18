@@ -32,6 +32,10 @@ class GradeDataManager private constructor(context: Context) {
     suspend fun loadGrades(semesterId: Long = selectedSemesterId): List<GradeEntity> =
         withContext(Dispatchers.IO) { dao.getGradesBySemesterId(semesterId) }
 
+    /** 全部学期的成绩（绩点计算页的「至今 / 全部」范围用一次查询取回） */
+    suspend fun loadAllGrades(): List<GradeEntity> =
+        withContext(Dispatchers.IO) { dao.getAllGrades() }
+
     /** 覆盖写入指定学期的成绩（删旧 + 插新，同一事务内完成） */
     suspend fun replaceGradesForSemester(grades: List<GradeEntity>, semesterId: Long) {
         withContext(Dispatchers.IO) {

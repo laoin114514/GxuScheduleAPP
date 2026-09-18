@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.cherry.wakeupschedule.BindJwxtActivity
+import com.cherry.wakeupschedule.GpaActivity
 import com.cherry.wakeupschedule.GradeQueryActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.databinding.FragmentToolsBinding
@@ -83,7 +84,8 @@ class ToolsFragment : Fragment() {
                 onClick = { ctx -> ctx.startActivity(Intent(ctx, GradeQueryActivity::class.java)) }),
             ToolItem("exams", "考试安排", icon = R.drawable.ic_mtrl_event_note),
             ToolItem("classroom", "教室查询", icon = R.drawable.ic_mtrl_school),
-            ToolItem("gpa", "绩点计算", icon = R.drawable.ic_mtrl_chart),
+            ToolItem("gpa", "绩点计算", icon = R.drawable.ic_mtrl_chart,
+                onClick = { ctx -> ctx.startActivity(Intent(ctx, GpaActivity::class.java)) }),
         )),
         ToolSection("校园生活", ToolSection.Style.ICON_GRID, listOf(
             ToolItem("library", "图书馆", icon = R.drawable.ic_mtrl_book),

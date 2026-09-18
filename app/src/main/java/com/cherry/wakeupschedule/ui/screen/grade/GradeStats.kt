@@ -1,6 +1,7 @@
 package com.cherry.wakeupschedule.ui.screen.grade
 
 import com.cherry.wakeupschedule.model.GradeEntity
+import com.cherry.wakeupschedule.model.SemesterEntity
 import java.util.Locale
 
 /** 成绩列表筛选条件 */
@@ -11,12 +12,34 @@ enum class GradeFilter(val label: String) {
     FAILED("不及格")
 }
 
-/** 学期成绩汇总 */
+/**
+ * 成绩汇总。
+ *
+ * 前三项用于成绩查询页，[weightedAverageScore] / [courseCount] / [failedCount] 用于绩点计算页；
+ * 传入 [SimulatedCourse] 时，模拟课程只参与平均学分绩点与已获学分，不影响其余指标。
+ */
 data class GradeSummary(
-    /** 平均学分绩点；无有效数据时为 null */
+    /** 平均学分绩点 = Σ学分绩点 / Σ学分；无有效数据时为 null */
     val averageGpa: Double?,
     /** 已通过课程的学分之和 */
-    val totalCredits: Double
+    val totalCredits: Double,
+    /** 加权平均分 = Σ(成绩 × 学分) / Σ学分；等级制与无学分课程不参与，无有效数据时为 null */
+    val weightedAverageScore: Double? = null,
+    /** 有效课程门数（排除作废成绩与成绩为空的条目） */
+    val courseCount: Int = 0,
+    /** 不及格门数 */
+    val failedCount: Int = 0
+)
+
+/**
+ * 模拟试算里的一门假设课程。
+ *
+ * [passed] 由调用方判定（百分制 ≥ 60 或绩点 ≥ 1.0），决定该课程学分是否计入「已获学分」。
+ */
+data class SimulatedCourse(
+    val credits: Double,
+    val gradePoint: Double,
+    val passed: Boolean
 )
 
 /**
@@ -116,10 +139,22 @@ object GradeStats {
 
     // ── 汇总 ──────────────────────────────────────────────
 
-    fun summarize(grades: List<GradeEntity>): GradeSummary {
+    /**
+     * 汇总成绩。[simulated] 为模拟试算的假设课程（默认为空，行为与只有真实成绩时完全一致）。
+     *
+     * 加权平均分只由真实课程贡献：模拟课程只给出学分/绩点，没有百分制成绩，混算会改变口径。
+     */
+    fun summarize(
+        grades: List<GradeEntity>,
+        simulated: List<SimulatedCourse> = emptyList()
+    ): GradeSummary {
         var creditSum = 0.0
         var creditGpaSum = 0.0
         var passedCreditSum = 0.0
+        var scoreWeightedSum = 0.0
+        var scoreCreditSum = 0.0
+        var courseCount = 0
+        var failedCount = 0
 
         grades.filterNot { isVoided(it) }.forEach { grade ->
             val credit = parseNumber(grade.credits) ?: 0.0
@@ -131,11 +166,44 @@ object GradeStats {
             if (isPassed(grade) && credit > 0) {
                 passedCreditSum += credit
             }
+            if (grade.score.isNotBlank() || grade.percentageScore.isNotBlank()) {
+                courseCount++
+            }
+            if (isFailed(grade)) failedCount++
+
+            val score = numericScore(grade)
+            if (credit > 0 && score != null) {
+                scoreWeightedSum = scoreWeightedSum + score * credit
+                scoreCreditSum += credit
+            }
+        }
+
+        simulated.forEach { course ->
+            if (course.credits <= 0) return@forEach
+            creditSum += course.credits
+            creditGpaSum += course.credits * course.gradePoint
+            if (course.passed) passedCreditSum += course.credits
         }
 
         val gpa = if (creditSum > 0) creditGpaSum / creditSum else null
-        return GradeSummary(averageGpa = gpa, totalCredits = passedCreditSum)
+        return GradeSummary(
+            averageGpa = gpa,
+            totalCredits = passedCreditSum,
+            weightedAverageScore = if (scoreCreditSum > 0) scoreWeightedSum / scoreCreditSum else null,
+            courseCount = courseCount,
+            failedCount = failedCount
+        )
     }
+
+    /**
+     * 成绩 → 绩点的估算口径（模拟试算「按成绩」模式用）。
+     *
+     * 校内换算公式未在仓库中固化，这里采用通用口径 `(成绩 − 50) / 10`（60 分以下计 0，上限 5.0），
+     * UI 必须标注「仅供参考」。真实成绩一律使用教务下发的 jd/xfjd，不做二次换算；
+     * 日后若确认校内口径，只改这一处。
+     */
+    fun estimateGradePoint(score: Double): Double =
+        if (score < PASS_SCORE) 0.0 else ((score - 50.0) / 10.0).coerceIn(0.0, 5.0)
 
     // ── 展示格式化 ────────────────────────────────────────
 
@@ -145,6 +213,10 @@ object GradeStats {
     fun formatCredits(credits: Double): String =
         if (credits == credits.toLong().toDouble()) credits.toLong().toString()
         else String.format(Locale.ROOT, "%.1f", credits)
+
+    /** 学期完整标题，如「大二上 · 2024-2025学年 第一学期」 */
+    fun semesterTitle(semester: SemesterEntity): String =
+        "${semester.label} · ${semester.academicYear}学年 ${semester.termName}"
 
     /** 学分胶囊文案，如「4.5 学分」 */
     fun formatCreditBadge(grade: GradeEntity): String {
@@ -156,7 +228,8 @@ object GradeStats {
     fun formatCreditValue(grade: GradeEntity): String? =
         parseNumber(grade.credits)?.let { formatCredits(it) }
 
-    private fun parseNumber(raw: String?): Double? {
+    /** 解析用户输入里的数字（取第一个数值，如「4.5 学分」→ 4.5）；空或非法返回 null */
+    fun parseNumber(raw: String?): Double? {
         if (raw.isNullOrBlank()) return null
         val match = NUMERIC.find(raw.trim()) ?: return null
         return match.value.toDoubleOrNull()

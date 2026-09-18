@@ -44,6 +44,10 @@
         <activity android:name=".ProfileActivity" />
         <activity android:name=".BindJwxtActivity" />
         <activity android:name=".GradeQueryActivity" />
+        <!-- 模拟试算要输入，键盘弹出时压缩内容而不是盖住输入框 -->
+        <activity
+            android:name=".GpaActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- 桌面小部件 - 今日课程 -->
         <receiver
