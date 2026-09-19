@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Course::class, AccountEntity::class, SemesterEntity::class, CookieEntity::class, GradeEntity::class], version = 9, exportSchema = false)
+@Database(entities = [Course::class, AccountEntity::class, SemesterEntity::class, CookieEntity::class, GradeEntity::class, ExamScheduleEntity::class], version = 11, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun courseDao(): CourseDao
@@ -15,6 +15,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun semesterDao(): SemesterDao
     abstract fun cookieDao(): CookieDao
     abstract fun gradeDao(): GradeDao
+    abstract fun examScheduleDao(): ExamScheduleDao
 
     companion object {
         @Volatile
@@ -143,6 +144,27 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 新增 exam_schedules 表：外键关联 semesters.id，学期清理时级联删除考试安排。
+                // 建表 SQL 必须与 Room 依 ExamScheduleEntity 生成的完全一致，否则启动表结构校验失败。
+                createExamSchedulesTable(db)
+            }
+        }
+
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 10 是早期未发布的考试表实验版本：表名 `exams`、多一个 scheduled 列、
+                // 教学班列叫 teaching_class（当前结构是 exam_schedules / teaching_class_name）。
+                // 该结构从未提交到仓库，却可能残留在开发机的数据库里：版本号同为 10 时
+                // Room 不会走任何迁移，直接以 identity hash 校验失败崩在 Application.onCreate。
+                // 这里统一重建；考试数据来自教务，重查即可，不需要保留。
+                db.execSQL("DROP TABLE IF EXISTS `exam_schedules`")
+                db.execSQL("DROP TABLE IF EXISTS `exams`")
+                createExamSchedulesTable(db)
+            }
+        }
+
         /** grades 表建表 + 索引，7→8 与 8→9 共用，保证两处结构永远一致。 */
         private fun createGradesTable(db: SupportSQLiteDatabase) {
             db.execSQL("""
@@ -176,6 +198,34 @@ abstract class AppDatabase : RoomDatabase() {
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_grades_semester_id` ON `grades` (`semester_id`)")
         }
 
+        /** exam_schedules 表建表 + 索引（列顺序与 ExamScheduleEntity 声明顺序一致）。 */
+        private fun createExamSchedulesTable(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS `exam_schedules` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `semester_id` INTEGER NOT NULL,
+                    `course_name` TEXT NOT NULL,
+                    `course_code` TEXT NOT NULL,
+                    `exam_name` TEXT NOT NULL,
+                    `exam_time` TEXT NOT NULL,
+                    `classroom` TEXT NOT NULL,
+                    `classroom_code` TEXT NOT NULL,
+                    `locations` TEXT NOT NULL,
+                    `assessment_method` TEXT NOT NULL,
+                    `teaching_class_name` TEXT NOT NULL,
+                    `teacher` TEXT NOT NULL,
+                    `credits` TEXT NOT NULL,
+                    `school_year` TEXT NOT NULL,
+                    `term` TEXT NOT NULL,
+                    `paper_id` TEXT NOT NULL,
+                    `updated_at` INTEGER NOT NULL,
+                    FOREIGN KEY(`semester_id`) REFERENCES `semesters`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+            """.trimIndent())
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_exam_schedules_semester_id` ON `exam_schedules` (`semester_id`)")
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -183,7 +233,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "schedule.db"
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }

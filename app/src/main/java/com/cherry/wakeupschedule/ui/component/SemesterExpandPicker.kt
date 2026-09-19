@@ -1,4 +1,4 @@
-package com.cherry.wakeupschedule.ui.screen.grade
+package com.cherry.wakeupschedule.ui.component
 
 import android.content.Context
 import android.graphics.Typeface
@@ -22,10 +22,11 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * 成绩页的学期选择器：点击字段后以**浮层下拉**展开（不是滚轮，也不在页内撑开把下方顶走）。
+ * 学期选择器：点击字段后以**浮层下拉**展开（不是滚轮，也不在页内撑开把下方顶走）。
+ * 成绩查询页与考试安排页共用。
  *
  * 视觉沿用「我的」里的学期选择（[com.cherry.wakeupschedule.ui.component.SemesterWheelDialog]）：
- * 左侧迷你色块（该学期已有成绩 → 风景块，否则素色块）+ 右侧「大二上  2024-2025学年 第一学期」，
+ * 左侧迷你色块（该学期已有缓存数据 → 风景块，否则素色块）+ 右侧「大二上  2024-2025学年 第一学期」，
  * 选中项用对勾标记。选项挂在 PopupWindow 上覆盖在下方内容之上，浮层内可滚动。
  *
  * 选择结果只回调给调用方用于本页筛选，不写回全局当前学期。
@@ -72,7 +73,7 @@ class SemesterExpandPicker(
 
     private var popup: PopupWindow? = null
     private var semesters: List<SemesterEntity> = emptyList()
-    private var gradeCounts: Map<Long, Int> = emptyMap()
+    private var cachedCounts: Map<Long, Int> = emptyMap()
     private var selectedId: Long = 0L
 
     val isExpanded: Boolean
@@ -82,10 +83,10 @@ class SemesterExpandPicker(
         field.setOnClickListener { toggle() }
     }
 
-    /** 更新数据并重绘（展开状态保持不变） */
-    fun submit(semesters: List<SemesterEntity>, gradeCounts: Map<Long, Int>, selectedId: Long) {
+    /** 更新数据并重绘（展开状态保持不变）。[cachedCounts] 为各学期已有的缓存条数（成绩 / 考试条数） */
+    fun submit(semesters: List<SemesterEntity>, cachedCounts: Map<Long, Int>, selectedId: Long) {
         this.semesters = semesters
-        this.gradeCounts = gradeCounts
+        this.cachedCounts = cachedCounts
         this.selectedId = selectedId
         renderField()
         rebuildOptions()
@@ -164,7 +165,7 @@ class SemesterExpandPicker(
         } else {
             "请选择学期"
         }
-        setBlock(blockContainer, 36, selected != null && (gradeCounts[selected.id] ?: 0) > 0, false)
+        setBlock(blockContainer, 36, selected != null && (cachedCounts[selected.id] ?: 0) > 0, false)
     }
 
     // ── 浮层列表 ──────────────────────────────────────────
@@ -202,7 +203,7 @@ class SemesterExpandPicker(
         val blockHost = FrameLayout(context).apply {
             layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
         }
-        setBlock(blockHost, 40, (gradeCounts[semester.id] ?: 0) > 0, isSelected)
+        setBlock(blockHost, 40, (cachedCounts[semester.id] ?: 0) > 0, isSelected)
         row.addView(blockHost)
 
         row.addView(TextView(context).apply {
@@ -227,11 +228,11 @@ class SemesterExpandPicker(
         return row
     }
 
-    /** 左侧迷你色块：已有成绩 → 风景块（选中再加描边），否则素色块 */
-    private fun setBlock(host: FrameLayout, sizeDp: Int, hasGrades: Boolean, selected: Boolean) {
+    /** 左侧迷你色块：已有缓存数据 → 风景块（选中再加描边），否则素色块 */
+    private fun setBlock(host: FrameLayout, sizeDp: Int, hasCache: Boolean, selected: Boolean) {
         val size = dp(sizeDp)
         host.removeAllViews()
-        if (hasGrades) {
+        if (hasCache) {
             host.addView(SemesterSceneryView(context).apply {
                 layoutParams = FrameLayout.LayoutParams(size, size)
                 setPalette(

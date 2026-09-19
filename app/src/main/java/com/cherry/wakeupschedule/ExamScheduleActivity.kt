@@ -12,71 +12,70 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.cherry.wakeupschedule.model.GradeEntity
+import com.cherry.wakeupschedule.model.ExamScheduleEntity
 import com.cherry.wakeupschedule.model.SemesterEntity
-import com.cherry.wakeupschedule.service.GradeDataManager
-import com.cherry.wakeupschedule.service.GradeImportService
+import com.cherry.wakeupschedule.service.ExamScheduleDataManager
+import com.cherry.wakeupschedule.service.ExamScheduleImportService
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SemesterManager
-import com.cherry.wakeupschedule.ui.component.createAppChip
-import com.cherry.wakeupschedule.ui.component.createChipDivider
-import com.cherry.wakeupschedule.ui.component.themeColor
-import com.cherry.wakeupschedule.ui.screen.grade.GradeAdapter
-import com.cherry.wakeupschedule.ui.screen.grade.GradeDetailDialog
-import com.cherry.wakeupschedule.ui.screen.grade.GradeFilter
-import com.cherry.wakeupschedule.ui.screen.grade.GradeStats
 import com.cherry.wakeupschedule.ui.component.SemesterExpandPicker
+import com.cherry.wakeupschedule.ui.component.createAppChip
+import com.cherry.wakeupschedule.ui.component.themeColor
+import com.cherry.wakeupschedule.ui.screen.exam.ExamFilter
+import com.cherry.wakeupschedule.ui.screen.exam.ExamScheduleAdapter
+import com.cherry.wakeupschedule.ui.screen.exam.ExamScheduleStats
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
-import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * 成绩查询页。
+ * 考试安排页。
  *
  * - 学期选择：浮层下拉（[SemesterExpandPicker]），**只筛选本页**，不改课表的当前学期
- * - 查询：从教务拉取所选学期成绩，**整学期覆盖**写入本地（[GradeImportService]）；
- *   查询期间「查询」按钮置灰禁用，loading 覆盖层盖住整个成绩列表
- * - 列表：筛选（全部/必修/选修/不及格）+ 按分数排序；点条目看平时/期末详情
+ * - 查询：从教务拉取所选学期的考试（[ExamScheduleImportService]），**整学期覆盖**写入本地；
+ *   查询期间「查询」按钮置灰禁用，loading 覆盖层盖住整个考试列表
+ * - 列表：筛选（全部/未开始/进行中/已结束）；排序固定为「未开始优先，再按距现在最近」
+ * - 场地只展示教务的 cdmc（为空显示「地点待定」）
  */
-class GradeQueryActivity : BaseActivity() {
+class ExamScheduleActivity : BaseActivity() {
 
-    private lateinit var gradeDataManager: GradeDataManager
-    private lateinit var adapter: GradeAdapter
+    private lateinit var examDataManager: ExamScheduleDataManager
+    private lateinit var adapter: ExamScheduleAdapter
     private lateinit var picker: SemesterExpandPicker
 
     private lateinit var recycler: RecyclerView
     private lateinit var statusContainer: View
     private lateinit var statusText: TextView
     private lateinit var loadingIndicator: View
-    private lateinit var gpaText: TextView
-    private lateinit var creditsText: TextView
     private lateinit var filterRow: LinearLayout
     private lateinit var btnQuery: View
 
-    private var currentFilter = GradeFilter.ALL
-    private var sortDescending = true
+    private var currentFilter = ExamFilter.ALL
 
-    /** 当前学期全量成绩（不筛选），用于汇总 */
-    private var semesterGrades: List<GradeEntity> = emptyList()
+    /** 当前学期全量考试（不筛选），用于判断该学期是否已有缓存 */
+    private var semesterExams: List<ExamScheduleEntity> = emptyList()
+
+    /** 首帧渲染完成前 onResume 不重复渲染（loadSemesters 自己会渲染一次） */
+    private var renderedOnce = false
+
+    /** 查询进行中：期间 onResume 的重渲染会盖掉 loading 遮罩，必须跳过 */
+    private var querying = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
-        setContentView(R.layout.activity_grade_query)
+        setContentView(R.layout.activity_exam_schedule)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        setupPageHeader(findViewById(R.id.toolbar), "成绩查询")
+        setupPageHeader(findViewById(R.id.toolbar), "考试安排")
 
-        gradeDataManager = GradeDataManager.getInstance(this)
+        examDataManager = ExamScheduleDataManager.getInstance(this)
 
-        recycler = findViewById(R.id.rv_grades)
+        recycler = findViewById(R.id.rv_exams)
         statusContainer = findViewById(R.id.ll_status)
         statusText = findViewById(R.id.tv_status)
         loadingIndicator = findViewById(R.id.pb_loading)
-        gpaText = findViewById(R.id.tv_gpa)
-        creditsText = findViewById(R.id.tv_credits)
         filterRow = findViewById(R.id.ll_filters)
 
         loadingIndicator.visibility = View.GONE
@@ -86,7 +85,7 @@ class GradeQueryActivity : BaseActivity() {
                 setIndicatorColor(themeColor(com.google.android.material.R.attr.colorPrimary))
             }
 
-        adapter = GradeAdapter { showDetail(it) }
+        adapter = ExamScheduleAdapter()
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
 
@@ -117,6 +116,14 @@ class GradeQueryActivity : BaseActivity() {
         loadSemesters()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 状态取决于「现在」：跨过考试开始/结束时刻后重渲染一次，徽标不滞后
+        if (renderedOnce && !querying) {
+            lifecycleScope.launch { renderExams() }
+        }
+    }
+
     // ── 学期 ──────────────────────────────────────────────
 
     private fun loadSemesters() {
@@ -124,29 +131,27 @@ class GradeQueryActivity : BaseActivity() {
         if (semesters.isEmpty()) {
             picker.submit(emptyList(), emptyMap(), 0L)
             showStatus("请先绑定教务账号，绑定后会自动生成学期", loading = false)
-            gpaText.text = "—"
-            creditsText.text = "—"
-            adapter.submit(emptyList())
+            adapter.submit(emptyList(), System.currentTimeMillis())
             return
         }
 
         lifecycleScope.launch {
-            val counts = gradeDataManager.getSemesterGradeCounts()
-            // 初始选中：上次选的 → 全局当前学期 → 首个已有成绩的学期 → 第一个
-            val selected = gradeDataManager.selectedSemesterId
+            val counts = examDataManager.getSemesterExamCounts()
+            // 初始选中：上次选的 → 全局当前学期 → 首个已有缓存的学期 → 第一个
+            val selected = examDataManager.selectedSemesterId
                 .takeIf { id -> semesters.any { it.id == id } }
                 ?: SemesterManager.getCurrent()?.id
                 ?: counts.keys.firstOrNull()
                 ?: semesters.first().id
-            gradeDataManager.selectSemester(selected)
+            examDataManager.selectSemester(selected)
             picker.submit(semesters, counts, selected)
-            renderGrades()
+            renderExams()
         }
     }
 
     private fun onSemesterSelected(semester: SemesterEntity) {
-        gradeDataManager.selectSemester(semester.id)
-        lifecycleScope.launch { renderGrades() }
+        examDataManager.selectSemester(semester.id)
+        lifecycleScope.launch { renderExams() }
     }
 
     // ── 查询（覆盖入库） ──────────────────────────────────
@@ -162,14 +167,16 @@ class GradeQueryActivity : BaseActivity() {
             return
         }
         picker.collapse()
-        showStatus("正在从教务获取成绩…", loading = true)
+        showStatus("正在从教务获取考试安排…", loading = true)
 
         lifecycleScope.launch {
-            val result = GradeImportService.fetchAndSaveGradesForSemester(this@GradeQueryActivity, semester)
+            val result = ExamScheduleImportService
+                .fetchAndSaveExamsForSemester(this@ExamScheduleActivity, semester)
+            if (isFinishing || isDestroyed) return@launch
             result.onSuccess { count ->
-                toast(if (count == 0) "该学期暂无成绩" else "已更新 $count 条成绩")
+                toast(if (count == 0) "该学期暂无考试安排" else "已更新 $count 条考试安排")
                 refreshSemesterOptions()
-                renderGrades()
+                renderExams()
             }.onFailure { error ->
                 // CaptchaRequiredException 等已带友好文案，直接展示
                 showStatus(error.message ?: "查询失败", loading = false)
@@ -180,29 +187,30 @@ class GradeQueryActivity : BaseActivity() {
     private suspend fun refreshSemesterOptions() {
         picker.submit(
             SemesterManager.getAll(),
-            gradeDataManager.getSemesterGradeCounts(),
-            gradeDataManager.selectedSemesterId
+            examDataManager.getSemesterExamCounts(),
+            examDataManager.selectedSemesterId
         )
     }
 
     // ── 渲染 ──────────────────────────────────────────────
 
-    private suspend fun renderGrades() {
-        semesterGrades = gradeDataManager.loadGrades()
+    private suspend fun renderExams() {
+        // 状态与排序共用同一个「现在」，避免列表顺序和徽标互相矛盾
+        val now = System.currentTimeMillis()
+        semesterExams = examDataManager.loadExams()
 
-        val summary = GradeStats.summarize(semesterGrades)
-        gpaText.text = GradeStats.formatGpa(summary.averageGpa)
-        creditsText.text = GradeStats.formatCredits(summary.totalCredits)
-
-        val visible = GradeStats.sort(
-            GradeStats.filter(semesterGrades, currentFilter),
-            descending = sortDescending
+        val visible = ExamScheduleStats.sort(
+            ExamScheduleStats.filter(semesterExams, currentFilter, now),
+            now
         )
-        adapter.submit(visible)
+        adapter.submit(visible, now)
+        renderedOnce = true
 
         when {
-            semesterGrades.isEmpty() -> showStatus("该学期还没有成绩，点「查询」从教务获取", loading = false)
-            visible.isEmpty() -> showStatus("没有符合「${currentFilter.label}」的成绩", loading = false)
+            semesterExams.isEmpty() ->
+                showStatus("该学期还没有考试安排，点「查询」从教务获取", loading = false)
+            visible.isEmpty() ->
+                showStatus("没有「${currentFilter.label}」的考试安排", loading = false)
             else -> hideStatus()
         }
     }
@@ -211,70 +219,29 @@ class GradeQueryActivity : BaseActivity() {
 
     private fun buildFilterChips() {
         filterRow.removeAllViews()
-        GradeFilter.values().forEach { filter ->
+        // 排序规则固定（未开始优先 + 距现在最近），因此这里不提供排序切换
+        ExamFilter.values().forEach { filter ->
             filterRow.addView(
                 createAppChip(
                     label = filter.label,
                     selected = filter == currentFilter,
-                    accent = if (filter == GradeFilter.FAILED) {
-                        themeColor(com.google.android.material.R.attr.colorError)
-                    } else null,
+                    accent = null,
                     leadingIcon = null
                 ) {
                     currentFilter = filter
                     buildFilterChips()
-                    lifecycleScope.launch { renderGrades() }
+                    lifecycleScope.launch { renderExams() }
                 }
             )
-        }
-
-        filterRow.addView(createChipDivider())
-
-        filterRow.addView(
-            createAppChip(
-                label = if (sortDescending) "成绩从高到低" else "成绩从低到高",
-                selected = false,
-                accent = null,
-                leadingIcon = R.drawable.ic_mtrl_swap_horiz
-            ) {
-                sortDescending = !sortDescending
-                buildFilterChips()
-                lifecycleScope.launch { renderGrades() }
-            }
-        )
-    }
-
-    // ── 成绩详情 ──────────────────────────────────────────
-
-    private fun showDetail(grade: GradeEntity) {
-        if (!JwxtAuthManager.isBound()) {
-            toast("请先绑定教务账号")
-            return
-        }
-        if (grade.classId.isBlank() || grade.studentId.isBlank()) {
-            toast("该成绩缺少详情参数")
-            return
-        }
-
-        val dialog = GradeDetailDialog.show(this, grade)
-        lifecycleScope.launch {
-            val result = JwxtAuthManager.doWithAuth { client ->
-                client.grades().detail(
-                    grade.classId, grade.schoolYear, grade.term, grade.studentId, grade.courseName
-                )
-            }
-            if (isFinishing || isDestroyed) return@launch
-            result.onSuccess { dialog.bind(it) }
-                .onFailure { dialog.showError(it.message ?: "获取成绩详情失败") }
         }
     }
 
     // ── 状态 / 工具 ───────────────────────────────────────
 
     private fun currentSemester(): SemesterEntity? =
-        SemesterManager.getAll().firstOrNull { it.id == gradeDataManager.selectedSemesterId }
+        SemesterManager.getAll().firstOrNull { it.id == examDataManager.selectedSemesterId }
 
-    /** 盖住成绩列表的 loading 遮罩：与列表卡片同色的圆角块 */
+    /** 盖住考试列表的 loading 遮罩：与列表卡片同色的圆角块 */
     private val loadingScrim: GradientDrawable by lazy {
         GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
@@ -291,7 +258,7 @@ class GradeQueryActivity : BaseActivity() {
         statusContainer.visibility = View.VISIBLE
         loadingIndicator.visibility = if (loading) View.VISIBLE else View.GONE
         statusText.text = text
-        // loading 遮罩：盖住旧成绩并吃掉点击，避免误点条目进详情
+        // loading 遮罩：盖住旧列表，避免查询中误以为看到的是新结果
         setStatusHeight(if (loading && recycler.height > 0) recycler.height else null)
         statusContainer.isClickable = loading
         statusContainer.background = if (loading) loadingScrim else null
@@ -322,6 +289,7 @@ class GradeQueryActivity : BaseActivity() {
 
     /** 查询期间禁用「查询」并压暗，避免重复触发 */
     private fun setQueryLoading(loading: Boolean) {
+        querying = loading
         btnQuery.isEnabled = !loading
         btnQuery.alpha = if (loading) 0.5f else 1f
     }

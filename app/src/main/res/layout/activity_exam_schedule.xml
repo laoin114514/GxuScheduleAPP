@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    android:background="@drawable/bg_page_gradient">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/transparent"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationIconTint="?attr/colorOnSurfaceVariant" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingBottom="32dp">
+
+            <!-- ===== 查询区：学期选择（页内展开）+ 查询按钮 ===== -->
+            <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:id="@+id/ll_semester_field"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/bg_grade_field"
+                        android:padding="12dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <FrameLayout
+                            android:id="@+id/fl_semester_block"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp" />
+
+                        <TextView
+                            android:id="@+id/tv_semester_value"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:textSize="@dimen/text_body"
+                            android:textColor="?attr/colorOnSurface"
+                            android:text="未设置" />
+
+                        <ImageView
+                            android:id="@+id/iv_expand"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_mtrl_expand_more"
+                            android:tint="?attr/colorOnSurfaceVariant"
+                            android:contentDescription="@null" />
+                    </LinearLayout>
+
+                    <!-- 学期列表由 SemesterExpandPicker 以浮层下拉展示，不占页内空间 -->
+
+                    <LinearLayout
+                        android:id="@+id/btn_query"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:paddingVertical="12dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginEnd="8dp"
+                            android:src="@drawable/ic_mtrl_search"
+                            android:tint="?attr/colorOnPrimary"
+                            android:contentDescription="@null" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="查询"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorOnPrimary" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ===== 列表标题 + 筛选（无汇总卡片：考试页不展示学分/绩点类统计） ===== -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="考试明细"
+                android:textSize="@dimen/text_title"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:paddingStart="4dp"
+                android:paddingTop="22dp"
+                android:paddingBottom="10dp" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:overScrollMode="never">
+
+                <LinearLayout
+                    android:id="@+id/ll_filters"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="2dp" />
+            </HorizontalScrollView>
+
+            <!-- ===== 列表 + 状态覆盖层 =====
+                 状态层与列表同区叠放：loading 时整块盖住列表（列表为空时则占据该区域），
+                 置顶对齐保证不随列表变长把指示器顶到屏幕外 -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_exams"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never" />
+
+                <LinearLayout
+                    android:id="@+id/ll_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="top|center_horizontal"
+                    android:paddingTop="36dp"
+                    android:paddingBottom="36dp"
+                    android:visibility="gone">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/pb_loading"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginBottom="12dp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_body_small"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+            </FrameLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
