@@ -19,6 +19,7 @@ import com.cherry.wakeupschedule.GpaActivity
 import com.cherry.wakeupschedule.GradeQueryActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.databinding.FragmentToolsBinding
+import com.cherry.wakeupschedule.service.JwxtAuthManager
 
 /**
  * 工具页：顶栏 + 搜索 + 推荐大卡 + 分组工具（图标网格 / 双列大卡）。
@@ -31,7 +32,7 @@ class ToolsFragment : Fragment() {
     private val binding get() = _binding!!
     private val adapter = ToolsAdapter()
 
-    /** 推荐位：教务一键导入（真实入口） */
+    /** 推荐位：教务一键导入（绑定引导，只在未绑定教务账号时展示） */
     private val featured = ToolItem(
         id = "jwxt_import",
         title = "教务一键导入",
@@ -72,6 +73,14 @@ class ToolsFragment : Fragment() {
         binding.btnToolsAvatar.setOnClickListener { goTab(R.id.nav_profile) }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 绑定/解绑后会原地回到本页（View 不重建），登录态可能已变，重算一次列表。
+        // 传当前搜索词：否则正在搜索时切出去回来，过滤会被静默清掉。
+        val b = _binding ?: return
+        refresh(b.etToolsSearch.text.toString())
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
@@ -105,7 +114,11 @@ class ToolsFragment : Fragment() {
 
     private fun refresh(query: String) {
         val q = query.trim()
-        val feat = featured.takeIf { q.isEmpty() || it.matches(q) }
+        // 教务一键导入：只在未绑定教务账号时作为引导位展示，绑定后整块移除
+        // （它不属于任何 ToolSection，所以移除后不会留下孤立的分组标题）
+        val feat = featured.takeIf {
+            !JwxtAuthManager.isBound() && (q.isEmpty() || it.matches(q))
+        }
         val secs = buildSections()
             .map { if (q.isEmpty()) it else it.copy(items = it.items.filter { item -> item.matches(q) }) }
             .filter { it.items.isNotEmpty() }
