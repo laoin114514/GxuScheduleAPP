@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -24,11 +25,17 @@ import com.cherry.wakeupschedule.ui.widget.GridBackgroundView
 import com.cherry.wakeupschedule.ui.widget.OverlapBadgeView
 import com.cherry.wakeupschedule.ui.widget.VerticalScrollView
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
  * ViewPager2 适配器。
- * 完全模仿原始 app：RecyclerView.Adapter + 代码构建 View（零 XML inflation）+ 每页直接渲染。
+ * 完全模仿原始 app：RecyclerView.Adapter + 代码构建 View（网格零 XML inflation）+ 每页直接渲染。
+ *
+ * 每页结构：日期栏（item_date_header.xml）+ 周网格。日期栏放在页内是为了让它随页面一起横向滚动，
+ * 这样左右滑周时日期栏与课表天然 1:1 跟手，不需要任何滚动同步代码。
  */
 class WeekPagerAdapter(
     private val totalWeeks: Int,
@@ -41,9 +48,26 @@ class WeekPagerAdapter(
 
     private var allCourses: List<Course> = emptyList()
 
+    /** 学期开始日期（epoch ms；0 = 未设置 → 日期栏保留占位文案） */
+    private var semesterStartDate: Long = 0L
+
+    /** 当前周，用于日期栏「今天」高亮（0 = 不高亮） */
+    private var currentWeek: Int = 0
+
     fun updateData(courses: List<Course>) {
         allCourses = courses
         notifyDataSetChanged()
+    }
+
+    /**
+     * 更新日期栏所需的学期上下文。
+     * 日期栏在每页内部，值变了只需重绑日期栏，不必重建课程卡片（走 payload 分支）。
+     */
+    fun setWeekContext(semesterStartDate: Long, currentWeek: Int) {
+        if (this.semesterStartDate == semesterStartDate && this.currentWeek == currentWeek) return
+        this.semesterStartDate = semesterStartDate
+        this.currentWeek = currentWeek
+        notifyItemRangeChanged(0, totalWeeks, PAYLOAD_WEEK_CONTEXT)
     }
 
     /**
@@ -64,18 +88,40 @@ class WeekPagerAdapter(
 
     override fun onBindViewHolder(holder: WeekViewHolder, position: Int) {
         val week = position + 1
-        holder.bind(week, allCourses, cellHeightDp)
+        holder.bind(week, allCourses, cellHeightDp, semesterStartDate, currentWeek)
+    }
+
+    /** 只有日期栏上下文变化时走这条轻量分支，避免整页重建课程卡片 */
+    override fun onBindViewHolder(
+        holder: WeekViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.contains(PAYLOAD_WEEK_CONTEXT)) {
+            holder.bindDateHeader(position + 1, semesterStartDate, currentWeek)
+            return
+        }
+        super.onBindViewHolder(holder, position, payloads)
     }
 
     class WeekViewHolder(context: Context) : RecyclerView.ViewHolder(
         buildPageRoot(context)
     ) {
         // ── 缓存的 view 引用 ──
+        private val dateHeader: ViewGroup
         private val scrollView: VerticalScrollView
         private val gridBg: GridBackgroundView
         private val timeAxis: LinearLayout
         private val courseContainer: FrameLayout
         private val emptyView: LinearLayout
+
+        // ── 日期栏 ──
+        private val dateViews: Array<TextView>
+        private val yearView: TextView
+
+        /** 日期栏渲染复用实例，避免每次 bind 重新分配 Calendar / Formatter */
+        private val headerCal = Calendar.getInstance()
+        private val headerDateFormat = SimpleDateFormat("M/d", Locale.getDefault())
 
         private var axisBuilt = false
         private var builtNodes = 0
@@ -89,16 +135,76 @@ class WeekPagerAdapter(
 
         init {
             val root = itemView as LinearLayout
-            scrollView = root.getChildAt(0) as VerticalScrollView
+            // 页面结构：日期栏 + 周网格。日期栏在页内，因此和网格共用同一次横向滚动
+            dateHeader = root.getChildAt(0) as ViewGroup
+            scrollView = root.getChildAt(1) as VerticalScrollView
             val contentLayout = scrollView.getChildAt(0) as LinearLayout
             timeAxis = contentLayout.getChildAt(0) as LinearLayout
             val contentArea = contentLayout.getChildAt(1) as FrameLayout
             gridBg = contentArea.getChildAt(0) as GridBackgroundView
             courseContainer = contentArea.getChildAt(1) as FrameLayout
             emptyView = contentArea.getChildAt(2) as LinearLayout
+
+            dateViews = arrayOf(
+                R.id.tv_date_1, R.id.tv_date_2, R.id.tv_date_3,
+                R.id.tv_date_4, R.id.tv_date_5, R.id.tv_date_6, R.id.tv_date_7
+            ).map { dateHeader.findViewById<TextView>(it) }.toTypedArray()
+            yearView = dateHeader.findViewById(R.id.tv_year_value)
         }
 
-        fun bind(week: Int, allCourses: List<Course>, cellHeightDp: Int) {
+        /**
+         * 渲染本页日期栏（本页 = 第 week 周）。
+         * 学期开始日期未设置（0）时保留布局里的占位文案，与改造前一致。
+         */
+        fun bindDateHeader(week: Int, semesterStartDate: Long, currentWeek: Int) {
+            if (semesterStartDate == 0L) return
+
+            headerCal.timeInMillis = semesterStartDate
+            headerCal.add(Calendar.WEEK_OF_YEAR, week - 1)
+            headerCal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            yearView.text = headerCal.get(Calendar.YEAR).toString()
+
+            val today = Calendar.getInstance()
+            // 今天方块底色是 colorPrimary（浅色主题为深色、深色主题为亮色），
+            // 字体用 colorOnPrimary 与之反色：浅色主题白字、深色主题深字
+            val todayTextColor = themeColor(com.google.android.material.R.attr.colorOnPrimary)
+            val normalTextColor =
+                themeColor(com.google.android.material.R.attr.colorOnSurfaceVariant)
+            val isCurrentWeek = week == currentWeek
+
+            dateViews.forEach { tv ->
+                tv.text = headerDateFormat.format(headerCal.time)
+                val isToday = isCurrentWeek &&
+                        headerCal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) &&
+                        headerCal.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+                if (isToday) {
+                    tv.setBackgroundResource(R.drawable.bg_date_selected)
+                    tv.setTextColor(todayTextColor)
+                } else {
+                    tv.background = null
+                    tv.setTextColor(normalTextColor)
+                }
+                headerCal.add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
+
+        /** 取主题色（浅色/深色自适应） */
+        private fun themeColor(attr: Int): Int {
+            val typedValue = android.util.TypedValue()
+            itemView.context.theme.resolveAttribute(attr, typedValue, true)
+            return typedValue.data
+        }
+
+        fun bind(
+            week: Int,
+            allCourses: List<Course>,
+            cellHeightDp: Int,
+            semesterStartDate: Long,
+            currentWeek: Int
+        ) {
+            // 日期栏先渲染：下面「暂无课程」会提前 return，不能漏掉日期栏
+            bindDateHeader(week, semesterStartDate, currentWeek)
+
             val ctx = itemView.context
             val maxNodes = TimeTableManager.getInstance(ctx).getMaxNodes()
             val density = ctx.resources.displayMetrics.density
@@ -338,7 +444,14 @@ class WeekPagerAdapter(
     }
 
     companion object {
-        /** 用代码构建页面根布局（零 XML inflation，跟原始 app 一致） */
+        /** 日期栏上下文（学期开始日期 / 当前周）变化的 payload 标记 */
+        private const val PAYLOAD_WEEK_CONTEXT = "week_context"
+
+        /**
+         * 用代码构建页面根布局。
+         * 网格沿用原始 app 的零 XML inflation 做法；日期栏复用 XML 里的 style，
+         * 按 ViewHolder 构造时 inflate 一次（不是每次 bind），见 item_date_header。
+         */
         private fun buildPageRoot(context: Context): LinearLayout {
             val density = context.resources.displayMetrics.density
 
@@ -422,7 +535,8 @@ class WeekPagerAdapter(
             val scrollView = VerticalScrollView(context).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
+                    0,
+                    1f
                 )
                 overScrollMode = View.OVER_SCROLL_NEVER
                 isVerticalScrollBarEnabled = false
@@ -430,13 +544,20 @@ class WeekPagerAdapter(
                 addView(contentLayout)
             }
 
-            return LinearLayout(context).apply {
+            val root = LinearLayout(context).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
-                addView(scrollView)
+                orientation = LinearLayout.VERTICAL
             }
+            // 以 root 当 parent 才能拿到 XML 根标签生成的 LinearLayout.LayoutParams；
+            // 传 null 会退化成 wrap_content，日期栏宽度会塌掉
+            root.addView(
+                LayoutInflater.from(context).inflate(R.layout.item_date_header, root, false)
+            )
+            root.addView(scrollView)
+            return root
         }
     }
 }

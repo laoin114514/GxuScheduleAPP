@@ -67,7 +67,6 @@ class ScheduleFragment : Fragment() {
     private lateinit var settingsManager: SettingsManager
     private lateinit var adapter: WeekPagerAdapter
     private lateinit var courseViewModel: CourseViewModel
-    private lateinit var layoutDateHeader: View
     private lateinit var layoutOverview: View
     private lateinit var rvCourseOverview: RecyclerView
     private lateinit var llOverviewFilters: LinearLayout
@@ -141,6 +140,8 @@ class ScheduleFragment : Fragment() {
 
         // 但「课表」外观页改过的格子高度要在这里同步（脏检查，没变就不动）
         syncCellHeightIfChanged()
+        // 从设置页回来时学期开始日期/当前周可能变了，日期栏也要跟上
+        syncWeekContextToAdapter()
     }
 
     /**
@@ -155,6 +156,15 @@ class ScheduleFragment : Fragment() {
         adapter.setCellHeightDp(heightDp)
     }
 
+    /**
+     * 把日期栏所需的「学期开始日期 + 当前周」推给适配器。
+     * 值没变时 [WeekPagerAdapter.setWeekContext] 内部直接返回，不触发重绑。
+     */
+    private fun syncWeekContextToAdapter() {
+        if (!::adapter.isInitialized) return
+        adapter.setWeekContext(settingsManager.getSemesterStartDate(), getCurrentWeek())
+    }
+
     private fun initViews(view: View) {
         viewPager = view.findViewById(R.id.view_pager)
         tvDate = view.findViewById(R.id.tv_date)
@@ -166,7 +176,6 @@ class ScheduleFragment : Fragment() {
         groupLoading = view.findViewById(R.id.group_loading)
         groupSuccess = view.findViewById(R.id.group_success)
         tvLoadResult = view.findViewById(R.id.tv_load_result)
-        layoutDateHeader = view.findViewById(R.id.layout_date_header)
         layoutOverview = view.findViewById(R.id.layout_overview)
         rvCourseOverview = view.findViewById(R.id.rv_course_overview)
         llOverviewFilters = view.findViewById(R.id.ll_overview_filters)
@@ -251,11 +260,11 @@ class ScheduleFragment : Fragment() {
     }
 
     /**
-     * 切换「周课表 ⇄ 总课表」：两者共用顶部信息栏，只互斥日期表头 + 周网格与总课表列表。
+     * 切换「周课表 ⇄ 总课表」：两者共用顶部信息栏，只互斥周网格与总课表列表。
+     * 日期栏在周课表的每一页内部（见 item_date_header.xml），随 viewPager 一起隐藏。
      */
     private fun applyScheduleMode(overview: Boolean) {
         isOverview = overview
-        layoutDateHeader.isVisible = !overview
         viewPager.isVisible = !overview
         layoutOverview.isVisible = overview
         if (overview) refreshOverview() else updateDateTimeHeader()
@@ -316,10 +325,14 @@ class ScheduleFragment : Fragment() {
     }
 
     private fun updateDateTimeHeader() {
+        // 日期栏在每页内部，这里顺带把周上下文推给适配器；
+        // 本方法是所有「周/日期显示状态变化」的统一入口，挂在这里可以保证一条不漏。
+        syncWeekContextToAdapter()
+
         val semesterLabel = SemesterManager.getCurrent()?.label?.takeIf { it.isNotBlank() }
 
         if (isOverview) {
-            // 总课表：顶栏换成总课表标题 + 条目数（日期表头已隐藏，无需刷新）
+            // 总课表：顶栏换成总课表标题 + 条目数（周课表已隐藏，无需刷新日期栏）
             tvWeekInfo.text = if (semesterLabel != null) "总课表 · $semesterLabel" else "总课表"
             tvDate.text = if (overviewFilter == CourseTypeFilter.ALL) {
                 "本学期共 $overviewGroupCount 门课程"
@@ -342,7 +355,6 @@ class ScheduleFragment : Fragment() {
             else -> "第${displayWk}周"
         }
         tvWeekInfo.text = if (semesterLabel != null) "$weekText · $semesterLabel" else weekText
-        updateDateHeaderRow(displayWk)
     }
 
     /** 返回 -1=未开始, 0=进行中, 1=已结束 */
@@ -356,55 +368,6 @@ class ScheduleFragment : Fragment() {
             now < startDate -> -1
             now > endDate -> 1
             else -> 0
-        }
-    }
-
-    private fun updateDateHeaderRow(week: Int) {
-        val startDate = settingsManager.getSemesterStartDate()
-        if (startDate == 0L) return
-
-        val cal = Calendar.getInstance().apply {
-            timeInMillis = startDate
-            add(Calendar.WEEK_OF_YEAR, week - 1)
-            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-        }
-
-        val dateViewIds = intArrayOf(
-            R.id.tv_date_1, R.id.tv_date_2, R.id.tv_date_3,
-            R.id.tv_date_4, R.id.tv_date_5, R.id.tv_date_6, R.id.tv_date_7
-        )
-        val today = Calendar.getInstance()
-        val fmt = SimpleDateFormat("M/d", Locale.getDefault())
-
-        val root = view ?: return
-
-        val yearLabel = root.findViewById<TextView>(R.id.tv_year_value)
-        yearLabel?.text = "${cal.get(Calendar.YEAR)}"
-
-        dateViewIds.forEachIndexed { _, id ->
-            val tv = root.findViewById<TextView>(id)
-            tv.text = fmt.format(cal.time)
-
-            if (getDisplayWeek() == getCurrentWeek() &&
-                cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) &&
-                cal.get(Calendar.YEAR) == today.get(Calendar.YEAR)) {
-                tv.setBackgroundResource(R.drawable.bg_date_selected)
-                // 今天方块底色是 colorPrimary（浅色主题为深色、深色主题为亮色），
-                // 字体用 colorOnPrimary 与之反色：浅色主题白字、深色主题深字
-                val typedValue = android.util.TypedValue()
-                root.context.theme.resolveAttribute(
-                    com.google.android.material.R.attr.colorOnPrimary, typedValue, true
-                )
-                tv.setTextColor(typedValue.data)
-            } else {
-                tv.background = null
-                val typedValue = android.util.TypedValue()
-                root.context.theme.resolveAttribute(
-                    com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
-                )
-                tv.setTextColor(typedValue.data)
-            }
-            cal.add(Calendar.DAY_OF_MONTH, 1)
         }
     }
 
@@ -724,6 +687,8 @@ class ScheduleFragment : Fragment() {
                                     // 更新 ViewPager 总页数
                                     appliedCellHeightDp = settingsManager.getCourseCellHeight()
                                     adapter = WeekPagerAdapter(settingsManager.getTotalWeeks(), appliedCellHeightDp)
+                                    // 刚导入完才有学期开始日期，日期栏要按新日期渲染
+                                    syncWeekContextToAdapter()
                                     viewPager.adapter = adapter
                                     adapter.updateData(CourseDataManager.getInstance(ctx).getAllCourses())
                                     refreshWeekSlider()
