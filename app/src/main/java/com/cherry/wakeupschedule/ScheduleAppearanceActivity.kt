@@ -35,7 +35,7 @@ class ScheduleAppearanceActivity : BaseActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         settingsManager = SettingsManager(this)
-        setupPageHeader(binding.toolbar, "课表")
+        setupPageHeader(binding.toolbar, "课表外观")
         setupCellHeightRow()
         updateUi()
     }
