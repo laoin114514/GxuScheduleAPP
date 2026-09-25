@@ -68,15 +68,27 @@ jobs:
       - name: Extract release notes from tag
         id: release_notes
         run: |
-          # 获取当前 tag 的 annotated message（去掉第一行标题）
+          # 描述严格取自 annotated tag 自身的注释，绝不回退到 tag 所指提交的提交信息：
+          # actions/checkout 是按 commit SHA 拉取的（refspec 为 +<sha>:refs/tags/<tag>），
+          # 本地 refs/tags/<tag> 因此是轻量 tag、没有 tag 对象，直接读 %(contents) 会拿到提交信息。
+          # 这里显式按 tag ref 再拉一次以取回真正的 tag 对象；轻量 tag（无注释对象）=> 描述为空。
           TAG_NAME=${GITHUB_REF#refs/tags/}
-          NOTES=$(git tag -l --format='%(contents)' "$TAG_NAME" | tail -n +2)
-          # 多行输出用 heredoc 方式写入 GITHUB_OUTPUT
-          {
-            echo 'notes<<EOF'
-            echo "$NOTES"
-            echo EOF
-          } >> $GITHUB_OUTPUT
+          git fetch --depth=1 --no-tags --force origin "+refs/tags/${TAG_NAME}:refs/tags/${TAG_NAME}" \
+            || echo "::warning::拉取 tag 对象失败，本次更新描述为空"
+          NOTES=""
+          if [ "$(git cat-file -t "refs/tags/${TAG_NAME}" 2>/dev/null)" = "tag" ]; then
+            NOTES=$(git tag -l --format='%(contents)' "$TAG_NAME")
+          fi
+          # 多行输出用 heredoc 方式写入 GITHUB_OUTPUT；注释为空则显式置空
+          if [ -z "$(printf '%s' "$NOTES" | tr -d '[:space:]')" ]; then
+            echo 'notes=' >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo 'notes<<EOF'
+              printf '%s\n' "$NOTES"
+              echo EOF
+            } >> "$GITHUB_OUTPUT"
+          fi
 
       # 上传 universal 包到更新服务器（软失败：后端临时故障不阻断 GitHub Release）
       - name: Upload universal APK to update server
