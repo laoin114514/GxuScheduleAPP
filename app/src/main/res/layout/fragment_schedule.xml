@@ -165,6 +165,19 @@
 
     </LinearLayout>
 
+    <!-- 回到本周：只在本周之外的周课表显示，箭头指向本周（更早 → 右箭头，更晚 → 左箭头）；
+         总课表模式下随 viewPager 一起隐藏。放在 overlay_loading 之前，加载遮罩会盖住它 -->
+    <com.cherry.wakeupschedule.ui.widget.CircleIconButton
+        android:id="@+id/btn_back_to_week"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:src="@drawable/ic_arrow_right"
+        android:contentDescription="回到本周"
+        android:visibility="gone" />
+
     <!-- 课表加载遮罩：全页覆盖；背景直接用底部导航栏同款色（浅色 #DDE4ED / 深色 #0D1117），
          与导航栏连成一片无缝表面，消除硬边界；阻断页面点击 -->
     <FrameLayout

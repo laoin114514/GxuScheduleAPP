@@ -41,6 +41,7 @@ import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
 import com.cherry.wakeupschedule.ui.component.createAppChip
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
+import com.cherry.wakeupschedule.ui.widget.CircleIconButton
 import com.cherry.wakeupschedule.ui.widget.SemesterSceneryView
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +68,7 @@ class ScheduleFragment : Fragment() {
     private lateinit var settingsManager: SettingsManager
     private lateinit var adapter: WeekPagerAdapter
     private lateinit var courseViewModel: CourseViewModel
+    private lateinit var btnBackToWeek: CircleIconButton
     private lateinit var layoutOverview: View
     private lateinit var rvCourseOverview: RecyclerView
     private lateinit var llOverviewFilters: LinearLayout
@@ -142,6 +144,7 @@ class ScheduleFragment : Fragment() {
         syncCellHeightIfChanged()
         // 从设置页回来时学期开始日期/当前周可能变了，日期栏也要跟上
         syncWeekContextToAdapter()
+        updateWeekJumpButton()
     }
 
     /**
@@ -165,6 +168,21 @@ class ScheduleFragment : Fragment() {
         adapter.setWeekContext(settingsManager.getSemesterStartDate(), getCurrentWeek())
     }
 
+    /**
+     * 右下角「回到本周」箭头的显隐与方向。
+     * 只在本周之外的周课表出现；箭头指向本周：显示周更早 → 右箭头，更晚 → 左箭头。
+     */
+    private fun updateWeekJumpButton() {
+        val displayWk = getDisplayWeek()
+        val currentWk = getCurrentWeek()
+        val visible = !isOverview && displayWk != currentWk
+        btnBackToWeek.isVisible = visible
+        if (!visible) return
+        btnBackToWeek.setIcon(
+            if (displayWk < currentWk) R.drawable.ic_arrow_right else R.drawable.ic_arrow_left
+        )
+    }
+
     private fun initViews(view: View) {
         viewPager = view.findViewById(R.id.view_pager)
         tvDate = view.findViewById(R.id.tv_date)
@@ -176,6 +194,7 @@ class ScheduleFragment : Fragment() {
         groupLoading = view.findViewById(R.id.group_loading)
         groupSuccess = view.findViewById(R.id.group_success)
         tvLoadResult = view.findViewById(R.id.tv_load_result)
+        btnBackToWeek = view.findViewById(R.id.btn_back_to_week)
         layoutOverview = view.findViewById(R.id.layout_overview)
         rvCourseOverview = view.findViewById(R.id.rv_course_overview)
         llOverviewFilters = view.findViewById(R.id.ll_overview_filters)
@@ -187,6 +206,12 @@ class ScheduleFragment : Fragment() {
 
         btnRefresh.setOnClickListener {
             refreshScheduleFromJwxt(showError = true)
+        }
+
+        // 一键平滑滑回本周（非瞬移）。重复点击是安全的：ViewPager2 的 currentItem
+        // 在平滑滚动开始时就已经置为目标页，第二次调用会因 currentItem 相等直接返回。
+        btnBackToWeek.setOnClickListener {
+            viewPager.setCurrentItem(getCurrentWeek() - 1, true)
         }
 
         view.findViewById<View>(R.id.btn_menu).setOnClickListener {
@@ -328,6 +353,7 @@ class ScheduleFragment : Fragment() {
         // 日期栏在每页内部，这里顺带把周上下文推给适配器；
         // 本方法是所有「周/日期显示状态变化」的统一入口，挂在这里可以保证一条不漏。
         syncWeekContextToAdapter()
+        updateWeekJumpButton()
 
         val semesterLabel = SemesterManager.getCurrent()?.label?.takeIf { it.isNotBlank() }
 
