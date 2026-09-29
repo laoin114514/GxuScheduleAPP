@@ -398,7 +398,7 @@
                             android:layout_marginStart="14dp">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="课表"
+                                android:text="课表外观"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
