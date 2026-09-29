@@ -52,6 +52,8 @@ class SettingsManager(context: Context) {
         private const val KEY_DARK_TIME = "theme_dark_time"            // 深色开始时间 HH:mm
         private const val KEY_LIGHT_TIME = "theme_light_time"          // 浅色开始时间 HH:mm
         private const val KEY_COURSE_CELL_HEIGHT = "course_cell_height" // 课程格子高度（设计 dp）
+        private const val KEY_SHOW_CLASSROOM = "show_classroom"        // 课程格子是否显示教室
+        private const val KEY_SHOW_TEACHER = "show_teacher"            // 课程格子是否显示教师
         private const val DEFAULT_HIDE_HOLIDAY_COURSES = false              // 默认不隐藏
         private const val DEFAULT_THEME_MODE = "system"                  // 默认跟随系统
         private const val DEFAULT_AUTO_SWITCH_THEME = false              // 默认不自动切换
@@ -66,6 +68,8 @@ class SettingsManager(context: Context) {
         private const val DEFAULT_COURSE_CARD_ALPHA = 0.85f                    // 默认卡片透明度85%
         private const val DEFAULT_SHOW_NON_CURRENT_WEEK_COURSES = true         // 默认显示非本周课程
         private const val DEFAULT_NON_CURRENT_WEEK_ALPHA = 0.3f                // 非本周课程默认30%透明度
+        private const val DEFAULT_SHOW_CLASSROOM = true                        // 默认显示教室
+        private const val DEFAULT_SHOW_TEACHER = true                          // 默认显示教师
 
         /** 课程格子高度可调范围（dp）：课表外观页的滑块、数值输入与读写校验共用 */
         const val COURSE_CELL_HEIGHT_MIN_DP = 40
@@ -257,6 +261,27 @@ class SettingsManager(context: Context) {
                 heightDp.coerceIn(COURSE_CELL_HEIGHT_MIN_DP, COURSE_CELL_HEIGHT_MAX_DP)
             )
             .apply()
+    }
+
+    /**
+     * 课程格子是否显示教室。课程名恒显示，只有教室和教师可关；
+     * 两者默认开启，「从未设置过」时与旧版本观感一致。
+     */
+    fun isShowClassroom(): Boolean {
+        return sharedPreferences.getBoolean(KEY_SHOW_CLASSROOM, DEFAULT_SHOW_CLASSROOM)
+    }
+
+    fun setShowClassroom(show: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_SHOW_CLASSROOM, show).apply()
+    }
+
+    /** 课程格子是否显示教师，默认开启 */
+    fun isShowTeacher(): Boolean {
+        return sharedPreferences.getBoolean(KEY_SHOW_TEACHER, DEFAULT_SHOW_TEACHER)
+    }
+
+    fun setShowTeacher(show: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_SHOW_TEACHER, show).apply()
     }
 
     /**

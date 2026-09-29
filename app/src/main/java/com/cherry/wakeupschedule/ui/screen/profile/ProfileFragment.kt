@@ -140,9 +140,6 @@ class ProfileFragment : Fragment() {
         // 主题模式展示（从主题页返回时刷新）
         updateThemeModeDisplay(requireView())
 
-        // 课程格子高度展示（从课表页返回时刷新）
-        updateCellHeightDisplay(requireView())
-
         // 字体大小档位展示（从字体大小页返回时刷新）
         updateFontSizeDisplay(requireView())
 
@@ -222,10 +219,5 @@ class ProfileFragment : Fragment() {
     private fun updateFontSizeDisplay(view: View) {
         val tv = view.findViewById<TextView>(R.id.tv_font_size_value)
         tv?.text = UiScaleManager.labelOf(requireContext())
-    }
-
-    private fun updateCellHeightDisplay(view: View) {
-        val tv = view.findViewById<TextView>(R.id.tv_schedule_cell_height_value)
-        tv?.text = "格子高度 ${settingsManager.getCourseCellHeight()}dp"
     }
 }

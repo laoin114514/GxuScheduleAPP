@@ -46,6 +46,12 @@ class WeekPagerAdapter(
     var cellHeightDp: Int = initialCellHeightDp
         private set
 
+    /** 课程格子是否显示教室 / 教师（课程名恒显示），随「课表外观 → 课程内容」的设置变化 */
+    var showClassroom: Boolean = true
+        private set
+    var showTeacher: Boolean = true
+        private set
+
     private var allCourses: List<Course> = emptyList()
 
     /** 学期开始日期（epoch ms；0 = 未设置 → 日期栏保留占位文案） */
@@ -80,6 +86,17 @@ class WeekPagerAdapter(
         notifyDataSetChanged()
     }
 
+    /**
+     * 更新课程格子的显示内容（教室 / 教师）；值未变时直接返回，避免每次切 tab 白刷一遍。
+     * 文字是 bind 时拼进同一个 TextView 的，所以改开关同样要重绑。
+     */
+    fun setContentVisibility(showClassroom: Boolean, showTeacher: Boolean) {
+        if (showClassroom == this.showClassroom && showTeacher == this.showTeacher) return
+        this.showClassroom = showClassroom
+        this.showTeacher = showTeacher
+        notifyDataSetChanged()
+    }
+
     override fun getItemCount(): Int = totalWeeks
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WeekViewHolder {
@@ -88,7 +105,8 @@ class WeekPagerAdapter(
 
     override fun onBindViewHolder(holder: WeekViewHolder, position: Int) {
         val week = position + 1
-        holder.bind(week, allCourses, cellHeightDp, semesterStartDate, currentWeek)
+        holder.bind(week, allCourses, cellHeightDp, semesterStartDate, currentWeek,
+            showClassroom, showTeacher)
     }
 
     /** 只有日期栏上下文变化时走这条轻量分支，避免整页重建课程卡片 */
@@ -200,7 +218,9 @@ class WeekPagerAdapter(
             allCourses: List<Course>,
             cellHeightDp: Int,
             semesterStartDate: Long,
-            currentWeek: Int
+            currentWeek: Int,
+            showClassroom: Boolean,
+            showTeacher: Boolean
         ) {
             // 日期栏先渲染：下面「暂无课程」会提前 return，不能漏掉日期栏
             bindDateHeader(week, semesterStartDate, currentWeek)
@@ -318,9 +338,10 @@ class WeekPagerAdapter(
                     }
                 }
 
+                // 课程名恒显示；教室/教师按「课表外观 → 课程内容」的开关取舍，空值本来就跳过
                 val parts = mutableListOf(primary.name)
-                if (primary.classroom.isNotBlank()) parts.add(primary.classroom)
-                if (primary.teacher.isNotBlank()) parts.add(primary.teacher)
+                if (showClassroom && primary.classroom.isNotBlank()) parts.add(primary.classroom)
+                if (showTeacher && primary.teacher.isNotBlank()) parts.add(primary.teacher)
 
                 val tv = TextView(ctx).apply {
                     text = parts.joinToString("\n")

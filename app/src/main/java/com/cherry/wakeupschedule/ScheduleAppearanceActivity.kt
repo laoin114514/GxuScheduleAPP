@@ -20,12 +20,16 @@ import kotlin.math.roundToInt
  * - 课程格子高度：滑块粗调 + 点数值胶囊精确输入，两者共用同一设置、双向同步
  * - 取值范围 [SettingsManager.COURSE_CELL_HEIGHT_MIN_DP, COURSE_CELL_HEIGHT_MAX_DP] dp，
  *   默认值取自 dimens.xml 的 course_cell_height（68dp），不动设置时与旧版观感一致
- * - 高度实际生效在课表页 onResume（见 ScheduleFragment），因此写入后返回课表页即生效
+ * - 格子内容显示：课程名恒显示，教室/教师各一个开关（默认均开启）
+ * - 两项设置都实际生效在课表页 onResume（见 ScheduleFragment），因此写入后返回课表页即生效
  */
 class ScheduleAppearanceActivity : BaseActivity() {
 
     private lateinit var binding: ActivityScheduleAppearanceBinding
     private lateinit var settingsManager: SettingsManager
+
+    /** 回填开关状态时抑制监听，避免把读出来的值再写回去 */
+    private var isUpdatingSwitchState = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyToTheme(this)
@@ -37,6 +41,7 @@ class ScheduleAppearanceActivity : BaseActivity() {
         settingsManager = SettingsManager(this)
         setupPageHeader(binding.toolbar, "课表外观")
         setupCellHeightRow()
+        setupContentRows()
         updateUi()
     }
 
@@ -122,6 +127,23 @@ class ScheduleAppearanceActivity : BaseActivity() {
         if (applied != typedDp) AppToast.info(this, "已取范围边界 ${applied}dp")
     }
 
+    // ==================== 格子内容显示 ====================
+
+    /**
+     * 课程格子显示内容：课程名恒显示，教室与教师各自独立开关。
+     * 与格子高度同属课表外观，只写入设置，生效交给课表页 onResume 的脏检查。
+     */
+    private fun setupContentRows() {
+        binding.switchShowClassroom.setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
+            settingsManager.setShowClassroom(isChecked)
+        }
+        binding.switchShowTeacher.setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
+            settingsManager.setShowTeacher(isChecked)
+        }
+    }
+
     // ==================== UI 刷新 ====================
 
     private fun updateUi() {
@@ -129,5 +151,11 @@ class ScheduleAppearanceActivity : BaseActivity() {
         val cellHeight = settingsManager.getCourseCellHeight()
         binding.sliderCellHeight.value = cellHeight.toFloat()
         binding.btnCellHeightValue.text = "${cellHeight}dp"
+
+        // 格子内容开关：回填时抑制监听，避免读出来又写一遍
+        isUpdatingSwitchState = true
+        binding.switchShowClassroom.isChecked = settingsManager.isShowClassroom()
+        binding.switchShowTeacher.isChecked = settingsManager.isShowTeacher()
+        isUpdatingSwitchState = false
     }
 }

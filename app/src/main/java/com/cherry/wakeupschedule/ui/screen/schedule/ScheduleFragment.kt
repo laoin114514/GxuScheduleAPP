@@ -81,6 +81,10 @@ class ScheduleFragment : Fragment() {
     /** 当前已应用到课表的格子高度（dp），onResume 对比设置变化后刷新 */
     private var appliedCellHeightDp = 0
 
+    /** 当前已应用到课表的课程内容开关（教室 / 教师），onResume 对比设置变化后刷新 */
+    private var appliedShowClassroom = true
+    private var appliedShowTeacher = true
+
     /** 当前是否处于总课表视图（周课表 ⇄ 总课表，由底部导航角标切换） */
     private var isOverview = false
 
@@ -142,6 +146,8 @@ class ScheduleFragment : Fragment() {
 
         // 但「课表」外观页改过的格子高度要在这里同步（脏检查，没变就不动）
         syncCellHeightIfChanged()
+        // 同上，课程格子里的教室/教师开关也在外观页
+        syncContentVisibilityIfChanged()
         // 从设置页回来时学期开始日期/当前周可能变了，日期栏也要跟上
         syncWeekContextToAdapter()
         updateWeekJumpButton()
@@ -157,6 +163,20 @@ class ScheduleFragment : Fragment() {
         if (heightDp == appliedCellHeightDp) return
         appliedCellHeightDp = heightDp
         adapter.setCellHeightDp(heightDp)
+    }
+
+    /**
+     * 同步「课表外观 → 课程内容」里的教室/教师开关。
+     * 课程格子的文字在 bind 时拼好，所以同样要重绑才生效（见 WeekPagerAdapter）。
+     */
+    private fun syncContentVisibilityIfChanged() {
+        if (!::adapter.isInitialized) return
+        val showClassroom = settingsManager.isShowClassroom()
+        val showTeacher = settingsManager.isShowTeacher()
+        if (showClassroom == appliedShowClassroom && showTeacher == appliedShowTeacher) return
+        appliedShowClassroom = showClassroom
+        appliedShowTeacher = showTeacher
+        adapter.setContentVisibility(showClassroom, showTeacher)
     }
 
     /**
@@ -255,7 +275,10 @@ class ScheduleFragment : Fragment() {
 
         // 格子高度取「我的 → 外观 → 课表」的设置（未设置过时回落 dimens 的 68dp）
         appliedCellHeightDp = settingsManager.getCourseCellHeight()
+        appliedShowClassroom = settingsManager.isShowClassroom()
+        appliedShowTeacher = settingsManager.isShowTeacher()
         adapter = WeekPagerAdapter(totalWeeks, appliedCellHeightDp)
+        adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
         // 仅预加载相邻1页（3页总量），减少tab切换时的初始构建压力
         viewPager.offscreenPageLimit = 1
 
@@ -712,7 +735,10 @@ class ScheduleFragment : Fragment() {
                                 result.onSuccess { count ->
                                     // 更新 ViewPager 总页数
                                     appliedCellHeightDp = settingsManager.getCourseCellHeight()
+                                    appliedShowClassroom = settingsManager.isShowClassroom()
+                                    appliedShowTeacher = settingsManager.isShowTeacher()
                                     adapter = WeekPagerAdapter(settingsManager.getTotalWeeks(), appliedCellHeightDp)
+                                    adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
                                     // 刚导入完才有学期开始日期，日期栏要按新日期渲染
                                     syncWeekContextToAdapter()
                                     viewPager.adapter = adapter
