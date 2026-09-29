@@ -49,7 +49,53 @@
                 android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="6dp" />
 
-            <!-- 课程格子高度：滑块与数值胶囊共用同一设置（取值范围见 SettingsManager） -->
+            <!-- 格子高度：滑块与数值胶囊共用同一设置（取值范围见 SettingsManager）。
+                 标签与胶囊都在卡外，与下方「格子内容」统一成「小字标签 + 无标题卡片」；
+                 胶囊留在标签行右侧，保住「点它输入精确值」的可发现性。 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="格子高度"
+                    android:textSize="@dimen/text_body_small"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_cell_height_value"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="68dp"
+                    android:textSize="@dimen/text_body_small"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="false"
+                    android:contentDescription="点击输入精确高度"
+                    app:backgroundTint="?attr/colorSurfaceContainerLowest"
+                    app:cornerRadius="999dp"
+                    app:strokeColor="?attr/colorOutline"
+                    app:strokeWidth="1dp"
+                    app:icon="@drawable/ic_edit"
+                    app:iconSize="14dp"
+                    app:iconPadding="6dp"
+                    app:iconGravity="textStart"
+                    app:iconTint="?attr/colorPrimary" />
+            </LinearLayout>
+
             <com.google.android.material.card.MaterialCardView
                 style="@style/AppSectionCard">
 
@@ -59,53 +105,12 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- 名称 + 可点击的数值胶囊（胶囊本身即「此处可编辑」的提醒） -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="课程格子高度"
-                            android:textSize="@dimen/text_subtitle"
-                            android:textColor="?attr/colorOnSurface" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_cell_height_value"
-                            style="@style/Widget.Material3.Button.TonalButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="0dp"
-                            android:minHeight="0dp"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:paddingStart="14dp"
-                            android:paddingEnd="14dp"
-                            android:paddingTop="6dp"
-                            android:paddingBottom="6dp"
-                            android:text="68dp"
-                            android:textSize="@dimen/text_body_small"
-                            android:textAllCaps="false"
-                            android:contentDescription="点击输入精确高度"
-                            app:cornerRadius="999dp"
-                            app:icon="@drawable/ic_edit"
-                            app:iconSize="14dp"
-                            app:iconPadding="6dp"
-                            app:iconGravity="textStart"
-                            app:iconTint="?attr/colorOnSecondaryContainer" />
-                    </LinearLayout>
-
                     <!-- 高度滑块：labelBehavior 关掉拖动气泡。AppSlider 样式的 withinBounds
                          会把气泡的 32dp 预留高度算进控件（轨道上方多出 46dp 空白），
                          而高度值已由上方数值胶囊实时显示，去掉气泡不丢信息。 -->
                     <com.google.android.material.slider.Slider
                         android:id="@+id/slider_cell_height"
                         style="@style/AppSlider"
-                        android:layout_marginTop="8dp"
                         android:valueFrom="40"
                         android:valueTo="120"
                         android:stepSize="1"
