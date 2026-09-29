@@ -1,43 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 课表外观设置面板（悬浮在课表页下方）。
+     根高度由 ScheduleAppearanceSheet 代码控制（初始半屏，拖把手可调），
+     背景也在代码里画（24dp 顶部圆角 + colorSurfaceContainer），这里不写。
+     内容列与原「课表外观」独立页一致（该页已删除，ids 保持不变方便迁移）。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/sheet_appearance_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:fitsSystemWindows="true"
-    android:background="@drawable/bg_page_gradient">
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
 
-    <!-- Toolbar -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
+    <!-- 拖拽把手：上下拖连续调整面板高度，轻点在「半屏/贴合内容」间切换。
+         外层 36dp 触控区比 4dp 指示条好按得多。 -->
+    <FrameLayout
+        android:id="@+id/handle_area"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@android:color/transparent"
-        app:navigationIcon="@drawable/ic_arrow_back"
-        app:navigationIconTint="?attr/colorOnSurfaceVariant" />
+        android:layout_height="36dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="拖动调整面板高度，点按切换半屏或贴合内容">
+
+        <View
+            android:layout_width="32dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_drag_handle" />
+    </FrameLayout>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_appearance"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true">
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
-            
-            <!-- 分区标题 -->
-            <!-- <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="课表主题  "
-                android:textSize="@dimen/text_title"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="6dp" /> -->
-
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="24dp">
 
             <!-- 分区标题 -->
             <TextView
@@ -46,8 +49,7 @@
                 android:text="课程格子"
                 android:textSize="@dimen/text_title"
                 android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="6dp" />
+                android:textColor="?attr/colorOnSurface" />
 
             <!-- 格子高度：滑块与数值胶囊共用同一设置（取值范围见 SettingsManager）。
                  标签与胶囊都在卡外，与下方「格子内容」统一成「小字标签 + 无标题卡片」；
@@ -57,6 +59,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
+                android:layout_marginTop="6dp"
                 android:layout_marginBottom="10dp">
 
                 <TextView

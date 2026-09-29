@@ -29,7 +29,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.R
-import com.cherry.wakeupschedule.ScheduleAppearanceActivity
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtAccountManager
@@ -148,9 +147,23 @@ class ScheduleFragment : Fragment() {
         syncCellHeightIfChanged()
         // 同上，课程格子里的教室/教师开关也在外观页
         syncContentVisibilityIfChanged()
+        // 「我的 → 课表外观」入口会跳到本 tab 并要求弹出外观面板（见 ProfileFragment）
+        if (ScheduleAppearanceSheet.consumePendingAutoOpen()) {
+            view?.post { ScheduleAppearanceSheet.show(this) }
+        }
         // 从设置页回来时学期开始日期/当前周可能变了，日期栏也要跟上
         syncWeekContextToAdapter()
         updateWeekJumpButton()
+    }
+
+    /**
+     * 课表外观面板（ScheduleAppearanceSheet）的实时生效入口：
+     * 面板已把设置写入 SettingsManager，这里把缓存值刷进适配器
+     * （两个 sync 内部自带脏检查，值没变就不动）。
+     */
+    fun applyAppearanceChanges() {
+        syncCellHeightIfChanged()
+        syncContentVisibilityIfChanged()
     }
 
     /**
@@ -769,14 +782,14 @@ class ScheduleFragment : Fragment() {
         // 注册色块刷新回调：全局 loading 状态切换时（如刷新按钮触发）同步菜单色块
         menuSemesterRefresher = { refreshSemesterItems(animateEntrance = false) }
 
-        // ── 课表外观（跳转到独立的课表外观设置页） ──
+        // ── 课表外观（弹出悬浮面板，改动实时生效在面板上方的课表） ──
         val groupAppearance = sheetView.findViewById<View>(R.id.group_schedule_appearance)
         // 入场前先隐藏，等弹窗展示后再淡入，避免 show() 瞬间闪一下
         groupAppearance.alpha = 0f
         sheetView.findViewById<View>(R.id.row_schedule_appearance).setOnClickListener {
-            // 故意不 dismiss：MainActivity 只是 stopped 不会销毁，返回时菜单仍在，
-            // 用户落回的就是出发时那个「课表菜单」（而不是「我的」页）
-            startActivity(Intent(ctx, ScheduleAppearanceActivity::class.java))
+            // 面板接替菜单：先关菜单再弹面板，避免两层弹窗叠加
+            dialog.dismiss()
+            ScheduleAppearanceSheet.show(this)
         }
 
         // 弹窗展示后，学期色块按顺序波浪式入场
