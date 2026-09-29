@@ -54,6 +54,12 @@ object ScheduleAppearanceSheet {
 
     private var currentDialog: Dialog? = null
 
+    /** 越界拉伸的渐近上限（dp）：系统 stretch 同款特征——初始跟手，越拉阻力越大 */
+    private const val OVERSCROLL_MAX_DP = 56
+
+    /** 松手越界回落动画时长（ms）；轻点切换沿用原来的 200ms */
+    private const val OVERSCROLL_SETTLE_MS = 300L
+
     /** 打开面板。[fragment] 用于把设置改动实时刷进课表。 */
     fun show(fragment: ScheduleFragment) {
         val context = fragment.requireContext()
@@ -174,6 +180,8 @@ object ScheduleAppearanceSheet {
 
     /**
      * 把手手势：上下拖连续调高（上拖增高、下拖收起，范围 [贴合内容, 75% 屏高]）；
+     * 到边界不硬停，而是像系统 stretch overscroll（工具页同款手感）那样越界渐进阻尼
+     * 地拉伸（初始跟手、越拉越难拉，渐近 [OVERSCROLL_MAX_DP]），松手平滑回落到边界。
      * 位移没超过 touchSlop 视为轻点，在「半屏 ↔ 贴合内容」间切换。
      * 拖拽只挂在把手上，滑块与内容滚动手势不受影响。
      */
@@ -181,14 +189,28 @@ object ScheduleAppearanceSheet {
         val handle = sheetView.findViewById<View>(R.id.handle_area)
         val metrics = context.resources.displayMetrics
         val maxH = (metrics.heightPixels * 0.75f).toInt()
+        val maxOverPx = (OVERSCROLL_MAX_DP * metrics.density).toInt()
         val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
         var dragStartRawY = 0f
         var dragStartHeight = 0
         var dragMoved = false
 
+        // 回弹 / 轻点切换共用的动画；再次抓手把时先取消，避免两套动画抢高度
+        var heightAnimator: ValueAnimator? = null
+        fun settleTo(target: Int, duration: Long = OVERSCROLL_SETTLE_MS) {
+            heightAnimator?.cancel()
+            heightAnimator = ValueAnimator.ofInt(sheetView.layoutParams.height, target).apply {
+                this.duration = duration
+                interpolator = DecelerateInterpolator()
+                addUpdateListener { setSheetHeight(sheetView, it.animatedValue as Int) }
+                start()
+            }
+        }
+
         handle.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    heightAnimator?.cancel()
                     dragStartRawY = event.rawY
                     dragStartHeight = sheetView.layoutParams.height
                     dragMoved = false
@@ -197,19 +219,39 @@ object ScheduleAppearanceSheet {
                 MotionEvent.ACTION_MOVE -> {
                     val dy = (dragStartRawY - event.rawY).roundToInt()
                     if (abs(dy) > touchSlop) dragMoved = true
-                    val target = (dragStartHeight + dy)
-                        .coerceIn(contentHugHeight(sheetView, metrics), maxH)
+                    val raw = dragStartHeight + dy
+                    val minH = contentHugHeight(sheetView, metrics)
+                    // 越界走渐进阻尼：初始仍跟手，越拉越难拉，渐近封顶
+                    val target = when {
+                        raw > maxH -> maxH + overshoot(raw - maxH, maxOverPx)
+                        raw < minH -> minH - overshoot(minH - raw, maxOverPx)
+                        else -> raw
+                    }
                     setSheetHeight(sheetView, target)
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (!dragMoved) toggleSheetHeight(sheetView, metrics)
+                    val minH = contentHugHeight(sheetView, metrics)
+                    val current = sheetView.layoutParams.height
+                    when {
+                        current > maxH -> settleTo(maxH)
+                        current < minH -> settleTo(minH)
+                        !dragMoved -> {
+                            // 轻点：当前高度在「贴合↔半屏」区间中点以上则收到贴合，否则展开到半屏
+                            val half = (metrics.heightPixels / 2).coerceAtLeast(minH)
+                            settleTo(if (current > (minH + half) / 2) minH else half, duration = 200)
+                        }
+                    }
                     true
                 }
                 else -> false
             }
         }
     }
+
+    /** 渐进阻尼：越界量 over → 拉伸量。导数在 0 处为 1（边界处不跳变），渐近封顶 maxOverPx */
+    private fun overshoot(over: Int, maxOverPx: Int): Int =
+        (maxOverPx * (1f - 1f / (1f + over.toFloat() / maxOverPx))).roundToInt()
 
     /** 内容贴合高度：把手区 + 内容列的完整测量高度（含内边距），面板再矮就裁内容了 */
     private fun contentHugHeight(sheetView: View, metrics: DisplayMetrics): Int {
@@ -227,20 +269,6 @@ object ScheduleAppearanceSheet {
         if (sheetView.layoutParams.height == heightPx) return
         sheetView.layoutParams.height = heightPx
         sheetView.requestLayout()
-    }
-
-    /** 轻点把手：当前高度在「贴合↔半屏」区间中点以上则收到贴合，否则展开到半屏 */
-    private fun toggleSheetHeight(sheetView: View, metrics: DisplayMetrics) {
-        val hug = contentHugHeight(sheetView, metrics)
-        val half = (metrics.heightPixels / 2).coerceAtLeast(hug)
-        val current = sheetView.layoutParams.height
-        val target = if (current > (hug + half) / 2) hug else half
-        ValueAnimator.ofInt(current, target).apply {
-            duration = 200
-            interpolator = DecelerateInterpolator()
-            addUpdateListener { setSheetHeight(sheetView, it.animatedValue as Int) }
-            start()
-        }
     }
 
     // ==================== 格子高度精确输入 ====================
