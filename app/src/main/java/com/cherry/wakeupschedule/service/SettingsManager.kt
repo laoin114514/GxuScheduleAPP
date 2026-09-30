@@ -249,6 +249,9 @@ class SettingsManager(context: Context) {
         TypedValue.complexToFloat(value.data).roundToInt()
     }
 
+    /** 课程格子高度的默认值（dimens.xml 的 course_cell_height），供「默认」刻度与恢复默认使用 */
+    fun getDefaultCourseCellHeight(): Int = defaultCellHeightDp
+
     /**
      * 获取课程格子高度（dp）。
      * 取值恒在 [COURSE_CELL_HEIGHT_MIN_DP, COURSE_CELL_HEIGHT_MAX_DP] 内，

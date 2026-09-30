@@ -165,40 +165,62 @@
 
                     <!-- 高度滑块：labelBehavior 关掉拖动气泡。AppSlider 样式的 withinBounds
                          会把气泡的 32dp 预留高度算进控件（轨道上方多出 46dp 空白），
-                         而高度值已由上方数值胶囊实时显示，去掉气泡不丢信息。 -->
-                    <com.google.android.material.slider.Slider
-                        android:id="@+id/slider_cell_height"
-                        style="@style/AppSlider"
-                        android:valueFrom="40"
-                        android:valueTo="120"
-                        android:stepSize="1"
-                        android:value="68"
-                        app:labelBehavior="gone" />
+                         而高度值已由上方数值胶囊实时显示，去掉气泡不丢信息。
+                         view_default_height_marker 是默认值（68）的凹槽式刻度：
+                         高 10dp（小于滑块直径，滑块压上时被完全盖住），透明度随
+                         滑块距离在 ScheduleAppearanceSheet 里渐变。 -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
-                    <!-- 取值范围两端标注 -->
-                    <LinearLayout
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_cell_height"
+                            style="@style/AppSlider"
+                            android:valueFrom="40"
+                            android:valueTo="120"
+                            android:stepSize="1"
+                            android:value="68"
+                            app:labelBehavior="gone" />
+
+                        <View
+                            android:id="@+id/view_default_height_marker"
+                            android:layout_width="2dp"
+                            android:layout_height="10dp"
+                            android:layout_gravity="center_vertical"
+                            android:visibility="gone" />
+                    </FrameLayout>
+
+                    <!-- 取值范围两端标注 + 默认值小字（位置由代码对齐刻度线） -->
+                    <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
                         android:paddingHorizontal="24dp">
 
                         <TextView
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
+                            android:layout_gravity="start|center_vertical"
                             android:text="40"
                             android:textSize="@dimen/text_caption"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
                         <TextView
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="end"
+                            android:layout_gravity="end|center_vertical"
                             android:text="120"
                             android:textSize="@dimen/text_caption"
                             android:textColor="?attr/colorOnSurfaceVariant" />
-                    </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_default_height"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:textSize="@dimen/text_caption"
+                            android:textColor="?attr/colorPrimary"
+                            android:visibility="gone" />
+                    </FrameLayout>
 
                 </LinearLayout>
 

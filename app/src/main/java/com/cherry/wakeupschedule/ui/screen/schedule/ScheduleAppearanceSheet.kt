@@ -70,6 +70,9 @@ object ScheduleAppearanceSheet {
     /** 打开时的屏占比（半屏），内容更高也由内部滚动承担 */
     private const val DEFAULT_HEIGHT_RATIO = 0.5f
 
+    /** 滑条轨道两侧的水平内边距（dp）：默认刻度按它收窄轨宽，模拟器上与滑块对拍校准（实测 24dp） */
+    private const val TRACK_INSET_DP = 24f
+
     /** 打开面板。[fragment] 用于把设置改动实时刷进课表。 */
     fun show(fragment: ScheduleFragment) {
         val context = fragment.requireContext()
@@ -101,6 +104,11 @@ object ScheduleAppearanceSheet {
         /** 回填开关状态时抑制监听，避免把读出来的值再写回去 */
         var isUpdatingSwitchState = false
 
+        val outlineValue = TypedValue()
+        context.theme.resolveAttribute(
+            com.google.android.material.R.attr.colorOutline, outlineValue, true
+        )
+
         // ── 格子高度：滑块粗调，松手落库并实时生效 ──
         val slider = sheetView.findViewById<Slider>(R.id.slider_cell_height)
         val btnValue = sheetView.findViewById<MaterialButton>(R.id.btn_cell_height_value)
@@ -109,8 +117,43 @@ object ScheduleAppearanceSheet {
         slider.valueTo = SettingsManager.COURSE_CELL_HEIGHT_MAX_DP.toFloat()
         // 粗轨道会埋住刻度，关掉刻度（与原独立页一致）
         slider.isTickVisible = false
+
+        // ── 默认值刻度：轨道上的凹槽标出默认高度位置，小字在下方对齐同一坐标；
+        //    滑块压近时凹槽淡出（见 updateMarkerAlpha），避免与圆圈重叠打架 ──
+        val defaultDp = settingsManager.getDefaultCourseCellHeight()
+        val marker = sheetView.findViewById<View>(R.id.view_default_height_marker)
+        val defaultHint = sheetView.findViewById<TextView>(R.id.tv_default_height)
+        val surfaceValue = TypedValue()
+        context.theme.resolveAttribute(
+            com.google.android.material.R.attr.colorSurface, surfaceValue, true
+        )
+        marker.background = GradientDrawable().apply {
+            cornerRadius = density
+            setColor(surfaceValue.data)
+        }
+        defaultHint.text = "默认 ${defaultDp}dp"
+        fun positionDefaultMark() {
+            if (slider.width == 0) return
+            val inset = TRACK_INSET_DP * density
+            val fraction = (defaultDp - slider.valueFrom) / (slider.valueTo - slider.valueFrom)
+            val x = inset + fraction * (slider.width - 2 * inset)
+            marker.visibility = View.VISIBLE
+            defaultHint.visibility = View.VISIBLE
+            marker.translationX = x - marker.width / 2f
+            defaultHint.translationX = x - defaultHint.width / 2f
+        }
+        /** 滑块距默认值 ≤1dp 时凹槽全透明、≥3dp 完全显形，之间线性渐变 */
+        fun updateMarkerAlpha(value: Float) {
+            marker.alpha = ((abs(value - defaultDp) - 1f) / 2f).coerceIn(0f, 1f)
+        }
+        slider.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            slider.post { positionDefaultMark() }
+        }
+        slider.post { positionDefaultMark() }
+
         slider.addOnChangeListener { _, value, _ ->
             btnValue.text = "${value.roundToInt()}dp"
+            updateMarkerAlpha(value)
         }
         slider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
             override fun onStartTrackingTouch(slider: Slider) = Unit
@@ -141,10 +184,6 @@ object ScheduleAppearanceSheet {
         // ── 边框颜色：色块弹自绘取色器，跟随开关实时生效 ──
         val swatch = sheetView.findViewById<View>(R.id.swatch_border_color)
         val switchFollow = sheetView.findViewById<Switch>(R.id.switch_border_follow_course)
-        val outlineValue = TypedValue()
-        context.theme.resolveAttribute(
-            com.google.android.material.R.attr.colorOutline, outlineValue, true
-        )
 
         /** 色块始终展示自定义色；跟随开关开启时置灰并禁点（描边已交给各课课程色） */
         fun refreshBorderSwatch() {
@@ -185,6 +224,7 @@ object ScheduleAppearanceSheet {
         val cellHeight = settingsManager.getCourseCellHeight()
         slider.value = cellHeight.toFloat()
         btnValue.text = "${cellHeight}dp"
+        updateMarkerAlpha(cellHeight.toFloat())
         isUpdatingSwitchState = true
         switchClassroom.isChecked = settingsManager.isShowClassroom()
         switchTeacher.isChecked = settingsManager.isShowTeacher()
@@ -351,7 +391,27 @@ object ScheduleAppearanceSheet {
                 }
             }
             .negativeButton("取消")
+            .neutralButton("恢复默认") {
+                // 一键回默认：落库并实时生效（弹窗随后自动关闭）
+                applyCellHeight(
+                    context, settingsManager, slider, btnValue,
+                    settingsManager.getDefaultCourseCellHeight()
+                )
+                fragment.applyAppearanceChanges()
+            }
             .show()
+
+        // 「恢复默认」推到按钮行最左、其余按钮保持右侧（与取色器弹层同款布局）：
+        // StyledDialog 按钮行是 [取消][中位][应用] 且 gravity=end，直接用会挤在取消旁边
+        dialog.findViewById<View>(R.id.btn_neutral)?.let { btnNeutral ->
+            (btnNeutral.parent as? LinearLayout)?.let { panel ->
+                panel.removeView(btnNeutral)
+                panel.addView(btnNeutral, 0)
+                panel.addView(View(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
+                }, 1)
+            }
+        }
 
         // 弹窗展示后拉起键盘并聚焦输入框，省掉一次点击
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
