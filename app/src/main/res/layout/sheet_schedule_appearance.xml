@@ -42,6 +42,60 @@
             android:paddingEnd="16dp"
             android:paddingBottom="24dp">
 
+            <!-- ═══ 课表整体 ═══ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="课表整体"
+                android:textSize="@dimen/text_title"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="6dp" />
+
+            <!-- 底部留白：灰色小标题在卡外，与「格子高度/格子内容/边框颜色」同款层级 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="底部留白"
+                android:textSize="@dimen/text_body_small"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="10dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppSectionCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="在课表底部保留一段空白"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <Switch
+                            android:id="@+id/switch_bottom_blank"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:theme="@style/SwitchTheme" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ═══ 课程格子 ═══ -->
             <!-- 分区标题 -->
             <TextView
                 android:layout_width="match_parent"
@@ -49,7 +103,8 @@
                 android:text="课程格子"
                 android:textSize="@dimen/text_title"
                 android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface" />
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginTop="20dp" />
 
             <!-- 格子高度：滑块与数值胶囊共用同一设置（取值范围见 SettingsManager）。
                  标签与胶囊都在卡外，与下方「格子内容」统一成「小字标签 + 无标题卡片」；

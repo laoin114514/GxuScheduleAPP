@@ -60,6 +60,10 @@ class WeekPagerAdapter(
     var borderFollowCourse: Boolean = false
         private set
 
+    /** 课表底部是否留白：开启后滚动内容末尾追加约 15% 屏高的空白 */
+    var bottomBlankEnabled: Boolean = false
+        private set
+
     private var allCourses: List<Course> = emptyList()
 
     /** 学期开始日期（epoch ms；0 = 未设置 → 日期栏保留占位文案） */
@@ -119,6 +123,13 @@ class WeekPagerAdapter(
         notifyDataSetChanged()
     }
 
+    /** 更新「课表底部留白」；值未变时直接返回 */
+    fun setBottomBlank(enabled: Boolean) {
+        if (enabled == bottomBlankEnabled) return
+        bottomBlankEnabled = enabled
+        notifyDataSetChanged()
+    }
+
     override fun getItemCount(): Int = totalWeeks
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WeekViewHolder {
@@ -128,7 +139,7 @@ class WeekPagerAdapter(
     override fun onBindViewHolder(holder: WeekViewHolder, position: Int) {
         val week = position + 1
         holder.bind(week, allCourses, cellHeightDp, semesterStartDate, currentWeek,
-            showClassroom, showTeacher, borderColor, borderFollowCourse)
+            showClassroom, showTeacher, borderColor, borderFollowCourse, bottomBlankEnabled)
     }
 
     /** 只有日期栏上下文变化时走这条轻量分支，避免整页重建课程卡片 */
@@ -154,6 +165,7 @@ class WeekPagerAdapter(
         private val timeAxis: LinearLayout
         private val courseContainer: FrameLayout
         private val emptyView: LinearLayout
+        private val bottomSpacer: View
 
         // ── 日期栏 ──
         private val dateViews: Array<TextView>
@@ -178,7 +190,10 @@ class WeekPagerAdapter(
             // 页面结构：日期栏 + 周网格。日期栏在页内，因此和网格共用同一次横向滚动
             dateHeader = root.getChildAt(0) as ViewGroup
             scrollView = root.getChildAt(1) as VerticalScrollView
-            val contentLayout = scrollView.getChildAt(0) as LinearLayout
+            // 滚动内容：网格行 + 可选的底部留白（见 bind）
+            val scrollContent = scrollView.getChildAt(0) as LinearLayout
+            val contentLayout = scrollContent.getChildAt(0) as LinearLayout
+            bottomSpacer = scrollContent.getChildAt(1)
             timeAxis = contentLayout.getChildAt(0) as LinearLayout
             val contentArea = contentLayout.getChildAt(1) as FrameLayout
             gridBg = contentArea.getChildAt(0) as GridBackgroundView
@@ -244,7 +259,8 @@ class WeekPagerAdapter(
             showClassroom: Boolean,
             showTeacher: Boolean,
             borderColor: Int,
-            borderFollowCourse: Boolean
+            borderFollowCourse: Boolean,
+            bottomBlankEnabled: Boolean
         ) {
             // 日期栏先渲染：下面「暂无课程」会提前 return，不能漏掉日期栏
             bindDateHeader(week, semesterStartDate, currentWeek)
@@ -292,6 +308,17 @@ class WeekPagerAdapter(
             val timeAxisWidth = (32 * density).toInt()
             val contentWidth = ctx.resources.displayMetrics.widthPixels - timeAxisWidth
             if (contentWidth <= 0) return
+
+            // ── 「课表整体 → 底部留白」：网格之下追加 33% 屏高的空白，让底部课程能上滑到
+            //    屏幕中部查看；空白不带时间轴与行线，与页面背景无缝 ──
+            if (bottomBlankEnabled) {
+                bottomSpacer.visibility = View.VISIBLE
+                bottomSpacer.layoutParams.height =
+                    (ctx.resources.displayMetrics.heightPixels * BOTTOM_BLANK_RATIO).toInt()
+                bottomSpacer.requestLayout()
+            } else {
+                bottomSpacer.visibility = View.GONE
+            }
 
             // ── 重建课程卡片 ──
             courseContainer.removeAllViews()
@@ -497,6 +524,9 @@ class WeekPagerAdapter(
         /** 边框默认色：50% 半透明白（十六进制超出 Int 范围需 toInt），与历史版本写死的描边一致 */
         val DEFAULT_BORDER_COLOR = 0x80FFFFFF.toInt()
 
+        /** 底部留白高度占屏高的比例（课表整体 → 底部留白） */
+        private const val BOTTOM_BLANK_RATIO = 0.15f
+
         /**
          * 用代码构建页面根布局。
          * 网格沿用原始 app 的零 XML inflation 做法；日期栏复用 XML 里的 style，
@@ -582,6 +612,25 @@ class WeekPagerAdapter(
                 addView(contentArea)
             }
 
+            // 「课表整体 → 底部留白」：网格之下追加一段空白（开关在 bind 里生效），
+            // 让底部的课程能上滑到屏幕中部查看
+            val bottomSpacer = View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0
+                )
+                visibility = View.GONE
+            }
+
+            val scrollContent = LinearLayout(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                orientation = LinearLayout.VERTICAL
+                addView(contentLayout)
+                addView(bottomSpacer)
+            }
+
             val scrollView = VerticalScrollView(context).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -591,7 +640,7 @@ class WeekPagerAdapter(
                 overScrollMode = View.OVER_SCROLL_NEVER
                 isVerticalScrollBarEnabled = false
                 isFillViewport = true
-                addView(contentLayout)
+                addView(scrollContent)
             }
 
             val root = LinearLayout(context).apply {
