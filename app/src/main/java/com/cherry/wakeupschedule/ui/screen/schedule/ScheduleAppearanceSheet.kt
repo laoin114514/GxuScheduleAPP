@@ -37,6 +37,8 @@ import kotlin.math.roundToInt
  * - 格子高度：滑块粗调 + 数值胶囊精确输入，写入即通过 [ScheduleFragment.applyAppearanceChanges]
  *   实时刷进课表
  * - 格子内容：课程名恒显示，教室/教师各一个开关
+ * - 边框颜色：色块弹自绘取色器（见 [CellBorderColorPicker]）+「跟随课程格子颜色」开关；
+ *   跟随开启时描边 = 各课不透明课程色，取色器入口置灰
  * - 面板高度可调：拖顶部把手在「贴合内容 ↔ 75% 屏高」间连续跟手，松手保持；
  *   轻点把手在「半屏 ↔ 贴合内容」间切换。拖拽只响应把手，与滑块/内容滚动互不干扰。
  */
@@ -128,6 +130,41 @@ object ScheduleAppearanceSheet {
             fragment.applyAppearanceChanges()
         }
 
+        // ── 边框颜色：色块弹自绘取色器，跟随开关实时生效 ──
+        val swatch = sheetView.findViewById<View>(R.id.swatch_border_color)
+        val switchFollow = sheetView.findViewById<Switch>(R.id.switch_border_follow_course)
+        val outlineValue = TypedValue()
+        context.theme.resolveAttribute(
+            com.google.android.material.R.attr.colorOutline, outlineValue, true
+        )
+
+        /** 色块始终展示自定义色；跟随开关开启时置灰并禁点（描边已交给各课课程色） */
+        fun refreshBorderSwatch() {
+            val follow = settingsManager.isBorderFollowCourse()
+            swatch.background = GradientDrawable().apply {
+                cornerRadius = 8 * density
+                setColor(settingsManager.getCellBorderColor())
+                setStroke((1 * density).toInt(), outlineValue.data)
+            }
+            swatch.alpha = if (follow) 0.38f else 1f
+            swatch.isEnabled = !follow
+        }
+
+        swatch.setOnClickListener {
+            if (settingsManager.isBorderFollowCourse()) return@setOnClickListener
+            CellBorderColorPicker.show(context, settingsManager.getCellBorderColor()) { color ->
+                settingsManager.setCellBorderColor(color)
+                fragment.applyAppearanceChanges()
+                refreshBorderSwatch()
+            }
+        }
+        switchFollow.setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
+            settingsManager.setBorderFollowCourse(isChecked)
+            fragment.applyAppearanceChanges()
+            refreshBorderSwatch()
+        }
+
         // 回填当前设置（抑制开关监听，避免读出来又写一遍）
         val cellHeight = settingsManager.getCourseCellHeight()
         slider.value = cellHeight.toFloat()
@@ -135,7 +172,9 @@ object ScheduleAppearanceSheet {
         isUpdatingSwitchState = true
         switchClassroom.isChecked = settingsManager.isShowClassroom()
         switchTeacher.isChecked = settingsManager.isShowTeacher()
+        switchFollow.isChecked = settingsManager.isBorderFollowCourse()
         isUpdatingSwitchState = false
+        refreshBorderSwatch()
 
         // ── 面板高度：把手拖动调节 ──
         setupHeightControl(context, sheetView)

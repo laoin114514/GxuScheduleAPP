@@ -54,6 +54,8 @@ class SettingsManager(context: Context) {
         private const val KEY_COURSE_CELL_HEIGHT = "course_cell_height" // 课程格子高度（设计 dp）
         private const val KEY_SHOW_CLASSROOM = "show_classroom"        // 课程格子是否显示教室
         private const val KEY_SHOW_TEACHER = "show_teacher"            // 课程格子是否显示教师
+        private const val KEY_CELL_BORDER_COLOR = "cell_border_color"  // 课程格子边框颜色（ARGB）
+        private const val KEY_BORDER_FOLLOW_COURSE = "border_follow_course" // 边框是否跟随课程颜色
         private const val DEFAULT_HIDE_HOLIDAY_COURSES = false              // 默认不隐藏
         private const val DEFAULT_THEME_MODE = "system"                  // 默认跟随系统
         private const val DEFAULT_AUTO_SWITCH_THEME = false              // 默认不自动切换
@@ -70,6 +72,10 @@ class SettingsManager(context: Context) {
         private const val DEFAULT_NON_CURRENT_WEEK_ALPHA = 0.3f                // 非本周课程默认30%透明度
         private const val DEFAULT_SHOW_CLASSROOM = true                        // 默认显示教室
         private const val DEFAULT_SHOW_TEACHER = true                          // 默认显示教师
+
+        /** 边框默认色：50% 半透明白，与历史版本写死的描边完全一致（十六进制超出 Int 范围需 toInt） */
+        private val DEFAULT_CELL_BORDER_COLOR = 0x80FFFFFF.toInt()
+        private const val DEFAULT_BORDER_FOLLOW_COURSE = false                 // 默认不跟随课程颜色
 
         /** 课程格子高度可调范围（dp）：课表外观页的滑块、数值输入与读写校验共用 */
         const val COURSE_CELL_HEIGHT_MIN_DP = 40
@@ -282,6 +288,27 @@ class SettingsManager(context: Context) {
 
     fun setShowTeacher(show: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_SHOW_TEACHER, show).apply()
+    }
+
+    /**
+     * 课程格子边框颜色（ARGB）。深浅模式共用一个值，不做自动适配；
+     * 默认 50% 半透明白，「从未设置过」时与旧版本观感一致。
+     */
+    fun getCellBorderColor(): Int {
+        return sharedPreferences.getInt(KEY_CELL_BORDER_COLOR, DEFAULT_CELL_BORDER_COLOR)
+    }
+
+    fun setCellBorderColor(color: Int) {
+        sharedPreferences.edit().putInt(KEY_CELL_BORDER_COLOR, color).apply()
+    }
+
+    /** 边框是否跟随课程格子颜色：开启后每格描边 = 该课不透明课程色，自定义色暂不生效 */
+    fun isBorderFollowCourse(): Boolean {
+        return sharedPreferences.getBoolean(KEY_BORDER_FOLLOW_COURSE, DEFAULT_BORDER_FOLLOW_COURSE)
+    }
+
+    fun setBorderFollowCourse(follow: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_BORDER_FOLLOW_COURSE, follow).apply()
     }
 
     /**

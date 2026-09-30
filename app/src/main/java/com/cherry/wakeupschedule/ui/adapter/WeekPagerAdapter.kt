@@ -52,6 +52,14 @@ class WeekPagerAdapter(
     var showTeacher: Boolean = true
         private set
 
+    /** 课程格子边框颜色（ARGB），随「课表外观 → 边框颜色」的设置变化 */
+    var borderColor: Int = DEFAULT_BORDER_COLOR
+        private set
+
+    /** 边框是否跟随课程颜色：开启后每格描边 = 该课不透明课程色，自定义色暂不生效 */
+    var borderFollowCourse: Boolean = false
+        private set
+
     private var allCourses: List<Course> = emptyList()
 
     /** 学期开始日期（epoch ms；0 = 未设置 → 日期栏保留占位文案） */
@@ -97,6 +105,20 @@ class WeekPagerAdapter(
         notifyDataSetChanged()
     }
 
+    /** 更新格子边框颜色；值未变时直接返回，避免每次切 tab 白刷一遍 */
+    fun setBorderColor(color: Int) {
+        if (color == borderColor) return
+        borderColor = color
+        notifyDataSetChanged()
+    }
+
+    /** 更新「边框跟随课程颜色」；值未变时直接返回 */
+    fun setBorderFollowCourse(follow: Boolean) {
+        if (follow == borderFollowCourse) return
+        borderFollowCourse = follow
+        notifyDataSetChanged()
+    }
+
     override fun getItemCount(): Int = totalWeeks
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WeekViewHolder {
@@ -106,7 +128,7 @@ class WeekPagerAdapter(
     override fun onBindViewHolder(holder: WeekViewHolder, position: Int) {
         val week = position + 1
         holder.bind(week, allCourses, cellHeightDp, semesterStartDate, currentWeek,
-            showClassroom, showTeacher)
+            showClassroom, showTeacher, borderColor, borderFollowCourse)
     }
 
     /** 只有日期栏上下文变化时走这条轻量分支，避免整页重建课程卡片 */
@@ -220,7 +242,9 @@ class WeekPagerAdapter(
             semesterStartDate: Long,
             currentWeek: Int,
             showClassroom: Boolean,
-            showTeacher: Boolean
+            showTeacher: Boolean,
+            borderColor: Int,
+            borderFollowCourse: Boolean
         ) {
             // 日期栏先渲染：下面「暂无课程」会提前 return，不能漏掉日期栏
             bindDateHeader(week, semesterStartDate, currentWeek)
@@ -274,7 +298,6 @@ class WeekPagerAdapter(
             val gapPx = (2 * density).toInt()
             val cellWidth = contentWidth / 7f
             val textColor = Color.WHITE
-            val strokeColor = 0x80FFFFFF.toInt()
             val colors = courseColors
 
             // 按 (day, startTime, endTime) 分组检测重叠
@@ -291,6 +314,9 @@ class WeekPagerAdapter(
                 val isDark = ThemeManager.isDarkMode(ctx)
                 val alpha = if (isDark) 191 else 128
                 val bgColor = ColorUtils.setAlphaComponent(colors[ci], alpha)
+                // 描边：跟随课程色时取该课不透明课程色（填充仍是半透明，实色描边轮廓清晰）；
+                // 否则用「课表外观 → 边框颜色」的自定义色（默认半透明白）
+                val strokeColor = if (borderFollowCourse) colors[ci] else borderColor
 
                 val rowStart = (primary.startTime - 1).coerceIn(0, maxNodes - 1)
                 val span = (primary.endTime - primary.startTime + 1).coerceAtLeast(1)
@@ -467,6 +493,9 @@ class WeekPagerAdapter(
     companion object {
         /** 日期栏上下文（学期开始日期 / 当前周）变化的 payload 标记 */
         private const val PAYLOAD_WEEK_CONTEXT = "week_context"
+
+        /** 边框默认色：50% 半透明白（十六进制超出 Int 范围需 toInt），与历史版本写死的描边一致 */
+        val DEFAULT_BORDER_COLOR = 0x80FFFFFF.toInt()
 
         /**
          * 用代码构建页面根布局。

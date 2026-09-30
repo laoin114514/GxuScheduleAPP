@@ -84,6 +84,10 @@ class ScheduleFragment : Fragment() {
     private var appliedShowClassroom = true
     private var appliedShowTeacher = true
 
+    /** 当前已应用到课表的边框颜色 / 跟随课程色开关，onResume 对比设置变化后刷新 */
+    private var appliedBorderColor = 0
+    private var appliedBorderFollowCourse = false
+
     /** 当前是否处于总课表视图（周课表 ⇄ 总课表，由底部导航角标切换） */
     private var isOverview = false
 
@@ -147,6 +151,8 @@ class ScheduleFragment : Fragment() {
         syncCellHeightIfChanged()
         // 同上，课程格子里的教室/教师开关也在外观页
         syncContentVisibilityIfChanged()
+        // 同上，格子边框颜色/跟随开关也在外观页
+        syncCellBorderIfChanged()
         // 「我的 → 课表外观」入口会跳到本 tab 并要求弹出外观面板（见 ProfileFragment）
         if (ScheduleAppearanceSheet.consumePendingAutoOpen()) {
             view?.post { ScheduleAppearanceSheet.show(this) }
@@ -164,6 +170,7 @@ class ScheduleFragment : Fragment() {
     fun applyAppearanceChanges() {
         syncCellHeightIfChanged()
         syncContentVisibilityIfChanged()
+        syncCellBorderIfChanged()
     }
 
     /**
@@ -190,6 +197,21 @@ class ScheduleFragment : Fragment() {
         appliedShowClassroom = showClassroom
         appliedShowTeacher = showTeacher
         adapter.setContentVisibility(showClassroom, showTeacher)
+    }
+
+    /**
+     * 同步「课表外观 → 边框颜色」的自定义色与跟随课程色开关。
+     * 描边在 bind 时画进卡片背景，同样要重绑才生效（见 WeekPagerAdapter）。
+     */
+    private fun syncCellBorderIfChanged() {
+        if (!::adapter.isInitialized) return
+        val color = settingsManager.getCellBorderColor()
+        val follow = settingsManager.isBorderFollowCourse()
+        if (color == appliedBorderColor && follow == appliedBorderFollowCourse) return
+        appliedBorderColor = color
+        appliedBorderFollowCourse = follow
+        adapter.setBorderColor(color)
+        adapter.setBorderFollowCourse(follow)
     }
 
     /**
@@ -290,8 +312,12 @@ class ScheduleFragment : Fragment() {
         appliedCellHeightDp = settingsManager.getCourseCellHeight()
         appliedShowClassroom = settingsManager.isShowClassroom()
         appliedShowTeacher = settingsManager.isShowTeacher()
+        appliedBorderColor = settingsManager.getCellBorderColor()
+        appliedBorderFollowCourse = settingsManager.isBorderFollowCourse()
         adapter = WeekPagerAdapter(totalWeeks, appliedCellHeightDp)
         adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
+        adapter.setBorderColor(appliedBorderColor)
+        adapter.setBorderFollowCourse(appliedBorderFollowCourse)
         // 仅预加载相邻1页（3页总量），减少tab切换时的初始构建压力
         viewPager.offscreenPageLimit = 1
 
@@ -750,8 +776,12 @@ class ScheduleFragment : Fragment() {
                                     appliedCellHeightDp = settingsManager.getCourseCellHeight()
                                     appliedShowClassroom = settingsManager.isShowClassroom()
                                     appliedShowTeacher = settingsManager.isShowTeacher()
+                                    appliedBorderColor = settingsManager.getCellBorderColor()
+                                    appliedBorderFollowCourse = settingsManager.isBorderFollowCourse()
                                     adapter = WeekPagerAdapter(settingsManager.getTotalWeeks(), appliedCellHeightDp)
                                     adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
+                                    adapter.setBorderColor(appliedBorderColor)
+                                    adapter.setBorderFollowCourse(appliedBorderFollowCourse)
                                     // 刚导入完才有学期开始日期，日期栏要按新日期渲染
                                     syncWeekContextToAdapter()
                                     viewPager.adapter = adapter
