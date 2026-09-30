@@ -309,8 +309,8 @@ class WeekPagerAdapter(
             val contentWidth = ctx.resources.displayMetrics.widthPixels - timeAxisWidth
             if (contentWidth <= 0) return
 
-            // ── 「课表整体 → 底部留白」：网格之下追加 33% 屏高的空白，让底部课程能上滑到
-            //    屏幕中部查看；空白不带时间轴与行线，与页面背景无缝 ──
+            // ── 「课表整体 → 底部留白」：网格之下追加 BOTTOM_BLANK_RATIO(15%) 屏高的空白，
+            //    让底部课程能上滑到屏幕中部查看；空白不带时间轴与行线，与页面背景无缝 ──
             if (bottomBlankEnabled) {
                 bottomSpacer.visibility = View.VISIBLE
                 bottomSpacer.layoutParams.height =
