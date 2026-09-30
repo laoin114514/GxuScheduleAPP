@@ -41,7 +41,7 @@ class AboutActivity : BaseActivity() {
 
         llCheckUpdate.setOnClickListener { updateService.checkForUpdate(showNoUpdateToast = true) }
 
-        llOfficialWebsite.setOnClickListener { openUrl("https://laoin114514.github.io/GxuScheduleAPP/") }
+        llOfficialWebsite.setOnClickListener { openUrl("https://easo.laoin.work/schedule") }
 
         llGithub.setOnClickListener { openUrl("https://github.com/laoin114514/GxuScheduleAPP") }
 

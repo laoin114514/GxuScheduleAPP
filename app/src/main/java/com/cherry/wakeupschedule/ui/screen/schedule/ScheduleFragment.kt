@@ -29,7 +29,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.R
-import com.cherry.wakeupschedule.ScheduleAppearanceActivity
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.JwxtAccountManager
@@ -80,6 +79,17 @@ class ScheduleFragment : Fragment() {
 
     /** 当前已应用到课表的格子高度（dp），onResume 对比设置变化后刷新 */
     private var appliedCellHeightDp = 0
+
+    /** 当前已应用到课表的课程内容开关（教室 / 教师），onResume 对比设置变化后刷新 */
+    private var appliedShowClassroom = true
+    private var appliedShowTeacher = true
+
+    /** 当前已应用到课表的边框颜色 / 跟随课程色开关，onResume 对比设置变化后刷新 */
+    private var appliedBorderColor = 0
+    private var appliedBorderFollowCourse = false
+
+    /** 当前已应用到课表的「底部留白」开关，onResume 对比设置变化后刷新 */
+    private var appliedBottomBlank = false
 
     /** 当前是否处于总课表视图（周课表 ⇄ 总课表，由底部导航角标切换） */
     private var isOverview = false
@@ -142,9 +152,31 @@ class ScheduleFragment : Fragment() {
 
         // 但「课表」外观页改过的格子高度要在这里同步（脏检查，没变就不动）
         syncCellHeightIfChanged()
+        // 同上，课程格子里的教室/教师开关也在外观页
+        syncContentVisibilityIfChanged()
+        // 同上，格子边框颜色/跟随开关也在外观页
+        syncCellBorderIfChanged()
+        // 同上，课表底部留白开关在「课表整体」区
+        syncBottomBlankIfChanged()
+        // 「我的 → 课表外观」入口会跳到本 tab 并要求弹出外观面板（见 ProfileFragment）
+        if (ScheduleAppearanceSheet.consumePendingAutoOpen()) {
+            view?.post { ScheduleAppearanceSheet.show(this) }
+        }
         // 从设置页回来时学期开始日期/当前周可能变了，日期栏也要跟上
         syncWeekContextToAdapter()
         updateWeekJumpButton()
+    }
+
+    /**
+     * 课表外观面板（ScheduleAppearanceSheet）的实时生效入口：
+     * 面板已把设置写入 SettingsManager，这里把缓存值刷进适配器
+     * （两个 sync 内部自带脏检查，值没变就不动）。
+     */
+    fun applyAppearanceChanges() {
+        syncCellHeightIfChanged()
+        syncContentVisibilityIfChanged()
+        syncCellBorderIfChanged()
+        syncBottomBlankIfChanged()
     }
 
     /**
@@ -157,6 +189,44 @@ class ScheduleFragment : Fragment() {
         if (heightDp == appliedCellHeightDp) return
         appliedCellHeightDp = heightDp
         adapter.setCellHeightDp(heightDp)
+    }
+
+    /**
+     * 同步「课表外观 → 课程内容」里的教室/教师开关。
+     * 课程格子的文字在 bind 时拼好，所以同样要重绑才生效（见 WeekPagerAdapter）。
+     */
+    private fun syncContentVisibilityIfChanged() {
+        if (!::adapter.isInitialized) return
+        val showClassroom = settingsManager.isShowClassroom()
+        val showTeacher = settingsManager.isShowTeacher()
+        if (showClassroom == appliedShowClassroom && showTeacher == appliedShowTeacher) return
+        appliedShowClassroom = showClassroom
+        appliedShowTeacher = showTeacher
+        adapter.setContentVisibility(showClassroom, showTeacher)
+    }
+
+    /**
+     * 同步「课表外观 → 边框颜色」的自定义色与跟随课程色开关。
+     * 描边在 bind 时画进卡片背景，同样要重绑才生效（见 WeekPagerAdapter）。
+     */
+    private fun syncCellBorderIfChanged() {
+        if (!::adapter.isInitialized) return
+        val color = settingsManager.getCellBorderColor()
+        val follow = settingsManager.isBorderFollowCourse()
+        if (color == appliedBorderColor && follow == appliedBorderFollowCourse) return
+        appliedBorderColor = color
+        appliedBorderFollowCourse = follow
+        adapter.setBorderColor(color)
+        adapter.setBorderFollowCourse(follow)
+    }
+
+    /** 同步「课表整体 → 底部留白」开关（页面滚动范围在 bind 时重建） */
+    private fun syncBottomBlankIfChanged() {
+        if (!::adapter.isInitialized) return
+        val enabled = settingsManager.isBottomBlank()
+        if (enabled == appliedBottomBlank) return
+        appliedBottomBlank = enabled
+        adapter.setBottomBlank(enabled)
     }
 
     /**
@@ -255,7 +325,16 @@ class ScheduleFragment : Fragment() {
 
         // 格子高度取「我的 → 外观 → 课表」的设置（未设置过时回落 dimens 的 68dp）
         appliedCellHeightDp = settingsManager.getCourseCellHeight()
+        appliedShowClassroom = settingsManager.isShowClassroom()
+        appliedShowTeacher = settingsManager.isShowTeacher()
+        appliedBorderColor = settingsManager.getCellBorderColor()
+        appliedBorderFollowCourse = settingsManager.isBorderFollowCourse()
+        appliedBottomBlank = settingsManager.isBottomBlank()
         adapter = WeekPagerAdapter(totalWeeks, appliedCellHeightDp)
+        adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
+        adapter.setBorderColor(appliedBorderColor)
+        adapter.setBorderFollowCourse(appliedBorderFollowCourse)
+        adapter.setBottomBlank(appliedBottomBlank)
         // 仅预加载相邻1页（3页总量），减少tab切换时的初始构建压力
         viewPager.offscreenPageLimit = 1
 
@@ -712,7 +791,16 @@ class ScheduleFragment : Fragment() {
                                 result.onSuccess { count ->
                                     // 更新 ViewPager 总页数
                                     appliedCellHeightDp = settingsManager.getCourseCellHeight()
+                                    appliedShowClassroom = settingsManager.isShowClassroom()
+                                    appliedShowTeacher = settingsManager.isShowTeacher()
+                                    appliedBorderColor = settingsManager.getCellBorderColor()
+                                    appliedBorderFollowCourse = settingsManager.isBorderFollowCourse()
+                                    appliedBottomBlank = settingsManager.isBottomBlank()
                                     adapter = WeekPagerAdapter(settingsManager.getTotalWeeks(), appliedCellHeightDp)
+                                    adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
+                                    adapter.setBorderColor(appliedBorderColor)
+                                    adapter.setBorderFollowCourse(appliedBorderFollowCourse)
+                                    adapter.setBottomBlank(appliedBottomBlank)
                                     // 刚导入完才有学期开始日期，日期栏要按新日期渲染
                                     syncWeekContextToAdapter()
                                     viewPager.adapter = adapter
@@ -743,14 +831,14 @@ class ScheduleFragment : Fragment() {
         // 注册色块刷新回调：全局 loading 状态切换时（如刷新按钮触发）同步菜单色块
         menuSemesterRefresher = { refreshSemesterItems(animateEntrance = false) }
 
-        // ── 课表外观（跳转到独立的课表外观设置页） ──
+        // ── 课表外观（弹出悬浮面板，改动实时生效在面板上方的课表） ──
         val groupAppearance = sheetView.findViewById<View>(R.id.group_schedule_appearance)
         // 入场前先隐藏，等弹窗展示后再淡入，避免 show() 瞬间闪一下
         groupAppearance.alpha = 0f
         sheetView.findViewById<View>(R.id.row_schedule_appearance).setOnClickListener {
-            // 故意不 dismiss：MainActivity 只是 stopped 不会销毁，返回时菜单仍在，
-            // 用户落回的就是出发时那个「课表菜单」（而不是「我的」页）
-            startActivity(Intent(ctx, ScheduleAppearanceActivity::class.java))
+            // 面板接替菜单：先关菜单再弹面板，避免两层弹窗叠加
+            dialog.dismiss()
+            ScheduleAppearanceSheet.show(this)
         }
 
         // 弹窗展示后，学期色块按顺序波浪式入场

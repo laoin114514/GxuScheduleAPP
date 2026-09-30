@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 课表外观设置面板（悬浮在课表页下方）。
+     根高度由 ScheduleAppearanceSheet 代码控制（初始半屏，拖把手可调），
+     背景也在代码里画（24dp 顶部圆角 + colorSurfaceContainer），这里不写。
+     内容列与原「课表外观」独立页一致（该页已删除，ids 保持不变方便迁移）。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/sheet_appearance_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- 拖拽把手：上下拖连续调整面板高度，轻点在「半屏/贴合内容」间切换。
+         外层 36dp 触控区比 4dp 指示条好按得多。 -->
+    <FrameLayout
+        android:id="@+id/handle_area"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="拖动调整面板高度，点按切换半屏或贴合内容">
+
+        <View
+            android:layout_width="32dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_drag_handle" />
+    </FrameLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_appearance"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="24dp">
+
+            <!-- ═══ 课表整体 ═══ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="课表整体"
+                android:textSize="@dimen/text_title"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="6dp" />
+
+            <!-- 底部留白：灰色小标题在卡外，与「格子高度/格子内容/边框颜色」同款层级 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="底部留白"
+                android:textSize="@dimen/text_body_small"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="10dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppSectionCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="在课表底部保留一段空白"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <Switch
+                            android:id="@+id/switch_bottom_blank"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:theme="@style/SwitchTheme" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ═══ 课程格子 ═══ -->
+            <!-- 分区标题 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="课程格子"
+                android:textSize="@dimen/text_title"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginTop="20dp" />
+
+            <!-- 格子高度：滑块与数值胶囊共用同一设置（取值范围见 SettingsManager）。
+                 标签与胶囊都在卡外，与下方「格子内容」统一成「小字标签 + 无标题卡片」；
+                 胶囊留在标签行右侧，保住「点它输入精确值」的可发现性。 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="格子高度"
+                    android:textSize="@dimen/text_body_small"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_cell_height_value"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:text="68dp"
+                    android:textSize="@dimen/text_body_small"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="false"
+                    android:contentDescription="点击输入精确高度"
+                    app:backgroundTint="?attr/colorSurfaceContainerLowest"
+                    app:cornerRadius="999dp"
+                    app:strokeColor="?attr/colorOutline"
+                    app:strokeWidth="1dp"
+                    app:icon="@drawable/ic_edit"
+                    app:iconSize="14dp"
+                    app:iconPadding="6dp"
+                    app:iconGravity="textStart"
+                    app:iconTint="?attr/colorPrimary" />
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppSectionCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 高度滑块：labelBehavior 关掉拖动气泡。AppSlider 样式的 withinBounds
+                         会把气泡的 32dp 预留高度算进控件（轨道上方多出 46dp 空白），
+                         而高度值已由上方数值胶囊实时显示，去掉气泡不丢信息。
+                         view_default_height_marker 是默认值（68）的凹槽式刻度：
+                         高 10dp（小于滑块直径，滑块压上时被完全盖住），透明度随
+                         滑块距离在 ScheduleAppearanceSheet 里渐变。 -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_cell_height"
+                            style="@style/AppSlider"
+                            android:valueFrom="40"
+                            android:valueTo="120"
+                            android:stepSize="1"
+                            android:value="68"
+                            app:labelBehavior="gone" />
+
+                        <View
+                            android:id="@+id/view_default_height_marker"
+                            android:layout_width="2dp"
+                            android:layout_height="10dp"
+                            android:layout_gravity="center_vertical"
+                            android:visibility="gone" />
+                    </FrameLayout>
+
+                    <!-- 取值范围两端标注 + 默认值小字（位置由代码对齐刻度线） -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="24dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:text="40"
+                            android:textSize="@dimen/text_caption"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|center_vertical"
+                            android:text="120"
+                            android:textSize="@dimen/text_caption"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/tv_default_height"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:textSize="@dimen/text_caption"
+                            android:textColor="?attr/colorPrimary"
+                            android:visibility="gone" />
+                    </FrameLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 边框颜色：色块点开自绘取色器；开启「跟随课程格子颜色」后描边用各课不透明
+                 课程色（色块置灰、入口不可用）。深浅模式共用一个颜色，不做自动适配。 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="边框颜色"
+                android:textSize="@dimen/text_body_small"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="10dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppSectionCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="自定义颜色"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <View
+                            android:id="@+id/swatch_border_color"
+                            android:layout_width="44dp"
+                            android:layout_height="28dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:contentDescription="点击选择边框颜色" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:background="?attr/colorOutlineVariant"
+                        android:layout_marginVertical="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="跟随课程格子颜色"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <Switch
+                            android:id="@+id/switch_border_follow_course"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:theme="@style/SwitchTheme" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 格子内容：课程名恒显示，只有教室/教师可关（默认均开启，见 SettingsManager）。
+                 独立于「课程格子」分组，用一行小字做轻量标注（样式对齐字体大小页的说明文字）。 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="格子内容"
+                android:textSize="@dimen/text_body_small"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="10dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppSectionCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 显示教室 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="显示教室"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <Switch
+                            android:id="@+id/switch_show_classroom"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:theme="@style/SwitchTheme" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:background="?attr/colorOutlineVariant"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 显示教师 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="显示教师"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <Switch
+                            android:id="@+id/switch_show_teacher"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:theme="@style/SwitchTheme" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
