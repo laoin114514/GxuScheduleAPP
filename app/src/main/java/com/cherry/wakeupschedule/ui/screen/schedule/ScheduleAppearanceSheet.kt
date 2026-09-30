@@ -6,7 +6,6 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
-import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -20,7 +19,6 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
-import androidx.core.widget.NestedScrollView
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.component.StyledDialog
@@ -39,8 +37,9 @@ import kotlin.math.roundToInt
  * - 格子内容：课程名恒显示，教室/教师各一个开关
  * - 边框颜色：色块弹自绘取色器（见 [CellBorderColorPicker]）+「跟随课程格子颜色」开关；
  *   跟随开启时描边 = 各课不透明课程色，取色器入口置灰
- * - 面板高度可调：拖顶部把手在「贴合内容 ↔ 75% 屏高」间连续跟手，松手保持；
- *   轻点把手在「半屏 ↔ 贴合内容」间切换。拖拽只响应把手，与滑块/内容滚动互不干扰。
+ * - 面板高度可调：拖顶部把手在「25% ↔ 75% 屏高」间连续跟手（越界有果冻阻尼），松手保持；
+ *   轻点把手在「半屏 ↔ 25%」间切换。拖拽只响应把手，与滑块/内容滚动互不干扰；
+ *   内容塞不下时在面板内的 NestedScrollView 上下滑动。
  */
 object ScheduleAppearanceSheet {
 
@@ -61,6 +60,13 @@ object ScheduleAppearanceSheet {
 
     /** 松手越界回落动画时长（ms）；轻点切换沿用原来的 200ms */
     private const val OVERSCROLL_SETTLE_MS = 300L
+
+    /** 面板高度可拖范围（屏高占比）：下限 25%、上限 75%；内容塞不下时由内部滚动承担 */
+    private const val MIN_HEIGHT_RATIO = 0.25f
+    private const val MAX_HEIGHT_RATIO = 0.75f
+
+    /** 打开时的屏占比（半屏），内容更高也由内部滚动承担 */
+    private const val DEFAULT_HEIGHT_RATIO = 0.5f
 
     /** 打开面板。[fragment] 用于把设置改动实时刷进课表。 */
     fun show(fragment: ScheduleFragment) {
@@ -187,10 +193,10 @@ object ScheduleAppearanceSheet {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         }
         (sheetView.parent as? ViewGroup)?.removeView(sheetView)
-        // 初始高度取半屏；内容比半屏还高时贴合内容
+        // 初始固定半屏；内容塞不下时由面板内的 NestedScrollView 上下滚动
         sheetView.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            (metrics.heightPixels / 2).coerceAtLeast(contentHugHeight(sheetView, metrics))
+            (metrics.heightPixels * DEFAULT_HEIGHT_RATIO).toInt()
         )
         container.addView(View(context).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -218,16 +224,17 @@ object ScheduleAppearanceSheet {
     // ==================== 面板高度调节 ====================
 
     /**
-     * 把手手势：上下拖连续调高（上拖增高、下拖收起，范围 [贴合内容, 75% 屏高]）；
+     * 把手手势：上下拖连续调高（上拖增高、下拖收起，范围 [25%, 75%] 屏高）；
      * 到边界不硬停，而是像系统 stretch overscroll（工具页同款手感）那样越界渐进阻尼
      * 地拉伸（初始跟手、越拉越难拉，渐近 [OVERSCROLL_MAX_DP]），松手平滑回落到边界。
-     * 位移没超过 touchSlop 视为轻点，在「半屏 ↔ 贴合内容」间切换。
+     * 位移没超过 touchSlop 视为轻点，在「半屏 ↔ 25%」间切换。
      * 拖拽只挂在把手上，滑块与内容滚动手势不受影响。
      */
     private fun setupHeightControl(context: Context, sheetView: View) {
         val handle = sheetView.findViewById<View>(R.id.handle_area)
         val metrics = context.resources.displayMetrics
-        val maxH = (metrics.heightPixels * 0.75f).toInt()
+        val minH = (metrics.heightPixels * MIN_HEIGHT_RATIO).toInt()
+        val maxH = (metrics.heightPixels * MAX_HEIGHT_RATIO).toInt()
         val maxOverPx = (OVERSCROLL_MAX_DP * metrics.density).toInt()
         val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
         var dragStartRawY = 0f
@@ -259,7 +266,6 @@ object ScheduleAppearanceSheet {
                     val dy = (dragStartRawY - event.rawY).roundToInt()
                     if (abs(dy) > touchSlop) dragMoved = true
                     val raw = dragStartHeight + dy
-                    val minH = contentHugHeight(sheetView, metrics)
                     // 越界走渐进阻尼：初始仍跟手，越拉越难拉，渐近封顶
                     val target = when {
                         raw > maxH -> maxH + overshoot(raw - maxH, maxOverPx)
@@ -270,14 +276,13 @@ object ScheduleAppearanceSheet {
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    val minH = contentHugHeight(sheetView, metrics)
                     val current = sheetView.layoutParams.height
                     when {
                         current > maxH -> settleTo(maxH)
                         current < minH -> settleTo(minH)
                         !dragMoved -> {
-                            // 轻点：当前高度在「贴合↔半屏」区间中点以上则收到贴合，否则展开到半屏
-                            val half = (metrics.heightPixels / 2).coerceAtLeast(minH)
+                            // 轻点：当前高度在「25%↔半屏」区间中点以上则收到 25%，否则展开到半屏
+                            val half = (metrics.heightPixels * DEFAULT_HEIGHT_RATIO).toInt()
                             settleTo(if (current > (minH + half) / 2) minH else half, duration = 200)
                         }
                     }
@@ -291,18 +296,6 @@ object ScheduleAppearanceSheet {
     /** 渐进阻尼：越界量 over → 拉伸量。导数在 0 处为 1（边界处不跳变），渐近封顶 maxOverPx */
     private fun overshoot(over: Int, maxOverPx: Int): Int =
         (maxOverPx * (1f - 1f / (1f + over.toFloat() / maxOverPx))).roundToInt()
-
-    /** 内容贴合高度：把手区 + 内容列的完整测量高度（含内边距），面板再矮就裁内容了 */
-    private fun contentHugHeight(sheetView: View, metrics: DisplayMetrics): Int {
-        val scroll = sheetView.findViewById<NestedScrollView>(R.id.scroll_appearance)
-        val content = scroll.getChildAt(0)
-        content.measure(
-            View.MeasureSpec.makeMeasureSpec(metrics.widthPixels, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val handle = sheetView.findViewById<View>(R.id.handle_area)
-        return content.measuredHeight + handle.layoutParams.height
-    }
 
     private fun setSheetHeight(sheetView: View, heightPx: Int) {
         if (sheetView.layoutParams.height == heightPx) return
