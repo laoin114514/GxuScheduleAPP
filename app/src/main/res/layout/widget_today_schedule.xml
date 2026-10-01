@@ -1,57 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 今日课程概览组件（官网「桌面小组件专区」2×2 款）：
+     头部「{周X} · {N} 门课」+ 状态卡片课程列表（已上完/进行中/下一节/未开始） -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_widget_white"
+    android:background="@drawable/bg_widget_card"
     android:padding="10dp">
 
-    <!-- 标题栏 -->
-    <LinearLayout
+    <!-- 头部：周X · N 门课（右对齐，对齐官网 mock） -->
+    <TextView
+        android:id="@+id/tv_widget_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingBottom="6dp">
+        android:gravity="end"
+        android:text="周三 · 3 门课"
+        android:textSize="@dimen/text_caption"
+        android:textColor="@color/widget_text_secondary"
+        android:maxLines="1" />
 
-        <TextView
-            android:id="@+id/tv_widget_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="本学期"
-            android:textSize="@dimen/text_label"
-            android:textColor="#666666" />
-
-        <TextView
-            android:id="@+id/tv_widget_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="今日"
-            android:textSize="@dimen/text_caption"
-            android:textColor="#4A90E2"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tv_widget_week"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="@dimen/text_label"
-            android:textColor="#888888"
-            android:layout_marginStart="6dp" />
-    </LinearLayout>
-
-    <!-- 课程列表 ListView：支持上下滑动 -->
+    <!-- 课程列表 ListView：支持上下滑动；行间距用透明 divider 实现 -->
     <ListView
         android:id="@+id/lv_today_courses"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:layout_marginTop="4dp"
         android:minHeight="60dp"
-        android:divider="@null"
-        android:dividerHeight="0dp"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="4dp"
         android:scrollbars="vertical"
         android:scrollbarSize="2dp"
         android:fadeScrollbars="true"
@@ -61,29 +39,16 @@
         android:overScrollMode="never"
         android:listSelector="@android:color/transparent" />
 
-    <!-- 底部信息 -->
-    <LinearLayout
+    <!-- 空态：之前 setEmptyView 指向的 android.R.id.empty 在布局里并不存在，空态从未生效，这里补上 -->
+    <TextView
+        android:id="@android:id/empty"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingTop="4dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="今日课程"
-            android:textSize="@dimen/text_label"
-            android:textColor="#999999" />
-
-        <TextView
-            android:id="@+id/tv_widget_size"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="上下滑动查看更多"
-            android:textSize="@dimen/text_label"
-            android:textColor="#CCCCCC" />
-    </LinearLayout>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="今天没有课程"
+        android:textSize="@dimen/text_caption"
+        android:textColor="@color/widget_text_secondary"
+        android:visibility="gone" />
 
 </LinearLayout>
