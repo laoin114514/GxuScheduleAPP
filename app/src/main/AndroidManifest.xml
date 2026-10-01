@@ -41,6 +41,7 @@
         <activity android:name=".AppearanceActivity" />
         <activity android:name=".ScheduleAppearanceActivity" />
         <activity android:name=".FontSizeActivity" />
+        <activity android:name=".WidgetCenterActivity" />
         <activity android:name=".AboutActivity" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".BindJwxtActivity" />
@@ -98,6 +99,48 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_upcoming_days_info" />
         </receiver>
+
+        <!-- 桌面小部件 - 一周课程 -->
+        <receiver
+            android:name=".widget.WeekViewWidgetProvider"
+            android:exported="true"
+            android:label="一周课程">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.cherry.wakeupschedule.widget.weekview.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_week_view_info" />
+        </receiver>
+
+        <!-- 桌面小部件 - 下一门课提醒 -->
+        <receiver
+            android:name=".widget.NextCourseWidgetProvider"
+            android:exported="true"
+            android:label="下一门课">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.cherry.wakeupschedule.widget.next.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_next_course_info" />
+        </receiver>
+
+        <!-- 下一门课小组件周期性更新接收器 -->
+        <receiver
+            android:name=".widget.NextCoursePeriodicReceiver"
+            android:exported="false" />
+
+        <!-- 下一门课小组件状态切换接收器（上课/下课/明天开课精确时刻） -->
+        <receiver
+            android:name=".widget.NextCourseTransitionReceiver"
+            android:exported="false" />
 
         <!-- 小组件定时更新接收器 -->
         <receiver
