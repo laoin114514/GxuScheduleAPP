@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小组件中心 · 第 6 页「找不到小组件（排查）」 -->
+<com.cherry.wakeupschedule.ui.widget.VerticalScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="找不到小组件？"
+                    android:textSize="@dimen/text_body"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:lineSpacingExtra="3dp"
+                    android:text="· 检查应用是否被手机管家冻结或限制后台，解冻后重启桌面再试\n· 应用若安装在 SD 卡上，桌面将不显示小组件，请移回内部存储\n· 也可以长按桌面空白处 → 小组件 → 搜索「西大课栈」手动添加\n· 部分桌面有缓存，重启手机后小组件列表会重新加载"
+                    android:textSize="@dimen/text_caption"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</com.cherry.wakeupschedule.ui.widget.VerticalScrollView>
