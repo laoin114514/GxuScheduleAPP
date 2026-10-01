@@ -274,13 +274,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="全周课程密度一览，当日高亮，深浅色自适应。"
+                        android:text="周一至周日迷你课表，课程块按节次排列，当日高亮。"
                         android:textSize="@dimen/text_caption"
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
                     <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="110dp"
+                        android:layout_height="230dp"
                         android:layout_marginTop="12dp">
 
                         <include
