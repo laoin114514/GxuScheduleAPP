@@ -103,8 +103,9 @@
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
                     <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="84dp"
+                        android:layout_width="172dp"
+                        android:layout_height="86dp"
+                        android:layout_gravity="center_horizontal"
                         android:layout_marginTop="12dp">
 
                         <include
@@ -190,8 +191,9 @@
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
                     <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="150dp"
+                        android:layout_width="172dp"
+                        android:layout_height="172dp"
+                        android:layout_gravity="center_horizontal"
                         android:layout_marginTop="12dp">
 
                         <include
