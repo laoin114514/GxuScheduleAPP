@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 下课倒计时组件（官网「桌面小组件专区」2×2 款）：
-     当前课程 + 距下课秒级倒计时 + 教室，配色见 widget_colors.xml -->
+     顶部状态（上课中 / 当前无课）贴顶，其余 5 行作为一整块在卡片里竖向居中 ——
+     时间+倒计时说明 / 倒计时（固定两位时分秒，autoSize 撑满宽度）/ 课名 / 教室 / 教师，全部居中。
+     配色见 widget_colors.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
@@ -10,79 +12,130 @@
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
     android:paddingTop="8dp"
-    android:paddingBottom="8dp"
-    android:gravity="center_vertical">
+    android:paddingBottom="8dp">
 
+    <!-- 顶部状态：上课中（主色）/ 当前无课（弱色），始终贴顶 -->
     <TextView
-        android:id="@+id/tv_course_label"
+        android:id="@+id/tv_class_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="当前课程：软件工程"
+        android:text="上课中"
         android:textSize="@dimen/text_caption"
-        android:textColor="@color/widget_text_secondary"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        android:textStyle="bold"
+        android:textColor="@color/widget_accent"
+        android:gravity="center"
+        android:maxLines="1" />
 
+    <!-- 内容块：在剩余空间里竖向居中 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
         android:gravity="center_vertical">
 
+        <!-- 时间行：'{时间} 下课，距下课还有' / '{时间} 上课，距上课还有' -->
         <TextView
-            android:id="@+id/tv_countdown_label"
-            android:layout_width="wrap_content"
+            android:id="@+id/tv_course_time"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="距下课还有"
+            android:text="16:05 下课，距下课还有"
             android:textSize="@dimen/text_caption"
-            android:textColor="@color/widget_text_secondary" />
+            android:textColor="@color/widget_text_secondary"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
+        <!-- 倒计时：固定两位时分秒，字号按「撑满 2×2 内容宽度」直接定死 ——
+             等宽数字 0.585em/字符，8 字符 × 30sp ≈ 140dp，正好铺满 ~147dp 的内容宽
+             （桌面端不会应用 autoSize，下面的 autoSize 属性只在支持它的宿主上生效） -->
         <Chronometer
             android:id="@+id/chronometer_countdown"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:textSize="@dimen/text_display"
+            android:layout_marginTop="2dp"
+            android:textSize="30sp"
             android:textColor="@color/widget_accent"
             android:textStyle="bold"
             android:fontFamily="monospace"
+            android:gravity="center"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="16sp"
+            android:autoSizeMaxTextSize="40sp"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/tv_countdown"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:textSize="@dimen/text_display"
+            android:layout_marginTop="2dp"
+            android:text="00:51:15"
+            android:textSize="30sp"
             android:textColor="@color/widget_accent"
             android:textStyle="bold"
             android:fontFamily="monospace"
-            android:maxLines="1" />
-    </LinearLayout>
+            android:gravity="center"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="16sp"
+            android:autoSizeMaxTextSize="40sp" />
 
-    <LinearLayout
-        android:id="@+id/ll_location"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <ImageView
-            android:layout_width="11dp"
-            android:layout_height="11dp"
-            android:src="@drawable/widget_ic_location"
-            android:importantForAccessibility="no" />
-
+        <!-- 课程名（进行中 / 下一节共用） -->
         <TextView
-            android:id="@+id/tv_course_location"
-            android:layout_width="wrap_content"
+            android:id="@+id/tv_course_label"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="3dp"
-            android:text="君武馆 301"
-            android:textSize="@dimen/text_caption"
-            android:textColor="@color/widget_text_secondary"
+            android:layout_marginTop="4dp"
+            android:text="软件工程"
+            android:textSize="@dimen/text_body"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title"
+            android:gravity="center"
             android:maxLines="1"
             android:ellipsize="end" />
+
+        <!-- 教室（为空时整行隐藏） -->
+        <LinearLayout
+            android:id="@+id/ll_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="11dp"
+                android:layout_height="11dp"
+                android:src="@drawable/widget_ic_location"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/tv_course_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:text="君武馆 301"
+                android:textSize="@dimen/text_caption"
+                android:textColor="@color/widget_text_secondary"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- 教师（为空时整行隐藏） -->
+        <TextView
+            android:id="@+id/tv_course_teacher"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:text="张老师"
+            android:textSize="@dimen/text_caption"
+            android:textColor="@color/widget_text_secondary"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
     </LinearLayout>
 
 </LinearLayout>

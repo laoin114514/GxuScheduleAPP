@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 下课倒计时组件（官网「桌面小组件专区」2×2 款）的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用 -->
+<!-- 下课倒计时组件（官网「桌面小组件专区」2×2 款）的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用；
+     行结构与真身 widget_minimal.xml 一致（状态贴顶 + 时间说明/倒计时/课名/教室/教师 居中块） -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,63 +9,98 @@
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
     android:paddingTop="8dp"
-    android:paddingBottom="8dp"
-    android:gravity="center_vertical">
+    android:paddingBottom="8dp">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="当前课程：软件工程"
+        android:text="上课中"
         android:textSize="@dimen/text_caption"
-        android:textColor="@color/widget_text_secondary"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        android:textStyle="bold"
+        android:textColor="@color/widget_accent"
+        android:gravity="center"
+        android:maxLines="1" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
         android:gravity="center_vertical">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="距下课还有"
-            android:textSize="@dimen/text_caption"
-            android:textColor="@color/widget_text_secondary" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:text="17:46"
-            android:textSize="@dimen/text_display"
-            android:textColor="@color/widget_accent"
-            android:textStyle="bold"
-            android:fontFamily="monospace" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <ImageView
-            android:layout_width="11dp"
-            android:layout_height="11dp"
-            android:src="@drawable/widget_ic_location"
-            android:importantForAccessibility="no" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="3dp"
-            android:text="君武馆 301"
+            android:text="16:05 下课，距下课还有"
             android:textSize="@dimen/text_caption"
             android:textColor="@color/widget_text_secondary"
+            android:gravity="center"
             android:maxLines="1"
             android:ellipsize="end" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="00:51:15"
+            android:textSize="30sp"
+            android:textColor="@color/widget_accent"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="16sp"
+            android:autoSizeMaxTextSize="40sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="软件工程"
+            android:textSize="@dimen/text_body"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="11dp"
+                android:layout_height="11dp"
+                android:src="@drawable/widget_ic_location"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:text="君武馆 301"
+                android:textSize="@dimen/text_caption"
+                android:textColor="@color/widget_text_secondary"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:text="张老师"
+            android:textSize="@dimen/text_caption"
+            android:textColor="@color/widget_text_secondary"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
     </LinearLayout>
 
 </LinearLayout>
