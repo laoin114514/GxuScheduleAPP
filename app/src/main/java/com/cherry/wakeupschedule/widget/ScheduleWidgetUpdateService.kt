@@ -49,15 +49,21 @@ class ScheduleWidgetUpdateService {
                 upcomingDaysProvider.onUpdate(context, appWidgetManager, upcomingDaysAppWidgetIds)
             }
 
-            // 一周课程小组件（已禁用）
-            /*
+            // 一周课程小组件
             val weekViewComponentName = ComponentName(context, WeekViewWidgetProvider::class.java)
             val weekViewAppWidgetIds = appWidgetManager.getAppWidgetIds(weekViewComponentName)
             if (weekViewAppWidgetIds.isNotEmpty()) {
                 val weekViewProvider = WeekViewWidgetProvider()
                 weekViewProvider.onUpdate(context, appWidgetManager, weekViewAppWidgetIds)
             }
-            */
+
+            // 下一门课提醒小组件
+            val nextCourseComponentName = ComponentName(context, NextCourseWidgetProvider::class.java)
+            val nextCourseAppWidgetIds = appWidgetManager.getAppWidgetIds(nextCourseComponentName)
+            if (nextCourseAppWidgetIds.isNotEmpty()) {
+                val nextCourseProvider = NextCourseWidgetProvider()
+                nextCourseProvider.onUpdate(context, appWidgetManager, nextCourseAppWidgetIds)
+            }
 
             scheduleNextUpdate(context)
         }
@@ -142,7 +148,7 @@ class WidgetBootReceiver : BroadcastReceiver() {
                 ScheduleWidgetProvider().schedulePeriodicUpdate(it)
                 MinimalWidgetProvider().schedulePeriodicUpdate(it)
                 UpcomingDaysWidgetProvider().schedulePeriodicUpdate(it)
-                // WeekViewWidgetProvider().schedulePeriodicUpdate(it) // 已禁用
+                NextCourseWidgetProvider().schedulePeriodicUpdate(it)
                 WidgetMidnightReceiver.scheduleMidnightUpdate(it)
             }
         }
@@ -166,22 +172,35 @@ class UpcomingDaysPeriodicReceiver : BroadcastReceiver() {
 }
 
 /**
- * 一周课程小组件周期性更新接收器（已禁用）
+ * 下一门课提醒小组件周期性更新接收器
  */
-/*
-class WeekViewPeriodicReceiver : BroadcastReceiver() {
+class NextCoursePeriodicReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         context?.let {
-            WeekViewWidgetProvider().onUpdate(
+            NextCourseWidgetProvider().onUpdate(
                 it,
                 AppWidgetManager.getInstance(it),
-                AppWidgetManager.getInstance(it).getAppWidgetIds(ComponentName(it, WeekViewWidgetProvider::class.java))
+                AppWidgetManager.getInstance(it).getAppWidgetIds(ComponentName(it, NextCourseWidgetProvider::class.java))
             )
             ScheduleWidgetUpdateService.scheduleNextUpdate(it)
         }
     }
 }
-*/
+
+/**
+ * 下一门课提醒小组件状态切换接收器（上课/下课/明天开课的精确时刻触发）
+ */
+class NextCourseTransitionReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+        context?.let {
+            NextCourseWidgetProvider().onUpdate(
+                it,
+                AppWidgetManager.getInstance(it),
+                AppWidgetManager.getInstance(it).getAppWidgetIds(ComponentName(it, NextCourseWidgetProvider::class.java))
+            )
+        }
+    }
+}
 
 /**
  * 课程结束时更新小组件

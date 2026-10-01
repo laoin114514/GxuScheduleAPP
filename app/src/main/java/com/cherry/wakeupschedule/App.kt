@@ -15,6 +15,7 @@ import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
+import com.cherry.wakeupschedule.widget.NextCourseWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.cherry.wakeupschedule.widget.WidgetMidnightReceiver
@@ -135,6 +136,7 @@ class App : Application() {
                 context ?: return
                 ScheduleWidgetProvider.triggerUpdate(context)
                 MinimalWidgetProvider.triggerUpdate(context)
+                NextCourseWidgetProvider.triggerUpdate(context)
             }
         }
         registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK), RECEIVER_NOT_EXPORTED)
