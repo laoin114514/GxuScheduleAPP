@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  桌面小组件配色 token，对齐官网「桌面小组件专区」mock 的精确提取值。
+  小组件布局由桌面进程以本 App 资源渲染，night 限定符跟随系统深色模式；
+  代码里 setTextColor 等动态取色统一走 widget/WidgetTheme.kt 兜底。
+-->
+<resources>
+    <!-- 容器卡片：浅色白 75%，深色 #151E2C 78% -->
+    <color name="widget_card_bg">#BFFFFFFF</color>
+    <color name="widget_card_stroke">#0F000000</color>
+
+    <!-- 文字三级：标题 / 次要 / 弱化 -->
+    <color name="widget_text_title">#0F172A</color>
+    <color name="widget_text_secondary">#64748B</color>
+    <color name="widget_text_weak">#94A3B8</color>
+
+    <!-- 主强调（倒计时数字、当日高亮），与官网倒计时色一致 -->
+    <color name="widget_accent">#4A90E2</color>
+
+    <!-- 今日概览状态徽标字色（官网演示深浅同色，不设 night 变体） -->
+    <color name="widget_badge_finished">#2563EB</color>
+    <color name="widget_badge_active">#9333EA</color>
+    <color name="widget_badge_upcoming">#94A3B8</color>
+
+    <!-- 周矩阵日期格文字色 -->
+    <color name="widget_day_text_today">#FFFFFF</color>
+    <color name="widget_day_text_has">#1E40AF</color>
+    <color name="widget_day_text_empty">#94A3B8</color>
+
+    <!-- 下一门课提醒的时间徽标 -->
+    <color name="widget_pill_text_amber">#92400E</color>
+    <color name="widget_pill_text_gray">#94A3B8</color>
+</resources>

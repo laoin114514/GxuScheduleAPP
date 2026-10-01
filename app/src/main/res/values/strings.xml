@@ -5,4 +5,8 @@
     <string name="countdown_format">下节课: %1$s</string>
     <string name="countdown_no_more_classes">今日课程已结束</string>
     <string name="countdown_class_end">距下课: %1$s</string>
+    <string name="widget_minimal_description">下课倒计时 · 秒级刷新 · 深浅色自适应</string>
+    <string name="widget_today_description">今日课程概览 · 已上完/进行中/未开始一目了然</string>
+    <string name="widget_week_description">一周课程微缩矩阵 · 当日高亮 · 深浅色自适应</string>
+    <string name="widget_next_description">下一门课提醒 · 开课前倒计时 · 深浅色自适应</string>
 </resources>
