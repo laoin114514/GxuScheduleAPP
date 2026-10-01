@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 下课倒计时组件（官网「桌面小组件专区」2×1 款）：
+<!-- 下课倒计时组件（官网「桌面小组件专区」2×2 款）：
      当前课程 + 距下课秒级倒计时 + 教室，配色见 widget_colors.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"

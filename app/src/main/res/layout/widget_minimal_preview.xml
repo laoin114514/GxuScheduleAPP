@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 下课倒计时组件的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用 -->
+<!-- 下课倒计时组件（官网「桌面小组件专区」2×2 款）的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"

@@ -87,7 +87,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="2×1"
+                            android:text="2×2"
                             android:textSize="@dimen/text_caption"
                             android:textStyle="bold"
                             android:textColor="?attr/colorPrimary" />
@@ -104,7 +104,7 @@
 
                     <FrameLayout
                         android:layout_width="172dp"
-                        android:layout_height="86dp"
+                        android:layout_height="172dp"
                         android:layout_gravity="center_horizontal"
                         android:layout_marginTop="12dp">
 
