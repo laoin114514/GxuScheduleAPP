@@ -15,14 +15,13 @@
         app:navigationIcon="@drawable/ic_arrow_back"
         app:navigationIconTint="?attr/colorOnSurfaceVariant" />
 
-    <!-- 小组件页的切换 chip：第 1 页「使用说明」不显示（见 WidgetCenterActivity#syncChipRow） -->
+    <!-- 4 个小组件页的切换 chip，选中项填主题主色 -->
     <HorizontalScrollView
         android:id="@+id/hsv_widget_chips"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:overScrollMode="never"
-        android:visibility="gone">
+        android:overScrollMode="never">
 
         <LinearLayout
             android:id="@+id/ll_widget_chips"
@@ -42,14 +41,41 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- 页指示圆点，数量与页数一致（代码生成） -->
-    <LinearLayout
-        android:id="@+id/ll_page_dots"
+    <!-- 页指示圆点贴底居中；右下角「?」是使用说明与排查的入口，
+         比圆点略高、尺寸沿用课表页「回到本周」的 40dp 圆钮 -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_horizontal"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <LinearLayout
+            android:id="@+id/ll_page_dots"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"
+            android:orientation="horizontal" />
+
+        <com.cherry.wakeupschedule.ui.widget.CircleIconButton
+            android:id="@+id/btn_widget_help"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|end"
+            android:contentDescription="使用说明与排查">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="?"
+                android:textSize="@dimen/text_title"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+        </com.cherry.wakeupschedule.ui.widget.CircleIconButton>
+
+    </FrameLayout>
 
 </LinearLayout>

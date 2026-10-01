@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色下页面本身接近全黑，纯白圆钮过于刺眼，改用抬升面色（同 bg_icon_circle 的深色值） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="?attr/colorSurfaceContainerHigh" />
+</shape>

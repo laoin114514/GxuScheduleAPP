@@ -9,9 +9,9 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.RemoteViews
 import androidx.core.view.WindowCompat
-import androidx.core.view.isVisible
 import androidx.viewpager2.widget.ViewPager2
 import com.cherry.wakeupschedule.databinding.ActivityWidgetCenterBinding
+import com.cherry.wakeupschedule.databinding.DialogWidgetHelpBinding
 import com.cherry.wakeupschedule.ui.adapter.WidgetCenterPagerAdapter
 import com.cherry.wakeupschedule.ui.adapter.WidgetPage
 import com.cherry.wakeupschedule.ui.component.StyledDialog
@@ -25,7 +25,8 @@ import kotlin.math.roundToInt
 /**
  * 小组件中心（我的 → 小组件）。
  *
- * 6 页横向分页：使用说明 → 4 个小组件 → 找不到小组件排查；每页内可独立上下滚动。
+ * 4 个小组件各占一页，进入即落在「下课倒计时」；每页内可独立上下滚动。
+ * 顶部 chip 切页，右下角「?」弹窗给出使用说明与「找不到小组件」的排查。
  * 部分手机在系统小组件列表找不到本应用（冻结 / SD 卡安装 / 桌面缓存等），
  * 这里通过 requestPinAppWidget 提供应用内一键添加；桌面不支持时回退手动添加引导。
  */
@@ -67,8 +68,12 @@ class WidgetCenterActivity : BaseActivity() {
         binding.viewPager.registerOnPageChangeCallback(pageChangeCallback)
 
         setupDots()
-        // 落地第 1 页：只有圆点，chip 行不显示
-        syncChipRow(WidgetCenterPagerAdapter.PAGE_INTRO)
+        // 落地第 1 页「下课倒计时」
+        syncChipRow(0)
+
+        // 页面渐变是蓝灰调，圆钮用纯白（浅色）才不糊进背景
+        binding.btnWidgetHelp.setCircleBackground(R.drawable.bg_widget_help)
+        binding.btnWidgetHelp.setOnClickListener { showHelpDialog() }
     }
 
     override fun onResume() {
@@ -84,24 +89,18 @@ class WidgetCenterActivity : BaseActivity() {
     // ── 顶部 chip 行 ──
 
     /**
-     * chip 行只在小组件页显示（使用说明页隐藏）。
-     * 选中项填主题主色，并自动滚到行中间 —— 5 个 chip 一屏放不下。
+     * chip 行与 4 个小组件页一一对应。
+     * 选中项填主题主色，并自动滚到行中间 —— 4 个 chip 一屏未必放得下。
      */
     private fun syncChipRow(position: Int) {
-        val selected = position - WidgetCenterPagerAdapter.WIDGET_PAGE_START
-        binding.hsvWidgetChips.isVisible = selected >= 0
-        if (selected < 0) return
-
-        val labels = pagerAdapter.widgetPages.map { it.title } + TROUBLESHOOT_TITLE
+        val labels = pagerAdapter.widgetPages.map { it.title }
         binding.llWidgetChips.removeAllViews()
         labels.forEachIndexed { index, label ->
-            val chip = createAppChip(label = label, selected = index == selected) {
-                binding.viewPager.setCurrentItem(
-                    index + WidgetCenterPagerAdapter.WIDGET_PAGE_START, true
-                )
+            val chip = createAppChip(label = label, selected = index == position) {
+                binding.viewPager.setCurrentItem(index, true)
             }
             binding.llWidgetChips.addView(chip)
-            if (index == selected) scrollChipToCenter(chip)
+            if (index == position) scrollChipToCenter(chip)
         }
     }
 
@@ -146,6 +145,16 @@ class WidgetCenterActivity : BaseActivity() {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).roundToInt()
+
+    // ── 右下角「?」：使用说明 + 找不到小组件的排查 ──
+
+    private fun showHelpDialog() {
+        StyledDialog.Builder(this)
+            .title("使用说明与排查")
+            .view(DialogWidgetHelpBinding.inflate(layoutInflater).root)
+            .positiveButton("知道了")
+            .show()
+    }
 
     // ── 添加到桌面 ──
 
@@ -192,9 +201,6 @@ class WidgetCenterActivity : BaseActivity() {
     }
 
     companion object {
-        /** chip 行最后一项：找不到小组件排查页 */
-        private const val TROUBLESHOOT_TITLE = "找不到小组件"
-
         private const val DOT_SIZE_DP = 8
         private const val DOT_MARGIN_DP = 4
         private const val DOT_MIN_ALPHA = 0.3f

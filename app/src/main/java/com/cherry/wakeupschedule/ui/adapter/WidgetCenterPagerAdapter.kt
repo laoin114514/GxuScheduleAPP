@@ -7,11 +7,9 @@ import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.cherry.wakeupschedule.R
-import com.cherry.wakeupschedule.databinding.PageWidgetCenterIntroBinding
 import com.cherry.wakeupschedule.databinding.PageWidgetCenterMinimalBinding
 import com.cherry.wakeupschedule.databinding.PageWidgetCenterNextBinding
 import com.cherry.wakeupschedule.databinding.PageWidgetCenterTodayBinding
-import com.cherry.wakeupschedule.databinding.PageWidgetCenterTroubleshootBinding
 import com.cherry.wakeupschedule.databinding.PageWidgetCenterWeekBinding
 import com.cherry.wakeupschedule.databinding.WidgetCenterAddFooterBinding
 import com.cherry.wakeupschedule.ui.widget.VerticalScrollView
@@ -34,8 +32,9 @@ data class WidgetPage(
 )
 
 /**
- * 小组件中心的分页适配器：使用说明 → 4 个小组件 → 找不到小组件排查，共 6 页。
+ * 小组件中心的分页适配器：4 个小组件各占一页，进入即落在第 1 页「下课倒计时」。
  *
+ * 使用说明与「找不到小组件」的排查已收进页面右下角「?」的弹窗（见 WidgetCenterActivity）。
  * 每页一个独立布局，viewType 直接取页序 —— 不同页永不共用 ViewHolder，
  * 从机制上排除预览图与状态错位。
  */
@@ -69,22 +68,19 @@ class WidgetCenterPagerAdapter(
     /** 各页离屏前的纵向滚动位置，回到该页时恢复 */
     private val scrollPositions = SparseIntArray()
 
-    /** 刷新 4 个小组件页的「已添加 N 个 / 未添加」 */
+    /** 刷新各页的「已添加 N 个 / 未添加」 */
     fun submitAddedCounts(counts: Map<Class<*>, Int>) {
         addedCounts = counts
-        notifyItemRangeChanged(WIDGET_PAGE_START, widgetPages.size)
+        notifyItemRangeChanged(0, widgetPages.size)
     }
 
-    override fun getItemCount(): Int = PAGE_COUNT
+    override fun getItemCount(): Int = widgetPages.size
 
     override fun getItemViewType(position: Int): Int = position
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            PAGE_INTRO ->
-                PageHolder(PageWidgetCenterIntroBinding.inflate(inflater, parent, false))
-
             PAGE_MINIMAL -> PageWidgetCenterMinimalBinding.inflate(inflater, parent, false)
                 .let { PageHolder(it, it.footerAdd) }
 
@@ -97,8 +93,8 @@ class WidgetCenterPagerAdapter(
             PAGE_NEXT -> PageWidgetCenterNextBinding.inflate(inflater, parent, false)
                 .let { PageHolder(it, it.footerAdd) }
 
-            else ->
-                PageHolder(PageWidgetCenterTroubleshootBinding.inflate(inflater, parent, false))
+            // 页序即 viewType，与 widgetPages 一一对应；走到这里说明加了页却漏了布局
+            else -> throw IllegalArgumentException("未知的小组件页序：$viewType")
         }
     }
 
@@ -106,7 +102,7 @@ class WidgetCenterPagerAdapter(
         holder.pageIndex = position
 
         holder.footer?.let { footer ->
-            val page = widgetPages[position - WIDGET_PAGE_START]
+            val page = widgetPages[position]
             val count = addedCounts[page.providerClass] ?: 0
             footer.tvWidgetStatus.text = if (count > 0) "已添加 $count 个" else "未添加"
             footer.btnWidgetAdd.setOnClickListener { onAddClick(page) }
@@ -133,7 +129,7 @@ class WidgetCenterPagerAdapter(
         val footer: WidgetCenterAddFooterBinding? = null
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        /** 页内竖滚容器（6 个页面布局的根都是它） */
+        /** 页内竖滚容器（4 个页面布局的根都是它） */
         val scroll: VerticalScrollView = binding.root as VerticalScrollView
 
         /** 当前绑定的页序，离屏时用来记录滚动位置 */
@@ -141,19 +137,9 @@ class WidgetCenterPagerAdapter(
     }
 
     companion object {
-        /** 第 1 页：使用说明 */
-        const val PAGE_INTRO = 0
-
-        /** 4 个小组件页的起始页序 */
-        const val WIDGET_PAGE_START = 1
-
-        /** 总页数：使用说明 + 4 个小组件 + 排查 */
-        const val PAGE_COUNT = 6
-
-        private const val PAGE_MINIMAL = 1
-        private const val PAGE_TODAY = 2
-        private const val PAGE_WEEK = 3
-        private const val PAGE_NEXT = 4
-        private const val PAGE_TROUBLESHOOT = 5
+        private const val PAGE_MINIMAL = 0
+        private const val PAGE_TODAY = 1
+        private const val PAGE_WEEK = 2
+        private const val PAGE_NEXT = 3
     }
 }
