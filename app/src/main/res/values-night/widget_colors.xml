@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 小组件夜间配色：不透明近黑底（课表页深色渐变亮端 / 底部导航同色），
+     文字与强调色对齐「海洋蓝」暗色调色板角色（onSurface/onSurfaceVariant/outline/primary） -->
 <resources>
-    <color name="widget_card_bg">#C7151E2C</color>
+    <color name="widget_card_bg">#0D1117</color>
     <color name="widget_card_stroke">#1E293B</color>
 
-    <color name="widget_text_title">#F8FAFC</color>
-    <color name="widget_text_secondary">#94A3B8</color>
-    <color name="widget_text_weak">#64748B</color>
+    <color name="widget_text_title">#E2E2E9</color>
+    <color name="widget_text_secondary">#C3C7CF</color>
+    <color name="widget_text_weak">#8D9199</color>
 
-    <color name="widget_accent">#4A90E2</color>
+    <color name="widget_accent">#AAC7FF</color>
 
     <color name="widget_day_text_has">#93C5FD</color>
+    <color name="widget_day_text_empty">#8D9199</color>
 
     <color name="widget_pill_text_amber">#FDE68A</color>
+    <color name="widget_pill_text_gray">#8D9199</color>
 </resources>
