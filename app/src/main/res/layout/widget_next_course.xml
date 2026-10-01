@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 下一门课提醒（官网「桌面小组件专区」4×1 款「近日课程轻量条」）：
+<!-- 下一门课提醒（官网「桌面小组件专区」4×2 款「近日课程轻量条」；2026-10 由 4×1 调整为 4×2：
+     targetCell 与 minWidth/minHeight 双轨统一，内容垂直居中）：
      「下一门课提醒 + 时间徽标」/「课名」/「起止时间 · 教室」 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"

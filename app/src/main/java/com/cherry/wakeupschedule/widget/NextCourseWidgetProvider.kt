@@ -16,7 +16,8 @@ import com.cherry.wakeupschedule.service.SettingsManager
 import java.util.Calendar
 
 /**
- * 下一门课提醒小组件（官网「桌面小组件专区」4×1 款「近日课程轻量条」）。
+ * 下一门课提醒小组件（官网「桌面小组件专区」4×2 款「近日课程轻量条」；2026-10 由 4×1 调整为 4×2，
+ * targetCell 与 minWidth/minHeight 双轨统一；布局本身不变，内容垂直居中）。
  *
  * 单条展示"下一门"课：优先今天进行中的课，其次今天下一个未开始的课，
  * 都没有则看明天第一节。徽标（pill）表达时间状态：
