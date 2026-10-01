@@ -1,64 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 下课倒计时组件（官网「桌面小组件专区」2×1 款）：
+     当前课程 + 距下课秒级倒计时 + 教室，配色见 widget_colors.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_widget_white"
-    android:padding="8dp"
-    android:gravity="center">
+    android:background="@drawable/bg_widget_card"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:gravity="center_vertical">
 
     <TextView
-        android:id="@+id/tv_widget_title"
+        android:id="@+id/tv_course_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="下一节课"
-        android:textSize="@dimen/text_label"
-        android:textColor="#888888"
-        android:gravity="center" />
-
-    <TextView
-        android:id="@+id/tv_course_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text=""
-        android:textSize="@dimen/text_body_small"
-        android:textColor="#333333"
-        android:textStyle="bold"
-        android:gravity="center"
+        android:text="当前课程：软件工程"
+        android:textSize="@dimen/text_caption"
+        android:textColor="@color/widget_text_secondary"
         android:maxLines="1"
         android:ellipsize="end" />
 
-    <Chronometer
-        android:id="@+id/chronometer_countdown"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textSize="@dimen/text_display"
-        android:textColor="#4A90E2"
-        android:gravity="center"
-        android:visibility="gone" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/tv_countdown"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text=""
-        android:textSize="@dimen/text_display"
-        android:textColor="#4A90E2"
-        android:textStyle="bold"
-        android:gravity="center" />
+        <TextView
+            android:id="@+id/tv_countdown_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="距下课还有"
+            android:textSize="@dimen/text_caption"
+            android:textColor="@color/widget_text_secondary" />
 
-    <TextView
-        android:id="@+id/tv_course_time"
-        android:layout_width="match_parent"
+        <Chronometer
+            android:id="@+id/chronometer_countdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:textSize="@dimen/text_display"
+            android:textColor="@color/widget_accent"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_countdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:textSize="@dimen/text_display"
+            android:textColor="@color/widget_accent"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:maxLines="1" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_location"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text=""
-        android:textSize="@dimen/text_label"
-        android:textColor="#666666"
-        android:gravity="center" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="11dp"
+            android:layout_height="11dp"
+            android:src="@drawable/widget_ic_location"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/tv_course_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="3dp"
+            android:text="君武馆 301"
+            android:textSize="@dimen/text_caption"
+            android:textColor="@color/widget_text_secondary"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
 
 </LinearLayout>
