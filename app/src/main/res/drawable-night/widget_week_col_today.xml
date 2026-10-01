@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 周视图当日列：夜间主蓝淡底（提高不透明度保证可辨） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#334A90E2" />
+    <corners android:radius="8dp" />
+</shape>

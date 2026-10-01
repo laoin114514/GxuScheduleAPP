@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 一周课程微缩矩阵的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用 -->
+<!-- 一周课程微缩地图的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -18,108 +18,527 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="周视图微缩地图"
+            android:id="@+id/tv_week_title"
             android:textSize="@dimen/text_caption"
             android:textStyle="bold"
-            android:textColor="@color/widget_text_title" />
+            android:textColor="@color/widget_text_title"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
             android:text="第3周"
+            android:id="@+id/tv_week_number"
             android:textSize="@dimen/text_micro"
             android:textColor="@color/widget_text_weak" />
     </LinearLayout>
-
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="6dp"
         android:orientation="horizontal">
 
         <LinearLayout
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:orientation="vertical" android:gravity="center"
-            android:background="@drawable/widget_day_has"
-            android:paddingTop="5dp" android:paddingBottom="5dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="一" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_has" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:text="2节" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_has" />
+                android:textColor="@color/widget_text_secondary" />
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_3">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="高等数学" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="教一 101" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_2">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="大学英语" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="外文 204" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_7">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="大学物理" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="格物 302" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
         <LinearLayout
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:layout_marginStart="3dp"
-            android:orientation="vertical" android:gravity="center"
-            android:background="@drawable/widget_day_has"
-            android:paddingTop="5dp" android:paddingBottom="5dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="二" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_has" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:text="3节" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_has" />
+                android:textColor="@color/widget_text_secondary" />
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_5">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="数据结构" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="信工 201" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_7">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="大学物理" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="格物 302" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_1">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="线性代数" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="教一 302" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
         <LinearLayout
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:layout_marginStart="3dp"
-            android:orientation="vertical" android:gravity="center"
-            android:background="@drawable/widget_day_today"
-            android:paddingTop="5dp" android:paddingBottom="5dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:background="@drawable/widget_week_col_today"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="三" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_today"
-                android:textStyle="bold" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:text="3节" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_today"
-                android:textStyle="bold" />
+                android:textColor="@color/widget_accent" />
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_3">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="高等数学" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="教一 101" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_1">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="线性代数" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="教一 202" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_2">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="大学英语" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="外文 204" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
         <LinearLayout
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:layout_marginStart="3dp"
-            android:orientation="vertical" android:gravity="center"
-            android:background="@drawable/widget_day_has"
-            android:paddingTop="5dp" android:paddingBottom="5dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="四" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_has" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:text="2节" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_has" />
+                android:textColor="@color/widget_text_secondary" />
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_2">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="大学英语" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="外文 204" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_6">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="体育" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="田径场" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_5">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="数据结构" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="信工 201" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
         <LinearLayout
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:layout_marginStart="3dp"
-            android:orientation="vertical" android:gravity="center"
-            android:background="@drawable/widget_day_has"
-            android:paddingTop="5dp" android:paddingBottom="5dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="五" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_has" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:text="1节" android:textSize="@dimen/text_micro"
-                android:textColor="@color/widget_day_text_has" />
+                android:textColor="@color/widget_text_secondary" />
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_5">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="数据结构" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="信工 201" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:background="@drawable/widget_week_chip_3">
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="高等数学" />
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end"
+                        android:text="教一 101" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+            </LinearLayout>
         </LinearLayout>
-
+        <LinearLayout
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="六" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="日" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="本周共 11 节课"
+        android:layout_marginTop="6dp"
+        android:text="本周共 14 节课"
         android:textSize="@dimen/text_micro"
         android:textColor="@color/widget_text_weak" />
 
