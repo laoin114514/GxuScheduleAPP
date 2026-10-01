@@ -54,9 +54,10 @@
                     android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
 
+                <!-- 4×4 预览：宽度同「下一门课提醒」的 4×2 预览，高度两倍 -->
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="230dp"
+                    android:layout_height="344dp"
                     android:layout_marginTop="12dp">
 
                     <include
