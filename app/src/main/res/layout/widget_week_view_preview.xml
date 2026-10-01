@@ -1,301 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 一周课程微缩矩阵的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@android:color/white"
+    android:background="@drawable/bg_widget_card"
     android:padding="10dp">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="05月20日"
-        android:textSize="@dimen/text_body_small"
-        android:textColor="#333333"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="2024-2025学年第二学期 · 第12周"
-        android:textSize="@dimen/text_label"
-        android:textColor="#666666"
-        android:layout_marginTop="2dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="6dp">
+        android:gravity="center_vertical">
 
-        <LinearLayout
+        <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="1dp">
+            android:text="周视图微缩地图"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="一"
-                android:textSize="@dimen/text_label"
-                android:textColor="#4A90E2" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="第3周"
+            android:textSize="@dimen/text_micro"
+            android:textColor="@color/widget_text_weak" />
+    </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="20"
-                android:textSize="@dimen/text_label"
-                android:textColor="#4A90E2" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="高数"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#E57373"
-                android:layout_marginTop="2dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="英语"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#64B5F6"
-                android:layout_marginTop="1dp" />
+        <LinearLayout
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_has"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="一" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_has" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="2节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_has" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="1dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="二"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="21"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="大物"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#FFB74D"
-                android:layout_marginTop="2dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="毛概"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#BA68C8"
-                android:layout_marginTop="1dp" />
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_has"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="二" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_has" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="3节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_has" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="1dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="三"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="22"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="数构"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#4DB6AC"
-                android:layout_marginTop="2dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="操作"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#E57373"
-                android:layout_marginTop="1dp" />
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_today"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="三" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_today"
+                android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="3节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_today"
+                android:textStyle="bold" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="1dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="四"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="23"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="马原"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#81C784"
-                android:layout_marginTop="2dp" />
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_has"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="四" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_has" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="2节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_has" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="1dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="五"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="24"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="计网"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#BA68C8"
-                android:layout_marginTop="2dp" />
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_has"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="五" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_has" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="1节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_has" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="1dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="六"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="25"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="活动"
-                android:textSize="@dimen/text_micro"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:padding="2dp"
-                android:background="#E57373"
-                android:layout_marginTop="2dp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:padding="1dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="日"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="26"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-        </LinearLayout>
     </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="一周课程"
-        android:textSize="@dimen/text_label"
-        android:textColor="#999999"
-        android:layout_marginTop="4dp" />
+        android:layout_marginTop="8dp"
+        android:text="本周共 11 节课"
+        android:textSize="@dimen/text_micro"
+        android:textColor="@color/widget_text_weak" />
 
 </LinearLayout>

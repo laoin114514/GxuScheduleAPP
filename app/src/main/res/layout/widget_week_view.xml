@@ -1,323 +1,273 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 一周课程微缩矩阵（官网「桌面小组件专区」4×4 款）：
+     标题行 + 日期格矩阵（默认 5 列，周末有课时由 Provider 切换为 7 列）+ 本周合计 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_widget_white"
-    android:padding="8dp">
+    android:background="@drawable/bg_widget_card"
+    android:padding="10dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="4dp">
-
-        <TextView
-            android:id="@+id/tv_widget_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="@dimen/text_body_small"
-            android:textColor="#333333"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tv_widget_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="@dimen/text_label"
-            android:textColor="#666666"
-            android:layout_marginTop="2dp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
         android:orientation="horizontal"
-        android:minHeight="80dp">
+        android:gravity="center_vertical">
 
-        <!-- 周一 -->
-        <LinearLayout
+        <TextView
+            android:id="@+id/tv_week_title"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
+            android:text="周视图微缩地图"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-            <TextView
-                android:id="@+id/tv_mon_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周一"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
+        <TextView
+            android:id="@+id/tv_week_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="第1周"
+            android:textSize="@dimen/text_micro"
+            android:textColor="@color/widget_text_weak" />
+    </LinearLayout>
 
-            <TextView
-                android:id="@+id/tv_mon_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
+    <!-- 默认行：周一 ~ 周五 -->
+    <LinearLayout
+        android:id="@+id/ll_week_days_5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/tv_mon_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/day5_1"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day5_1_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="一" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day5_1_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
         </LinearLayout>
 
-        <!-- 周二 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_tue_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周二"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_tue_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_tue_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/day5_2"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day5_2_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="二" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day5_2_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
         </LinearLayout>
 
-        <!-- 周三 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_wed_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周三"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_wed_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_wed_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/day5_3"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day5_3_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="三" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day5_3_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
         </LinearLayout>
 
-        <!-- 周四 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_thu_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周四"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_thu_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_thu_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/day5_4"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day5_4_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="四" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day5_4_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
         </LinearLayout>
 
-        <!-- 周五 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_fri_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周五"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_fri_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_fri_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
-        </LinearLayout>
-
-        <!-- 周六 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_sat_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周六"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_sat_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_sat_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
-        </LinearLayout>
-
-        <!-- 周日 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_sun_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周日"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_sun_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_sun_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/day5_5"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day5_5_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="五" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day5_5_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
         </LinearLayout>
 
     </LinearLayout>
+
+    <!-- 扩展行：周一 ~ 周日（周六或周日有课时由 Provider 切换显示） -->
+    <LinearLayout
+        android:id="@+id/ll_week_days_7"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <LinearLayout android:id="@+id/day7_1"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day7_1_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="一" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day7_1_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/day7_2"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day7_2_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="二" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day7_2_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/day7_3"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day7_3_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="三" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day7_3_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/day7_4"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day7_4_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="四" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day7_4_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/day7_5"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day7_5_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="五" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day7_5_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/day7_6"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day7_6_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="六" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day7_6_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/day7_7"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/widget_day_empty"
+            android:paddingTop="5dp" android:paddingBottom="5dp">
+            <TextView android:id="@+id/day7_7_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="日" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <TextView android:id="@+id/day7_7_count"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="0节" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_week_total"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="本周共 0 节课"
+        android:textSize="@dimen/text_micro"
+        android:textColor="@color/widget_text_weak"
+        android:maxLines="1" />
+
 </LinearLayout>
