@@ -8,13 +8,15 @@ import android.view.ViewGroup
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import com.cherry.wakeupschedule.AboutActivity
 import com.cherry.wakeupschedule.AppearanceActivity
 import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.FontSizeActivity
 import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
-import com.cherry.wakeupschedule.ScheduleAppearanceActivity
 import com.cherry.wakeupschedule.TimeTableEditActivity
 import com.cherry.wakeupschedule.WidgetCenterActivity
 import com.cherry.wakeupschedule.service.JwxtAccountManager
@@ -26,6 +28,7 @@ import com.cherry.wakeupschedule.service.UiScaleManager
 import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.component.SemesterWheelDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
+import com.cherry.wakeupschedule.ui.screen.schedule.ScheduleAppearanceSheet
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.gxu.jwxt.model.Term
 import kotlinx.coroutines.CoroutineScope
@@ -92,9 +95,11 @@ class ProfileFragment : Fragment() {
             startActivity(Intent(requireContext(), AppearanceActivity::class.java))
         }
 
-        // 课表：跳转到独立的课表外观设置页（课程格子高度）
+        // 课表外观：跳到课表页签弹出悬浮面板（改动实时生效在面板上方的课表），
+        // 待打开标志由 ScheduleFragment.onResume 消费
         view.findViewById<View>(R.id.item_schedule_appearance).setOnClickListener {
-            startActivity(Intent(requireContext(), ScheduleAppearanceActivity::class.java))
+            ScheduleAppearanceSheet.pendingAutoOpen = true
+            goTab(R.id.nav_schedule)
         }
 
         // 字体大小：整体 UI 缩放档位（字体与界面尺寸一起变）
@@ -144,9 +149,6 @@ class ProfileFragment : Fragment() {
 
         // 主题模式展示（从主题页返回时刷新）
         updateThemeModeDisplay(requireView())
-
-        // 课程格子高度展示（从课表页返回时刷新）
-        updateCellHeightDisplay(requireView())
 
         // 字体大小档位展示（从字体大小页返回时刷新）
         updateFontSizeDisplay(requireView())
@@ -229,8 +231,13 @@ class ProfileFragment : Fragment() {
         tv?.text = UiScaleManager.labelOf(requireContext())
     }
 
-    private fun updateCellHeightDisplay(view: View) {
-        val tv = view.findViewById<TextView>(R.id.tv_schedule_cell_height_value)
-        tv?.text = "格子高度 ${settingsManager.getCourseCellHeight()}dp"
+    /** 顶层页签式跳转（与底部导航一致的栈行为，照 ToolsFragment.goTab） */
+    private fun goTab(id: Int) {
+        val nav = findNavController()
+        nav.navigate(id, null, navOptions {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        })
     }
 }

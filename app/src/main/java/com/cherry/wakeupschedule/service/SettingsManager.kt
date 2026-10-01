@@ -52,6 +52,11 @@ class SettingsManager(context: Context) {
         private const val KEY_DARK_TIME = "theme_dark_time"            // 深色开始时间 HH:mm
         private const val KEY_LIGHT_TIME = "theme_light_time"          // 浅色开始时间 HH:mm
         private const val KEY_COURSE_CELL_HEIGHT = "course_cell_height" // 课程格子高度（设计 dp）
+        private const val KEY_SHOW_CLASSROOM = "show_classroom"        // 课程格子是否显示教室
+        private const val KEY_SHOW_TEACHER = "show_teacher"            // 课程格子是否显示教师
+        private const val KEY_CELL_BORDER_COLOR = "cell_border_color"  // 课程格子边框颜色（ARGB）
+        private const val KEY_BORDER_FOLLOW_COURSE = "border_follow_course" // 边框是否跟随课程颜色
+        private const val KEY_BOTTOM_BLANK = "bottom_blank"            // 课表底部是否留白
         private const val DEFAULT_HIDE_HOLIDAY_COURSES = false              // 默认不隐藏
         private const val DEFAULT_THEME_MODE = "system"                  // 默认跟随系统
         private const val DEFAULT_AUTO_SWITCH_THEME = false              // 默认不自动切换
@@ -66,6 +71,13 @@ class SettingsManager(context: Context) {
         private const val DEFAULT_COURSE_CARD_ALPHA = 0.85f                    // 默认卡片透明度85%
         private const val DEFAULT_SHOW_NON_CURRENT_WEEK_COURSES = true         // 默认显示非本周课程
         private const val DEFAULT_NON_CURRENT_WEEK_ALPHA = 0.3f                // 非本周课程默认30%透明度
+        private const val DEFAULT_SHOW_CLASSROOM = true                        // 默认显示教室
+        private const val DEFAULT_SHOW_TEACHER = true                          // 默认显示教师
+
+        /** 边框默认色：50% 半透明白，与历史版本写死的描边完全一致（十六进制超出 Int 范围需 toInt） */
+        private val DEFAULT_CELL_BORDER_COLOR = 0x80FFFFFF.toInt()
+        private const val DEFAULT_BORDER_FOLLOW_COURSE = false                 // 默认不跟随课程颜色
+        private const val DEFAULT_BOTTOM_BLANK = false                         // 默认不留白，与旧版一致
 
         /** 课程格子高度可调范围（dp）：课表外观页的滑块、数值输入与读写校验共用 */
         const val COURSE_CELL_HEIGHT_MIN_DP = 40
@@ -237,6 +249,9 @@ class SettingsManager(context: Context) {
         TypedValue.complexToFloat(value.data).roundToInt()
     }
 
+    /** 课程格子高度的默认值（dimens.xml 的 course_cell_height），供「默认」刻度与恢复默认使用 */
+    fun getDefaultCourseCellHeight(): Int = defaultCellHeightDp
+
     /**
      * 获取课程格子高度（dp）。
      * 取值恒在 [COURSE_CELL_HEIGHT_MIN_DP, COURSE_CELL_HEIGHT_MAX_DP] 内，
@@ -257,6 +272,60 @@ class SettingsManager(context: Context) {
                 heightDp.coerceIn(COURSE_CELL_HEIGHT_MIN_DP, COURSE_CELL_HEIGHT_MAX_DP)
             )
             .apply()
+    }
+
+    /**
+     * 课程格子是否显示教室。课程名恒显示，只有教室和教师可关；
+     * 两者默认开启，「从未设置过」时与旧版本观感一致。
+     */
+    fun isShowClassroom(): Boolean {
+        return sharedPreferences.getBoolean(KEY_SHOW_CLASSROOM, DEFAULT_SHOW_CLASSROOM)
+    }
+
+    fun setShowClassroom(show: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_SHOW_CLASSROOM, show).apply()
+    }
+
+    /** 课程格子是否显示教师，默认开启 */
+    fun isShowTeacher(): Boolean {
+        return sharedPreferences.getBoolean(KEY_SHOW_TEACHER, DEFAULT_SHOW_TEACHER)
+    }
+
+    fun setShowTeacher(show: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_SHOW_TEACHER, show).apply()
+    }
+
+    /**
+     * 课程格子边框颜色（ARGB）。深浅模式共用一个值，不做自动适配；
+     * 默认 50% 半透明白，「从未设置过」时与旧版本观感一致。
+     */
+    fun getCellBorderColor(): Int {
+        return sharedPreferences.getInt(KEY_CELL_BORDER_COLOR, DEFAULT_CELL_BORDER_COLOR)
+    }
+
+    fun setCellBorderColor(color: Int) {
+        sharedPreferences.edit().putInt(KEY_CELL_BORDER_COLOR, color).apply()
+    }
+
+    /** 边框是否跟随课程格子颜色：开启后每格描边 = 该课不透明课程色，自定义色暂不生效 */
+    fun isBorderFollowCourse(): Boolean {
+        return sharedPreferences.getBoolean(KEY_BORDER_FOLLOW_COURSE, DEFAULT_BORDER_FOLLOW_COURSE)
+    }
+
+    fun setBorderFollowCourse(follow: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_BORDER_FOLLOW_COURSE, follow).apply()
+    }
+
+    /**
+     * 课表底部是否留白。开启后在滚动内容末尾追加一段空白（约 15% 屏高），
+     * 让底部的课程能上滑到屏幕中部查看；默认关闭，与旧版滚动范围一致。
+     */
+    fun isBottomBlank(): Boolean {
+        return sharedPreferences.getBoolean(KEY_BOTTOM_BLANK, DEFAULT_BOTTOM_BLANK)
+    }
+
+    fun setBottomBlank(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_BOTTOM_BLANK, enabled).apply()
     }
 
     /**
