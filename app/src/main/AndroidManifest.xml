@@ -196,7 +196,8 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.DATE_CHANGED" />
-                <action android:name="android.intent.action.TIME_CHANGED" />
+                <!-- 系统改时间发的是 TIME_SET（Intent.ACTION_TIME_CHANGED 常量的值即 TIME_SET），勿写成 TIME_CHANGED -->
+                <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
