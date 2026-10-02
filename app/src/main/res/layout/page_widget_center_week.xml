@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 小组件中心 · 第 4 页「一周课程 4×4」 -->
+<!-- 小组件中心 · 第 3 页「一周课程 4×4」 -->
 <com.cherry.wakeupschedule.ui.widget.VerticalScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -13,7 +13,24 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
+        <!-- 页头：标题与总述不进卡片，与其他页同构 -->
+        <TextView
+            style="@style/AppSectionHeader"
+            android:paddingTop="4dp"
+            android:paddingBottom="2dp"
+            android:text="一周课程" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="周一至周日迷你课表，课程块按节次排列，当日高亮。"
+            android:textSize="@dimen/text_caption"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/AppSectionCard"
+            android:layout_marginTop="12dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -21,38 +38,13 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="一周课程"
-                        android:textSize="@dimen/text_body"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="4×4"
-                        android:textSize="@dimen/text_caption"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorPrimary" />
-
-                </LinearLayout>
-
                 <TextView
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="周一至周日迷你课表，课程块按节次排列，当日高亮。"
+                    android:text="4×4"
                     android:textSize="@dimen/text_caption"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary" />
 
                 <!-- 4×4 预览：宽度同「下一门课提醒」的 4×2 预览，高度两倍 -->
                 <FrameLayout

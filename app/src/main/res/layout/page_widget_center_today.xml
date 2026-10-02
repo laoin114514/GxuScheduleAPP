@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 小组件中心 · 第 2 页「今日课程概览 4×2」（新增变体；2×2 仍在系统小组件选择器中提供） -->
+<!-- 小组件中心 · 第 2 页「今日课程概览」：页头只出现一次，下方 4×2 主推 / 2×2 紧凑两张变体卡 -->
 <com.cherry.wakeupschedule.ui.widget.VerticalScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -13,7 +13,25 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
+        <!-- 页头：标题与总述不进卡片，双变体也不会重复 -->
+        <TextView
+            style="@style/AppSectionHeader"
+            android:paddingTop="4dp"
+            android:paddingBottom="2dp"
+            android:text="今日课程概览" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="今日全部课程状态（已上完/进行中/下一节/未开始），提供 4×2 双行卡与 2×2 紧凑两种尺寸。"
+            android:textSize="@dimen/text_caption"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <!-- 主推：4×2 -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/AppSectionCard"
+            android:layout_marginTop="12dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -21,38 +39,13 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="今日课程概览"
-                        android:textSize="@dimen/text_body"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="4×2"
-                        android:textSize="@dimen/text_caption"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorPrimary" />
-
-                </LinearLayout>
-
                 <TextView
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="今日全部课程状态（已上完/进行中/下一节/未开始），双行行卡可上下滑动查看更多。"
+                    android:text="4×2"
                     android:textSize="@dimen/text_caption"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary" />
 
                 <FrameLayout
                     android:layout_width="match_parent"
@@ -74,7 +67,7 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 次变体：紧凑 2×2（与 4×2 并存，各自独立添加） -->
+        <!-- 紧凑：2×2（与 4×2 并存，各自独立添加） -->
         <com.google.android.material.card.MaterialCardView
             style="@style/AppSectionCard"
             android:layout_marginTop="12dp">
@@ -85,38 +78,13 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="今日课程概览"
-                        android:textSize="@dimen/text_body"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="2×2"
-                        android:textSize="@dimen/text_caption"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorPrimary" />
-
-                </LinearLayout>
-
                 <TextView
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="紧凑 2×2 版：今日全部课程状态，适合小空间桌面。"
+                    android:text="2×2"
                     android:textSize="@dimen/text_caption"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary" />
 
                 <FrameLayout
                     android:layout_width="172dp"
