@@ -33,6 +33,14 @@ class ScheduleWidgetUpdateService {
                 provider.onUpdate(context, appWidgetManager, appWidgetIds)
             }
 
+            // 今日课程 4×2 小组件
+            val wideComponentName = ComponentName(context, ScheduleWideWidgetProvider::class.java)
+            val wideAppWidgetIds = appWidgetManager.getAppWidgetIds(wideComponentName)
+            if (wideAppWidgetIds.isNotEmpty()) {
+                val wideProvider = ScheduleWideWidgetProvider()
+                wideProvider.onUpdate(context, appWidgetManager, wideAppWidgetIds)
+            }
+
             // 最小化/下课倒计时小组件
             val minimalComponentName = ComponentName(context, MinimalWidgetProvider::class.java)
             val minimalAppWidgetIds = appWidgetManager.getAppWidgetIds(minimalComponentName)
@@ -215,6 +223,12 @@ class WidgetCourseEndReceiver : BroadcastReceiver() {
                 appWidgetManager,
                 appWidgetManager.getAppWidgetIds(ComponentName(it, ScheduleWidgetProvider::class.java))
             )
+            // 今日课程 4×2（两个组件各自的下课精确闹钟都指向本接收器）
+            ScheduleWideWidgetProvider().onUpdate(
+                it,
+                appWidgetManager,
+                appWidgetManager.getAppWidgetIds(ComponentName(it, ScheduleWideWidgetProvider::class.java))
+            )
             MinimalWidgetProvider().onUpdate(
                 it,
                 appWidgetManager,
@@ -231,11 +245,20 @@ class WidgetCourseEndReceiver : BroadcastReceiver() {
 class WidgetPeriodicUpdateReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         context?.let {
+            val appWidgetManager = AppWidgetManager.getInstance(it)
             ScheduleWidgetProvider().onUpdate(
                 it,
-                AppWidgetManager.getInstance(it),
-                AppWidgetManager.getInstance(it).getAppWidgetIds(
+                appWidgetManager,
+                appWidgetManager.getAppWidgetIds(
                     ComponentName(it, ScheduleWidgetProvider::class.java)
+                )
+            )
+            // 今日课程 4×2 的周期闹钟也指向本接收器，一并刷新
+            ScheduleWideWidgetProvider().onUpdate(
+                it,
+                appWidgetManager,
+                appWidgetManager.getAppWidgetIds(
+                    ComponentName(it, ScheduleWideWidgetProvider::class.java)
                 )
             )
             ScheduleWidgetUpdateService.scheduleNextUpdate(it)

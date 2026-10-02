@@ -12,6 +12,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import com.cherry.wakeupschedule.service.CourseDataManager
+import com.cherry.wakeupschedule.widget.ScheduleWideWidgetProvider
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
@@ -135,6 +136,7 @@ class App : Application() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 context ?: return
                 ScheduleWidgetProvider.triggerUpdate(context)
+                ScheduleWideWidgetProvider.triggerUpdate(context)
                 MinimalWidgetProvider.triggerUpdate(context)
                 NextCourseWidgetProvider.triggerUpdate(context)
             }

@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 今日课程概览组件（官网「桌面小组件专区」2×2 款）：
-     头部「今日课程 · N 门 | 周X」+ 状态卡片课程列表（已上完/进行中/下一节/未开始） -->
+<!-- 今日课程概览 4×2（2026-10 新增变体，与 2×2 并存；样式 token 全部沿用 2×2，只做布局扩展）：
+     标题行「今日课程 · N 门 | 第N周 · 周X」+ 彩底行卡 ListView（双行：课名+徽标+起时间 / 教室·节次+止时间），
+     110dp 可见约 2 门，可上下滑动。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/bg_widget_card"
-    android:padding="10dp">
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
 
-    <!-- 头部：左固定标签 + 右周X（与 4×2 变体同构） -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -17,7 +20,7 @@
         android:gravity="center_vertical">
 
         <TextView
-            android:id="@+id/tv_widget_header"
+            android:id="@+id/tv_wide_header"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -29,19 +32,19 @@
             android:ellipsize="end" />
 
         <TextView
-            android:id="@+id/tv_widget_day"
+            android:id="@+id/tv_wide_day"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
-            android:text="周三"
+            android:text="第4周 · 周三"
             android:textSize="@dimen/text_caption"
             android:textColor="@color/widget_text_secondary"
             android:maxLines="1" />
     </LinearLayout>
 
-    <!-- 课程列表 ListView：支持上下滑动；行间距用透明 divider 实现 -->
+    <!-- 课程列表 ListView：支持上下滑动；行间距用透明 divider 实现，滚动条配置与 2×2 一致 -->
     <ListView
-        android:id="@+id/lv_today_courses"
+        android:id="@+id/lv_wide_courses"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -58,7 +61,7 @@
         android:overScrollMode="never"
         android:listSelector="@android:color/transparent" />
 
-    <!-- 空态：之前 setEmptyView 指向的 android.R.id.empty 在布局里并不存在，空态从未生效，这里补上 -->
+    <!-- 空态：setEmptyView 指向本视图 -->
     <TextView
         android:id="@android:id/empty"
         android:layout_width="match_parent"

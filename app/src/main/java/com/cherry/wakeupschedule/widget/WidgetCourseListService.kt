@@ -30,6 +30,7 @@ class WidgetCourseListService : RemoteViewsService() {
         val uriSource = intent.data?.lastPathSegment
         val source = when (uriSource) {
             "today" -> SOURCE_TODAY
+            "today_wide" -> SOURCE_TODAY_WIDE
             "upcoming_today" -> SOURCE_UPCOMING_TODAY
             "tomorrow" -> SOURCE_TOMORROW
             else -> intent.getStringExtra(EXTRA_SOURCE) ?: SOURCE_TODAY
@@ -40,6 +41,7 @@ class WidgetCourseListService : RemoteViewsService() {
     companion object {
         const val EXTRA_SOURCE = "extra_source"
         const val SOURCE_TODAY = "today"
+        const val SOURCE_TODAY_WIDE = "today_wide"
         const val SOURCE_TOMORROW = "tomorrow"
         const val SOURCE_UPCOMING_TODAY = "upcoming_today"
     }
@@ -78,13 +80,17 @@ class WidgetCourseListFactory(
             return loadingView()
         }
         val item = items[position]
-        return if (source == WidgetCourseListService.SOURCE_TODAY) statusItemView(item) else legacyItemView(item)
+        return when (source) {
+            WidgetCourseListService.SOURCE_TODAY -> statusItemView(item)
+            WidgetCourseListService.SOURCE_TODAY_WIDE -> wideStatusItemView(item)
+            else -> legacyItemView(item)
+        }
     }
 
     override fun getLoadingView(): RemoteViews = loadingView()
 
-    /** 一个工厂可能产出旧样式行与状态卡片行两种布局（加载视图用旧样式） */
-    override fun getViewTypeCount(): Int = 2
+    /** 一个工厂可能产出旧样式行、状态卡片行与 4×2 宽版行三种布局（加载视图用旧样式） */
+    override fun getViewTypeCount(): Int = 3
 
     override fun getItemId(position: Int): Long {
         return if (position in items.indices) items[position].id else position.toLong()
@@ -122,6 +128,24 @@ class WidgetCourseListFactory(
         return views
     }
 
+    /** 今日概览 4×2 宽版行：与 2×2 同款彩底行卡/徽标，双行排布并增加右列起止时间 */
+    private fun wideStatusItemView(item: WidgetCourseItem): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_course_status_item_wide)
+        views.setTextViewText(R.id.tv_wide_course_name, item.courseName ?: item.name)
+        views.setTextViewText(R.id.tv_wide_room, item.roomLine ?: item.location)
+        views.setTextViewText(R.id.tv_wide_start, item.startTimeText ?: "")
+        views.setTextViewText(R.id.tv_wide_end, item.endTimeText ?: "")
+        if (item.statusLabel == null) {
+            views.setViewVisibility(R.id.tv_wide_badge, android.view.View.GONE)
+        } else {
+            views.setViewVisibility(R.id.tv_wide_badge, android.view.View.VISIBLE)
+            views.setTextViewText(R.id.tv_wide_badge, item.statusLabel)
+            views.setTextColor(R.id.tv_wide_badge, badgeColor(item.status))
+        }
+        views.setInt(R.id.course_wide_root, "setBackgroundResource", rowBackgroundRes(item.status))
+        return views
+    }
+
     private fun badgeColor(status: WidgetCourseStatus?): Int = when (status) {
         WidgetCourseStatus.FINISHED -> context.getColor(R.color.widget_badge_finished)
         WidgetCourseStatus.ACTIVE -> context.getColor(R.color.widget_badge_active)
@@ -142,6 +166,10 @@ class WidgetCourseListFactory(
             when (source) {
                 WidgetCourseListService.SOURCE_TODAY -> {
                     // 今日课程概览：展示全部今日课程并标注状态（空列表时由布局的 empty 视图兜底）
+                    loadTodayCoursesWithStatus()
+                }
+                WidgetCourseListService.SOURCE_TODAY_WIDE -> {
+                    // 今日课程概览 4×2：同一份今日数据，行填充走 wideStatusItemView
                     loadTodayCoursesWithStatus()
                 }
                 WidgetCourseListService.SOURCE_UPCOMING_TODAY -> {
@@ -198,6 +226,7 @@ class WidgetCourseListFactory(
             }
             val startText = timeSlots.find { it.node == course.startTime }?.startTime
                 ?: "第${course.startTime}节"
+            val endText = timeSlots.find { it.node == course.endTime }?.endTime
             WidgetCourseItem(
                 id = course.id,
                 name = "$startText ${course.name}",
@@ -206,7 +235,10 @@ class WidgetCourseListFactory(
                 color = 0,
                 statusLabel = statusLabel,
                 status = status,
-                roomLine = "${course.classroom} · ${course.startTime}-${course.endTime}节"
+                roomLine = "${course.classroom} · ${course.startTime}-${course.endTime}节",
+                courseName = course.name,
+                startTimeText = startText,
+                endTimeText = endText
             )
         }
     }
@@ -356,5 +388,10 @@ data class WidgetCourseItem(
     val color: Int,
     val statusLabel: String? = null,
     val status: WidgetCourseStatus? = null,
-    val roomLine: String? = null
+    val roomLine: String? = null,
+    /** 4×2 宽版行的右列起止时间（HH:mm；时间表缺失时 start 回落「第N节」、end 为 null） */
+    val startTimeText: String? = null,
+    val endTimeText: String? = null,
+    /** 4×2 宽版行的课名（不带 2×2 的时间前缀） */
+    val courseName: String? = null
 )

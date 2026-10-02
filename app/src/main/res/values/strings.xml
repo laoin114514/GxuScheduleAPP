@@ -6,7 +6,8 @@
     <string name="countdown_no_more_classes">今日课程已结束</string>
     <string name="countdown_class_end">距下课: %1$s</string>
     <string name="widget_minimal_description">下课倒计时 · 秒级刷新 · 深浅色自适应</string>
-    <string name="widget_today_description">今日课程概览 · 已上完/进行中/未开始一目了然</string>
+    <string name="widget_today_description">今日课程概览 · 已上完/进行中/下一节/未开始一目了然</string>
+    <string name="widget_today_wide_description">今日课程概览 4×2 · 双行行卡 · 可滑动查看全部 · 深浅色自适应</string>
     <string name="widget_week_description">周一至周日迷你课表 · 课程块配色同课表 · 深浅色自适应</string>
     <string name="widget_next_description">下一门课提醒 · 当前课与下一门 · 深浅色自适应</string>
 </resources>

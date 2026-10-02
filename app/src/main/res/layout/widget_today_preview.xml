@@ -7,13 +7,33 @@
     android:background="@drawable/bg_widget_card"
     android:padding="10dp">
 
-    <TextView
+    <!-- 头部：左固定标签 + 右周X（与 4×2 变体同构） -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="end"
-        android:text="周三 · 3 门课"
-        android:textSize="@dimen/text_caption"
-        android:textColor="@color/widget_text_secondary" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="今日课程 · 3 门"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="周三"
+            android:textSize="@dimen/text_caption"
+            android:textColor="@color/widget_text_secondary"
+            android:maxLines="1" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

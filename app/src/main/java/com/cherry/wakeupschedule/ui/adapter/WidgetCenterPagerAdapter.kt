@@ -15,6 +15,7 @@ import com.cherry.wakeupschedule.databinding.WidgetCenterAddFooterBinding
 import com.cherry.wakeupschedule.ui.widget.VerticalScrollView
 import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
 import com.cherry.wakeupschedule.widget.NextCourseWidgetProvider
+import com.cherry.wakeupschedule.widget.ScheduleWideWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetProvider
 import com.cherry.wakeupschedule.widget.WeekViewWidgetProvider
 
@@ -28,7 +29,9 @@ data class WidgetPage(
     val title: String,
     val pickerLabel: String,
     val providerClass: Class<*>,
-    @LayoutRes val previewLayoutRes: Int
+    @LayoutRes val previewLayoutRes: Int,
+    /** 同页附带的次变体（如今日课程概览页同时提供 4×2 主推与 2×2 紧凑版两个添加入口） */
+    val smallVariant: WidgetPage? = null
 )
 
 /**
@@ -50,7 +53,11 @@ class WidgetCenterPagerAdapter(
         ),
         WidgetPage(
             "今日课程概览", "今日课程",
-            ScheduleWidgetProvider::class.java, R.layout.widget_today_preview
+            ScheduleWideWidgetProvider::class.java, R.layout.widget_today_wide_preview,
+            smallVariant = WidgetPage(
+                "今日课程概览", "今日课程",
+                ScheduleWidgetProvider::class.java, R.layout.widget_today_preview
+            )
         ),
         WidgetPage(
             "一周课程", "一周课程",
@@ -82,16 +89,26 @@ class WidgetCenterPagerAdapter(
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
             PAGE_MINIMAL -> PageWidgetCenterMinimalBinding.inflate(inflater, parent, false)
-                .let { PageHolder(it, it.footerAdd) }
+                .let { PageHolder(it, listOf(it.footerAdd to widgetPages[PAGE_MINIMAL])) }
 
             PAGE_TODAY -> PageWidgetCenterTodayBinding.inflate(inflater, parent, false)
-                .let { PageHolder(it, it.footerAdd) }
+                .let { binding ->
+                    PageHolder(
+                        binding,
+                        listOf(
+                            binding.footerAdd to widgetPages[PAGE_TODAY],
+                            binding.footerAddSmall to requireNotNull(
+                                widgetPages[PAGE_TODAY].smallVariant
+                            ) { "今日课程页缺少 2×2 次变体定义" }
+                        )
+                    )
+                }
 
             PAGE_WEEK -> PageWidgetCenterWeekBinding.inflate(inflater, parent, false)
-                .let { PageHolder(it, it.footerAdd) }
+                .let { PageHolder(it, listOf(it.footerAdd to widgetPages[PAGE_WEEK])) }
 
             PAGE_NEXT -> PageWidgetCenterNextBinding.inflate(inflater, parent, false)
-                .let { PageHolder(it, it.footerAdd) }
+                .let { PageHolder(it, listOf(it.footerAdd to widgetPages[PAGE_NEXT])) }
 
             // 页序即 viewType，与 widgetPages 一一对应；走到这里说明加了页却漏了布局
             else -> throw IllegalArgumentException("未知的小组件页序：$viewType")
@@ -101,11 +118,11 @@ class WidgetCenterPagerAdapter(
     override fun onBindViewHolder(holder: PageHolder, position: Int) {
         holder.pageIndex = position
 
-        holder.footer?.let { footer ->
-            val page = widgetPages[position]
-            val count = addedCounts[page.providerClass] ?: 0
+        // 今日课程页有两个变体出口（4×2 主推 + 2×2 紧凑版），其余页只有一个
+        holder.footers.forEach { (footer, targetPage) ->
+            val count = addedCounts[targetPage.providerClass] ?: 0
             footer.tvWidgetStatus.text = if (count > 0) "已添加 $count 个" else "未添加"
-            footer.btnWidgetAdd.setOnClickListener { onAddClick(page) }
+            footer.btnWidgetAdd.setOnClickListener { onAddClick(targetPage) }
         }
 
         val savedScroll = scrollPositions[position]
@@ -123,10 +140,11 @@ class WidgetCenterPagerAdapter(
         }
     }
 
-    /** 页面骨架 + 「已添加状态 / 一键添加」出口，两者都是 ViewBinding，无 findViewById */
+    /** 页面骨架 + 「已添加状态 / 一键添加」出口，两者都是 ViewBinding，无 findViewById；
+     *  footers 为「footer ↔ 点击后要添加的变体」配对（今日课程页有两个） */
     class PageHolder(
         val binding: ViewBinding,
-        val footer: WidgetCenterAddFooterBinding? = null
+        val footers: List<Pair<WidgetCenterAddFooterBinding, WidgetPage>>
     ) : RecyclerView.ViewHolder(binding.root) {
 
         /** 页内竖滚容器（4 个页面布局的根都是它） */

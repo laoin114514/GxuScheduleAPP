@@ -67,6 +67,22 @@
                 android:resource="@xml/widget_today_info" />
         </receiver>
 
+        <!-- 今日课程概览 4×2 变体（与 2×2 并存，样式同款、只做布局扩展） -->
+        <receiver
+            android:name=".widget.ScheduleWideWidgetProvider"
+            android:exported="true"
+            android:label="今日课程 4×2">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.cherry.wakeupschedule.widget.wide.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_today_wide_info" />
+        </receiver>
+
         <!-- 桌面小部件 - 极简小组件 -->
         <receiver
             android:name=".widget.MinimalWidgetProvider"

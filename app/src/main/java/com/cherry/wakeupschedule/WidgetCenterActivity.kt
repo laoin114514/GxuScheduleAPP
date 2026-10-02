@@ -158,12 +158,14 @@ class WidgetCenterActivity : BaseActivity() {
 
     // ── 添加到桌面 ──
 
-    /** 4 个小组件在桌面上已添加的个数 */
+    /** 各小组件在桌面上已添加的个数（含同页次变体，如今日课程的 2×2） */
     private fun readAddedCounts(): Map<Class<*>, Int> {
         val manager = AppWidgetManager.getInstance(this)
-        return pagerAdapter.widgetPages.associate { page ->
-            page.providerClass to
-                    manager.getAppWidgetIds(ComponentName(this, page.providerClass)).size
+        val classes = pagerAdapter.widgetPages
+            .flatMap { listOfNotNull(it.providerClass, it.smallVariant?.providerClass) }
+            .distinct()
+        return classes.associateWith { clazz ->
+            manager.getAppWidgetIds(ComponentName(this, clazz)).size
         }
     }
 

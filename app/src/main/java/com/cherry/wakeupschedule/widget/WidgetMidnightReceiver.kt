@@ -16,6 +16,7 @@ class WidgetMidnightReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         context ?: return
         ScheduleWidgetProvider.triggerUpdate(context)
+        ScheduleWideWidgetProvider.triggerUpdate(context)
         MinimalWidgetProvider.triggerUpdate(context)
         WeekViewWidgetProvider.triggerUpdate(context)
         NextCourseWidgetProvider.triggerUpdate(context)
