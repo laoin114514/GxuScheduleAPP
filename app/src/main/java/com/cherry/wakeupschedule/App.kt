@@ -188,8 +188,8 @@ class App : Application() {
         secondTickRunnable = object : Runnable {
             override fun run() {
                 if (!isScreenOn) return
+                // 仅倒计时组件需要逐秒跳字；其余组件由分钟 tick / TIME_SET / 周期与切换闹钟覆盖
                 MinimalWidgetProvider.triggerUpdate(this@App)
-                ScheduleWidgetProvider.triggerUpdate(this@App)
                 secondTickHandler.postDelayed(this, 1000L)
             }
         }

@@ -26,6 +26,10 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
     companion object {
         const val ACTION_REFRESH = "com.cherry.wakeupschedule.widget.ACTION_REFRESH"
         private const val WIDGET_COURSE_END_REQUEST_CODE = 10002
+
+        /** 上次通知 ListView 重载时的列表内容签名（进程级缓存；null 表示未知，首次必通知） */
+        @Volatile
+        private var lastListSignature: String? = null
         private const val WIDGET_PERIODIC_UPDATE_REQUEST_CODE = 10003
         private const val PERIODIC_UPDATE_INTERVAL = 15 * 60 * 1000L // 15分钟
 
@@ -40,10 +44,42 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
     @Suppress("DEPRECATION")
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (appWidgetId in appWidgetIds) updateAppWidget(context, appWidgetManager, appWidgetId)
-        // 通知 ListView 数据可能变化，重新拉取
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_today_courses)
+        // 仅当列表可见内容可能变化时才通知 ListView 重载（每次都通知会重置滚动条，导致右侧滑动条持续闪烁）
+        val signature = computeListSignature(context)
+        if (signature != lastListSignature) {
+            lastListSignature = signature
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_today_courses)
+        }
         scheduleNextCourseEndUpdate(context)
         schedulePeriodicUpdate(context)
+    }
+
+    /**
+     * 列表可见内容的轻量签名：星期、周次、课程集合（id/名称/教室/节次），
+     * 以及每门课相对当前时刻的阶段标记（未开始/进行中/已上完的组合决定每行徽标）。
+     * 阶段标记只在某节课开始或结束的分钟边界变化，因此数据未变时不会触发重载。
+     */
+    private fun computeListSignature(context: Context): String {
+        return try {
+            val settingsManager = SettingsManager(context)
+            val calendar = Calendar.getInstance()
+            val todayDayOfWeek = if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7
+            else calendar.get(Calendar.DAY_OF_WEEK) - 1
+            val nowMinutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+            val currentWeek = CourseTimeUtils.getCurrentWeek(settingsManager)
+            val courses = CourseDataManager.getInstance(context).getAllCourses()
+                .filter { it.dayOfWeek == todayDayOfWeek && it.isActiveInWeek(currentWeek) }
+                .sortedBy { CourseTimeUtils.getStartMinutes(context, it) }
+            courses.joinToString("|") { course ->
+                val started = if (CourseTimeUtils.getStartMinutes(context, course) > nowMinutes) 0 else 1
+                val ended = if (CourseTimeUtils.getEndMinutes(context, course) > nowMinutes) 0 else 1
+                "${course.id}-${course.name}-${course.classroom}-${course.startTime}-${course.endTime}:$started$ended"
+            } + "|$todayDayOfWeek|$currentWeek"
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // 取不到数据时放弃去重，保持原有的每次都通知行为
+            UUID.randomUUID().toString()
+        }
     }
 
     override fun onEnabled(context: Context) {
