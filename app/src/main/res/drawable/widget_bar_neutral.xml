@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 下一门课提醒的无课/失败占位短棒：中性灰（@color/widget_bar_neutral 带 night 变体，桌面进程按系统深色模式解析） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="2dp" />
+    <solid android:color="@color/widget_bar_neutral" />
+</shape>

@@ -14,6 +14,7 @@ class WidgetTimeChangedReceiver : BroadcastReceiver() {
                 // 更新小组件
                 ScheduleWidgetProvider.triggerUpdate(context)
                 MinimalWidgetProvider.triggerUpdate(context)
+                NextCourseWidgetProvider.triggerUpdate(context)
                 WidgetMidnightReceiver.scheduleMidnightUpdate(context)
                 ScheduleWidgetUpdateService.scheduleNextUpdate(context)
             }

@@ -8,5 +8,5 @@
     <string name="widget_minimal_description">下课倒计时 · 秒级刷新 · 深浅色自适应</string>
     <string name="widget_today_description">今日课程概览 · 已上完/进行中/未开始一目了然</string>
     <string name="widget_week_description">周一至周日迷你课表 · 课程块配色同课表 · 深浅色自适应</string>
-    <string name="widget_next_description">下一门课提醒 · 开课前倒计时 · 深浅色自适应</string>
+    <string name="widget_next_description">下一门课提醒 · 当前课与下一门 · 深浅色自适应</string>
 </resources>

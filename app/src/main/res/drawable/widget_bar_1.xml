@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 课程色短棒 1（红，与 ThemeManager.FIXED_COURSE_COLORS[0] 对齐）：胶囊圆角，RemoteViews 白名单不允许裸 <View> -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="2dp" />
+    <solid android:color="#FFFF1744" />
+</shape>

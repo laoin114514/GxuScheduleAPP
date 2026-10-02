@@ -34,6 +34,9 @@
     <color name="widget_pill_text_amber">#92400E</color>
     <color name="widget_pill_text_gray">#73777F</color>
 
+    <!-- 下一门课提醒的课程行竖线：无课/失败占位的中性灰（课程态用课表页课程色，不随主题） -->
+    <color name="widget_bar_neutral">#94A3B8</color>
+
     <!-- 周视图课程块教室行文字（白 70%，主题无关） -->
     <color name="widget_chip_room_text">#B3FFFFFF</color>
 </resources>

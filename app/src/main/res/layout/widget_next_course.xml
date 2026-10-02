@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 下一门课提醒（官网「桌面小组件专区」4×2 款「近日课程轻量条」；2026-10 由 4×1 调整为 4×2：
-     targetCell 与 minWidth/minHeight 双轨统一，内容垂直居中）：
-     「下一门课提醒 + 时间徽标」/「课名」/「起止时间 · 教室」 -->
+<!-- 下一门课提醒（官网「桌面小组件专区」4×2 款；2026-10 改版为双课展示 + WakeUp 式两列排版）：
+     标题行「下一门课提醒 | 第N周 · 周X（accent 高亮）」+ 当前课/下一门课两行等分剩余高度。
+     每行 = 圆角课程色短棒（只包文字高度）+ 左列「课名 / 教室」+ 右列「起 / 止时间」（tnum 右对齐）；
+     徽标为课名行右侧的相对语义彩色小字（无底色）。
+     注意：RemoteViews 白名单不允许裸 <View>，色条用 FrameLayout 承载。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
@@ -11,9 +13,9 @@
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
     android:paddingTop="6dp"
-    android:paddingBottom="6dp"
-    android:gravity="center_vertical">
+    android:paddingBottom="6dp">
 
+    <!-- 标题行：固定文案 + 跨周/跨天上下文（周几高亮） -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -33,42 +35,224 @@
             android:ellipsize="end" />
 
         <TextView
-            android:id="@+id/tv_next_pill"
+            android:id="@+id/tv_next_week"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
-            android:text="20 分钟后"
-            android:textSize="@dimen/text_label"
-            android:textColor="@color/widget_pill_text_amber"
-            android:background="@drawable/widget_pill_amber"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
+            android:text="第4周 · "
+            android:textSize="@dimen/text_caption"
+            android:textColor="@color/widget_text_weak"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/tv_next_day"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="周二"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_accent"
             android:maxLines="1" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tv_next_name"
+    <!-- 当前课行：外层等分剩余高度，内层 wrap_content 让短棒只包文字高度 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="大学英语(IV)"
-        android:textSize="@dimen/text_body_small"
-        android:textStyle="bold"
-        android:textColor="@color/widget_text_title"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/tv_next_detail"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/bar_current"
+                android:layout_width="4dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/widget_bar_neutral" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tv_current_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="文献检索"
+                        android:textSize="@dimen/text_body_small"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_text_title"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tv_current_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="进行中"
+                        android:textSize="@dimen/text_label"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_accent"
+                        android:maxLines="1" />
+
+                    <TextView
+                        android:id="@+id/tv_current_start"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="10:00"
+                        android:textSize="@dimen/text_caption"
+                        android:textColor="@color/widget_text_weak"
+                        android:fontFeatureSettings="tnum"
+                        android:maxLines="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_current_detail"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="东图-631"
+                        android:textSize="@dimen/text_caption"
+                        android:textColor="@color/widget_text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tv_current_end"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="11:40"
+                        android:textSize="@dimen/text_caption"
+                        android:textColor="@color/widget_text_weak"
+                        android:fontFeatureSettings="tnum"
+                        android:maxLines="1" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 下一门课行：与当前课行同构 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:text="10:10 ~ 11:50 · 外国语楼 204"
-        android:textSize="@dimen/text_caption"
-        android:textColor="@color/widget_text_secondary"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/bar_next"
+                android:layout_width="4dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/widget_bar_neutral" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tv_next_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="算法设计与分析"
+                        android:textSize="@dimen/text_body_small"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_text_title"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tv_next_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="25 分钟后"
+                        android:textSize="@dimen/text_label"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_accent"
+                        android:maxLines="1" />
+
+                    <TextView
+                        android:id="@+id/tv_next_start"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="14:30"
+                        android:textSize="@dimen/text_caption"
+                        android:textColor="@color/widget_text_weak"
+                        android:fontFeatureSettings="tnum"
+                        android:maxLines="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_next_detail"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="西综合306"
+                        android:textSize="@dimen/text_caption"
+                        android:textColor="@color/widget_text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tv_next_end"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="16:05"
+                        android:textSize="@dimen/text_caption"
+                        android:textColor="@color/widget_text_weak"
+                        android:fontFeatureSettings="tnum"
+                        android:maxLines="1" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

@@ -16,4 +16,6 @@
 
     <color name="widget_pill_text_amber">#FDE68A</color>
     <color name="widget_pill_text_gray">#8D9199</color>
+
+    <color name="widget_bar_neutral">#64748B</color>
 </resources>

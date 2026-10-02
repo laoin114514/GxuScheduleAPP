@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>下一门课提醒 · 双课改版效果图（全部状态）</title>
+<style>
+  :root{
+    --card-w:512px; --card-h:224px;
+    --pad-x:22px; --pad-y:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#F2F4F8; color-scheme:only light;}
+  body{font-family:"Segoe UI","Microsoft YaHei",Roboto,sans-serif; padding:24px 28px 40px;}
+  h1{font-size:22px; color:#1A1C1E; margin-bottom:6px;}
+  .sub{font-size:14px; color:#73777F; margin-bottom:22px;}
+  h2{font-size:18px; margin:24px 0 14px; color:#1A1C1E;}
+  .grid{display:grid; grid-template-columns:repeat(3, var(--card-w)); gap:24px 28px;}
+
+  /* ---------- 卡片（1px≈1.7 缩放，对应 250dp 宽） ---------- */
+  .widget{
+    width:var(--card-w); height:var(--card-h);
+    border-radius:28px; padding:var(--pad-y) var(--pad-x);
+    display:flex; flex-direction:column;
+    background:#DDE4ED; border:2px solid rgba(15,0,0,.06);
+  }
+  .dark{background:#0D1117; border-color:#1E293B;}
+  .widget .title{display:flex; align-items:center; margin-bottom:2px;}
+  .widget .label{flex:1; font-size:19px; font-weight:700; color:#1A1C1E;}
+  .dark .label{color:#E2E2E9;}
+  .widget .week{font-size:19px; color:#73777F;}
+  .dark .week{color:#8D9199;}
+  .widget .day{font-size:19px; font-weight:700; color:#1565C0;}
+  .dark .day{color:#AAC7FF;}
+
+  .rows{flex:1; display:flex; flex-direction:column;}
+  .row{flex:1; display:flex; align-items:center;}
+  .inner{display:flex; align-items:stretch; width:100%;}
+  .bar{width:7px; border-radius:4px; background:#94A3B8; margin-right:16px; flex:none;}
+  .dark .bar{background:#64748B;}
+  .col{flex:1; display:flex; flex-direction:column; justify-content:center;}
+  .line{display:flex; align-items:center;}
+  .name{flex:1; font-size:24px; font-weight:700; color:#1A1C1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dark .name{color:#E2E2E9;}
+  .room{flex:1; font-size:20px; color:#43474E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dark .room{color:#C3C7CF;}
+  .badge{font-size:17px; font-weight:700; color:#1565C0; margin:0 0 0 10px;}
+  .dark .badge{color:#AAC7FF;}
+  .badge.gray{color:#73777F; font-weight:400;}
+  .dark .badge.gray{color:#8D9199;}
+  .time{font-size:20px; color:#43474E; margin-left:12px; font-feature-settings:'tnum'; font-variant-numeric:tabular-nums;}
+  .dark .time{color:#C3C7CF;}
+
+  .cap{font-size:13px; color:#666; margin-top:8px; line-height:1.5;}
+  .cap b{color:#333;}
+  .darkcap{color:#8fa0b3;}
+  .darkcap b{color:#c9d6e6;}
+
+  .darkwrap{background:#0A0C10; margin:24px -28px 0; padding:6px 28px 36px; border-radius:12px;}
+  .darkwrap h2{color:#E2E2E9;}
+</style>
+</head>
+<body>
+<h1>下一门课提醒 · 双课展示改版 —— 全状态效果图</h1>
+<div class="sub">2026-10-02 · 结构：标题行 + 两行等分（圆角课程色短棒 / 左列课名+教室 / 右列起止时间 / 徽标=相对语义彩色小字）· 尺寸按 250dp 宽 4×2 卡片 1.7 倍仿真</div>
+
+<h2>浅色模式</h2>
+<div class="grid">
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周二</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#2979FF"></div>
+          <div class="col">
+            <div class="line"><span class="name">文献检索</span><span class="badge">进行中</span><span class="time">10:00</span></div>
+            <div class="line"><span class="room">东图-631</span><span class="time">11:40</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#FA6278"></div>
+          <div class="col">
+            <div class="line"><span class="name">算法设计与分析</span><span class="badge">25 分钟后</span><span class="time">14:30</span></div>
+            <div class="line"><span class="room">西综合306</span><span class="time">16:05</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap"><b>① 进行中 + 今日下一门（&lt;60min）</b>：徽标「N 分钟后」；两行各自课程色短棒</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周二</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#1DE9B6"></div>
+          <div class="col">
+            <div class="line"><span class="name">大学英语(IV)</span><span class="badge">进行中</span><span class="time">10:10</span></div>
+            <div class="line"><span class="room">外国语楼204</span><span class="time">11:50</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#FF9100"></div>
+          <div class="col">
+            <div class="line"><span class="name">数据结构</span><span class="badge">4 小时后</span><span class="time">15:20</span></div>
+            <div class="line"><span class="room">西2-102</span><span class="time">16:55</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap"><b>② 进行中 + 今日下一门（≥60min）</b>：徽标「N 小时后」= (间隔+30)/60 四舍五入，不再复述 HH:mm</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周二</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">当前没有课程</span></div>
+            <div class="line"><span class="room">今天还剩 2 门课</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#005CAF"></div>
+          <div class="col">
+            <div class="line"><span class="name">高等数学(2)</span><span class="badge">12 分钟后</span><span class="time">14:30</span></div>
+            <div class="line"><span class="room">理学楼101</span><span class="time">16:05</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap"><b>③ 课间（今日下一门 &lt;60min）</b>：第一行灰棒占位 +「今天还剩 N 门课」，徽标位留空</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周二</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">当前没有课程</span></div>
+            <div class="line"><span class="room">今天还剩 1 门课</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#A375FF"></div>
+          <div class="col">
+            <div class="line"><span class="name">大学英语(IV)</span><span class="badge">2 小时后</span><span class="time">19:40</span></div>
+            <div class="line"><span class="room">外国语楼204</span><span class="time">21:15</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap"><b>④ 课间（今日下一门 ≥60min）</b>：晚上的课隔几个小时，「N 小时后」</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周二</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">当前没有课程</span></div>
+            <div class="line"><span class="room">今天的课程已全部结束</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#FA6278"></div>
+          <div class="col">
+            <div class="line"><span class="name">算法设计与分析</span><span class="badge">明天</span><span class="time">08:00</span></div>
+            <div class="line"><span class="room">西综合306</span><span class="time">09:45</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap"><b>⑤ 今日清空 + 明天有课</b>：第二行降级明天第一节，徽标只写「明天」，时间直接给明天的起止</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周三</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">当前没有课程</span></div>
+            <div class="line"><span class="room">今天的课程已全部结束</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">明天无课</span></div>
+            <div class="line"><span class="room">本学期还剩 15 周 · 好好休息</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap"><b>⑥ 今日清空 + 明天无课（原重复态）</b>：两行分工——今天视角 / 未来视角，「已结束」徽标删除</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周日</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">当前没有课程</span></div>
+            <div class="line"><span class="room">今天没有安排</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#2196F3"></div>
+          <div class="col">
+            <div class="line"><span class="name">大学生就业指导</span><span class="badge">明天</span><span class="time">10:10</span></div>
+            <div class="line"><span class="room">西2-501</span><span class="time">11:50</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap"><b>⑦ 今天无课 + 明天有课</b>：c 分支文案缩短为「今天没有安排」，学期信息让位给明天课程</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周六</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">当前没有课程</span></div>
+            <div class="line"><span class="room">今天没有安排</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">明天无课</span></div>
+            <div class="line"><span class="room">本学期还剩 15 周 · 好好休息</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap"><b>⑧ 今天明天都无课</b>：与 ⑥ 同构，「今天没有安排」不与「明天无课」重复</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week"></span><span class="day"></span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">课程数据读取失败</span></div>
+            <div class="line"><span class="room">请打开 App 检查课表导入</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner"></div></div>
+      </div>
+    </div>
+    <div class="cap"><b>⑨ 数据读取失败</b>：第一行灰棒报错 + 引导文案，第二行整体留空、竖线隐藏</div>
+  </div>
+
+</div>
+
+<div class="darkwrap">
+<h2>深色模式（同一套状态，夜间 token）</h2>
+<div class="grid">
+
+  <div>
+    <div class="widget dark">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周二</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#2979FF"></div>
+          <div class="col">
+            <div class="line"><span class="name">文献检索</span><span class="badge">进行中</span><span class="time">10:00</span></div>
+            <div class="line"><span class="room">东图-631</span><span class="time">11:40</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#FA6278"></div>
+          <div class="col">
+            <div class="line"><span class="name">算法设计与分析</span><span class="badge">25 分钟后</span><span class="time">14:30</span></div>
+            <div class="line"><span class="room">西综合306</span><span class="time">16:05</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap darkcap"><b>①</b> 课程色短棒深浅同值（与课表页一致），徽标 accent 换夜间色 #AAC7FF</div>
+  </div>
+
+  <div>
+    <div class="widget dark">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周三</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">当前没有课程</span></div>
+            <div class="line"><span class="room">今天的课程已全部结束</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">明天无课</span></div>
+            <div class="line"><span class="room">本学期还剩 15 周 · 好好休息</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap darkcap"><b>⑥</b> 空课态夜间：灰棒 #64748B，占位文案弱灰</div>
+  </div>
+
+  <div>
+    <div class="widget dark">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week">第4周 · </span><span class="day">周二</span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#005CAF"></div>
+          <div class="col">
+            <div class="line"><span class="name">高等数学(2)</span><span class="badge">12 分钟后</span><span class="time">14:30</span></div>
+            <div class="line"><span class="room">理学楼101</span><span class="time">16:05</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner">
+          <div class="bar" style="background:#FA6278"></div>
+          <div class="col">
+            <div class="line"><span class="name">算法设计与分析</span><span class="badge">明天</span><span class="time">08:00</span></div>
+            <div class="line"><span class="room">西综合306</span><span class="time">09:45</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="cap darkcap"><b>③+⑤ 混合示例</b>：今晚最后一门 + 明天第一节（第二行降级到明天）</div>
+  </div>
+
+  <div>
+    <div class="widget dark">
+      <div class="title"><span class="label">下一门课提醒</span><span class="week"></span><span class="day"></span></div>
+      <div class="rows">
+        <div class="row"><div class="inner">
+          <div class="bar"></div>
+          <div class="col">
+            <div class="line"><span class="name">课程数据读取失败</span></div>
+            <div class="line"><span class="room">请打开 App 检查课表导入</span></div>
+          </div>
+        </div></div>
+        <div class="row"><div class="inner"></div></div>
+      </div>
+    </div>
+    <div class="cap darkcap"><b>⑨</b> 失败态夜间</div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>
