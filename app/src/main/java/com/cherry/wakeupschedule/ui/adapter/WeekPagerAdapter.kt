@@ -64,6 +64,10 @@ class WeekPagerAdapter(
     var bottomBlankEnabled: Boolean = false
         private set
 
+    /** 「高亮当日」：开启后在日期蓝框之外，为当日整列追加淡色底（课表整体 → 高亮当日） */
+    var highlightToday: Boolean = false
+        private set
+
     private var allCourses: List<Course> = emptyList()
 
     /** 学期开始日期（epoch ms；0 = 未设置 → 日期栏保留占位文案） */
@@ -130,6 +134,13 @@ class WeekPagerAdapter(
         notifyDataSetChanged()
     }
 
+    /** 更新「高亮当日」；值未变时直接返回 */
+    fun setHighlightToday(enabled: Boolean) {
+        if (enabled == highlightToday) return
+        highlightToday = enabled
+        notifyDataSetChanged()
+    }
+
     override fun getItemCount(): Int = totalWeeks
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WeekViewHolder {
@@ -139,7 +150,8 @@ class WeekPagerAdapter(
     override fun onBindViewHolder(holder: WeekViewHolder, position: Int) {
         val week = position + 1
         holder.bind(week, allCourses, cellHeightDp, semesterStartDate, currentWeek,
-            showClassroom, showTeacher, borderColor, borderFollowCourse, bottomBlankEnabled)
+            showClassroom, showTeacher, borderColor, borderFollowCourse, bottomBlankEnabled,
+            highlightToday)
     }
 
     /** 只有日期栏上下文变化时走这条轻量分支，避免整页重建课程卡片 */
@@ -150,6 +162,8 @@ class WeekPagerAdapter(
     ) {
         if (payloads.contains(PAYLOAD_WEEK_CONTEXT)) {
             holder.bindDateHeader(position + 1, semesterStartDate, currentWeek)
+            // 周上下文变化可能改变「今天在哪列/是否本周」，列淡底跟着日期栏一起轻量刷新
+            holder.bindTodayColumn(highlightToday, 0f)
             return
         }
         super.onBindViewHolder(holder, position, payloads)
@@ -170,6 +184,15 @@ class WeekPagerAdapter(
         // ── 日期栏 ──
         private val dateViews: Array<TextView>
         private val yearView: TextView
+
+        /** 「高亮当日」的当日列淡底：holder 级复用，attach/detach 由 bindTodayColumn 管理 */
+        private val todayColumnView = View(itemView.context)
+
+        /** 今天在本页的列下标（bindDateHeader 算出；-1 = 学期未设置或今天不在本页） */
+        private var todayColumnIndex = -1
+
+        /** 当日列最近一次使用的列宽 px（payload 轻量刷新时复用，避免重算） */
+        private var lastCellWidthPx = 0f
 
         /** 日期栏渲染复用实例，避免每次 bind 重新分配 Calendar / Formatter */
         private val headerCal = Calendar.getInstance()
@@ -210,8 +233,11 @@ class WeekPagerAdapter(
         /**
          * 渲染本页日期栏（本页 = 第 week 周）。
          * 学期开始日期未设置（0）时保留布局里的占位文案，与改造前一致。
+         * 「今天」仍用蓝框标出；命中时记下 [todayColumnIndex]，
+         * 供 [bindTodayColumn] 在「高亮当日」开启时画整列淡底。
          */
         fun bindDateHeader(week: Int, semesterStartDate: Long, currentWeek: Int) {
+            todayColumnIndex = -1
             if (semesterStartDate == 0L) return
 
             headerCal.timeInMillis = semesterStartDate
@@ -227,7 +253,7 @@ class WeekPagerAdapter(
                 themeColor(com.google.android.material.R.attr.colorOnSurfaceVariant)
             val isCurrentWeek = week == currentWeek
 
-            dateViews.forEach { tv ->
+            dateViews.forEachIndexed { index, tv ->
                 tv.text = headerDateFormat.format(headerCal.time)
                 val isToday = isCurrentWeek &&
                         headerCal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) &&
@@ -235,12 +261,42 @@ class WeekPagerAdapter(
                 if (isToday) {
                     tv.setBackgroundResource(R.drawable.bg_date_selected)
                     tv.setTextColor(todayTextColor)
+                    todayColumnIndex = index
                 } else {
                     tv.background = null
                     tv.setTextColor(normalTextColor)
                 }
                 headerCal.add(Calendar.DAY_OF_MONTH, 1)
             }
+        }
+
+        /**
+         * 「高亮当日」的当日列淡底：周微缩地图小组件同款画法——主色 10% 淡底、8dp 圆角，
+         * 作为 courseContainer 第一个孩子垫在课程卡之下（半透明卡片与 2dp 间隙处会透出）。
+         * 依赖 [bindDateHeader] 算出的 [todayColumnIndex]，须在其后调用；空课表页不画。
+         * [cellWidthPx] 传 0 表示复用上次的列宽（payload 轻量刷新路径）。
+         */
+        fun bindTodayColumn(highlightToday: Boolean, cellWidthPx: Float) {
+            if (cellWidthPx > 0f) lastCellWidthPx = cellWidthPx
+            val show = highlightToday && todayColumnIndex >= 0 &&
+                    emptyView.visibility != View.VISIBLE && lastCellWidthPx > 0f
+            if (!show) {
+                (todayColumnView.parent as? ViewGroup)?.removeView(todayColumnView)
+                return
+            }
+            if (todayColumnView.parent == null) courseContainer.addView(todayColumnView, 0)
+            val density = itemView.context.resources.displayMetrics.density
+            todayColumnView.background = GradientDrawable().apply {
+                cornerRadius = 8 * density
+                setColor(
+                    ColorUtils.setAlphaComponent(
+                        themeColor(com.google.android.material.R.attr.colorPrimary), 26
+                    )
+                )
+            }
+            todayColumnView.layoutParams = FrameLayout.LayoutParams(
+                lastCellWidthPx.toInt(), ViewGroup.LayoutParams.MATCH_PARENT
+            ).apply { marginStart = (todayColumnIndex * lastCellWidthPx).toInt() }
         }
 
         /** 取主题色（浅色/深色自适应） */
@@ -260,9 +316,11 @@ class WeekPagerAdapter(
             showTeacher: Boolean,
             borderColor: Int,
             borderFollowCourse: Boolean,
-            bottomBlankEnabled: Boolean
+            bottomBlankEnabled: Boolean,
+            highlightToday: Boolean
         ) {
-            // 日期栏先渲染：下面「暂无课程」会提前 return，不能漏掉日期栏
+            // 日期栏先渲染：下面「暂无课程」会提前 return，不能漏掉日期栏；
+            // 且当日列淡底依赖它算出的 todayColumnIndex
             bindDateHeader(week, semesterStartDate, currentWeek)
 
             val ctx = itemView.context
@@ -324,6 +382,8 @@ class WeekPagerAdapter(
             courseContainer.removeAllViews()
             val gapPx = (2 * density).toInt()
             val cellWidth = contentWidth / 7f
+            // 「课表整体 → 高亮当日」：当日列淡底垫在卡片之下（clear 后第 0 位，先于卡片循环）
+            bindTodayColumn(highlightToday, cellWidth)
             val textColor = Color.WHITE
             val colors = courseColors
 

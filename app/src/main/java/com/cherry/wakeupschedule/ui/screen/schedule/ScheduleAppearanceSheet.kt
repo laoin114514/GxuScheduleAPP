@@ -38,7 +38,8 @@ import kotlin.math.roundToInt
  * - 边框颜色：色块弹自绘取色器（见 [CellBorderColorPicker]）+「跟随课程格子颜色」开关；
  *   跟随开启时描边 = 各课不透明课程色，取色器入口置灰
  * - 课表整体：底部留白开关——开启后在滚动内容末尾追加约 15% 屏高的空白，
- *   让底部的课程能上滑到屏幕中部查看
+ *   让底部的课程能上滑到屏幕中部查看；高亮当日开关——开启后在日期蓝框之外，
+ *   为当日整列追加淡色底（周微缩地图小组件同款画法）
  * - 面板高度可调：拖顶部把手在「25% ↔ 75% 屏高」间连续跟手（越界有果冻阻尼），松手保持；
  *   轻点把手在「半屏 ↔ 25%」间切换。拖拽只响应把手，与滑块/内容滚动互不干扰；
  *   内容塞不下时在面板内的 NestedScrollView 上下滑动。
@@ -220,6 +221,14 @@ object ScheduleAppearanceSheet {
             fragment.applyAppearanceChanges()
         }
 
+        // ── 课表整体：高亮当日开关（蓝框外追加当日整列淡底），实时生效 ──
+        val switchHighlightToday = sheetView.findViewById<Switch>(R.id.switch_highlight_today)
+        switchHighlightToday.setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
+            settingsManager.setHighlightToday(isChecked)
+            fragment.applyAppearanceChanges()
+        }
+
         // 回填当前设置（抑制开关监听，避免读出来又写一遍）
         val cellHeight = settingsManager.getCourseCellHeight()
         slider.value = cellHeight.toFloat()
@@ -230,6 +239,7 @@ object ScheduleAppearanceSheet {
         switchTeacher.isChecked = settingsManager.isShowTeacher()
         switchFollow.isChecked = settingsManager.isBorderFollowCourse()
         switchBottomBlank.isChecked = settingsManager.isBottomBlank()
+        switchHighlightToday.isChecked = settingsManager.isHighlightToday()
         isUpdatingSwitchState = false
         refreshBorderSwatch()
 
