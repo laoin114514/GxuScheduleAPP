@@ -57,6 +57,7 @@ class SettingsManager(context: Context) {
         private const val KEY_CELL_BORDER_COLOR = "cell_border_color"  // 课程格子边框颜色（ARGB）
         private const val KEY_BORDER_FOLLOW_COURSE = "border_follow_course" // 边框是否跟随课程颜色
         private const val KEY_BOTTOM_BLANK = "bottom_blank"            // 课表底部是否留白
+        private const val KEY_HIGHLIGHT_TODAY = "highlight_today"      // 高亮当日（蓝框外追加整列淡底）
         private const val DEFAULT_HIDE_HOLIDAY_COURSES = false              // 默认不隐藏
         private const val DEFAULT_THEME_MODE = "system"                  // 默认跟随系统
         private const val DEFAULT_AUTO_SWITCH_THEME = false              // 默认不自动切换
@@ -326,6 +327,18 @@ class SettingsManager(context: Context) {
 
     fun setBottomBlank(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_BOTTOM_BLANK, enabled).apply()
+    }
+
+    /**
+     * 「高亮当日」：开启后在日期蓝框之外，为当日整列追加淡色底
+     * （周微缩地图小组件同款画法）；默认关闭。
+     */
+    fun isHighlightToday(): Boolean {
+        return sharedPreferences.getBoolean(KEY_HIGHLIGHT_TODAY, false)
+    }
+
+    fun setHighlightToday(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_HIGHLIGHT_TODAY, enabled).apply()
     }
 
     /**

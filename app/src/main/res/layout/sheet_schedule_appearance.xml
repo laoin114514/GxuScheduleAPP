@@ -95,6 +95,51 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- 高亮当日：在日期蓝框之外，为当日整列追加淡色底
+                 （周微缩地图小组件同款画法） -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="高亮当日"
+                android:textSize="@dimen/text_body_small"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="10dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppSectionCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="当日整列加淡色底"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <Switch
+                            android:id="@+id/switch_highlight_today"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:theme="@style/SwitchTheme" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- ═══ 课程格子 ═══ -->
             <!-- 分区标题 -->
             <TextView
