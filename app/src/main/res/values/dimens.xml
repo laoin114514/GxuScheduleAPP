@@ -21,4 +21,5 @@
     <dimen name="text_caption">12sp</dimen>      <!-- 辅助说明 / 值 -->
     <dimen name="text_label">10sp</dimen>        <!-- 极小标签 / 课程卡片 -->
     <dimen name="text_micro">9sp</dimen>         <!-- widget 专用极小字 -->
+    <dimen name="text_chip_room">8sp</dimen>     <!-- widget 课程块教室行专用 -->
 </resources>

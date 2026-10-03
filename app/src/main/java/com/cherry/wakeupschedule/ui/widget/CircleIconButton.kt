@@ -8,6 +8,7 @@ import android.view.View
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
+import androidx.annotation.DrawableRes
 import com.cherry.wakeupschedule.R
 import com.google.android.material.color.MaterialColors
 
@@ -75,4 +76,10 @@ class CircleIconButton @JvmOverloads constructor(
 
     /** 动态换图标 */
     fun setIcon(resId: Int) = iconView.setImageResource(resId)
+
+    /**
+     * 换圆形底色（默认 [R.drawable.bg_icon_circle]）。
+     * 只在页面底色与默认色接近、圆钮会「糊」进背景时才用，例如小组件中心的「?」。
+     */
+    fun setCircleBackground(@DrawableRes resId: Int) = setBackgroundResource(resId)
 }

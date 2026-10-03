@@ -1,323 +1,756 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 一周课程微缩地图（官网「桌面小组件专区」4×4 款）：
+     标题行 + 周一~周日 7 列时段网格（5 个可排课时段 1-2/3-4/5-6/7-8/11-12
+     各 weight=2，9-10 节为薄空档 weight=1），一门课 = 一个整块容器，
+     块内两行：课名（粗）+ 教室；底色由 Provider 按 FIXED_COURSE_COLORS
+     对应的 widget_week_chip_1..9 设置（半透明填充+描边，与课表同画法）。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_widget_white"
-    android:padding="8dp">
+    android:background="@drawable/bg_widget_card"
+    android:padding="10dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="4dp">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <TextView
-            android:id="@+id/tv_widget_date"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="@dimen/text_body_small"
-            android:textColor="#333333"
-            android:textStyle="bold" />
+            android:layout_weight="1"
+            android:text="周视图微缩地图"
+            android:id="@+id/tv_week_title"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
         <TextView
-            android:id="@+id/tv_widget_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="@dimen/text_label"
-            android:textColor="#666666"
-            android:layout_marginTop="2dp" />
+            android:layout_marginStart="6dp"
+            android:text="第1周"
+            android:id="@+id/tv_week_number"
+            android:textSize="@dimen/text_micro"
+            android:textColor="@color/widget_text_weak" />
     </LinearLayout>
-
+    <!-- 周一 ~ 周日七列：时段块随小组件高度拉伸，空白即无课时段 -->
     <LinearLayout
+        android:id="@+id/ll_week_days"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="horizontal"
-        android:minHeight="80dp">
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
 
-        <!-- 周一 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_mon_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周一"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_mon_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_mon_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/week_col_1"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView android:id="@+id/week_1_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="一" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout android:id="@+id/week_1_grid"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout android:id="@+id/week_1_s1"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_1_s1_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_1_s1_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_1_s2"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_1_s2_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_1_s2_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_1_s3"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_1_s3_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_1_s3_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_1_s4"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_1_s4_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_1_s4_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <!-- 9-10 节薄空档，不排课 -->
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout android:id="@+id/week_1_s5"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_1_s5_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_1_s5_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
-        <!-- 周二 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_tue_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周二"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_tue_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_tue_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/week_col_2"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView android:id="@+id/week_2_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="二" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout android:id="@+id/week_2_grid"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout android:id="@+id/week_2_s1"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_2_s1_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_2_s1_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_2_s2"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_2_s2_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_2_s2_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_2_s3"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_2_s3_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_2_s3_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_2_s4"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_2_s4_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_2_s4_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <!-- 9-10 节薄空档，不排课 -->
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout android:id="@+id/week_2_s5"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_2_s5_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_2_s5_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
-        <!-- 周三 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_wed_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周三"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_wed_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_wed_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/week_col_3"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView android:id="@+id/week_3_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="三" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout android:id="@+id/week_3_grid"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout android:id="@+id/week_3_s1"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_3_s1_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_3_s1_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_3_s2"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_3_s2_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_3_s2_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_3_s3"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_3_s3_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_3_s3_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_3_s4"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_3_s4_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_3_s4_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <!-- 9-10 节薄空档，不排课 -->
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout android:id="@+id/week_3_s5"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_3_s5_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_3_s5_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
-        <!-- 周四 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_thu_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周四"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_thu_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_thu_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/week_col_4"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView android:id="@+id/week_4_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="四" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout android:id="@+id/week_4_grid"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout android:id="@+id/week_4_s1"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_4_s1_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_4_s1_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_4_s2"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_4_s2_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_4_s2_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_4_s3"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_4_s3_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_4_s3_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_4_s4"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_4_s4_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_4_s4_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <!-- 9-10 节薄空档，不排课 -->
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout android:id="@+id/week_4_s5"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_4_s5_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_4_s5_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
-        <!-- 周五 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_fri_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周五"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_fri_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_fri_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/week_col_5"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView android:id="@+id/week_5_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="五" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout android:id="@+id/week_5_grid"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout android:id="@+id/week_5_s1"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_5_s1_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_5_s1_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_5_s2"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_5_s2_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_5_s2_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_5_s3"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_5_s3_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_5_s3_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_5_s4"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_5_s4_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_5_s4_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <!-- 9-10 节薄空档，不排课 -->
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout android:id="@+id/week_5_s5"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_5_s5_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_5_s5_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
-        <!-- 周六 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_sat_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周六"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_sat_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_sat_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/week_col_6"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView android:id="@+id/week_6_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="六" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout android:id="@+id/week_6_grid"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout android:id="@+id/week_6_s1"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_6_s1_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_6_s1_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_6_s2"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_6_s2_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_6_s2_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_6_s3"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_6_s3_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_6_s3_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_6_s4"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_6_s4_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_6_s4_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <!-- 9-10 节薄空档，不排课 -->
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout android:id="@+id/week_6_s5"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_6_s5_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_6_s5_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
-        <!-- 周日 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="top|center_horizontal"
-            android:padding="2dp">
-
-            <TextView
-                android:id="@+id/tv_sun_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="周日"
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_sun_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_label"
-                android:textColor="#888888"
-                android:paddingBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tv_sun_course_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="@dimen/text_micro"
-                android:textColor="#333333"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:padding="3dp"
-                android:background="#E0E0E0" />
+        <LinearLayout android:id="@+id/week_col_7"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="4dp" android:paddingBottom="4dp">
+            <TextView android:id="@+id/week_7_label"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="日" android:textSize="@dimen/text_micro"
+                android:textColor="@color/widget_day_text_empty" />
+            <LinearLayout android:id="@+id/week_7_grid"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="3dp"
+                android:orientation="vertical">
+                <LinearLayout android:id="@+id/week_7_s1"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_7_s1_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_7_s1_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_7_s2"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_7_s2_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_7_s2_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_7_s3"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_7_s3_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_7_s3_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/week_7_s4"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_7_s4_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_7_s4_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+                <!-- 9-10 节薄空档，不排课 -->
+                <TextView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="" />
+                <LinearLayout android:id="@+id/week_7_s5"
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical" android:gravity="center"
+                    android:visibility="invisible">
+                    <TextView android:id="@+id/week_7_s5_name"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center" android:textStyle="bold"
+                        android:textSize="@dimen/text_micro" android:textColor="@android:color/white"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                    <TextView android:id="@+id/week_7_s5_room"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="@dimen/text_chip_room" android:textColor="@color/widget_chip_room_text"
+                        android:maxLines="1" android:ellipsize="end" android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
-
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_week_total"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="本周共 0 节课"
+        android:textSize="@dimen/text_micro"
+        android:textColor="@color/widget_text_weak"
+        android:maxLines="1" />
+
 </LinearLayout>

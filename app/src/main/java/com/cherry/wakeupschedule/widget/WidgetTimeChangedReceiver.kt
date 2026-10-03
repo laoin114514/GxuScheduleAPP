@@ -13,7 +13,9 @@ class WidgetTimeChangedReceiver : BroadcastReceiver() {
             Intent.ACTION_TIMEZONE_CHANGED -> {
                 // 更新小组件
                 ScheduleWidgetProvider.triggerUpdate(context)
+                ScheduleWideWidgetProvider.triggerUpdate(context)
                 MinimalWidgetProvider.triggerUpdate(context)
+                NextCourseWidgetProvider.triggerUpdate(context)
                 WidgetMidnightReceiver.scheduleMidnightUpdate(context)
                 ScheduleWidgetUpdateService.scheduleNextUpdate(context)
             }

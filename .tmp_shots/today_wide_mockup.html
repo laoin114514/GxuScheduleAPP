@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>今日课程概览 · 4×2 变体效果图（去短棒 · 样式沿用 2×2）</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#F2F4F8; color-scheme:only light;}
+  body{font-family:"Segoe UI","Microsoft YaHei",Roboto,sans-serif; padding:24px 28px 40px;}
+  h1{font-size:22px; color:#1A1C1E; margin-bottom:6px;}
+  .sub{font-size:14px; color:#73777F; margin-bottom:22px; line-height:1.5;}
+  h2{font-size:18px; margin:24px 0 14px; color:#1A1C1E;}
+  .grid{display:grid; grid-template-columns:repeat(2, 512px); gap:24px 28px;}
+
+  /* ---------- 4×2 卡片（250×110dp @1.7x ≈ 512×224px） ---------- */
+  .widget{
+    width:512px; height:224px;
+    border-radius:28px; padding:10px 22px;
+    display:flex; flex-direction:column;
+    background:#DDE4ED; border:2px solid rgba(15,0,0,.06);
+  }
+  .dark{background:#0D1117; border-color:#1E293B;}
+
+  /* 标题行：左侧加固定标签（title 色 bold），右侧沿用 2×2 头部的 secondary 灰，无新增颜色 */
+  .widget .title{display:flex; align-items:center; margin:2px 0 6px;}
+  .widget .label{font-size:20px; font-weight:700; color:#1A1C1E;}
+  .dark .label{color:#E2E2E9;}
+  .widget .spacer{flex:1;}
+  .widget .ctx{font-size:20px; color:#43474E;}
+  .dark .ctx{color:#C3C7CF;}
+
+  .rows{flex:1; display:flex; flex-direction:column; gap:8px;}
+  /* 彩底行卡：与 2×2 完全相同的 widget_row_* 底色（12dp 圆角 → 20px） */
+  .rowcard{
+    flex:1; border-radius:20px; padding:7px 14px;
+    display:flex; align-items:center;
+  }
+  .bg-finished{background:#CCEFF6FF;}
+  .bg-active{background:#CCFAF5FF;}
+  .bg-upcoming{background:#CCECFDF5;}
+  /* 夜间变体（真机以 drawable-night 为准，此处取同色低透明近似；CSS 为 RRGGBBAA） */
+  .dark .bg-finished{background:rgba(239,246,255,0.14);}
+  .dark .bg-active{background:rgba(250,245,255,0.14);}
+  .dark .bg-upcoming{background:rgba(236,253,245,0.14);}
+
+  /* 行内文字：字号/颜色全部沿用 2×2 行样式（课名 caption 12sp bold、教室 label 10sp、徽标 micro 三色） */
+  .col{flex:1; display:flex; flex-direction:column; justify-content:center;}
+  .line{display:flex; align-items:center;}
+  .name{font-size:20px; font-weight:700; color:#1A1C1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dark .name{color:#E2E2E9;}
+  .room{font-size:17px; color:#43474E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dark .room{color:#C3C7CF;}
+  .badge{font-size:15px; font-weight:700; margin-left:10px;}
+  .b-finished{color:#2563EB;}
+  .b-active{color:#9333EA;}
+  .b-upcoming{color:#94A3B8; font-weight:400;}
+  .time{font-size:17px; color:#43474E; margin-left:12px; font-feature-settings:'tnum'; font-variant-numeric:tabular-nums;}
+  .dark .time{color:#C3C7CF;}
+
+  .cap{font-size:13px; color:#666; margin-top:8px; line-height:1.5;}
+  .cap b{color:#333;}
+  .darkwrap{background:#0A0C10; margin:24px -28px 0; padding:6px 28px 36px; border-radius:12px;}
+  .darkwrap h2{color:#E2E2E9;}
+  .darkcap{color:#8fa0b3;}
+  .darkcap b{color:#c9d6e6;}
+</style>
+</head>
+<body>
+<h1>今日课程概览 · 4×2 变体 —— 效果图（去短棒 · 样式沿用 2×2）</h1>
+<div class="sub">2026-10-02 · 新增变体与现有 2×2 并存 · 只改布局：双行行卡（课名+徽标+起时间 / 教室·节次+止时间）· 配色、字号、行卡底色、徽标三色全部沿用 2×2 现有 token，无新增颜色</div>
+
+<h2>浅色模式</h2>
+<div class="grid">
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">今日课程 · 2 门</span><span class="spacer"></span><span class="ctx">第4周 · 周三</span></div>
+      <div class="rows">
+        <div class="rowcard bg-finished">
+          <div class="col">
+            <div class="line"><span class="name">编译原理</span><span class="badge b-finished">已上完</span><span class="time">08:00</span></div>
+            <div class="line"><span class="room">西2-102 · 5-6节</span><span class="time">09:45</span></div>
+          </div>
+        </div>
+        <div class="rowcard bg-active">
+          <div class="col">
+            <div class="line"><span class="name">深度学习</span><span class="badge b-active">进行中</span><span class="time">10:10</span></div>
+            <div class="line"><span class="room">西2-501 · 7-8节</span><span class="time">11:50</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>① 已上完 + 进行中</b>：行卡底色/徽标三色与 2×2 完全一致，宽度用于双行铺开 + 右列起止时间</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">今日课程 · 3 门</span><span class="spacer"></span><span class="ctx">第4周 · 周三</span></div>
+      <div class="rows">
+        <div class="rowcard bg-active">
+          <div class="col">
+            <div class="line"><span class="name">深度学习</span><span class="badge b-active">进行中</span><span class="time">10:10</span></div>
+            <div class="line"><span class="room">西2-501 · 7-8节</span><span class="time">11:50</span></div>
+          </div>
+        </div>
+        <div class="rowcard bg-active">
+          <div class="col">
+            <div class="line"><span class="name">代数结构与设计</span><span class="badge b-active">下一节</span><span class="time">19:40</span></div>
+            <div class="line"><span class="room">西2-501 · 11-12节</span><span class="time">21:20</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>② 进行中 + 下一节</b>：110dp 可见 2 门，更多课程上下滑动</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">今日课程 · 3 门</span><span class="spacer"></span><span class="ctx">第4周 · 周四</span></div>
+      <div class="rows">
+        <div class="rowcard bg-active">
+          <div class="col">
+            <div class="line"><span class="name">数据结构</span><span class="badge b-active">下一节</span><span class="time">08:00</span></div>
+            <div class="line"><span class="room">西2-102 · 1-2节</span><span class="time">09:45</span></div>
+          </div>
+        </div>
+        <div class="rowcard bg-upcoming">
+          <div class="col">
+            <div class="line"><span class="name">大学英语(IV)</span><span class="badge b-upcoming">未开始</span><span class="time">10:10</span></div>
+            <div class="line"><span class="room">外国语楼204 · 3-4节</span><span class="time">11:50</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>③ 下一节 + 未开始</b>：早间状态；「未开始」灰字弱化，仅「下一节」用紫字突出</div>
+  </div>
+
+  <div>
+    <div class="widget">
+      <div class="title"><span class="label">今日课程 · 2 门</span><span class="spacer"></span><span class="ctx">第4周 · 周一</span></div>
+      <div class="rows">
+        <div class="rowcard bg-finished">
+          <div class="col">
+            <div class="line"><span class="name">汇编语言</span><span class="badge b-finished">已上完</span><span class="time">14:30</span></div>
+            <div class="line"><span class="room">西综316 · 5-6节</span><span class="time">16:05</span></div>
+          </div>
+        </div>
+        <div class="rowcard bg-finished">
+          <div class="col">
+            <div class="line"><span class="name">文献检索</span><span class="badge b-finished">已上完</span><span class="time">16:25</span></div>
+            <div class="line"><span class="room">东图-631 · 7-8节</span><span class="time">17:15</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>④ 全部已上完（晚间）</b>：行卡全为浅蓝底、蓝徽标；空课日显示「今天没有课程」空态</div>
+  </div>
+
+</div>
+
+<div class="darkwrap">
+<h2>深色模式（行卡取 drawable-night 低透明近似）</h2>
+<div class="grid">
+
+  <div>
+    <div class="widget dark">
+      <div class="title"><span class="label">今日课程 · 2 门</span><span class="spacer"></span><span class="ctx">第4周 · 周三</span></div>
+      <div class="rows">
+        <div class="rowcard bg-finished">
+          <div class="col">
+            <div class="line"><span class="name">编译原理</span><span class="badge b-finished">已上完</span><span class="time">08:00</span></div>
+            <div class="line"><span class="room">西2-102 · 5-6节</span><span class="time">09:45</span></div>
+          </div>
+        </div>
+        <div class="rowcard bg-active">
+          <div class="col">
+            <div class="line"><span class="name">深度学习</span><span class="badge b-active">进行中</span><span class="time">10:10</span></div>
+            <div class="line"><span class="room">西2-501 · 7-8节</span><span class="time">11:50</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap darkcap"><b>①</b> 夜间：近黑卡底 + 低透明彩底行卡，文字换夜间 token</div>
+  </div>
+
+  <div>
+    <div class="widget dark">
+      <div class="title"><span class="label">今日课程 · 3 门</span><span class="spacer"></span><span class="ctx">第4周 · 周四</span></div>
+      <div class="rows">
+        <div class="rowcard bg-active">
+          <div class="col">
+            <div class="line"><span class="name">数据结构</span><span class="badge b-active">下一节</span><span class="time">08:00</span></div>
+            <div class="line"><span class="room">西2-102 · 1-2节</span><span class="time">09:45</span></div>
+          </div>
+        </div>
+        <div class="rowcard bg-upcoming">
+          <div class="col">
+            <div class="line"><span class="name">大学英语(IV)</span><span class="badge b-upcoming">未开始</span><span class="time">10:10</span></div>
+            <div class="line"><span class="room">外国语楼204 · 3-4节</span><span class="time">11:50</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap darkcap"><b>③</b> 夜间：下一节 + 未开始</div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>

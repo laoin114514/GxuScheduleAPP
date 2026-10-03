@@ -14,7 +14,6 @@ import com.cherry.wakeupschedule.MainActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
-import com.cherry.wakeupschedule.service.TimeTableManager
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,6 +26,10 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
     companion object {
         const val ACTION_REFRESH = "com.cherry.wakeupschedule.widget.ACTION_REFRESH"
         private const val WIDGET_COURSE_END_REQUEST_CODE = 10002
+
+        /** 上次通知 ListView 重载时的列表内容签名（进程级缓存；null 表示未知，首次必通知） */
+        @Volatile
+        private var lastListSignature: String? = null
         private const val WIDGET_PERIODIC_UPDATE_REQUEST_CODE = 10003
         private const val PERIODIC_UPDATE_INTERVAL = 15 * 60 * 1000L // 15分钟
 
@@ -41,11 +44,24 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
     @Suppress("DEPRECATION")
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (appWidgetId in appWidgetIds) updateAppWidget(context, appWidgetManager, appWidgetId)
-        // 通知 ListView 数据可能变化，重新拉取
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_today_courses)
+        // 仅当列表可见内容可能变化时才通知 ListView 重载（每次都通知会重置滚动条，导致右侧滑动条持续闪烁）
+        val signature = computeListSignature(context)
+        if (signature != lastListSignature) {
+            lastListSignature = signature
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_today_courses)
+        }
         scheduleNextCourseEndUpdate(context)
         schedulePeriodicUpdate(context)
     }
+
+    /**
+     * 列表可见内容的轻量签名：星期、周次、课程集合（id/名称/教室/节次），
+     * 以及每门课相对当前时刻的阶段标记（未开始/进行中/已上完的组合决定每行徽标）。
+     * 阶段标记只在某节课开始或结束的分钟边界变化，因此数据未变时不会触发重载。
+     */
+    /** 列表内容签名：抽到 WidgetListSignature 供 2×2 与 4×2 共用 */
+    private fun computeListSignature(context: Context): String =
+        WidgetListSignature.todaySignature(context)
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
@@ -137,12 +153,16 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             val settingsManager = SettingsManager(context)
             val calendar = Calendar.getInstance()
             val dayOfWeek = if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else calendar.get(Calendar.DAY_OF_WEEK) - 1
+            val currentWeek = CourseTimeUtils.getCurrentWeek(settingsManager)
 
-            views.setTextViewText(R.id.tv_widget_title, settingsManager.getCurrentSemester())
-            views.setTextViewText(R.id.tv_widget_date, "${calendar.get(Calendar.MONTH) + 1}.${calendar.get(Calendar.DAY_OF_MONTH)} ${arrayOf("", "周一", "周二", "周三", "周四", "周五", "周六", "周日")[dayOfWeek]}")
-            views.setTextViewText(R.id.tv_widget_week, "第${calculateCurrentWeek(settingsManager)}周")
+            val todayCount = CourseDataManager.getInstance(context).getAllCourses().count {
+                it.dayOfWeek == dayOfWeek && it.isActiveInWeek(currentWeek)
+            }
+            val weekLabel = arrayOf("", "周一", "周二", "周三", "周四", "周五", "周六", "周日")[dayOfWeek]
+            views.setTextViewText(R.id.tv_widget_header, "今日课程 · $todayCount 门")
+            views.setTextViewText(R.id.tv_widget_day, weekLabel)
 
-            // 绑定 ListView 到 RemoteViewsService，显示完整今日课程列表（包含已结束）
+            // 绑定 ListView 到 RemoteViewsService，显示完整今日课程列表（含已结束，标注状态）
             // 使用 data Uri 让系统识别为唯一绑定
             val todayIntent = Intent(context, WidgetCourseListService::class.java).apply {
                 putExtra(WidgetCourseListService.EXTRA_SOURCE, WidgetCourseListService.SOURCE_TODAY)
@@ -158,7 +178,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
                 Intent(context, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 },
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             views.setPendingIntentTemplate(R.id.lv_today_courses, clickIntentTemplate)
         } catch (e: Exception) { e.printStackTrace() }
@@ -171,11 +191,11 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             val dayOfWeek = if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else calendar.get(Calendar.DAY_OF_WEEK) - 1
             val currentTimeSeconds = calendar.get(Calendar.HOUR_OF_DAY) * 3600 + calendar.get(Calendar.MINUTE) * 60 + calendar.get(Calendar.SECOND)
             val currentTimeMinutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
-            val currentWeek = calculateCurrentWeek(SettingsManager(context))
+            val currentWeek = CourseTimeUtils.getCurrentWeek(SettingsManager(context))
 
             val todayEndCourses = CourseDataManager.getInstance(context).getAllCourses()
                 .filter { it.dayOfWeek == dayOfWeek && it.isActiveInWeek(currentWeek) }
-                .mapNotNull { val end = getCourseEndTimeInMinutes(context, it); if (end > currentTimeMinutes) end to it else null }
+                .mapNotNull { val end = CourseTimeUtils.getEndMinutes(context, it); if (end > currentTimeMinutes) end to it else null }
                 .sortedBy { it.first }
 
             if (todayEndCourses.isEmpty()) {
@@ -210,17 +230,6 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, ScheduleWidgetProvider::class.java))
         if (appWidgetIds.isNotEmpty()) onUpdate(context, appWidgetManager, appWidgetIds)
-    }
-
-    private fun getCourseEndTimeInMinutes(context: Context, course: com.cherry.wakeupschedule.model.Course): Int = try {
-        val slot = TimeTableManager.getInstance(context).getTimeSlots().find { it.node == course.endTime }
-        if (slot != null) { val p = slot.endTime.split(":"); p[0].toInt() * 60 + p[1].toInt() } else (8 + course.endTime) * 60 + 45
-    } catch (e: Exception) { (8 + course.endTime) * 60 + 45 }
-
-    private fun calculateCurrentWeek(settingsManager: SettingsManager): Int {
-        val startDate = settingsManager.getSemesterStartDate()
-        if (startDate == 0L) return settingsManager.getDefaultWeek()
-        return (((System.currentTimeMillis() - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
     }
 
 

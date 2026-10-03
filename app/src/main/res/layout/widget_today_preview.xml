@@ -1,60 +1,181 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 今日课程概览的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@android:color/white"
+    android:background="@drawable/bg_widget_card"
     android:padding="10dp">
 
-    <TextView
+    <!-- 头部：左固定标签 + 右周X（与 4×2 变体同构） -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="本学期  今日  第1周"
-        android:textSize="@dimen/text_label"
-        android:textColor="#666666" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="今日课程 · 3 门"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="周三"
+            android:textSize="@dimen/text_caption"
+            android:textColor="@color/widget_text_secondary"
+            android:maxLines="1" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         android:orientation="vertical">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="● 高等数学"
-            android:textSize="@dimen/text_caption"
-            android:textColor="#E57373"
-            android:paddingTop="4dp" />
+            android:orientation="vertical"
+            android:background="@drawable/widget_row_finished"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="  教学楼A101"
-            android:textSize="@dimen/text_label"
-            android:textColor="#888888" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="● 大学英语"
-            android:textSize="@dimen/text_caption"
-            android:textColor="#64B5F6"
-            android:paddingTop="4dp" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="08:00 软件工程"
+                    android:textSize="@dimen/text_caption"
+                    android:textColor="@color/widget_text_title"
+                    android:textStyle="bold"
+                    android:maxLines="1" />
 
-        <TextView
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="已上完"
+                    android:textSize="@dimen/text_micro"
+                    android:textColor="@color/widget_badge_finished" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="君武 301 · 1-2节"
+                android:textSize="@dimen/text_label"
+                android:textColor="@color/widget_text_secondary"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="  教学楼B205"
-            android:textSize="@dimen/text_label"
-            android:textColor="#888888" />
+            android:layout_marginTop="4dp"
+            android:orientation="vertical"
+            android:background="@drawable/widget_row_active"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="10:10 大学英语"
+                    android:textSize="@dimen/text_caption"
+                    android:textColor="@color/widget_text_title"
+                    android:textStyle="bold"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="下一节"
+                    android:textSize="@dimen/text_micro"
+                    android:textColor="@color/widget_badge_active"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="外国语 204 · 3-4节"
+                android:textSize="@dimen/text_label"
+                android:textColor="@color/widget_text_secondary"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="vertical"
+            android:background="@drawable/widget_row_upcoming"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="14:30 算法设计"
+                    android:textSize="@dimen/text_caption"
+                    android:textColor="@color/widget_text_title"
+                    android:textStyle="bold"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="未开始"
+                    android:textSize="@dimen/text_micro"
+                    android:textColor="@color/widget_badge_upcoming" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="计电 105 · 5-6节"
+                android:textSize="@dimen/text_label"
+                android:textColor="@color/widget_text_secondary"
+                android:maxLines="1" />
+        </LinearLayout>
+
     </LinearLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="今日课程"
-        android:textSize="@dimen/text_label"
-        android:textColor="#999999" />
 
 </LinearLayout>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 周视图课程块（浅色）：与应用内课表同画法——课程色 50% 填充 + 50% 白描边（WeekPagerAdapter alpha=128, 边框 0x80FFFFFF） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#802196F3" />
+    <stroke android:width="1dp" android:color="#80FFFFFF" />
+    <corners android:radius="5dp" />
+</shape>

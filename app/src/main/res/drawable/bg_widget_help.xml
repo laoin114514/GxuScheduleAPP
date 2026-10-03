@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小组件中心右下角「?」的圆底：浅色用与卡片同色的纯白，
+     页面渐变本身是蓝灰调，用默认的 bg_icon_circle 会糊进背景 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="?attr/colorSurfaceContainerLowest" />
+</shape>

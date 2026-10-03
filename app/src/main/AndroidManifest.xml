@@ -40,6 +40,7 @@
         <activity android:name=".TimeTableEditActivity" />
         <activity android:name=".AppearanceActivity" />
         <activity android:name=".FontSizeActivity" />
+        <activity android:name=".WidgetCenterActivity" />
         <activity android:name=".AboutActivity" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".BindJwxtActivity" />
@@ -64,6 +65,22 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_today_info" />
+        </receiver>
+
+        <!-- 今日课程概览 4×2 变体（与 2×2 并存，样式同款、只做布局扩展） -->
+        <receiver
+            android:name=".widget.ScheduleWideWidgetProvider"
+            android:exported="true"
+            android:label="今日课程 4×2">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.cherry.wakeupschedule.widget.wide.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_today_wide_info" />
         </receiver>
 
         <!-- 桌面小部件 - 极简小组件 -->
@@ -97,6 +114,48 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_upcoming_days_info" />
         </receiver>
+
+        <!-- 桌面小部件 - 一周课程 -->
+        <receiver
+            android:name=".widget.WeekViewWidgetProvider"
+            android:exported="true"
+            android:label="一周课程">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.cherry.wakeupschedule.widget.weekview.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_week_view_info" />
+        </receiver>
+
+        <!-- 桌面小部件 - 下一门课提醒 -->
+        <receiver
+            android:name=".widget.NextCourseWidgetProvider"
+            android:exported="true"
+            android:label="下一门课">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.cherry.wakeupschedule.widget.next.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_next_course_info" />
+        </receiver>
+
+        <!-- 下一门课小组件周期性更新接收器 -->
+        <receiver
+            android:name=".widget.NextCoursePeriodicReceiver"
+            android:exported="false" />
+
+        <!-- 下一门课小组件状态切换接收器（上课/下课/明天开课精确时刻） -->
+        <receiver
+            android:name=".widget.NextCourseTransitionReceiver"
+            android:exported="false" />
 
         <!-- 小组件定时更新接收器 -->
         <receiver
@@ -132,6 +191,11 @@
             android:name=".widget.MinimalWidgetCourseEndReceiver"
             android:exported="false" />
 
+        <!-- 小组件一键添加成功回调（requestPinAppWidget 的 successCallback，桌面放置完成后发出） -->
+        <receiver
+            android:name=".WidgetPinResultReceiver"
+            android:exported="false" />
+
         <!-- Minimal小组件短周期刷新接收器（API < 24 低版本保底） -->
         <receiver
             android:name=".widget.MinimalWidgetTickReceiver"
@@ -153,7 +217,8 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.DATE_CHANGED" />
-                <action android:name="android.intent.action.TIME_CHANGED" />
+                <!-- 系统改时间发的是 TIME_SET（Intent.ACTION_TIME_CHANGED 常量的值即 TIME_SET），勿写成 TIME_CHANGED -->
+                <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>

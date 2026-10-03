@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 今日课程概览 4×2（2026-10 新增变体，与 2×2 并存；样式 token 全部沿用 2×2，只做布局扩展）：
+     标题行「今日课程 · N 门 | 第N周 · 周X」+ 彩底行卡 ListView（双行：课名+徽标+起时间 / 教室·节次+止时间），
+     110dp 可见约 2 门，可上下滑动。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_widget_card"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tv_wide_header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="今日课程 · 3 门"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tv_wide_day"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="第4周 · 周三"
+            android:textSize="@dimen/text_caption"
+            android:textColor="@color/widget_text_secondary"
+            android:maxLines="1" />
+    </LinearLayout>
+
+    <!-- 课程列表 ListView：支持上下滑动；行间距用透明 divider 实现，滚动条配置与 2×2 一致 -->
+    <ListView
+        android:id="@+id/lv_wide_courses"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="4dp"
+        android:minHeight="60dp"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="4dp"
+        android:scrollbars="vertical"
+        android:scrollbarSize="2dp"
+        android:fadeScrollbars="true"
+        android:scrollbarFadeDuration="500"
+        android:scrollbarDefaultDelayBeforeFade="0"
+        android:scrollbarStyle="insideInset"
+        android:overScrollMode="never"
+        android:listSelector="@android:color/transparent" />
+
+    <!-- 空态：setEmptyView 指向本视图 -->
+    <TextView
+        android:id="@android:id/empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="今天没有课程"
+        android:textSize="@dimen/text_caption"
+        android:textColor="@color/widget_text_secondary"
+        android:visibility="gone" />
+
+</LinearLayout>

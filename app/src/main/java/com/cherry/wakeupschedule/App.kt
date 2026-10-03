@@ -12,9 +12,11 @@ import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import com.cherry.wakeupschedule.service.CourseDataManager
+import com.cherry.wakeupschedule.widget.ScheduleWideWidgetProvider
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
+import com.cherry.wakeupschedule.widget.NextCourseWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
 import com.cherry.wakeupschedule.widget.WidgetMidnightReceiver
@@ -134,7 +136,9 @@ class App : Application() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 context ?: return
                 ScheduleWidgetProvider.triggerUpdate(context)
+                ScheduleWideWidgetProvider.triggerUpdate(context)
                 MinimalWidgetProvider.triggerUpdate(context)
+                NextCourseWidgetProvider.triggerUpdate(context)
             }
         }
         registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK), RECEIVER_NOT_EXPORTED)
@@ -186,8 +190,8 @@ class App : Application() {
         secondTickRunnable = object : Runnable {
             override fun run() {
                 if (!isScreenOn) return
+                // 仅倒计时组件需要逐秒跳字；其余组件由分钟 tick / TIME_SET / 周期与切换闹钟覆盖
                 MinimalWidgetProvider.triggerUpdate(this@App)
-                ScheduleWidgetProvider.triggerUpdate(this@App)
                 secondTickHandler.postDelayed(this, 1000L)
             }
         }

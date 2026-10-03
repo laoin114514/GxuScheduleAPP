@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小组件中心 · 第 3 页「一周课程 4×4」 -->
+<com.cherry.wakeupschedule.ui.widget.VerticalScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 页头：标题与总述不进卡片，与其他页同构 -->
+        <TextView
+            style="@style/AppSectionHeader"
+            android:paddingTop="4dp"
+            android:paddingBottom="2dp"
+            android:text="一周课程" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="周一至周日迷你课表，课程块按节次排列，当日高亮。"
+            android:textSize="@dimen/text_caption"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/AppSectionCard"
+            android:layout_marginTop="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="4×4"
+                    android:textSize="@dimen/text_caption"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary" />
+
+                <!-- 4×4 预览：宽度同「下一门课提醒」的 4×2 预览，高度两倍 -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="344dp"
+                    android:layout_marginTop="12dp">
+
+                    <include
+                        android:id="@+id/preview_widget"
+                        layout="@layout/widget_week_view_preview" />
+
+                </FrameLayout>
+
+                <include
+                    android:id="@+id/footer_add"
+                    layout="@layout/widget_center_add_footer" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</com.cherry.wakeupschedule.ui.widget.VerticalScrollView>

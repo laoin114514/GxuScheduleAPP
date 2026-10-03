@@ -18,6 +18,7 @@ import com.cherry.wakeupschedule.FontSizeActivity
 import com.cherry.wakeupschedule.ProfileActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.TimeTableEditActivity
+import com.cherry.wakeupschedule.WidgetCenterActivity
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SemesterManager
@@ -108,6 +109,10 @@ class ProfileFragment : Fragment() {
 
         view.findViewById<View>(R.id.item_time_table).setOnClickListener {
             startActivity(Intent(requireContext(), TimeTableEditActivity::class.java))
+        }
+
+        view.findViewById<View>(R.id.item_widget).setOnClickListener {
+            startActivity(Intent(requireContext(), WidgetCenterActivity::class.java))
         }
 
         view.findViewById<View>(R.id.item_about).setOnClickListener {

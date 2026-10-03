@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  桌面小组件配色 token。
+  小组件布局由桌面进程以本 App 资源渲染，night 限定符跟随系统深色模式；
+  代码里 setTextColor 等动态取色统一走 widget/WidgetTheme.kt 兜底。
+  2026-10：卡片背景改为不透明并取课表页渐变亮端色（= 底部导航同色），
+  文字/强调色对齐应用主题「海洋蓝」调色板的角色色（onSurface/onSurfaceVariant/
+  outline/primary；调色板当前不可被用户切换，故直接写死）。
+-->
+<resources>
+    <!-- 容器卡片：不透明，课表页渐变亮端色（浅 #C4D4E4→#DDE4ED 的末端） -->
+    <color name="widget_card_bg">#DDE4ED</color>
+    <color name="widget_card_stroke">#0F000000</color>
+
+    <!-- 文字三级：标题 / 次要 / 弱化（onSurface / onSurfaceVariant / outline） -->
+    <color name="widget_text_title">#1A1C1E</color>
+    <color name="widget_text_secondary">#43474E</color>
+    <color name="widget_text_weak">#73777F</color>
+
+    <!-- 主强调（倒计时数字、当日高亮）：主题 primary -->
+    <color name="widget_accent">#1565C0</color>
+
+    <!-- 今日概览状态徽标字色（状态语义色，不随主题） -->
+    <color name="widget_badge_finished">#2563EB</color>
+    <color name="widget_badge_active">#9333EA</color>
+    <color name="widget_badge_upcoming">#94A3B8</color>
+
+    <!-- 周矩阵日期格文字色（无课日标签 = outline） -->
+    <color name="widget_day_text_today">#FFFFFF</color>
+    <color name="widget_day_text_has">#1E40AF</color>
+    <color name="widget_day_text_empty">#73777F</color>
+
+    <!-- 下一门课提醒的时间徽标 -->
+    <color name="widget_pill_text_amber">#92400E</color>
+    <color name="widget_pill_text_gray">#73777F</color>
+
+    <!-- 下一门课提醒的课程行竖线：无课/失败占位的中性灰（课程态用课表页课程色，不随主题） -->
+    <color name="widget_bar_neutral">#94A3B8</color>
+
+    <!-- 周视图课程块教室行文字（白 70%，主题无关） -->
+    <color name="widget_chip_room_text">#B3FFFFFF</color>
+</resources>

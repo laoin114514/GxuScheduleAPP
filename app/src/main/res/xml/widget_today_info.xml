@@ -10,5 +10,6 @@
     android:initialLayout="@layout/widget_today_schedule"
     android:previewLayout="@layout/widget_today_preview"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen">
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_today_description">
 </appwidget-provider>

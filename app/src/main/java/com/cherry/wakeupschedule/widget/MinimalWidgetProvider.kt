@@ -18,10 +18,13 @@ import com.cherry.wakeupschedule.service.TimeTableManager
 import java.util.Calendar
 
 /**
- * 最小化小组件提供者
- * 显示下课倒计时
- * - API 24+ 使用系统 Chronometer 实现硬件级倒计时，进程被杀也不影响
- * - API < 24 使用短周期精确闹钟保底刷新
+ * 下课倒计时小组件提供者（2×2）。
+ *
+ * 布局：顶部状态（上课中 / 当前无课）贴顶，其余 5 行竖向居中 ——
+ * 时间+说明 / 倒计时 / 课名 / 教室 / 教师。
+ * 有进行中的课 → 距下课倒计时；今天还有下一节 → 距上课倒计时。
+ * 倒计时走系统 Chronometer（进程被杀也能继续走秒），格式由 App 指定以保证恒为两位时分秒；
+ * 归零时由安全闹钟刷新翻状态，跨整点时由格式闹钟回来重设格式。
  */
 class MinimalWidgetProvider : AppWidgetProvider() {
 
@@ -31,8 +34,10 @@ class MinimalWidgetProvider : AppWidgetProvider() {
         private const val WIDGET_MINIMAL_COURSE_END_REQUEST_CODE = 10006
         private const val WIDGET_MINIMAL_TICK_REQUEST_CODE = 10007
         private const val WIDGET_MINIMAL_SAFETY_REQUEST_CODE = 10008
+
+        /** 跨整点重设 Chronometer 格式（与到点翻状态的安全闹钟并存，互不覆盖） */
+        private const val WIDGET_MINIMAL_FORMAT_REQUEST_CODE = 10011
         private const val MINIMAL_PERIODIC_UPDATE_INTERVAL = 15 * 60 * 1000L
-        private const val MINIMAL_TICK_INTERVAL = 30 * 1000L
 
         /**
          * 触发小组件更新
@@ -72,6 +77,7 @@ class MinimalWidgetProvider : AppWidgetProvider() {
             cancelMinimalCourseEndUpdate(context)
             cancelMinimalTick(context)
             cancelCountdownSafetyUpdate(context)
+            cancelCountdownFormatUpdate(context)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -265,8 +271,10 @@ class MinimalWidgetProvider : AppWidgetProvider() {
     }
 
     /**
-     * 更新小组件内容
-     * API 24+ 使用系统 Chronometer 实现硬件级倒计时，即使进程被杀也能继续走
+     * 更新小组件内容。
+     * 顶部状态贴顶（上课中 / 当前无课），其余 5 行竖向居中：
+     * 时间+说明（"16:05 下课，距下课还有"）/ 倒计时 / 课名 / 教室 / 教师。
+     * 进行中 → 距下课倒计时；今天还有下一节 → 距上课倒计时；都没课 → 今天没课 / 今日已结束。
      */
     private fun updateWidgetContent(context: Context, views: RemoteViews) {
         try {
@@ -295,99 +303,161 @@ class MinimalWidgetProvider : AppWidgetProvider() {
                 currentTime >= startMinutes && currentTime < endMinutes
             }
 
-            when {
-                currentCourse != null -> {
-                    views.setTextViewText(R.id.tv_widget_title, "下课倒计时")
-                    views.setTextViewText(R.id.tv_course_name, currentCourse.name)
-                    views.setTextViewText(R.id.tv_course_time, "后下课")
-
-                    val endSeconds = getCourseEndMinutes(context, currentCourse) * 60
-                    val remainingSeconds = (endSeconds - currentTimeSeconds).coerceAtLeast(0)
-                    val remainingMillis = remainingSeconds * 1000L
-
-                    if (remainingSeconds < 60) {
-                        views.setViewVisibility(R.id.chronometer_countdown, android.view.View.GONE)
-                        views.setViewVisibility(R.id.tv_countdown, android.view.View.VISIBLE)
-                        val mins = remainingMillis / 60000
-                        val secs = (remainingMillis % 60000) / 1000
-                        views.setTextViewText(R.id.tv_countdown, "%02d:%02d".format(mins, secs))
-                        cancelMinimalTick(context)
-                        // 安全更新在倒计时归零时触发，避免显示负数
-                        scheduleCountdownSafetyUpdate(context, remainingMillis.coerceAtLeast(1000L))
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        views.setViewVisibility(R.id.tv_countdown, android.view.View.GONE)
-                        views.setViewVisibility(R.id.chronometer_countdown, android.view.View.VISIBLE)
-                        views.setChronometerCountDown(R.id.chronometer_countdown, true)
-                        views.setChronometer(
-                            R.id.chronometer_countdown,
-                            SystemClock.elapsedRealtime() + remainingMillis,
-                            "%s",
-                            true
-                        )
-                        cancelMinimalTick(context)
-                        // Chronometer 归零后会继续走成负数，安排安全更新在倒计时归零时刷新小组件
-                        scheduleCountdownSafetyUpdate(context, remainingMillis)
-                    } else {
-                        views.setViewVisibility(R.id.chronometer_countdown, android.view.View.GONE)
-                        views.setViewVisibility(R.id.tv_countdown, android.view.View.VISIBLE)
-                        val mins = remainingMillis / 60000
-                        val secs = (remainingMillis % 60000) / 1000
-                        views.setTextViewText(R.id.tv_countdown, "%02d:%02d".format(mins, secs))
-                        scheduleMinimalTick(context)
-                        // 安全更新在倒计时归零时触发，确保课程结束时立即刷新
-                        scheduleCountdownSafetyUpdate(context, remainingMillis)
-                    }
-                }
-                else -> {
-                    views.setTextViewText(R.id.tv_widget_title, "下课倒计时")
-                    views.setTextViewText(R.id.tv_course_name, "当前没课")
-                    views.setTextViewText(R.id.tv_course_time, "")
-                    views.setViewVisibility(R.id.chronometer_countdown, android.view.View.GONE)
-                    views.setViewVisibility(R.id.tv_countdown, android.view.View.VISIBLE)
-                    views.setTextViewText(R.id.tv_countdown, "--")
+            if (currentCourse != null) {
+                showClassStatus(context, views, inClass = true)
+                views.setTextViewText(R.id.tv_course_label, currentCourse.name)
+                showCourseTime(context, views, currentCourse, isEnd = true)
+                showClassroom(views, currentCourse.classroom)
+                showTeacher(views, currentCourse.teacher)
+                showCountdownTo(context, views, getCourseEndMinutes(context, currentCourse), currentTimeSeconds)
+            } else {
+                val nextCourse = todayCourses.firstOrNull { getCourseStartMinutes(context, it) > currentTime }
+                if (nextCourse != null) {
+                    showClassStatus(context, views, inClass = false)
+                    views.setTextViewText(R.id.tv_course_label, nextCourse.name)
+                    showCourseTime(context, views, nextCourse, isEnd = false)
+                    showClassroom(views, nextCourse.classroom)
+                    showTeacher(views, nextCourse.teacher)
+                    showCountdownTo(context, views, getCourseStartMinutes(context, nextCourse), currentTimeSeconds)
+                } else {
+                    showClassStatus(context, views, inClass = false)
+                    views.setTextViewText(
+                        R.id.tv_course_label,
+                        if (todayCourses.isEmpty()) "今天没课" else "今日已结束"
+                    )
+                    hideCourseDetail(views)
                     cancelMinimalTick(context)
                     cancelCountdownSafetyUpdate(context)
+                    cancelCountdownFormatUpdate(context)
                 }
             }
         } catch (e: Exception) {
-            views.setTextViewText(R.id.tv_widget_title, "下课倒计时")
-            views.setTextViewText(R.id.tv_course_name, "加载失败")
-            views.setTextViewText(R.id.tv_course_time, "")
-            views.setViewVisibility(R.id.chronometer_countdown, android.view.View.GONE)
-            views.setViewVisibility(R.id.tv_countdown, android.view.View.VISIBLE)
-            views.setTextViewText(R.id.tv_countdown, "--")
+            views.setViewVisibility(R.id.tv_class_status, android.view.View.GONE)
+            views.setTextViewText(R.id.tv_course_label, "加载失败")
+            hideCourseDetail(views)
+            showTextCountdown(views, "--")
+        }
+    }
+
+    /** 顶部状态：上课中（主色）/ 当前无课（弱色），两个有课状态一眼区分 */
+    private fun showClassStatus(context: Context, views: RemoteViews, inClass: Boolean) {
+        views.setViewVisibility(R.id.tv_class_status, android.view.View.VISIBLE)
+        views.setTextViewText(R.id.tv_class_status, if (inClass) "上课中" else "当前无课")
+        views.setTextColor(
+            R.id.tv_class_status,
+            context.getColor(if (inClass) R.color.widget_accent else R.color.widget_text_weak)
+        )
+    }
+
+    /** 无课 / 异常时收起课程明细行（时间、教室、教师、倒计时） */
+    private fun hideCourseDetail(views: RemoteViews) {
+        views.setViewVisibility(R.id.tv_course_time, android.view.View.GONE)
+        views.setViewVisibility(R.id.ll_location, android.view.View.GONE)
+        views.setViewVisibility(R.id.tv_course_teacher, android.view.View.GONE)
+        views.setViewVisibility(R.id.chronometer_countdown, android.view.View.GONE)
+        views.setViewVisibility(R.id.tv_countdown, android.view.View.GONE)
+    }
+
+    /**
+     * 时间行（倒计时上方）："{时间} 下课，距下课还有" / "{时间} 上课，距上课还有"。
+     * 时间优先取时间表的 HH:mm，缺失时退回「第 N 节」（与今日课程列表同口径）。
+     */
+    private fun showCourseTime(
+        context: Context,
+        views: RemoteViews,
+        course: com.cherry.wakeupschedule.model.Course,
+        isEnd: Boolean
+    ) {
+        val node = if (isEnd) course.endTime else course.startTime
+        val slot = try {
+            TimeTableManager.getInstance(context).getTimeSlots().find { it.node == node }
+        } catch (e: Exception) {
+            null
+        }
+        val clock = if (isEnd) slot?.endTime else slot?.startTime
+        val timeText = if (!clock.isNullOrBlank()) clock else "第${node}节"
+        val action = if (isEnd) "下课" else "上课"
+        val countdownHint = if (isEnd) "距下课还有" else "距上课还有"
+        views.setTextViewText(R.id.tv_course_time, "$timeText $action，$countdownHint")
+        views.setViewVisibility(R.id.tv_course_time, android.view.View.VISIBLE)
+    }
+
+    /** 教室行：为空时整行隐藏，不留孤零零的定位图标 */
+    private fun showClassroom(views: RemoteViews, classroom: String) {
+        if (classroom.isBlank()) {
+            views.setViewVisibility(R.id.ll_location, android.view.View.GONE)
+        } else {
+            views.setViewVisibility(R.id.ll_location, android.view.View.VISIBLE)
+            views.setTextViewText(R.id.tv_course_location, classroom)
+        }
+    }
+
+    /** 教师行：为空时整行隐藏 */
+    private fun showTeacher(views: RemoteViews, teacher: String) {
+        if (teacher.isBlank()) {
+            views.setViewVisibility(R.id.tv_course_teacher, android.view.View.GONE)
+        } else {
+            views.setViewVisibility(R.id.tv_course_teacher, android.view.View.VISIBLE)
+            views.setTextViewText(R.id.tv_course_teacher, teacher)
         }
     }
 
     /**
-     * 为低版本 Android 安排短周期刷新（每30秒），弥补无 Chronometer countdown 的缺陷
+     * 距目标时刻（当天分钟数）的秒级倒计时，走系统 Chronometer（进程被杀也能继续走秒）。
+     *
+     * Chronometer 不补前导零（<1h 显示 "51:15"、≥1h 显示 "1:05:30"），所以按剩余时长指定格式，
+     * 让渲染恒为 8 个字符：<1h "00:%s"、1–9h "0%s"、≥10h "%s"。
+     * 它自己不会换格式，因此除"到点翻状态"的安全闹钟外，还要在跨 1 小时 / 10 小时整点时回来重设。
      */
-    private fun scheduleMinimalTick(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) return
-        try {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                WIDGET_MINIMAL_TICK_REQUEST_CODE,
-                Intent(context, MinimalWidgetTickReceiver::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    System.currentTimeMillis() + MINIMAL_TICK_INTERVAL,
-                    pendingIntent
-                )
-            } else {
-                alarmManager.set(
-                    AlarmManager.RTC_WAKEUP,
-                    System.currentTimeMillis() + MINIMAL_TICK_INTERVAL,
-                    pendingIntent
-                )
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    private fun showCountdownTo(
+        context: Context,
+        views: RemoteViews,
+        targetMinutes: Int,
+        currentTimeSeconds: Int
+    ) {
+        val remainingSeconds = (targetMinutes * 60 - currentTimeSeconds).coerceAtLeast(0)
+        val remainingMillis = remainingSeconds * 1000L
+        val hours = remainingSeconds / 3600
+        val format = when {
+            hours == 0 -> "00:%s"
+            hours < 10 -> "0%s"
+            else -> "%s"
         }
+
+        views.setViewVisibility(R.id.tv_countdown, android.view.View.GONE)
+        views.setViewVisibility(R.id.chronometer_countdown, android.view.View.VISIBLE)
+        views.setChronometerCountDown(R.id.chronometer_countdown, true)
+        views.setChronometer(
+            R.id.chronometer_countdown,
+            SystemClock.elapsedRealtime() + remainingMillis,
+            format,
+            true
+        )
+
+        // 归零时刷新并按新状态重渲染（Chronometer 归零后会继续走成负数）
+        scheduleCountdownSafetyUpdate(context, remainingMillis.coerceAtLeast(1000L))
+
+        // 跨过整点（1 小时 / 10 小时）时回来重设格式，否则会残留旧格式的数字
+        val boundarySeconds = when {
+            hours in 1..9 -> remainingSeconds - 3600
+            hours >= 10 -> remainingSeconds - 10 * 3600
+            else -> -1
+        }
+        if (boundarySeconds >= 0) {
+            scheduleCountdownFormatUpdate(context, (boundarySeconds + 1) * 1000L)
+        } else {
+            cancelCountdownFormatUpdate(context)
+        }
+        cancelMinimalTick(context)
+    }
+
+    /**
+     * 以静态文本显示倒计时位（无课 / 异常态）
+     */
+    private fun showTextCountdown(views: RemoteViews, text: String) {
+        views.setViewVisibility(R.id.chronometer_countdown, android.view.View.GONE)
+        views.setViewVisibility(R.id.tv_countdown, android.view.View.VISIBLE)
+        views.setTextViewText(R.id.tv_countdown, text)
     }
 
     /**
@@ -461,65 +531,63 @@ class MinimalWidgetProvider : AppWidgetProvider() {
     }
 
     /**
-     * 获取课程开始时间（分钟）
+     * 跨整点重设 Chronometer 格式的闹钟（复用安全刷新接收器，靠 request code 与到点闹钟区分）
      */
-    private fun getCourseStartMinutes(context: Context, course: com.cherry.wakeupschedule.model.Course): Int {
-        return try {
-            val timeTableManager = TimeTableManager.getInstance(context)
-            val timeSlots = timeTableManager.getTimeSlots()
-            val startSlot = timeSlots.find { it.node == course.startTime }
-            if (startSlot != null) {
-                val parts = startSlot.startTime.split(":")
-                if (parts.size == 2) {
-                    parts[0].toInt() * 60 + parts[1].toInt()
-                } else {
-                    (8 + course.startTime) * 60
-                }
-            } else {
-                (8 + course.startTime) * 60
+    private fun scheduleCountdownFormatUpdate(context: Context, delayMillis: Long) {
+        try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                WIDGET_MINIMAL_FORMAT_REQUEST_CODE,
+                Intent(context, MinimalWidgetSafetyReceiver::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.cancel(pendingIntent)
+            if (delayMillis > 0) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    System.currentTimeMillis() + delayMillis,
+                    pendingIntent
+                )
             }
         } catch (e: Exception) {
-            (8 + course.startTime) * 60
+            e.printStackTrace()
         }
     }
+
+    /**
+     * 取消跨整点的格式更新
+     */
+    private fun cancelCountdownFormatUpdate(context: Context) {
+        try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                WIDGET_MINIMAL_FORMAT_REQUEST_CODE,
+                Intent(context, MinimalWidgetSafetyReceiver::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.cancel(pendingIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * 获取课程开始时间（分钟）
+     */
+    private fun getCourseStartMinutes(context: Context, course: com.cherry.wakeupschedule.model.Course): Int =
+        CourseTimeUtils.getStartMinutes(context, course)
 
     /**
      * 获取课程结束时间（分钟）
      */
-    private fun getCourseEndMinutes(context: Context, course: com.cherry.wakeupschedule.model.Course): Int {
-        return try {
-            val timeTableManager = TimeTableManager.getInstance(context)
-            val timeSlots = timeTableManager.getTimeSlots()
-            val endSlot = timeSlots.find { it.node == course.endTime }
-            if (endSlot != null) {
-                val parts = endSlot.endTime.split(":")
-                if (parts.size == 2) {
-                    parts[0].toInt() * 60 + parts[1].toInt()
-                } else {
-                    (8 + course.endTime) * 60 + 45
-                }
-            } else {
-                (8 + course.endTime) * 60 + 45
-            }
-        } catch (e: Exception) {
-            (8 + course.endTime) * 60 + 45
-        }
-    }
+    private fun getCourseEndMinutes(context: Context, course: com.cherry.wakeupschedule.model.Course): Int =
+        CourseTimeUtils.getEndMinutes(context, course)
 
     /**
      * 计算当前周
      */
-    private fun calculateCurrentWeek(settingsManager: SettingsManager): Int {
-        val semesterStartDate = settingsManager.getSemesterStartDate()
-        if (semesterStartDate == 0L) {
-            return settingsManager.getDefaultWeek()
-        }
-
-        val now = System.currentTimeMillis()
-        val diffMillis = now - semesterStartDate
-        val diffDays = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
-        val week = (diffDays / 7) + 1
-
-        return week.coerceIn(1, settingsManager.getTotalWeeks())
-    }
+    private fun calculateCurrentWeek(settingsManager: SettingsManager): Int =
+        CourseTimeUtils.getCurrentWeek(settingsManager)
 }
