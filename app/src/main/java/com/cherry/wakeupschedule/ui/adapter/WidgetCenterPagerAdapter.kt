@@ -30,9 +30,15 @@ data class WidgetPage(
     val pickerLabel: String,
     val providerClass: Class<*>,
     @LayoutRes val previewLayoutRes: Int,
+    /** 尺寸徽标（如 "4×2"），拼进「已添加到桌面」卡的展示名 */
+    val sizeLabel: String = "",
     /** 同页附带的次变体（如今日课程概览页同时提供 4×2 主推与 2×2 紧凑版两个添加入口） */
     val smallVariant: WidgetPage? = null
-)
+) {
+    /** 出提示卡用的展示名：如「今日课程（4×2）」 */
+    val displayName: String
+        get() = if (sizeLabel.isBlank()) pickerLabel else "$pickerLabel（$sizeLabel）"
+}
 
 /**
  * 小组件中心的分页适配器：4 个小组件各占一页，进入即落在第 1 页「下课倒计时」。
@@ -49,23 +55,28 @@ class WidgetCenterPagerAdapter(
     val widgetPages: List<WidgetPage> = listOf(
         WidgetPage(
             "下课倒计时", "下课倒计时",
-            MinimalWidgetProvider::class.java, R.layout.widget_minimal_preview
+            MinimalWidgetProvider::class.java, R.layout.widget_minimal_preview,
+            sizeLabel = "2×2"
         ),
         WidgetPage(
             "今日课程概览", "今日课程",
             ScheduleWideWidgetProvider::class.java, R.layout.widget_today_wide_preview,
+            sizeLabel = "4×2",
             smallVariant = WidgetPage(
                 "今日课程概览", "今日课程",
-                ScheduleWidgetProvider::class.java, R.layout.widget_today_preview
+                ScheduleWidgetProvider::class.java, R.layout.widget_today_preview,
+                sizeLabel = "2×2"
             )
         ),
         WidgetPage(
             "一周课程", "一周课程",
-            WeekViewWidgetProvider::class.java, R.layout.widget_week_view_preview
+            WeekViewWidgetProvider::class.java, R.layout.widget_week_view_preview,
+            sizeLabel = "4×4"
         ),
         WidgetPage(
             "下一门课提醒", "下一门课",
-            NextCourseWidgetProvider::class.java, R.layout.widget_next_course_preview
+            NextCourseWidgetProvider::class.java, R.layout.widget_next_course_preview,
+            sizeLabel = "4×2"
         ),
     )
 

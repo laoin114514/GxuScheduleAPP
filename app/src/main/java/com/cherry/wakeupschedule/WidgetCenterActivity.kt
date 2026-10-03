@@ -1,7 +1,10 @@
 package com.cherry.wakeupschedule
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
@@ -17,8 +20,10 @@ import com.cherry.wakeupschedule.ui.adapter.WidgetPage
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.component.createAppChip
 import com.cherry.wakeupschedule.ui.component.themeColor
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
+import java.lang.ref.WeakReference
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -35,6 +40,9 @@ class WidgetCenterActivity : BaseActivity() {
     private lateinit var binding: ActivityWidgetCenterBinding
     private lateinit var pagerAdapter: WidgetCenterPagerAdapter
     private val dots = mutableListOf<View>()
+
+    /** 上次进入本页时各 provider 的添加数；null = 尚未建立基线（首次进入只记录不比较） */
+    private var lastAddedCounts: Map<Class<*>, Int>? = null
 
     /** chip 高亮与页指示圆点共用主题主色 */
     private val accentColor: Int by lazy {
@@ -78,7 +86,15 @@ class WidgetCenterActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        pagerAdapter.submitAddedCounts(readAddedCounts())
+        foregroundRef = WeakReference(this)
+        val counts = readAddedCounts()
+        pagerAdapter.submitAddedCounts(counts)
+        reconcileAddedCounts(counts)
+    }
+
+    override fun onPause() {
+        foregroundRef = null
+        super.onPause()
     }
 
     override fun onDestroy() {
@@ -169,6 +185,30 @@ class WidgetCenterActivity : BaseActivity() {
         }
     }
 
+    /**
+     * 兜底的「已添加」感知：与上次进入本页的计数比对，多出来的部分出卡。
+     * 覆盖成功回调丢失的桌面、从系统小组件选择器手动添加、回调到达时人已离开超 8s 的情况；
+     * 回调路径已提示过的 provider 本次跳过（顺手清掉标记，防陈旧压制后续提示）。
+     */
+    private fun reconcileAddedCounts(counts: Map<Class<*>, Int>) {
+        val baseline = lastAddedCounts
+        lastAddedCounts = counts
+        baseline ?: return
+        counts.forEach { (provider, count) ->
+            if (pinToastShown.remove(provider.name)) return@forEach
+            val delta = count - (baseline[provider] ?: 0)
+            if (delta > 0) showAddedToast(provider, delta)
+        }
+    }
+
+    private fun showAddedToast(provider: Class<*>, count: Int) {
+        val page = pagerAdapter.widgetPages
+            .flatMap { listOfNotNull(it, it.smallVariant) }
+            .firstOrNull { it.providerClass == provider } ?: return
+        val suffix = if (count > 1) " ×$count" else ""
+        AppToast.success(this, "已添加到桌面：${page.displayName}$suffix")
+    }
+
     private fun pinWidget(page: WidgetPage) {
         val manager = AppWidgetManager.getInstance(this)
         val component = ComponentName(this, page.providerClass)
@@ -187,11 +227,27 @@ class WidgetCenterActivity : BaseActivity() {
         }
 
         val requested = try {
-            manager.requestPinAppWidget(component, extras, null)
+            manager.requestPinAppWidget(component, extras, pinSuccessPendingIntent(page))
         } catch (e: Exception) {
             false
         }
         if (!requested) showManualGuide(page.pickerLabel)
+    }
+
+    /**
+     * 一键添加的成功回调：桌面放置完成后由系统发出，[WidgetPinResultReceiver] 出「已添加」卡。
+     * requestCode 按 provider 类名派生 —— 同变体重发覆盖旧 PendingIntent，不同变体互不覆盖。
+     */
+    private fun pinSuccessPendingIntent(page: WidgetPage): PendingIntent {
+        val intent = Intent(this, WidgetPinResultReceiver::class.java).apply {
+            putExtra(WidgetPinResultReceiver.EXTRA_PROVIDER, page.providerClass.name)
+            putExtra(WidgetPinResultReceiver.EXTRA_MESSAGE, "已添加到桌面：${page.displayName}")
+        }
+        // FLAG_MUTABLE：系统要往 intent 里回填 EXTRA_APPWIDGET_ID，immutable 收不到；
+        // API 31 以下默认就是 mutable，没有该标志位
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0
+        return PendingIntent.getBroadcast(this, page.providerClass.name.hashCode(), intent, flags)
     }
 
     private fun showManualGuide(widgetName: String) {
@@ -207,5 +263,26 @@ class WidgetCenterActivity : BaseActivity() {
         private const val DOT_MARGIN_DP = 4
         private const val DOT_MIN_ALPHA = 0.3f
         private const val DOT_MIN_SCALE = 0.75f
+
+        /** 前台中的小组件中心：成功回调到达时直接在页上出卡（onResume/onPause 维护） */
+        private var foregroundRef: WeakReference<WidgetCenterActivity>? = null
+
+        /** 回调路径已出过「已添加」卡的 provider（类名），兜底路径据此去重 */
+        private val pinToastShown = mutableSetOf<String>()
+
+        /**
+         * 添加成功回调入口（[WidgetPinResultReceiver] 调用，主线程）。
+         * 页面在前台 → 立即出卡；已退后台 → 传 applicationContext，
+         * AppToast 暂存 8s，回到应用任意页面补发，超时丢弃后由兜底路径接住。
+         */
+        internal fun notifyPinSuccess(context: Context, message: String, providerName: String) {
+            pinToastShown.add(providerName)
+            val activity = foregroundRef?.get()
+            if (activity != null) {
+                AppToast.success(activity, message)
+            } else {
+                AppToast.success(context.applicationContext, message)
+            }
+        }
     }
 }

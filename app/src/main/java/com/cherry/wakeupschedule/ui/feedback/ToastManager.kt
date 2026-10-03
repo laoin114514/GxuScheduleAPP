@@ -63,7 +63,12 @@ internal object ToastManager {
     // ── 宿主生命周期（仅由 App 的 ActivityLifecycleCallbacks 调用）─────
 
     fun onHostResumed(activity: Activity) {
-        if (hostRef?.get() === activity && container != null) return
+        if (hostRef?.get() === activity && container != null) {
+            // 同一页面从后台回来（如被系统弹窗/桌面短暂压住后焦点返还）：
+            // 容器还挂着无需重建，但后台期间暂存的提示要在此时补发
+            flushPending()
+            return
+        }
         detachContainer()
         hostRef = WeakReference(activity)
         val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return

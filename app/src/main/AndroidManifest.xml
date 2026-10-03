@@ -191,6 +191,11 @@
             android:name=".widget.MinimalWidgetCourseEndReceiver"
             android:exported="false" />
 
+        <!-- 小组件一键添加成功回调（requestPinAppWidget 的 successCallback，桌面放置完成后发出） -->
+        <receiver
+            android:name=".WidgetPinResultReceiver"
+            android:exported="false" />
+
         <!-- Minimal小组件短周期刷新接收器（API < 24 低版本保底） -->
         <receiver
             android:name=".widget.MinimalWidgetTickReceiver"
