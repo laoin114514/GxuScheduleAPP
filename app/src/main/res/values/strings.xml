@@ -10,4 +10,5 @@
     <string name="widget_today_wide_description">今日课程概览 4×2 · 双行行卡 · 可滑动查看全部 · 深浅色自适应</string>
     <string name="widget_week_description">周一至周日迷你课表 · 课程块配色同课表 · 深浅色自适应</string>
     <string name="widget_next_description">下一门课提醒 · 当前课与下一门 · 深浅色自适应</string>
+    <string name="widget_upcoming_description">近日课程 · 今天与明天两日课表并排</string>
 </resources>

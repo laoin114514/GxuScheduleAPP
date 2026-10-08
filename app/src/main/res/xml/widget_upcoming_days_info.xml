@@ -9,5 +9,7 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_upcoming_days"
     android:previewLayout="@layout/widget_upcoming_days_preview"
+    android:previewImage="@drawable/widget_preview_upcoming"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_upcoming_description" />
