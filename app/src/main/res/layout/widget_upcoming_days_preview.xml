@@ -74,7 +74,8 @@
                 android:textColor="#888888" />
         </LinearLayout>
 
-        <View
+        <!-- 分隔线：RemoteViews 布局白名单不允许裸 <View>，用 FrameLayout 承载（否则预览整卡 inflate 失败） -->
+        <FrameLayout
             android:layout_width="1dp"
             android:layout_height="match_parent"
             android:background="#E0E0E0"
