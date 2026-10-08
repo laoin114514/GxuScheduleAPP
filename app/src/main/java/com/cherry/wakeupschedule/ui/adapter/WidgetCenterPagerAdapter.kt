@@ -83,12 +83,20 @@ class WidgetCenterPagerAdapter(
     /** Provider → 桌面上已添加的个数 */
     private var addedCounts: Map<Class<*>, Int> = emptyMap()
 
+    /** 正在等待落地结果的一键添加：该行显示「正在添加到桌面…」并禁用按钮 */
+    private var pendingProvider: Class<*>? = null
+
     /** 各页离屏前的纵向滚动位置，回到该页时恢复 */
     private val scrollPositions = SparseIntArray()
 
-    /** 刷新各页的「已添加 N 个 / 未添加」 */
-    fun submitAddedCounts(counts: Map<Class<*>, Int>) {
+    /**
+     * 刷新各页的「已添加 N 个 / 未添加」。
+     * [pendingProvider] 为正在请求添加的组件 —— 部分 ROM 的桌面既不弹确认框也不回调，
+     * 状态行是用户按下按钮后唯一的即时反馈，核验出结果后由调用方传 null 收起。
+     */
+    fun submitAddedCounts(counts: Map<Class<*>, Int>, pendingProvider: Class<*>? = null) {
         addedCounts = counts
+        this.pendingProvider = pendingProvider
         notifyItemRangeChanged(0, widgetPages.size)
     }
 
@@ -132,7 +140,13 @@ class WidgetCenterPagerAdapter(
         // 今日课程页有两个变体出口（4×2 主推 + 2×2 紧凑版），其余页只有一个
         holder.footers.forEach { (footer, targetPage) ->
             val count = addedCounts[targetPage.providerClass] ?: 0
-            footer.tvWidgetStatus.text = if (count > 0) "已添加 $count 个" else "未添加"
+            val pending = targetPage.providerClass == pendingProvider
+            footer.tvWidgetStatus.text = when {
+                pending -> "正在添加到桌面…"
+                count > 0 -> "已添加 $count 个"
+                else -> "未添加"
+            }
+            footer.btnWidgetAdd.isEnabled = !pending
             footer.btnWidgetAdd.setOnClickListener { onAddClick(targetPage) }
         }
 

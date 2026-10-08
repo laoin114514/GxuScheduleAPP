@@ -19,7 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="部分手机在系统小组件列表里找不到西大课栈，在这里可以一键添加到桌面，抬眼即可看到课程信息。"
+        android:text="部分手机在系统小组件列表里找不到西大课栈，在这里可以一键添加到桌面，抬眼即可看到课程信息。\n\n一键添加依赖系统桌面的支持：vivo / iQOO 等机型的桌面会忽略应用的添加请求（点了没有反应），小米 / 红米 需要「桌面快捷方式」权限。遇到这些情况请按下面的方式手动添加。"
         android:textSize="@dimen/text_caption"
         android:textColor="?attr/colorOnSurfaceVariant" />
 
