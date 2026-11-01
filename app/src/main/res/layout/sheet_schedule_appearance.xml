@@ -45,7 +45,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="课表外观"
+            android:text="@string/menu_appearance_row"
             android:textColor="?attr/colorOnSurface"
             android:textSize="@dimen/text_title"
             android:textStyle="bold" />
