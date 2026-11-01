@@ -60,10 +60,18 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled = false
+            // R8：代码压缩 + 资源压缩。规则见 app/proguard-rules.pro
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig = signingConfigs.release
         }
+    }
+
+    // Room 导出的 schema 快照落在 app/schemas/，既用于 migration 测试（打进 androidTest assets），
+    // 也是唯一能证明「哪天改了实体忘了写迁移」的凭据。该目录必须提交进 git。
+    sourceSets {
+        androidTest.assets.srcDirs += files("$projectDir/schemas".toString())
     }
     
     packagingOptions {
@@ -97,6 +105,10 @@ android {
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation 'androidx.core:core-ktx:1.15.0'
     implementation 'androidx.appcompat:appcompat:1.7.0'
@@ -114,41 +126,20 @@ dependencies {
     // ViewPager2 for swipe gestures
     implementation 'androidx.viewpager2:viewpager2:1.1.0'
 
-    // WorkManager for background scheduling
-    implementation 'androidx.work:work-runtime-ktx:2.10.0'
-
     // Coroutines
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-    
-    // Excel文件解析
-    implementation 'org.apache.poi:poi:5.2.3'
-    implementation 'org.apache.poi:poi-ooxml:5.2.3'
-    implementation 'org.apache.poi:poi-scratchpad:5.2.3'
-    
-    // Network
-    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.11.0'
-    
-    // Image loading
-    implementation 'com.github.bumptech.glide:glide:4.14.2'
-    
-    // Calendar
-    implementation 'org.mnode.ical4j:ical4j:3.2.9'
+
+    // Network —— 全项目只用裸 OkHttp（教务抓取、更新包下载、WebView 之外的下载），
+    // 从未引入 Retrofit。版本与 gxuJwxtJavaClient 对齐，避免依赖决议时被静默换版
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    // Gson —— 教务客户端对上暴露的是 implementation 依赖，Gson 不会传递到 app 模块，
+    // 而 app 侧 JwxtAccountManager / CourseDataManager / TimeTableManager 都直接用它反射
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     // GXU JWXT Client (本地源码模块)
     implementation project(':gxuJwxtJavaClient')
 
-    // JavaMail API for sending emails
-    implementation 'com.sun.mail:android-mail:1.6.7'
-    implementation 'com.sun.mail:android-activation:1.6.7'
-    
-    // File picker
-    // implementation 'com.github.nbsp:materialfilepicker:1.0'
-    
-    // Toasty for better toast messages
-    // implementation 'com.github.GrenderG:Toasty:1.5.2'
-    
     // Room database
     implementation "androidx.room:room-runtime:2.6.1"
     implementation "androidx.room:room-ktx:2.6.1"
@@ -157,4 +148,6 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    // MigrationTestHelper：读 app/schemas/ 的快照，验证迁移后的库结构与新版本一致
+    androidTestImplementation "androidx.room:room-testing:2.6.1"
 }

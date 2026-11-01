@@ -40,9 +40,9 @@
 | 架构 | MVVM |
 | UI | Material 3, ViewBinding, ViewPager2, Navigation |
 | 数据库 | Room |
-| 网络 | OkHttp（教务客户端） |
+| 网络 | OkHttp（教务客户端，无 Retrofit） |
 | 后台 | AlarmManager（桌面小组件刷新） |
-| Excel | Apache POI |
+| 构建 | R8 代码压缩 + 资源压缩 |
 | 异步 | Kotlin Coroutines |
 
 - **最低支持**：Android 8.0 (API 26)

@@ -4,8 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- 仅写应用专属目录（getExternalFilesDir），API 19+ 无需存储权限 -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- 应用内更新安装 APK 需要 -->
@@ -36,7 +35,6 @@
             android:windowSoftInputMode="adjustResize" />
 
         <!-- 独立页面：入口在「我的」页签、工具页与课表菜单，见 ProfileFragment / ToolsFragment / ScheduleFragment -->
-        <activity android:name=".WebViewActivity" />
         <activity android:name=".TimeTableEditActivity" />
         <activity android:name=".AppearanceActivity" />
         <activity android:name=".FontSizeActivity" />

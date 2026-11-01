@@ -185,10 +185,6 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun getIdByName(context: Context, name: String): Int {
-        return context.resources.getIdentifier(name, "id", context.packageName)
-    }
-
     private fun getCourseTimeString(context: Context, course: Course): String {
         return try {
             val timeTableManager = TimeTableManager.getInstance(context)
