@@ -83,6 +83,7 @@ superpowers
 
 # website (independent repository GxuScheduleWebsite)
 website/
+GxuScheduleWebsite/
 
 # 本地 agent 工作区（勿提交，历史上曾误传）
 .opencode/
