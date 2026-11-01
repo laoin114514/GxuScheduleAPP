@@ -671,12 +671,32 @@ class ScheduleFragment : Fragment() {
         // 右上角关闭：内容变长后必须有一个一眼可见的退出方式
         sheetView.findViewById<View>(R.id.btn_menu_close)?.setOnClickListener { dialog.dismiss() }
 
-        val tvSubtitle = sheetView.findViewById<TextView>(R.id.tv_menu_subtitle)
-        tvSubtitle.text = if (SemesterManager.getCurrent() == null) {
-            "未绑定教务账号"
-        } else {
-            "${settingsManager.getCurrentSemester()} · ${settingsManager.getCurrentSemesterFullName()}"
+        // 菜单内联错误条：菜单里的失败信息不再走 AppToast（会被弹层遮罩压住）
+        val tvMenuError = sheetView.findViewById<TextView>(R.id.tv_menu_error)
+        fun showMenuError(message: String) {
+            tvMenuError.text = message
+            tvMenuError.isVisible = true
+            tvMenuError.alpha = 0f
+            tvMenuError.animate().alpha(1f).setDuration(160).start()
         }
+        fun clearMenuError() {
+            if (tvMenuError.isVisible) {
+                tvMenuError.animate().alpha(0f).setDuration(120)
+                    .withEndAction { tvMenuError.isVisible = false }.start()
+            }
+        }
+
+        val tvSubtitle = sheetView.findViewById<TextView>(R.id.tv_menu_subtitle)
+
+        // 副标题跟着当前学期走：切学期后要立刻刷新，否则会一直显示打开菜单时的那个学期
+        fun refreshMenuSubtitle() {
+            tvSubtitle.text = if (SemesterManager.getCurrent() == null) {
+                "未绑定教务账号"
+            } else {
+                "${settingsManager.getCurrentSemester()} · ${settingsManager.getCurrentSemesterFullName()}"
+            }
+        }
+        refreshMenuSubtitle()
 
         // ── 周数滑块（Material Slider） ──
         val tvWeekLabel = sheetView.findViewById<TextView>(R.id.tv_week_label)
@@ -906,8 +926,16 @@ class ScheduleFragment : Fragment() {
                         return@setOnClickListener
                     }
                     // 切换学期（菜单保持打开，下方课表与菜单内状态同步刷新）
+                    clearMenuError()
+                    // 记录切换前的状态：该学期没有本地数据时要联网拉取，失败得能回滚，
+                    // 否则会停在一个空学期上（顶栏写着"大一上"、副标题还写着"大二下"）。
+                    val prevIndex = settingsManager.getCurrentSemesterIndex()
+                    val prevSemesterId = SemesterManager.getCurrent()?.id
+                    val prevWeek = getDisplayWeek()
+
                     settingsManager.setCurrentSemesterIndex(index)
                     CourseDataManager.getInstance(ctx).switchSemester(sem.id)
+                    refreshMenuSubtitle()
 
                     // 调到第一周
                     courseViewModel.currentWeek = calculateCurrentWeek()
@@ -947,7 +975,20 @@ class ScheduleFragment : Fragment() {
                                     showLoadSuccess(count)
                                 }.onFailure { e ->
                                     setScheduleLoading(false)
-                                    AppToast.error(ctx, "获取课表失败: ${e.message}")
+                                    // 回滚到切换前的学期：导入失败不该把用户丢在一个空学期上
+                                    if (prevSemesterId != null) {
+                                        settingsManager.setCurrentSemesterIndex(prevIndex)
+                                        CourseDataManager.getInstance(ctx).switchSemester(prevSemesterId)
+                                        courseViewModel.currentWeek = calculateCurrentWeek()
+                                        setDisplayWeek(prevWeek)
+                                        viewPager.setCurrentItem(prevWeek - 1, false)
+                                        updateDateTimeHeader()
+                                        refreshWeekSlider()
+                                        refreshMenuSubtitle()
+                                    }
+                                    // 菜单还开着：错误显示在菜单里，用户能立刻看到原因
+                                    showMenuError("获取课表失败：${e.message ?: "网络异常"}")
+                                    refreshSemesterItems(animateEntrance = false)
                                 }
                             }
                         }

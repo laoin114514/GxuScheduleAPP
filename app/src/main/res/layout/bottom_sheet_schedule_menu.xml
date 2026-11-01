@@ -73,6 +73,24 @@
         android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="@dimen/text_caption" />
 
+    <!-- 内联错误条：菜单内的失败（如切学期时联网拉课表失败）显示在这里，
+         而不是 AppToast —— 弹层打开时 Toast 会被弹窗遮罩压住，用户看不到。 -->
+    <TextView
+        android:id="@+id/tv_menu_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_inline_error"
+        android:drawablePadding="6dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp"
+        android:textColor="?attr/colorOnErrorContainer"
+        android:textSize="@dimen/text_body_small"
+        android:visibility="gone"
+        app:drawableStartCompat="@drawable/ic_mtrl_error_outline"
+        app:drawableTint="?attr/colorOnErrorContainer" />
+
     <!-- 滚动区：周次 / 学期 / 外观；右侧常驻细滚动条提示「下面还有」 -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll_menu"

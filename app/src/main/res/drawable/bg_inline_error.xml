@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 弹层/页面内的内联错误条：底色用 M3 的 errorContainer，
+     比 AppToast 更适合"弹窗打开时"的场景（Toast 会被弹窗遮罩压住）。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorErrorContainer" />
+    <corners android:radius="12dp" />
+</shape>
