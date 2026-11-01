@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
+import androidx.core.view.isVisible
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.component.StyledDialog
@@ -226,6 +227,7 @@ object ScheduleAppearanceControls {
             .inflate(R.layout.dialog_cell_height_input, null)
         val etHeight = dialogView.findViewById<EditText>(R.id.et_cell_height)
         val tvRange = dialogView.findViewById<TextView>(R.id.tv_cell_height_range)
+        val tvError = dialogView.findViewById<TextView>(R.id.tv_cell_height_error)
 
         // 越界不拦，应用时自动夹取到最近的边界，规则写在弹窗说明里
         tvRange.text = "范围 ${SettingsManager.COURSE_CELL_HEIGHT_MIN_DP}-" +
@@ -235,15 +237,28 @@ object ScheduleAppearanceControls {
         etHeight.setText(settingsManager.getCourseCellHeight().toString())
         etHeight.setSelection(0, etHeight.text.length)
 
+        // 校验放在「应用」之前：不合格就不关窗，把错误显示在输入框下方。
+        // 原来是先 dismiss 再 AppToast —— 提示落在弹层遮罩之下，用户只看到"点了没反应"。
+        fun validateHeight(): Boolean {
+            val typed = etHeight.text.toString().trim().toIntOrNull()
+            val error = when {
+                typed == null || etHeight.text.isNullOrBlank() -> "请输入 40–120 之间的数字"
+                typed < SettingsManager.COURSE_CELL_HEIGHT_MIN_DP ||
+                        typed > SettingsManager.COURSE_CELL_HEIGHT_MAX_DP ->
+                    "超出范围，请输入 40–120 之间的数字"
+                else -> null
+            }
+            tvError.text = error
+            tvError.isVisible = error != null
+            return error == null
+        }
+
         val dialog = StyledDialog.Builder(context)
             .title("课程格子高度")
             .view(dialogView)
-            .positiveButton("应用") {
-                // 空输入视为不修改
-                val typed = etHeight.text.toString().toIntOrNull()
-                if (typed == null) {
-                    AppToast.warn(context, "请输入高度")
-                } else {
+            .positiveButton("应用", validate = { validateHeight() }) {
+                val typed = etHeight.text.toString().trim().toIntOrNull()
+                if (typed != null) {
                     applyCellHeight(context, settingsManager, slider, btnValue, typed)
                     fragment.applyAppearanceChanges()
                 }

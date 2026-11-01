@@ -59,7 +59,8 @@ class FontSizeActivity : BaseActivity() {
             stepSize = 1f
             value = currentIndex.toFloat()
             // 胶囊轨道较粗会埋住刻度，关掉刻度、由下方档位名标注（与课表页周数滑块一致）
-            isTickVisible = false
+            // 5 档离散值，细轨道下刻度点可见，能看出"还有几档"
+            isTickVisible = true
             // 拖动气泡直接显示档位名，而不是数字
             setLabelFormatter { value -> presets[value.roundToInt().coerceIn(0, lastIndex)].label }
         }

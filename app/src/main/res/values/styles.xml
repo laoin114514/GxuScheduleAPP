@@ -149,22 +149,28 @@
     <item name="android:letterSpacing">0.04</item>
 </style>
 
-<!-- 全局滑块：宽胶囊轨道 + 白色圆球在轨道内滑动（课表菜单周数 / 字体大小共用）。
-     M3 默认手柄是 4dp×44dp 的竖条，必须显式把 thumbWidth/thumbHeight 设为相等
-     并配 thumbRadius，才能得到圆形滚球。轨道较粗会埋住刻度，用时请关闭 isTickVisible。 -->
+<!-- 全局滑块：白色圆球 + 细轨道（课表菜单周数 / 字体大小共用）。
+     旧版是「轨道 20dp + 拇指 18dp」——拇指比轨道还细，白球埋在粗条里，
+     拖动时看不出抓取点，离散刻度也被轨道盖住。现在拇指 20dp > 轨道 4dp，
+     刻度点恢复可见。 -->
 <style name="AppSlider" parent="Widget.Material3.Slider">
     <item name="android:layout_width">match_parent</item>
     <item name="android:layout_height">wrap_content</item>
     <item name="labelBehavior">withinBounds</item>
     <item name="thumbColor">#FFFFFF</item>
-    <item name="thumbWidth">18dp</item>
-    <item name="thumbHeight">18dp</item>
-    <item name="thumbRadius">9dp</item>
+    <item name="thumbWidth">20dp</item>
+    <item name="thumbHeight">20dp</item>
+    <item name="thumbRadius">10dp</item>
     <item name="thumbStrokeColor">?attr/colorPrimary</item>
     <item name="thumbStrokeWidth">2dp</item>
     <item name="thumbElevation">4dp</item>
     <item name="trackColorActive">?attr/colorPrimary</item>
     <item name="trackColorInactive">?attr/colorOutlineVariant</item>
-    <item name="trackHeight">20dp</item>
+    <item name="trackHeight">4dp</item>
+    <item name="tickVisible">true</item>
+    <item name="tickColorActive">?attr/colorOnPrimary</item>
+    <item name="tickColorInactive">?attr/colorOutline</item>
+    <item name="tickRadiusActive">2dp</item>
+    <item name="tickRadiusInactive">1.5dp</item>
 </style>
 </resources>

@@ -253,6 +253,8 @@ class StyledDialog private constructor(
             }
             btnPositive.visibility = View.VISIBLE
             btnPositive.setOnClickListener {
+                // 校验不通过时不关窗，把错误留在输入框旁边（见 ScheduleAppearanceControls 的用法）
+                if (config.positiveValidate?.invoke() == false) return@setOnClickListener
                 config.positiveAction?.invoke()
                 dismiss()
             }
@@ -348,6 +350,7 @@ class StyledDialog private constructor(
         private var customView: View? = null
         private var positiveText: String? = null
         private var positiveAction: (() -> Unit)? = null
+        private var positiveValidate: (() -> Boolean)? = null
         private var negativeText: String? = null
         private var negativeAction: (() -> Unit)? = null
         private var neutralText: String? = null
@@ -365,8 +368,17 @@ class StyledDialog private constructor(
             onItemClick = onClick
         }
         fun view(v: View) = apply { customView = v }
-        fun positiveButton(text: String, action: (() -> Unit)? = null) = apply {
+        /**
+         * 主按钮。[validate] 返回 false 时不关闭弹窗（用于表单校验：
+         * 以前校验失败也会无条件 dismiss，用户看不到错误提示，只觉得"点了没反应"）。
+         */
+        fun positiveButton(
+            text: String,
+            validate: (() -> Boolean)? = null,
+            action: (() -> Unit)? = null
+        ) = apply {
             positiveText = text
+            positiveValidate = validate
             positiveAction = action
         }
         /**
@@ -395,6 +407,7 @@ class StyledDialog private constructor(
                 customView = customView,
                 positiveText = positiveText,
                 positiveAction = positiveAction,
+                positiveValidate = positiveValidate,
                 negativeText = negativeText,
                 negativeAction = negativeAction,
                 neutralText = neutralText,
@@ -424,6 +437,7 @@ internal data class DialogConfig(
     val customView: View?,
     val positiveText: String?,
     val positiveAction: (() -> Unit)?,
+    val positiveValidate: (() -> Boolean)? = null,
     val negativeText: String?,
     val negativeAction: (() -> Unit)?,
     val neutralText: String?,

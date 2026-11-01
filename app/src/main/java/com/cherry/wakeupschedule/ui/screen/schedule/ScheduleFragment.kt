@@ -710,14 +710,16 @@ class ScheduleFragment : Fragment() {
 
         /** 同步滑块：范围、当前值与提示行。切换学期 / 点「回到本周」后可重复调用。 */
         fun refreshWeekSlider() {
-            val totalWeeks = settingsManager.getTotalWeeks()
+            // coerceAtLeast(2)：M3 Slider 在 valueTo <= valueFrom 时会抛异常，
+            // 总周数异常（1）时打开菜单会直接崩
+            val totalWeeks = settingsManager.getTotalWeeks().coerceAtLeast(2)
             val week = getDisplayWeek().coerceIn(1, totalWeeks)
             tvWeekLabel.text = "第 $week 周"
             sbWeek.valueFrom = 1f
             sbWeek.valueTo = totalWeeks.toFloat()
             sbWeek.stepSize = 1f
             sbWeek.value = week.toFloat()
-            // 胶囊轨道较粗，刻度会埋在轨道里，关闭刻度
+            // 18 个离散档位密集到连成虚线，看着像"斑马线"；周次的即时反馈交给拖动气泡
             sbWeek.isTickVisible = false
             // 提示行合并了原来的两端端点标注：轨道左右各被 thumbRadius 内缩，
             // 端点文字贴在卡片内容边缘会明显对不齐，与其猜内缩值做对齐，
@@ -738,6 +740,9 @@ class ScheduleFragment : Fragment() {
         chipThisWeek = chip
         llWeekAction.addView(chip)
         llWeekAction.addView(chipNowWeek)
+
+        // 气泡显示「第 N 周」，而不是裸数字
+        sbWeek.setLabelFormatter { value -> "第 ${value.roundToInt()} 周" }
 
         sbWeek.addOnChangeListener { _, value, fromUser ->
             val totalWeeks = settingsManager.getTotalWeeks()

@@ -138,17 +138,17 @@
                     </LinearLayout>
 
                     <!-- 周数滑块：外观见 @style/AppSlider（与字体大小页共用同一套样式）。
-                         labelBehavior 关掉气泡：当前周已经用上面的大号「第 N 周」显示，
-                         气泡既重复又给 Slider 平白撑高约 20dp（卡片内会显得空）。 -->
+                         保留 M3 的 withinBounds 气泡：拖动时手指正压着轨道，
+                         上方的大号「第 N 周」会被挡住，气泡是唯一能读到的即时反馈。 -->
                     <com.google.android.material.slider.Slider
                         android:id="@+id/sb_week"
                         style="@style/AppSlider"
-                        android:layout_marginTop="-6dp"
+                        android:layout_marginTop="4dp"
                         android:valueFrom="1"
                         android:valueTo="20"
                         android:stepSize="1"
                         android:value="1"
-                        app:labelBehavior="gone" />
+                        app:labelBehavior="withinBounds" />
 
                     <TextView
                         android:id="@+id/tv_week_hint"

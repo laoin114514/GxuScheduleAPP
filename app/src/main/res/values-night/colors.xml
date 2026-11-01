@@ -7,4 +7,7 @@
     <color name="success_color">#7ED694</color>
     <!-- 应用内提示卡语义色：警告（深色下提亮琥珀） -->
     <color name="warn_color">#FFB74D</color>
+
+    <!-- 语义色：负向（深色下用亮红，深底上才够醒目） -->
+    <color name="semantic_negative">#FF5449</color>
 </resources>

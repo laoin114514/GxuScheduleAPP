@@ -18,4 +18,8 @@
     <color name="success_color">#1E8E3E</color>
     <!-- 应用内提示卡语义色：警告（浅色下用深琥珀，避免纯黄在浅底上不可读） -->
     <color name="warn_color">#B26A00</color>
+
+    <!-- 语义色：负向（校验失败 / 挂科 / 危险操作）。
+         与 danger_color 同源，单独命名是为了让"错误提示"和"危险按钮"语义分开 -->
+    <color name="semantic_negative">#B3261E</color>
 </resources>

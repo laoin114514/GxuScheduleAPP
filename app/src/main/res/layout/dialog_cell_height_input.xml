@@ -28,4 +28,14 @@
         android:textSize="@dimen/text_caption"
         android:textColor="?attr/colorOnSurfaceVariant" />
 
+    <!-- 校验失败时的内联错误行：弹窗不再关闭，错误就显示在输入框下面 -->
+    <TextView
+        android:id="@+id/tv_cell_height_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textSize="@dimen/text_caption"
+        android:textColor="@color/semantic_negative"
+        android:visibility="gone" />
+
 </LinearLayout>
