@@ -2,7 +2,7 @@
 <!--
   桌面小组件配色 token。
   小组件布局由桌面进程以本 App 资源渲染，night 限定符跟随系统深色模式；
-  代码里 setTextColor 等动态取色统一走 widget/WidgetTheme.kt 兜底。
+  代码里 setTextColor 等动态取色一律 context.getColor(R.color.widget_*)，不再有第二套入口。
   2026-10：卡片背景改为不透明并取课表页渐变亮端色（= 底部导航同色），
   文字/强调色对齐应用主题「海洋蓝」调色板的角色色（onSurface/onSurfaceVariant/
   outline/primary；调色板当前不可被用户切换，故直接写死）。
