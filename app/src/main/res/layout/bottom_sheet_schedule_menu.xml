@@ -233,7 +233,67 @@
                     android:layout_marginBottom="8dp"
                     android:text="外观" />
 
-                <include layout="@layout/view_schedule_appearance_controls" />
+                <!-- 外观摘要行：默认收起，一行说清当前外观（格子高度 / 显示什么 / 边框）。
+                     点开展开下面整组控件。原来 7 个控件常驻展开，把菜单顶到 900dp，
+                     首屏根本看不到「外观」入口。 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_appearance_toggle"
+                    style="@style/DetailSheetCard">
+
+                    <LinearLayout
+                        android:id="@+id/row_appearance_toggle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="52dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="课表外观"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="@dimen/text_body"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_appearance_summary"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="10dp"
+                            android:ellipsize="end"
+                            android:gravity="end"
+                            android:maxLines="1"
+                            android:text=""
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textSize="@dimen/text_caption" />
+
+                        <ImageView
+                            android:id="@+id/iv_appearance_chevron"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="4dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_mtrl_expand_more"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 展开后是完整控件；默认 GONE，由 ScheduleFragment 控制 -->
+                <LinearLayout
+                    android:id="@+id/group_appearance_controls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <include layout="@layout/view_schedule_appearance_controls" />
+                </LinearLayout>
 
             </LinearLayout>
 

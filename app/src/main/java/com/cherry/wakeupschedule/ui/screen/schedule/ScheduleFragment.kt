@@ -616,6 +616,54 @@ class ScheduleFragment : Fragment() {
         }
     }
 
+    /**
+     * 「外观」折叠：默认只显示一行摘要（格子高度 / 显示内容 / 边框策略），点开展开整组控件。
+     *
+     * 外观控件内联进菜单后内容接近 900dp，被 0.7 屏高截断，首屏根本看不到「外观」入口；
+     * 折叠后首屏能同时看到「周次卡 + 学期卡 + 外观摘要行」。
+     */
+    private fun setupAppearanceCollapse(sheetView: View) {
+        val toggleRow = sheetView.findViewById<View>(R.id.row_appearance_toggle) ?: return
+        val controls = sheetView.findViewById<View>(R.id.group_appearance_controls) ?: return
+        val chevron = sheetView.findViewById<View>(R.id.iv_appearance_chevron)
+
+        fun refreshSummary() {
+            val summary = sheetView.findViewById<TextView>(R.id.tv_appearance_summary)
+            val parts = mutableListOf("格子 ${settingsManager.getCourseCellHeight()}dp")
+            val contentKinds = buildList {
+                if (settingsManager.isShowClassroom()) add("教室")
+                if (settingsManager.isShowTeacher()) add("教师")
+            }
+            parts += if (contentKinds.isEmpty()) "仅课名" else contentKinds.joinToString(" ")
+            parts += if (settingsManager.isBorderFollowCourse()) "边框跟随课程" else "自定义边框"
+            summary.text = parts.joinToString(" · ")
+        }
+
+        val scroll = sheetView.findViewById<View>(R.id.scroll_menu)
+        fun setExpanded(expanded: Boolean, animate: Boolean) {
+            // 展开和收起都先刷新摘要：收起后那一行就是"刚才改成了什么"
+            refreshSummary()
+            controls.visibility = if (expanded) View.VISIBLE else View.GONE
+            chevron.animate()
+                .rotation(if (expanded) 180f else 0f)
+                .setDuration(if (animate) 160 else 0)
+                .start()
+            // 展开后把控件滚进视野：菜单高度封顶 85%，不滚的话展开等于没反应
+            if (expanded) {
+                (scroll as? androidx.core.widget.NestedScrollView)?.post {
+                    val target = controls.top
+                    (scroll).smoothScrollTo(0, target)
+                }
+            }
+        }
+
+        refreshSummary()
+        setExpanded(false, animate = false)
+        toggleRow.setOnClickListener {
+            setExpanded(controls.visibility != View.VISIBLE, animate = true)
+        }
+    }
+
     // ── 课表菜单 Bottom Sheet ─────────────────────────────
 
     /**
@@ -1019,6 +1067,7 @@ class ScheduleFragment : Fragment() {
         // 入场前先隐藏，等弹窗展示后再淡入，避免 show() 瞬间闪一下
         groupAppearance.alpha = 0f
         ScheduleAppearanceControls.bind(sheetView, ctx, this)
+        setupAppearanceCollapse(sheetView)
 
         // 弹窗展示后，学期色块按顺序波浪式入场
         dialog.setOnShowListener {
