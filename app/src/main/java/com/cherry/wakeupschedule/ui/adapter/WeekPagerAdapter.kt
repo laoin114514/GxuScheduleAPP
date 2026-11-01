@@ -335,8 +335,13 @@ class WeekPagerAdapter(
             if (!axisBuilt || builtNodes != maxNodes) {
                 gridBg.rowCount = maxNodes
                 gridBg.columnCount = 7
-                gridBg.gridColor = android.graphics.Color.TRANSPARENT
             }
+            // 虚线网格：给 7 列 × N 节一个可读的骨架。
+            // 之前固定透明等于完全关掉，课程稀疏的周次看起来像"文字漂在背景上"。
+            gridBg.gridColor = ColorUtils.setAlphaComponent(
+                themeColor(com.google.android.material.R.attr.colorOutlineVariant),
+                if (ThemeManager.isDarkMode(ctx)) 46 else 34
+            )
 
             // ── 时间轴（只构建一次，或节点数/格子高度变化时重建） ──
             if (!axisBuilt || builtNodes != maxNodes || builtCellHeight != cellHeight) {
@@ -365,7 +370,7 @@ class WeekPagerAdapter(
             emptyView.visibility = View.GONE
 
             // ── 同步计算 cell 宽度 ──
-            val timeAxisWidth = (32 * density).toInt()
+            val timeAxisWidth = ctx.resources.getDimensionPixelSize(R.dimen.time_axis_width)
             val contentWidth = ctx.resources.displayMetrics.widthPixels - timeAxisWidth
             if (contentWidth <= 0) return
 
@@ -382,7 +387,9 @@ class WeekPagerAdapter(
 
             // ── 重建课程卡片 ──
             courseContainer.removeAllViews()
-            val gapPx = (2 * density).toInt()
+            // 单元格间距：2dp → 1.5dp。时间轴从 32dp 加到 40dp 后每列少了 3.4dp，
+            // 4 个汉字的课名（44dp）刚好卡在临界，这里把横向空间还给文字。
+            val gapPx = (1.5f * density).toInt()
             val cellWidth = contentWidth / 7f
             // 「课表整体 → 高亮当日」：当日列淡底垫在卡片之下（clear 后第 0 位，先于卡片循环）
             bindTodayColumn(highlightToday, cellWidth)
@@ -486,10 +493,11 @@ class WeekPagerAdapter(
                 val content = LinearLayout(ctx).apply {
                     orientation = LinearLayout.VERTICAL
                     gravity = Gravity.CENTER
-                    // 左右留 5dp：格子本身只有约 50dp 宽，留白太多课名会只剩 3 个字
+                    // 左右留 3dp：格子本身只有约 52dp 宽，5dp 的留白会让「数据结构」这种
+                    // 4 字课名折成 3+1 两行，视觉上像断词
                     setPadding(
-                        (5 * density).toInt(), (3 * density).toInt(),
-                        (5 * density).toInt(), (3 * density).toInt()
+                        (3 * density).toInt(), (3 * density).toInt(),
+                        (3 * density).toInt(), (3 * density).toInt()
                     )
                 }
 
@@ -555,37 +563,34 @@ class WeekPagerAdapter(
                 )
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
-                setPadding(4, 4, 4, 4)
+                // 这里原来写的是 setPadding(4, 4, 4, 4)——单位是 px，在 420dpi 上只有 1.5dp，
+                // 等于没有内边距，所以时间轴一直贴着屏幕最左边。改成真正的 dp。
+                val padH = (4 * resources.displayMetrics.density).toInt()
+                setPadding(padH, 0, padH, 0)
 
                 addView(TextView(ctx).apply {
                     text = node.toString()
                     setTextSizeRes(R.dimen.text_caption)
                     setTypeface(null, Typeface.BOLD)
-                    val typedValue = android.util.TypedValue()
-                    ctx.theme.resolveAttribute(
-                        com.google.android.material.R.attr.colorOnSurface, typedValue, true
-                    )
-                    setTextColor(typedValue.data)
+                    gravity = Gravity.CENTER
+                    setTextColor(themeAttr(ctx, com.google.android.material.R.attr.colorOnSurface))
                 })
+                // 只显示开始时间：每行就是一个节次，结束时间等于下一行的开始时间，
+                // 三行文字在 40–96dp 的行高里必然打架；完整起止时间在课程详情里看。
                 addView(TextView(ctx).apply {
-                    text = start?.takeIf { it.isNotBlank() } ?: "--:--"
-                    setTextSizeRes(R.dimen.text_label)
-                    val typedValue = android.util.TypedValue()
-                    ctx.theme.resolveAttribute(
-                        com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
-                    )
-                    setTextColor(typedValue.data)
-                })
-                addView(TextView(ctx).apply {
-                    text = end?.takeIf { it.isNotBlank() } ?: "--:--"
-                    setTextSizeRes(R.dimen.text_label)
-                    val typedValue = android.util.TypedValue()
-                    ctx.theme.resolveAttribute(
-                        com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
-                    )
-                    setTextColor(typedValue.data)
+                    text = start?.takeIf { it.isNotBlank() } ?: "—"
+                    setTextSizeRes(R.dimen.text_time_axis)
+                    gravity = Gravity.CENTER
+                    setTextColor(themeAttr(ctx, com.google.android.material.R.attr.colorOnSurfaceVariant))
                 })
             }
+        }
+
+        /** 取主题属性色（静态版，供没有 ViewHolder 上下文的场合复用） */
+        private fun themeAttr(ctx: Context, attr: Int): Int {
+            val typedValue = android.util.TypedValue()
+            ctx.theme.resolveAttribute(attr, typedValue, true)
+            return typedValue.data
         }
 
         // 课程类别优先级（数字越小越优先）
@@ -716,7 +721,8 @@ class WeekPagerAdapter(
 
             val timeAxis = LinearLayout(context).apply {
                 layoutParams = LinearLayout.LayoutParams(
-                    (32 * density).toInt(), ViewGroup.LayoutParams.MATCH_PARENT
+                    context.resources.getDimensionPixelSize(R.dimen.time_axis_width),
+                    ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 orientation = LinearLayout.VERTICAL
             }

@@ -19,7 +19,7 @@
 
         <!-- Offset column for time axis -->
         <LinearLayout
-            android:layout_width="32dp"
+            android:layout_width="@dimen/time_axis_width"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical">
@@ -62,7 +62,7 @@
         <!-- Year in offset column -->
         <TextView
             android:id="@+id/tv_year_value"
-            android:layout_width="32dp"
+            android:layout_width="@dimen/time_axis_width"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="2026"

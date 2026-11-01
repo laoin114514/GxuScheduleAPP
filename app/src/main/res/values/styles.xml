@@ -13,20 +13,22 @@
         <item name="colorSwitchThumbNormal">#FFFFFF</item>
     </style>
 
+    <!-- 日期栏两层信息：周几是标签（小、弱），日期是内容（略大、强）。
+         原来的组合正好相反（周几 14sp > 日期 12sp），读的时候会先看到"一 二 三"。 -->
     <style name="DateHeaderText">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:gravity">center</item>
-        <item name="android:textSize">@dimen/text_body_small</item>
-        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textSize">@dimen/text_caption</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <style name="DateNumberText">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:gravity">center</item>
-        <item name="android:textSize">@dimen/text_caption</item>
-        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:textSize">@dimen/text_body_small</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="ProfileSection" parent="Widget.Material3.CardView.Elevated">

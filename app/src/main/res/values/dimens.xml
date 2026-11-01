@@ -28,4 +28,11 @@
          所以课名固定 11sp + 最多 3 行截断，元信息 10sp 退一档（见 UI 方案 §3.2）。 -->
     <dimen name="text_course_cell">11sp</dimen>
     <dimen name="text_course_cell_meta">10sp</dimen>
+
+    <!-- 课表左侧时间轴列宽：32dp 装 "08:00"(10sp ≈ 25dp) 只剩 4dp 余量，
+         系统字体放大就折行；加到 40dp 并把文字居中，左边距约 7dp -->
+    <dimen name="time_axis_width">40dp</dimen>
+
+    <!-- 时间轴上的开始时间（课名下方的小字） -->
+    <dimen name="text_time_axis">10sp</dimen>
 </resources>
