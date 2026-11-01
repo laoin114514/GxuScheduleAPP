@@ -61,7 +61,7 @@
                         android:id="@+id/tv_detail_name"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="课程名称"
+                        android:text="@string/course_name_label"
                         android:textAppearance="?attr/textAppearanceTitleLarge"
                         android:textColor="?attr/colorOnSurface"
                         android:maxLines="2" />
@@ -73,7 +73,7 @@
                         android:layout_marginTop="4dp"
                         android:paddingHorizontal="8dp"
                         android:paddingVertical="2dp"
-                        android:text="课程类别"
+                        android:text="@string/course_category"
                         android:textAppearance="?attr/textAppearanceLabelSmall"
                         android:visibility="gone" />
                 </LinearLayout>
@@ -133,7 +133,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="10dp"
                                 android:minWidth="56dp"
-                                android:text="时间"
+                                android:text="@string/course_time"
                                 android:textAppearance="?attr/textAppearanceBodyMedium"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -188,7 +188,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
                             android:minWidth="56dp"
-                            android:text="QQ群"
+                            android:text="@string/course_qq_group"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -198,7 +198,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:gravity="end"
-                            android:text="未设置"
+                            android:text="@string/common_not_set"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textStyle="bold"
                             android:textColor="?attr/colorOnSurface" />
@@ -248,7 +248,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
                             android:minWidth="56dp"
-                            android:text="教师"
+                            android:text="@string/course_teacher"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -258,7 +258,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:gravity="end"
-                            android:text="未知"
+                            android:text="@string/common_unknown"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textStyle="bold"
                             android:textColor="?attr/colorOnSurface" />
@@ -311,7 +311,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
-                                android:text="学分"
+                                android:text="@string/course_credits"
                                 android:textAppearance="?attr/textAppearanceBodyMedium"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
                         </LinearLayout>
@@ -321,7 +321,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="未设置"
+                            android:text="@string/common_not_set"
                             android:textAppearance="?attr/textAppearanceTitleMedium"
                             android:textColor="?attr/colorOnSurface" />
                     </LinearLayout>
@@ -365,7 +365,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
-                                android:text="教室"
+                                android:text="@string/course_classroom"
                                 android:textAppearance="?attr/textAppearanceBodyMedium"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
                         </LinearLayout>
@@ -375,7 +375,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="未设置"
+                            android:text="@string/common_not_set"
                             android:textAppearance="?attr/textAppearanceTitleMedium"
                             android:textColor="?attr/colorOnSurface" />
                     </LinearLayout>
@@ -414,7 +414,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="10dp"
-                        android:text="周次"
+                        android:text="@string/course_weeks"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -425,7 +425,7 @@
                         android:layout_weight="1"
                         android:layout_marginStart="10dp"
                         android:gravity="end"
-                        android:text="第1-16周"
+                        android:text="@string/course_weeks_placeholder"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface" />

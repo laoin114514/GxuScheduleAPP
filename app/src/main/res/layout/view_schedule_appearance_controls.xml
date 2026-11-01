@@ -44,7 +44,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="格子高度"
+                android:text="@string/appearance_cell_height"
                 android:textSize="@dimen/text_body"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -152,7 +152,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="显示教室"
+                android:text="@string/appearance_show_classroom"
                 android:textSize="@dimen/text_body"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -174,7 +174,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="显示教师"
+                android:text="@string/appearance_show_teacher"
                 android:textSize="@dimen/text_body"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -204,7 +204,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="边框颜色"
+                android:text="@string/appearance_border_color"
                 android:textSize="@dimen/text_body"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -228,7 +228,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="边框跟随课程颜色"
+                android:text="@string/appearance_border_follow"
                 android:textSize="@dimen/text_body"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -257,7 +257,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="底部留白"
+                android:text="@string/appearance_bottom_blank"
                 android:textSize="@dimen/text_body"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -279,7 +279,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="高亮当日"
+                android:text="@string/appearance_highlight_today"
                 android:textSize="@dimen/text_body"
                 android:textColor="?attr/colorOnSurface" />
 

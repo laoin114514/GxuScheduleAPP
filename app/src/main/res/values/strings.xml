@@ -84,4 +84,35 @@
     <string name="common_na">—</string>
     <string name="profile_unbound_toast">已解绑教务账号</string>
     <string name="profile_no_mail_app">未找到邮件应用</string>
+
+    <!-- ===== 课表 / 课表菜单 / 课程详情 ===== -->
+    <string name="schedule_empty_semester">本学期暂无课程</string>
+    <string name="schedule_import_done_placeholder">成功导入 0 门课程</string>
+    <string name="schedule_week_placeholder">第5周 (本周)</string>
+    <string name="schedule_loading">正在加载课表…</string>
+    <string name="menu_week_placeholder">第 1 周</string>
+    <string name="menu_title">课表菜单</string>
+    <string name="menu_appearance_row">课表外观</string>
+    <string name="menu_week_hint_placeholder">拖动切换周次 · 共 20 周</string>
+    <string name="menu_section_appearance">外观</string>
+    <string name="menu_semester_placeholder">未设置学期</string>
+    <string name="menu_section_semester">学期</string>
+    <string name="menu_section_week">周次</string>
+    <string name="appearance_border_follow">边框跟随课程颜色</string>
+    <string name="appearance_border_color">边框颜色</string>
+    <string name="appearance_bottom_blank">底部留白</string>
+    <string name="appearance_highlight_today">高亮当日</string>
+    <string name="appearance_cell_height">格子高度</string>
+    <string name="appearance_show_teacher">显示教师</string>
+    <string name="appearance_show_classroom">显示教室</string>
+    <string name="course_teacher">教师</string>
+    <string name="course_classroom">教室</string>
+    <string name="course_category">课程类别</string>
+    <string name="course_name_label">课程名称</string>
+    <string name="course_time">时间</string>
+    <string name="common_unknown">未知</string>
+    <string name="course_credits">学分</string>
+    <string name="course_weeks">周次</string>
+    <string name="course_qq_group">QQ群</string>
+    <string name="course_weeks_placeholder">第1-16周</string>
 </resources>

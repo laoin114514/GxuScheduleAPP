@@ -45,7 +45,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="课表菜单"
+            android:text="@string/menu_title"
             android:textColor="?attr/colorOnSurface"
             android:textSize="@dimen/text_title"
             android:textStyle="bold" />
@@ -69,7 +69,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="6dp"
-        android:text="未设置学期"
+        android:text="@string/menu_semester_placeholder"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="@dimen/text_caption" />
 
@@ -117,7 +117,7 @@
                 style="@style/SheetSectionLabel"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="8dp"
-                android:text="周次" />
+                android:text="@string/menu_section_week" />
 
             <com.google.android.material.card.MaterialCardView
                 style="@style/DetailSheetCard">
@@ -142,7 +142,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="第 1 周"
+                            android:text="@string/menu_week_placeholder"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="@dimen/text_headline"
                             android:textStyle="bold" />
@@ -173,7 +173,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="拖动切换周次 · 共 20 周"
+                        android:text="@string/menu_week_hint_placeholder"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="@dimen/text_caption" />
                 </LinearLayout>
@@ -191,7 +191,7 @@
                     style="@style/SheetSectionLabel"
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
-                    android:text="学期" />
+                    android:text="@string/menu_section_semester" />
 
                 <com.google.android.material.card.MaterialCardView
                     style="@style/DetailSheetCard">
@@ -231,7 +231,7 @@
                     style="@style/SheetSectionLabel"
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
-                    android:text="外观" />
+                    android:text="@string/menu_section_appearance" />
 
                 <!-- 外观摘要行：默认收起，一行说清当前外观（格子高度 / 显示什么 / 边框）。
                      点开展开下面整组控件。原来 7 个控件常驻展开，把菜单顶到 900dp，
@@ -254,7 +254,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="课表外观"
+                            android:text="@string/menu_appearance_row"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="@dimen/text_body"
                             android:textStyle="bold" />
