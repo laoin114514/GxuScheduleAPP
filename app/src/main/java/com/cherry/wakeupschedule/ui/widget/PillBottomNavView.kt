@@ -35,9 +35,9 @@ class PillBottomNavView @JvmOverloads constructor(
     private data class Tab(val id: Int, val title: String, val iconRes: Int)
 
     private val tabs = listOf(
-        Tab(R.id.nav_schedule, "课表", R.drawable.ic_mtrl_calendar_month),
-        Tab(R.id.nav_tools, "工具", R.drawable.ic_mtrl_grid_view),
-        Tab(R.id.nav_profile, "我的", R.drawable.ic_mtrl_person),
+        Tab(R.id.nav_schedule, context.getString(R.string.nav_schedule), R.drawable.ic_mtrl_calendar_month),
+        Tab(R.id.nav_tools, context.getString(R.string.nav_tools), R.drawable.ic_mtrl_grid_view),
+        Tab(R.id.nav_profile, context.getString(R.string.nav_profile), R.drawable.ic_mtrl_person),
     )
 
     private inner class Item(val tab: Tab) {
@@ -185,11 +185,9 @@ class PillBottomNavView @JvmOverloads constructor(
                 else com.google.android.material.R.attr.colorOnSurfaceVariant
             )
         )
-        item.cell.contentDescription = if (overview) {
-            "课表，当前总课表，再次点击切换到周课表"
-        } else {
-            "课表，当前周课表，再次点击切换到总课表"
-        }
+        item.cell.contentDescription = context.getString(
+            if (overview) R.string.nav_schedule_desc_overview else R.string.nav_schedule_desc_week
+        )
     }
 
     private fun selectInternal(id: Int, animate: Boolean) {

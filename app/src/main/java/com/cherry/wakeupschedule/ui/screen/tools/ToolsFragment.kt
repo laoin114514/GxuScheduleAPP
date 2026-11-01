@@ -91,29 +91,33 @@ class ToolsFragment : Fragment() {
 
     // ── 数据 ────────────────────────────────────────────────────
 
-    private fun buildSections(): List<ToolSection> = listOf(
-        ToolSection("学业服务", ToolSection.Style.ICON_GRID, listOf(
-            ToolItem("grades", "成绩查询", icon = R.drawable.ic_mtrl_assignment,
+    private fun buildSections(): List<ToolSection> {
+        // 文案统一走 strings.xml（第一批：工具页分组与条目）
+        val ctx = requireContext()
+        return listOf(
+        ToolSection(ctx.getString(R.string.tools_section_academic), ToolSection.Style.ICON_GRID, listOf(
+            ToolItem("grades", ctx.getString(R.string.tools_grades), icon = R.drawable.ic_mtrl_assignment,
                 onClick = { ctx -> ctx.startActivity(Intent(ctx, GradeQueryActivity::class.java)) }),
-            ToolItem("exams", "考试安排", icon = R.drawable.ic_mtrl_event_note,
+            ToolItem("exams", ctx.getString(R.string.tools_exams), icon = R.drawable.ic_mtrl_event_note,
                 onClick = { ctx -> ctx.startActivity(Intent(ctx, ExamScheduleActivity::class.java)) }),
-            ToolItem("classroom", "教室查询", icon = R.drawable.ic_mtrl_meeting_room),
-            ToolItem("gpa", "绩点计算", icon = R.drawable.ic_mtrl_chart,
+            ToolItem("classroom", ctx.getString(R.string.tools_classroom), icon = R.drawable.ic_mtrl_meeting_room),
+            ToolItem("gpa", ctx.getString(R.string.tools_gpa), icon = R.drawable.ic_mtrl_chart,
                 onClick = { ctx -> ctx.startActivity(Intent(ctx, GpaActivity::class.java)) }),
         )),
-        ToolSection("校园生活", ToolSection.Style.ICON_GRID, listOf(
-            ToolItem("library", "图书馆", icon = R.drawable.ic_mtrl_book),
-            ToolItem("campus_card", "校园卡", icon = R.drawable.ic_mtrl_credit_card),
-            ToolItem("map", "校园地图", icon = R.drawable.ic_mtrl_map),
-            ToolItem("dining", "食堂菜谱", icon = R.drawable.ic_mtrl_restaurant),
+        ToolSection(ctx.getString(R.string.tools_section_campus), ToolSection.Style.ICON_GRID, listOf(
+            ToolItem("library", ctx.getString(R.string.tools_library), icon = R.drawable.ic_mtrl_book),
+            ToolItem("campus_card", ctx.getString(R.string.tools_campus_card), icon = R.drawable.ic_mtrl_credit_card),
+            ToolItem("map", ctx.getString(R.string.tools_campus_map), icon = R.drawable.ic_mtrl_map),
+            ToolItem("dining", ctx.getString(R.string.tools_dining), icon = R.drawable.ic_mtrl_restaurant),
         ), tint = ToolSection.Tint.SECONDARY),
-        ToolSection("学习工具", ToolSection.Style.CARDS, listOf(
-            ToolItem("pomodoro", "番茄钟", subtitle = "专注计时", icon = R.drawable.ic_mtrl_timer),
-            ToolItem("notes", "快速笔记", subtitle = "灵感随手记", icon = R.drawable.ic_mtrl_note),
-            ToolItem("export", "课表导出", subtitle = "生成课表图片，轻松分享",
+        ToolSection(ctx.getString(R.string.tools_section_study), ToolSection.Style.CARDS, listOf(
+            ToolItem("pomodoro", ctx.getString(R.string.tools_pomodoro), subtitle = ctx.getString(R.string.tools_pomodoro_sub), icon = R.drawable.ic_mtrl_timer),
+            ToolItem("notes", ctx.getString(R.string.tools_notes), subtitle = ctx.getString(R.string.tools_notes_sub), icon = R.drawable.ic_mtrl_note),
+            ToolItem("export", ctx.getString(R.string.tools_export), subtitle = ctx.getString(R.string.tools_export_sub),
                 icon = R.drawable.ic_mtrl_file_upload, wide = true),
         )),
-    )
+        )
+    }
 
     private fun refresh(query: String) {
         val q = query.trim()

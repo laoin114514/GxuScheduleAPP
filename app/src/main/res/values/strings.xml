@@ -11,4 +11,40 @@
     <string name="widget_week_description">周一至周日迷你课表 · 课程块配色同课表 · 深浅色自适应</string>
     <string name="widget_next_description">下一门课提醒 · 当前课与下一门 · 深浅色自适应</string>
     <string name="widget_upcoming_description">近日课程 · 今天与明天两日课表并排</string>
+
+    <!-- ===== 工具页 ===== -->
+    <string name="tools_title">工具</string>
+    <string name="tools_search_hint">搜索工具…</string>
+    <string name="tools_search_empty">未找到相关工具</string>
+    <string name="tools_search_empty_action">清除搜索</string>
+    <string name="tools_section_academic">学业服务</string>
+    <string name="tools_section_campus">校园生活</string>
+    <string name="tools_section_study">学习工具</string>
+    <string name="tools_coming_soon">即将上线</string>
+    <string name="tools_coming_soon_toast">功能开发中，敬请期待</string>
+    <string name="tools_hero_title">教务一键导入</string>
+    <string name="tools_hero_subtitle">绑定教务系统，自动同步课表</string>
+    <string name="tools_hero_badge">推荐</string>
+    <string name="tools_grades">成绩查询</string>
+    <string name="tools_exams">考试安排</string>
+    <string name="tools_classroom">教室查询</string>
+    <string name="tools_gpa">绩点计算</string>
+    <string name="tools_library">图书馆</string>
+    <string name="tools_campus_card">校园卡</string>
+    <string name="tools_campus_map">校园地图</string>
+    <string name="tools_dining">食堂菜谱</string>
+    <string name="tools_pomodoro">番茄钟</string>
+    <string name="tools_pomodoro_sub">专注计时</string>
+    <string name="tools_notes">快速笔记</string>
+    <string name="tools_notes_sub">灵感随手记</string>
+    <string name="tools_export">课表导出</string>
+    <string name="tools_export_sub">生成课表图片，轻松分享</string>
+
+    <!-- ===== 底部导航 ===== -->
+    <string name="nav_schedule">课表</string>
+    <string name="nav_tools">工具</string>
+    <string name="nav_profile">我的</string>
+    <!-- 无障碍描述：点击「课表」页签会在周课表 / 总课表之间切换 -->
+    <string name="nav_schedule_desc_week">课表，当前周课表，再次点击切换到总课表</string>
+    <string name="nav_schedule_desc_overview">课表，当前总课表，再次点击切换到周课表</string>
 </resources>

@@ -304,7 +304,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                 })
                 if (item.isComingSoon) {
                     titleRow.addView(TextView(ctx).apply {
-                        text = "即将上线"
+                        text = ctx.getString(R.string.tools_coming_soon)
                         setTextSizeRes(R.dimen.text_label)
                         setTextColor(attr(ctx, com.google.android.material.R.attr.colorOnSurfaceVariant))
                         background = GradientDrawable().apply {
@@ -399,7 +399,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
         if (action != null) {
             action(v.context)
         } else {
-            AppToast.info(v.context, "功能开发中，敬请期待")
+            AppToast.info(v.context, v.context.getString(R.string.tools_coming_soon_toast))
         }
     }
 
