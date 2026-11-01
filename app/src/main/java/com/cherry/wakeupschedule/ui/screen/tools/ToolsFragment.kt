@@ -97,7 +97,7 @@ class ToolsFragment : Fragment() {
                 onClick = { ctx -> ctx.startActivity(Intent(ctx, GradeQueryActivity::class.java)) }),
             ToolItem("exams", "考试安排", icon = R.drawable.ic_mtrl_event_note,
                 onClick = { ctx -> ctx.startActivity(Intent(ctx, ExamScheduleActivity::class.java)) }),
-            ToolItem("classroom", "教室查询", icon = R.drawable.ic_mtrl_school),
+            ToolItem("classroom", "教室查询", icon = R.drawable.ic_mtrl_meeting_room),
             ToolItem("gpa", "绩点计算", icon = R.drawable.ic_mtrl_chart,
                 onClick = { ctx -> ctx.startActivity(Intent(ctx, GpaActivity::class.java)) }),
         )),
