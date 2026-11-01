@@ -129,9 +129,10 @@
                             </LinearLayout>
 
                             <TextView
-                                android:layout_width="40dp"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="10dp"
+                                android:minWidth="56dp"
                                 android:text="时间"
                                 android:textAppearance="?attr/textAppearanceBodyMedium"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
@@ -183,9 +184,10 @@
                         </LinearLayout>
 
                         <TextView
-                            android:layout_width="40dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
+                            android:minWidth="56dp"
                             android:text="QQ群"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
@@ -242,9 +244,10 @@
                         </LinearLayout>
 
                         <TextView
-                            android:layout_width="40dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
+                            android:minWidth="56dp"
                             android:text="教师"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />

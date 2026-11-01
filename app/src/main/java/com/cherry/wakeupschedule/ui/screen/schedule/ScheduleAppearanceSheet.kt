@@ -87,6 +87,9 @@ object ScheduleAppearanceSheet {
         // 控件装配只有一份实现（菜单里内联的同一组控件也走它），这里只负责容器与高度手势
         ScheduleAppearanceControls.bind(sheetView, context, fragment)
 
+        // 右上角关闭：与课表菜单同一规格
+        sheetView.findViewById<View>(R.id.btn_appearance_close)?.setOnClickListener { dialog.dismiss() }
+
         // ── 面板高度：把手拖动调节 ──
         setupHeightControl(context, sheetView)
 

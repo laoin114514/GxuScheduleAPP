@@ -10,6 +10,7 @@
   背景也在代码里画（24dp 顶部圆角 + colorSurfaceContainer），这里不写。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/sheet_appearance_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -29,7 +30,36 @@
             android:layout_width="32dp"
             android:layout_height="4dp"
             android:layout_gravity="center"
+            android:alpha="0.32"
             android:background="@drawable/bg_drag_handle" />
+    </FrameLayout>
+
+    <!-- 标题行：与课表菜单同一规格（居中标题 + 右端关闭），钉在滚动区之上 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="课表外观"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btn_appearance_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="-8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="关闭课表外观"
+            android:src="@drawable/ic_close"
+            app:tint="?attr/colorOnSurfaceVariant" />
     </FrameLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -47,15 +77,6 @@
             android:paddingHorizontal="16dp"
             android:paddingTop="4dp"
             android:paddingBottom="24dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="课表外观"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="@dimen/text_title"
-                android:textStyle="bold" />
 
             <include layout="@layout/view_schedule_appearance_controls" />
 
