@@ -66,31 +66,13 @@ class BindJwxtActivity : BaseActivity() {
         groupForm = findViewById(R.id.group_form)
         cardSteps = findViewById(R.id.card_steps)
         tvBrandSubtitle = findViewById(R.id.tv_brand_subtitle)
+        // 4 个步骤行共用 item_bind_step.xml：内层 id 在 4 个 include 里重复，
+        // 必须从各自的 include 根往下找，不能直接从 Activity 找（否则全拿到第一份）。
         stepRows = listOf(
-            StepRow(
-                findViewById(R.id.step_row_login), findViewById(R.id.step_login_dot),
-                findViewById(R.id.step_login_spinner), findViewById(R.id.step_login_check),
-                findViewById(R.id.step_login_fail), findViewById(R.id.step_login_text),
-                "登录教务账号", "正在登录教务账号…", "登录成功"
-            ),
-            StepRow(
-                findViewById(R.id.step_row_profile), findViewById(R.id.step_profile_dot),
-                findViewById(R.id.step_profile_spinner), findViewById(R.id.step_profile_check),
-                findViewById(R.id.step_profile_fail), findViewById(R.id.step_profile_text),
-                "获取个人信息", "正在获取个人信息…", "获取个人信息成功"
-            ),
-            StepRow(
-                findViewById(R.id.step_row_semester), findViewById(R.id.step_semester_dot),
-                findViewById(R.id.step_semester_spinner), findViewById(R.id.step_semester_check),
-                findViewById(R.id.step_semester_fail), findViewById(R.id.step_semester_text),
-                "获取学期信息", "正在获取学期信息…", "获取学期信息成功"
-            ),
-            StepRow(
-                findViewById(R.id.step_row_schedule), findViewById(R.id.step_schedule_dot),
-                findViewById(R.id.step_schedule_spinner), findViewById(R.id.step_schedule_check),
-                findViewById(R.id.step_schedule_fail), findViewById(R.id.step_schedule_text),
-                "导入本学期课表", "正在导入本学期课表…", "课表导入完成"
-            )
+            bindStep(R.id.step_row_login, "登录教务账号", "正在登录教务账号…", "登录成功"),
+            bindStep(R.id.step_row_profile, "获取个人信息", "正在获取个人信息…", "获取个人信息成功"),
+            bindStep(R.id.step_row_semester, "获取学期信息", "正在获取学期信息…", "获取学期信息成功"),
+            bindStep(R.id.step_row_schedule, "导入本学期课表", "正在导入本学期课表…", "课表导入完成")
         )
         setupPageHeader(toolbar, "绑定教务系统")
         setupFieldFocusFeedback()
@@ -117,14 +99,51 @@ class BindJwxtActivity : BaseActivity() {
                 etUsername.text.toString().trim()
             }
 
-            if (username.isEmpty() || password.isEmpty()) {
-                tvStatus.text = if (isPasswordUpdateMode) "请输入新密码" else "请输入学号和密码"
-                tvStatus.visibility = View.VISIBLE
+            // 校验错误贴在对应输入框下方（TextInputLayout 的 error），
+            // 不再写到页面底部那行状态文字里 —— 那里离输入框有 200dp，用户根本连不上。
+            if (username.isEmpty()) {
+                findViewById<com.google.android.material.textfield.TextInputLayout>(
+                    R.id.input_layout_username
+                ).error = "请输入学号"
                 return@setOnClickListener
             }
+            if (password.isEmpty()) {
+                findViewById<com.google.android.material.textfield.TextInputLayout>(
+                    R.id.input_layout_username
+                ).error = null
+                inputLayoutPassword.error = if (isPasswordUpdateMode) "请输入新密码" else "请输入密码"
+                return@setOnClickListener
+            }
+            findViewById<com.google.android.material.textfield.TextInputLayout>(
+                R.id.input_layout_username
+            ).error = null
+            inputLayoutPassword.error = null
 
             doLogin(username, password)
         }
+    }
+
+    /** 从 include 根往下取一份步骤行的五个子视图，并填上文案 */
+    private fun bindStep(
+        rootId: Int,
+        baseText: String,
+        runningText: String,
+        successText: String
+    ): StepRow {
+        val root = findViewById<View>(rootId)
+        val label = root.findViewById<TextView>(R.id.step_text)
+        label.text = baseText
+        return StepRow(
+            root,
+            root.findViewById(R.id.step_dot),
+            root.findViewById(R.id.step_spinner),
+            root.findViewById(R.id.step_check),
+            root.findViewById(R.id.step_fail),
+            label,
+            baseText,
+            runningText,
+            successText
+        )
     }
 
     /**

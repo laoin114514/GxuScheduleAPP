@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  绑定教务的一步（被 activity_bind_jwxt.xml include 4 次）。
+
+  原来 4 个步骤行是逐字复制的 ~60 行 × 4 ≈ 240 行，占整份布局的一半，
+  改一处要同步改四处。抽成一份后，文案由代码填（setStepLabel）。
+
+  内层 id 在 4 个 include 里会重复，所以调用方必须从 include 根
+  （step_row_login 等）往下找，不能直接从 Activity 找 —— 见 BindJwxtActivity.bindStep。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="44dp"
+    android:orientation="horizontal">
+
+    <FrameLayout
+        android:layout_width="22dp"
+        android:layout_height="22dp">
+
+        <View
+            android:id="@+id/step_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_step_dot" />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/step_spinner"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:indicatorColor="?attr/colorPrimary"
+            app:indicatorSize="22dp"
+            app:trackThickness="2dp" />
+
+        <ImageView
+            android:id="@+id/step_check"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_check"
+            android:visibility="gone"
+            app:tint="?attr/colorPrimary" />
+
+        <ImageView
+            android:id="@+id/step_fail"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_close"
+            android:visibility="gone"
+            app:tint="?attr/colorError" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/step_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface" />
+</LinearLayout>
