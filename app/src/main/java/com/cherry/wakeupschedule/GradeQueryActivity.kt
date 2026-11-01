@@ -25,6 +25,7 @@ import com.cherry.wakeupschedule.ui.screen.grade.GradeAdapter
 import com.cherry.wakeupschedule.ui.screen.grade.GradeDetailDialog
 import com.cherry.wakeupschedule.ui.screen.grade.GradeFilter
 import com.cherry.wakeupschedule.ui.screen.grade.GradeStats
+import com.cherry.wakeupschedule.ui.component.PageStatusController
 import com.cherry.wakeupschedule.ui.component.SemesterExpandPicker
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
@@ -47,11 +48,7 @@ class GradeQueryActivity : BaseActivity() {
     private lateinit var picker: SemesterExpandPicker
 
     private lateinit var recycler: RecyclerView
-    private lateinit var statusContainer: View
-    private lateinit var statusText: TextView
-    private lateinit var loadingIndicator: View
-    private lateinit var statusIcon: android.widget.ImageView
-    private lateinit var statusAction: TextView
+    private lateinit var status: PageStatusController
     private lateinit var gpaText: TextView
     private lateinit var creditsText: TextView
     private lateinit var filterRow: LinearLayout
@@ -74,21 +71,30 @@ class GradeQueryActivity : BaseActivity() {
         gradeDataManager = GradeDataManager.getInstance(this)
 
         recycler = findViewById(R.id.rv_grades)
-        statusContainer = findViewById(R.id.ll_status)
-        statusText = findViewById(R.id.tv_status)
-        loadingIndicator = findViewById(R.id.pb_loading)
-        statusIcon = findViewById(R.id.iv_status_icon)
-        statusAction = findViewById(R.id.tv_status_action)
         gpaText = findViewById(R.id.tv_gpa)
         creditsText = findViewById(R.id.tv_credits)
         filterRow = findViewById(R.id.ll_filters)
 
-        loadingIndicator.visibility = View.GONE
-        (loadingIndicator as? com.google.android.material.progressindicator.CircularProgressIndicator)
-            ?.apply {
-                isIndeterminate = true
-                setIndicatorColor(themeColor(com.google.android.material.R.attr.colorPrimary))
+        btnQuery = findViewById(R.id.btn_query)
+        val loadingIndicator =
+            findViewById<com.google.android.material.progressindicator.CircularProgressIndicator>(
+                R.id.pb_loading
+            )
+        loadingIndicator.isIndeterminate = true
+        loadingIndicator.setIndicatorColor(themeColor(com.google.android.material.R.attr.colorPrimary))
+        // 状态层（加载/空态/失败）统一由 PageStatusController 管理，与考试安排页共用一份实现
+        status = PageStatusController(
+            container = findViewById(R.id.ll_status),
+            textView = findViewById(R.id.tv_status),
+            loadingView = loadingIndicator,
+            iconView = findViewById(R.id.iv_status_icon),
+            actionView = findViewById(R.id.tv_status_action),
+            listView = recycler,
+            onLoadingChanged = { loading ->
+                btnQuery.isEnabled = !loading
+                btnQuery.alpha = if (loading) 0.5f else 1f
             }
+        )
 
         adapter = GradeAdapter { showDetail(it) }
         recycler.layoutManager = LinearLayoutManager(this)
@@ -108,14 +114,12 @@ class GradeQueryActivity : BaseActivity() {
             picker.collapse()
         }
 
-        btnQuery = findViewById<View>(R.id.btn_query).apply {
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = dp(12).toFloat()
-                setColor(themeColor(com.google.android.material.R.attr.colorPrimary))
-            }
-            setOnClickListener { querySelectedSemester() }
+        btnQuery.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(12).toFloat()
+            setColor(themeColor(com.google.android.material.R.attr.colorPrimary))
         }
+        btnQuery.setOnClickListener { querySelectedSemester() }
 
         buildFilterChips()
         loadSemesters()
@@ -312,75 +316,15 @@ class GradeQueryActivity : BaseActivity() {
     private fun currentSemester(): SemesterEntity? =
         SemesterManager.getAll().firstOrNull { it.id == gradeDataManager.selectedSemesterId }
 
-    /** 盖住成绩列表的 loading 遮罩：与列表卡片同色的圆角块 */
-    private val loadingScrim: GradientDrawable by lazy {
-        GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = dp(16).toFloat()
-            setColor(
-                ColorUtils.setAlphaComponent(
-                    themeColor(com.google.android.material.R.attr.colorSurfaceContainerLowest), 0xF5
-                )
-            )
-        }
-    }
-
-    /**
-     * 状态层：加载中 / 空态 / 失败三态共用。
-     * [iconRes] 空态与失败态显示图标；[actionText]/[action] 提供下一步动作（去绑定 / 重试），
-     * 让"该学期还没有成绩"这种空态不只是干瞪一行字。
-     */
     private fun showStatus(
         text: String,
         loading: Boolean,
         @androidx.annotation.DrawableRes iconRes: Int? = null,
         actionText: String? = null,
         action: (() -> Unit)? = null
-    ) {
-        statusContainer.visibility = View.VISIBLE
-        loadingIndicator.visibility = if (loading) View.VISIBLE else View.GONE
-        statusIcon.visibility =
-            if (!loading && iconRes != null) View.VISIBLE else View.GONE
-        iconRes?.let { statusIcon.setImageResource(it) }
-        statusAction.visibility =
-            if (!loading && actionText != null && action != null) View.VISIBLE else View.GONE
-        statusAction.text = actionText
-        statusAction.setOnClickListener { action?.invoke() }
-        statusText.text = text
-        // loading 遮罩：盖住旧成绩并吃掉点击，避免误点条目进详情
-        setStatusHeight(if (loading && recycler.height > 0) recycler.height else null)
-        statusContainer.isClickable = loading
-        statusContainer.background = if (loading) loadingScrim else null
-        setQueryLoading(loading)
-    }
+    ) = status.show(text, loading, iconRes, actionText, action)
 
-    private fun hideStatus() {
-        statusContainer.visibility = View.GONE
-        statusContainer.isClickable = false
-        statusContainer.background = null
-        setStatusHeight(null)
-        setQueryLoading(false)
-    }
-
-    /**
-     * 指定状态层高度：null 表示按内容自适应。
-     *
-     * 铺满列表要显式给高度——FrameLayout 只会在**多于一个** MATCH_PARENT 子项时
-     * 二次测量，单个 match_parent 子项在 wrap_content 容器里量不出来列表高度。
-     */
-    private fun setStatusHeight(height: Int?) {
-        val lp = statusContainer.layoutParams
-        val target = height ?: ViewGroup.LayoutParams.WRAP_CONTENT
-        if (lp.height == target) return
-        lp.height = target
-        statusContainer.layoutParams = lp
-    }
-
-    /** 查询期间禁用「查询」并压暗，避免重复触发 */
-    private fun setQueryLoading(loading: Boolean) {
-        btnQuery.isEnabled = !loading
-        btnQuery.alpha = if (loading) 0.5f else 1f
-    }
+    private fun hideStatus() = status.hide()
 
     /** 页面内轻提示；失败类文案请直接用 AppToast.error */
     private fun toast(text: String) =
