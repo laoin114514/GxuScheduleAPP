@@ -50,6 +50,8 @@ class GradeQueryActivity : BaseActivity() {
     private lateinit var statusContainer: View
     private lateinit var statusText: TextView
     private lateinit var loadingIndicator: View
+    private lateinit var statusIcon: android.widget.ImageView
+    private lateinit var statusAction: TextView
     private lateinit var gpaText: TextView
     private lateinit var creditsText: TextView
     private lateinit var filterRow: LinearLayout
@@ -75,6 +77,8 @@ class GradeQueryActivity : BaseActivity() {
         statusContainer = findViewById(R.id.ll_status)
         statusText = findViewById(R.id.tv_status)
         loadingIndicator = findViewById(R.id.pb_loading)
+        statusIcon = findViewById(R.id.iv_status_icon)
+        statusAction = findViewById(R.id.tv_status_action)
         gpaText = findViewById(R.id.tv_gpa)
         creditsText = findViewById(R.id.tv_credits)
         filterRow = findViewById(R.id.ll_filters)
@@ -175,10 +179,20 @@ class GradeQueryActivity : BaseActivity() {
                 refreshSemesterOptions()
                 renderGrades()
             }.onFailure { error ->
-                // 失败原因走浮层提示（CaptchaRequiredException 等已带友好文案）；
-                // 同时把页面还原成「已有数据 / 空态」，不再把错误嵌在列表区域里
+                // 失败原因走浮层提示（CaptchaRequiredException 等已带友好文案）
                 AppToast.error(this@GradeQueryActivity, error.message ?: "查询失败")
-                renderGrades()
+                if (semesterGrades.isEmpty()) {
+                    // 本来就没数据时，空态换成"失败 + 重试"，而不是继续显示"还没有成绩"
+                    showStatus(
+                        "查询失败：${error.message ?: "网络异常"}",
+                        loading = false,
+                        iconRes = R.drawable.ic_mtrl_error_outline,
+                        actionText = "重试",
+                        action = { querySelectedSemester() }
+                    )
+                } else {
+                    renderGrades()
+                }
             }
         }
     }
@@ -207,8 +221,23 @@ class GradeQueryActivity : BaseActivity() {
         adapter.submit(visible)
 
         when {
-            semesterGrades.isEmpty() -> showStatus("该学期还没有成绩，点「查询」从教务获取", loading = false)
-            visible.isEmpty() -> showStatus("没有符合「${currentFilter.label}」的成绩", loading = false)
+            semesterGrades.isEmpty() -> showStatus(
+                "该学期还没有成绩，点「查询」从教务获取",
+                loading = false,
+                iconRes = R.drawable.ic_mtrl_assignment,
+                actionText = if (JwxtAuthManager.isBound()) "立即查询" else "去绑定教务",
+                action = {
+                    if (JwxtAuthManager.isBound()) querySelectedSemester()
+                    else startActivity(
+                        android.content.Intent(this, BindJwxtActivity::class.java)
+                    )
+                }
+            )
+            visible.isEmpty() -> showStatus(
+                "没有符合「${currentFilter.label}」的成绩",
+                loading = false,
+                iconRes = R.drawable.ic_mtrl_search
+            )
             else -> hideStatus()
         }
     }
@@ -293,9 +322,27 @@ class GradeQueryActivity : BaseActivity() {
         }
     }
 
-    private fun showStatus(text: String, loading: Boolean) {
+    /**
+     * 状态层：加载中 / 空态 / 失败三态共用。
+     * [iconRes] 空态与失败态显示图标；[actionText]/[action] 提供下一步动作（去绑定 / 重试），
+     * 让"该学期还没有成绩"这种空态不只是干瞪一行字。
+     */
+    private fun showStatus(
+        text: String,
+        loading: Boolean,
+        @androidx.annotation.DrawableRes iconRes: Int? = null,
+        actionText: String? = null,
+        action: (() -> Unit)? = null
+    ) {
         statusContainer.visibility = View.VISIBLE
         loadingIndicator.visibility = if (loading) View.VISIBLE else View.GONE
+        statusIcon.visibility =
+            if (!loading && iconRes != null) View.VISIBLE else View.GONE
+        iconRes?.let { statusIcon.setImageResource(it) }
+        statusAction.visibility =
+            if (!loading && actionText != null && action != null) View.VISIBLE else View.GONE
+        statusAction.text = actionText
+        statusAction.setOnClickListener { action?.invoke() }
         statusText.text = text
         // loading 遮罩：盖住旧成绩并吃掉点击，避免误点条目进详情
         setStatusHeight(if (loading && recycler.height > 0) recycler.height else null)

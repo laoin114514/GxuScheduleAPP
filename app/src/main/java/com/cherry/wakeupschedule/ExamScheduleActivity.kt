@@ -47,6 +47,8 @@ class ExamScheduleActivity : BaseActivity() {
     private lateinit var recycler: RecyclerView
     private lateinit var statusContainer: View
     private lateinit var statusText: TextView
+    private lateinit var statusIcon: android.widget.ImageView
+    private lateinit var statusAction: TextView
     private lateinit var loadingIndicator: View
     private lateinit var filterRow: LinearLayout
     private lateinit var btnQuery: View
@@ -76,6 +78,8 @@ class ExamScheduleActivity : BaseActivity() {
         statusContainer = findViewById(R.id.ll_status)
         statusText = findViewById(R.id.tv_status)
         loadingIndicator = findViewById(R.id.pb_loading)
+        statusIcon = findViewById(R.id.iv_status_icon)
+        statusAction = findViewById(R.id.tv_status_action)
         filterRow = findViewById(R.id.ll_filters)
 
         loadingIndicator.visibility = View.GONE
@@ -130,7 +134,15 @@ class ExamScheduleActivity : BaseActivity() {
         val semesters = SemesterManager.getAll()
         if (semesters.isEmpty()) {
             picker.submit(emptyList(), emptyMap(), 0L)
-            showStatus("请先绑定教务账号，绑定后会自动生成学期", loading = false)
+            showStatus(
+                "请先绑定教务账号，绑定后会自动生成学期",
+                loading = false,
+                iconRes = R.drawable.ic_mtrl_info,
+                actionText = "去绑定教务",
+                action = {
+                    startActivity(android.content.Intent(this, BindJwxtActivity::class.java))
+                }
+            )
             adapter.submit(emptyList(), System.currentTimeMillis())
             return
         }
@@ -214,9 +226,22 @@ class ExamScheduleActivity : BaseActivity() {
 
         when {
             semesterExams.isEmpty() ->
-                showStatus("该学期还没有考试安排，点「查询」从教务获取", loading = false)
+                showStatus(
+                    "该学期还没有考试安排，点「查询」从教务获取",
+                    loading = false,
+                    iconRes = R.drawable.ic_mtrl_event_note,
+                    actionText = if (JwxtAuthManager.isBound()) "立即查询" else "去绑定教务",
+                    action = {
+                        if (JwxtAuthManager.isBound()) querySelectedSemester()
+                        else startActivity(android.content.Intent(this, BindJwxtActivity::class.java))
+                    }
+                )
             visible.isEmpty() ->
-                showStatus("没有「${currentFilter.label}」的考试安排", loading = false)
+                showStatus(
+                    "没有「${currentFilter.label}」的考试安排",
+                    loading = false,
+                    iconRes = R.drawable.ic_mtrl_search
+                )
             else -> hideStatus()
         }
     }
@@ -260,9 +285,21 @@ class ExamScheduleActivity : BaseActivity() {
         }
     }
 
-    private fun showStatus(text: String, loading: Boolean) {
+    private fun showStatus(
+        text: String,
+        loading: Boolean,
+        @androidx.annotation.DrawableRes iconRes: Int? = null,
+        actionText: String? = null,
+        action: (() -> Unit)? = null
+    ) {
         statusContainer.visibility = View.VISIBLE
         loadingIndicator.visibility = if (loading) View.VISIBLE else View.GONE
+        statusIcon.visibility = if (!loading && iconRes != null) View.VISIBLE else View.GONE
+        iconRes?.let { statusIcon.setImageResource(it) }
+        statusAction.visibility =
+            if (!loading && actionText != null && action != null) View.VISIBLE else View.GONE
+        statusAction.text = actionText
+        statusAction.setOnClickListener { action?.invoke() }
         statusText.text = text
         // loading 遮罩：盖住旧列表，避免查询中误以为看到的是新结果
         setStatusHeight(if (loading && recycler.height > 0) recycler.height else null)

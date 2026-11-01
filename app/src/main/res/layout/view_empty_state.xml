@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  统一空状态 / 状态层（成绩查询、考试安排、绩点计算共用）。
+
+  原来这三个页面各自是「一行 14sp 灰字 + 36dp 上下留白」，
+  而工具页的空状态是「72dp 图标 + 主文案 + 居中」，四页四种语言。
+  这里收成一份：图标 + 主文案 + 可选次按钮；加载中只显示转圈。
+
+  使用方（Activity）通过这几个 id 控制：
+  - pb_loading       加载中转圈（gone 即非加载态）
+  - iv_status_icon   图标（空状态显示，加载/纯文字时可隐藏）
+  - tv_status        主文案
+  - tv_status_action 次按钮（如「去绑定」「重试」；无动作时隐藏）
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingTop="40dp"
+    android:paddingBottom="40dp">
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/pb_loading"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone"
+        app:indicatorColor="?attr/colorPrimary"
+        app:indicatorSize="32dp"
+        app:trackThickness="3dp" />
+
+    <ImageView
+        android:id="@+id/iv_status_icon"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:alpha="0.3"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_mtrl_calendar_month"
+        android:visibility="gone"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:gravity="center"
+        android:paddingHorizontal="24dp"
+        android:textSize="@dimen/text_body_small"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+    <TextView
+        android:id="@+id/tv_status_action"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minWidth="88dp"
+        android:paddingHorizontal="16dp"
+        android:textSize="@dimen/text_body_small"
+        android:textColor="?attr/colorPrimary"
+        android:textStyle="bold"
+        android:visibility="gone" />
+</LinearLayout>
