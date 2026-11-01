@@ -33,6 +33,9 @@
         <item name="colorOnSurfaceVariant">#49454F</item>
         <item name="colorSurfaceContainer">#F3EDF7</item>
         <item name="colorSurfaceContainerHigh">#ECE6F0</item>
+        <item name="colorSurfaceContainerLowest">#FFFEFF</item>
+        <item name="colorSurfaceContainerLow">#FCF8FB</item>
+        <item name="colorSurfaceContainerHighest">#F7F2F7</item>
         <item name="colorOutline">#79747E</item>
         <item name="colorOutlineVariant">#CAC4D0</item>
         <item name="android:colorBackground">#FFFBFE</item>
@@ -60,6 +63,9 @@
         <item name="colorOnSurfaceVariant">#43474E</item>
         <item name="colorSurfaceContainer">#F0F4FA</item>
         <item name="colorSurfaceContainerHigh">#EAEEF4</item>
+        <item name="colorSurfaceContainerLowest">#FFFEFF</item>
+        <item name="colorSurfaceContainerLow">#FCF8FB</item>
+        <item name="colorSurfaceContainerHighest">#F7F2F7</item>
         <item name="colorOutline">#73777F</item>
         <item name="colorOutlineVariant">#C3C7CF</item>
         <item name="android:colorBackground">#FDFCFF</item>
@@ -87,6 +93,9 @@
         <item name="colorOnSurfaceVariant">#3F4946</item>
         <item name="colorSurfaceContainer">#EFF5F1</item>
         <item name="colorSurfaceContainerHigh">#E9EFEB</item>
+        <item name="colorSurfaceContainerLowest">#FEFEFF</item>
+        <item name="colorSurfaceContainerLow">#FAF9FC</item>
+        <item name="colorSurfaceContainerHighest">#F4F4F7</item>
         <item name="colorOutline">#6F7976</item>
         <item name="colorOutlineVariant">#BEC9C5</item>
         <item name="android:colorBackground">#FBFDF9</item>
@@ -114,6 +123,9 @@
         <item name="colorOnSurfaceVariant">#51443A</item>
         <item name="colorSurfaceContainer">#FDF3EC</item>
         <item name="colorSurfaceContainerHigh">#F7EDE6</item>
+        <item name="colorSurfaceContainerLowest">#FEFEFD</item>
+        <item name="colorSurfaceContainerLow">#F7FAF6</item>
+        <item name="colorSurfaceContainerHighest">#F1F5F1</item>
         <item name="colorOutline">#847468</item>
         <item name="colorOutlineVariant">#D7C3B5</item>
         <item name="android:colorBackground">#FFFBFF</item>
@@ -141,6 +153,9 @@
         <item name="colorOnSurfaceVariant">#514348</item>
         <item name="colorSurfaceContainer">#FFF0F3</item>
         <item name="colorSurfaceContainerHigh">#FCEAEE</item>
+        <item name="colorSurfaceContainerLowest">#FFFEFF</item>
+        <item name="colorSurfaceContainerLow">#FDF8FB</item>
+        <item name="colorSurfaceContainerHighest">#F9F2F3</item>
         <item name="colorOutline">#847378</item>
         <item name="colorOutlineVariant">#D7C1C7</item>
         <item name="android:colorBackground">#FFFBFF</item>

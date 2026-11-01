@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色模式：卡片与页面底色的亮度差很小，靠 1dp 描边把卡片边界画出来 -->
+    <dimen name="card_stroke_width">1dp</dimen>
+</resources>

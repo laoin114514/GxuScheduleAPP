@@ -62,4 +62,7 @@
 
     <!-- 所有页面顶部栏统一高度（原来一级页写死 52dp、二级页用 ?attr/actionBarSize ≈ 56dp） -->
     <dimen name="top_bar_height">52dp</dimen>
+
+    <!-- 卡片描边：浅色下面卡片靠白底 + 1dp 阴影就能分辨，深色下必须靠描边 -->
+    <dimen name="card_stroke_width">0dp</dimen>
 </resources>

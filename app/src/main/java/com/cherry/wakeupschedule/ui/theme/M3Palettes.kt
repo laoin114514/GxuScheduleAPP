@@ -2,6 +2,7 @@ package com.cherry.wakeupschedule.ui.theme
 
 import android.content.Context
 import androidx.annotation.ColorInt
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.toColorInt
 
 data class M3ColorPalette(
@@ -31,6 +32,28 @@ data class M3ColorPalette(
     @ColorInt val outlineVariant: Int,
     val isDark: Boolean = false
 ) {
+    /**
+     * 5 档 surface 容器族的其余三档（Material 的 Low / Lowest / Highest）。
+     *
+     * 这组值在 values/themes.xml 与 values-night/themes.xml 里也各写了一份静态值：
+     * XML 无法做颜色运算，代码侧必须保持同构，否则"布局里拿到的卡片底色"和
+     * "代码里算出来的卡片底色"会分叉。改动时两边一起改。
+     */
+    val surfaceContainerLowest: Int
+        get() = if (isDark) mix(surface, 0xFF000000.toInt(), 0.42f)
+        else mix(surface, 0xFFFFFFFF.toInt(), 0.72f)
+
+    val surfaceContainerLow: Int
+        get() = if (isDark) mix(surface, 0xFFFFFFFF.toInt(), 0.04f)
+        else mix(surface, outlineVariant, 0.06f)
+
+    val surfaceContainerHighest: Int
+        get() = if (isDark) mix(surface, 0xFFFFFFFF.toInt(), 0.12f)
+        else mix(surface, outlineVariant, 0.16f)
+
+    private fun mix(base: Int, tint: Int, amount: Float): Int =
+        ColorUtils.blendARGB(base, tint, amount)
+
     companion object {
         val LIGHT_PALETTES: List<M3ColorPalette> = listOf(
             M3ColorPalette(
