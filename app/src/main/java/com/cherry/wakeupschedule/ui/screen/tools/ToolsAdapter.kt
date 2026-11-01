@@ -97,12 +97,20 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
         }
     }
 
-    private fun buildCardGrid(ctx: Context): android.widget.GridLayout {
-        return android.widget.GridLayout(ctx).apply {
+    /**
+     * 双列卡容器。
+     *
+     * 原来用 android.widget.GridLayout + weight 分配列宽：GridLayout 算列宽时
+     * **不含子项的 margin**，两张卡各带 4dp 外边距后就比父宽多出 16dp，
+     * 右列被裁掉一截（截图里「快速笔记」右边永远缺一块）。
+     * 换成竖向 LinearLayout + 每行两个 weight=1 的卡，宽度由父容器精确分配。
+     */
+    private fun buildCardGrid(ctx: Context): LinearLayout {
+        return LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
             layoutParams = RecyclerView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { setMargins(dp(ctx, 16), 0, dp(ctx, 16), 0) }
-            columnCount = 2
         }
     }
 
@@ -222,6 +230,8 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                         layoutParams = FrameLayout.LayoutParams(dp(ctx, 22), dp(ctx, 22), Gravity.CENTER)
                         setImageResource(item.icon)
                         setColorFilter(iconColor)
+                        // 占位项（点击只弹"功能开发中"）图标降一档，和可用项区分开
+                        if (item.isComingSoon) alpha = 0.5f
                     })
                 }
                 addView(box)
@@ -251,16 +261,15 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
         val onCircleColor = attr(ctx, com.google.android.material.R.attr.colorOnSecondaryContainer)
         val outlineColor = attr(ctx, com.google.android.material.R.attr.colorOutline)
 
+        var currentRow: LinearLayout? = null
+        var cardsInRow = 0
+
         items.forEach { item ->
             val card = com.google.android.material.card.MaterialCardView(ctx).apply {
                 radius = dp(ctx, 20).toFloat()
                 cardElevation = dp(ctx, 1).toFloat()
                 strokeWidth = 0
                 setCardBackgroundColor(attr(ctx, com.google.android.material.R.attr.colorSurfaceContainerLowest))
-                layoutParams = android.widget.GridLayout.LayoutParams(
-                    android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, if (item.wide) 2 else 1),
-                    android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, 1f)
-                ).apply { setMargins(dp(ctx, 4), dp(ctx, 6), dp(ctx, 4), dp(ctx, 6)) }
             }
 
             val iconCircle = FrameLayout(ctx).apply {
@@ -273,17 +282,42 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                     layoutParams = FrameLayout.LayoutParams(dp(ctx, 20), dp(ctx, 20), Gravity.CENTER)
                     setImageResource(item.icon)
                     setColorFilter(onCircleColor)
+                    // 占位项降一档不透明度：可用项"亮"，未上线项"淡"
+                    if (item.isComingSoon) alpha = 0.55f
                 })
             }
 
             val textCol = LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
-                addView(TextView(ctx).apply {
+                // 标题行：标题 +（占位功能）「即将上线」小胶囊
+                val titleRow = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+                titleRow.addView(TextView(ctx).apply {
                     text = item.title
                     setTextSizeRes(R.dimen.text_body)
                     setTypeface(Typeface.DEFAULT_BOLD)
-                    setTextColor(attr(ctx, com.google.android.material.R.attr.colorOnSurface))
-                }, LinearLayout.LayoutParams(
+                    setTextColor(
+                        attr(ctx, com.google.android.material.R.attr.colorOnSurface)
+                    )
+                })
+                if (item.isComingSoon) {
+                    titleRow.addView(TextView(ctx).apply {
+                        text = "即将上线"
+                        setTextSizeRes(R.dimen.text_label)
+                        setTextColor(attr(ctx, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                        background = GradientDrawable().apply {
+                            cornerRadius = dp(ctx, 99).toFloat()
+                            setColor(attr(ctx, com.google.android.material.R.attr.colorSurfaceContainerHigh))
+                        }
+                        setPadding(dp(ctx, 6), dp(ctx, 2), dp(ctx, 6), dp(ctx, 2))
+                    }, LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { marginStart = dp(ctx, 6) })
+                }
+                addView(titleRow, LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
                 ))
                 if (!item.subtitle.isNullOrBlank()) {
@@ -322,8 +356,39 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
 
             pressScale(card)
             card.setOnClickListener { handleClick(it, item) }
-            grid.addView(card)
+
+            if (item.wide) {
+                // 通栏卡：独占一行（前面若有半行，先把那半行封口）
+                currentRow?.let { (grid as LinearLayout).addView(it) }
+                currentRow = null
+                cardsInRow = 0
+                card.layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { setMargins(dp(ctx, 6), dp(ctx, 6), dp(ctx, 6), dp(ctx, 6)) }
+                (grid as LinearLayout).addView(card)
+            } else {
+                if (currentRow == null) {
+                    currentRow = LinearLayout(ctx).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        layoutParams = LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                    }
+                }
+                card.layoutParams = LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+                ).apply { setMargins(dp(ctx, 6), dp(ctx, 6), dp(ctx, 6), dp(ctx, 6)) }
+                currentRow!!.addView(card)
+                cardsInRow++
+                if (cardsInRow == 2) {
+                    (grid as LinearLayout).addView(currentRow)
+                    currentRow = null
+                    cardsInRow = 0
+                }
+            }
         }
+        // 收尾：最后一行只有一张卡时也要加进去
+        currentRow?.let { (grid as LinearLayout).addView(it) }
     }
 
     // ── 工具方法 ────────────────────────────────────────────────

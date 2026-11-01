@@ -19,6 +19,9 @@ data class ToolItem(
     /** 非空时点击执行真实跳转；空则占位提示 */
     val onClick: ((Context) -> Unit)? = null,
 ) {
+    /** 未接入跳转 = 占位功能（点击只弹"功能开发中"），列表里要显式标出来 */
+    val isComingSoon: Boolean get() = onClick == null
+
     fun matches(query: String): Boolean =
         title.contains(query, ignoreCase = true) ||
                 (subtitle?.contains(query, ignoreCase = true) ?: false)
