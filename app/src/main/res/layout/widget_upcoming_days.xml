@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_widget_white"
+    android:background="@drawable/bg_widget_card"
     android:padding="10dp">
 
     <LinearLayout
@@ -21,7 +21,7 @@
             android:layout_weight="1"
             android:text=""
             android:textSize="@dimen/text_label"
-            android:textColor="#666666" />
+            android:textColor="@color/widget_text_secondary" />
 
         <TextView
             android:id="@+id/tv_widget_date"
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:text=""
             android:textSize="@dimen/text_label"
-            android:textColor="#4A90E2" />
+            android:textColor="@color/widget_accent" />
     </LinearLayout>
 
     <LinearLayout
@@ -53,7 +53,7 @@
                 android:layout_height="wrap_content"
                 android:text="今天"
                 android:textSize="@dimen/text_caption"
-                android:textColor="#4A90E2"
+                android:textColor="@color/widget_accent"
                 android:textStyle="bold"
                 android:paddingBottom="4dp" />
 
@@ -88,7 +88,7 @@
                 android:layout_height="wrap_content"
                 android:text="明天"
                 android:textSize="@dimen/text_caption"
-                android:textColor="#888888"
+                android:textColor="@color/widget_text_weak"
                 android:paddingBottom="4dp" />
 
             <ListView
