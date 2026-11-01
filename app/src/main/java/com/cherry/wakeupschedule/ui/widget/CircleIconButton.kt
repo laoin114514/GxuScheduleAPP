@@ -8,7 +8,9 @@ import android.view.View
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.graphics.drawable.InsetDrawable
 import androidx.annotation.DrawableRes
+import androidx.appcompat.content.res.AppCompatResources
 import com.cherry.wakeupschedule.R
 import com.google.android.material.color.MaterialColors
 
@@ -29,6 +31,12 @@ class CircleIconButton @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, 0) {
 
     private val iconView: ImageView
+
+    /** 当前圆形底色 drawable（setCircleBackground 可换） */
+    private var circleRes: Int = R.drawable.bg_icon_circle
+
+    /** 视觉圆直径：默认 40dp；控件本身做成 48dp 以拿到标准触控热区 */
+    private var circleDiameterPx: Int = (40 * resources.displayMetrics.density).toInt()
 
     init {
         isClickable = true
@@ -69,9 +77,20 @@ class CircleIconButton @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        // 图标约占圆钮的 9/16（32dp 圆钮 → 18dp 图标）
-        val icon = (minOf(w, h) * 9f / 16f).toInt()
+        // 控件尺寸 ≥ 48dp（触控热区标准），但视觉圆保持 circleDiameterPx：
+        // 用 InsetDrawable 把背景圆往里缩，多出来的部分就是"看不见但可点"的触控区。
+        val size = minOf(w, h)
+        val inset = ((size - circleDiameterPx) / 2).coerceAtLeast(0)
+        applyCircleBackground(inset)
+        // 图标约占视觉圆的 9/16（40dp 圆钮 → 22dp 图标）
+        val visual = (size - inset * 2).coerceAtLeast(1)
+        val icon = (visual * 9f / 16f).toInt()
         iconView.layoutParams = LayoutParams(icon, icon, Gravity.CENTER)
+    }
+
+    private fun applyCircleBackground(inset: Int) {
+        val drawable = AppCompatResources.getDrawable(context, circleRes)?.mutate() ?: return
+        background = if (inset > 0) InsetDrawable(drawable, inset) else drawable
     }
 
     /** 动态换图标 */
@@ -81,5 +100,16 @@ class CircleIconButton @JvmOverloads constructor(
      * 换圆形底色（默认 [R.drawable.bg_icon_circle]）。
      * 只在页面底色与默认色接近、圆钮会「糊」进背景时才用，例如小组件中心的「?」。
      */
-    fun setCircleBackground(@DrawableRes resId: Int) = setBackgroundResource(resId)
+    fun setCircleBackground(@DrawableRes resId: Int) {
+        circleRes = resId
+        val size = minOf(width, height)
+        val inset = ((size - circleDiameterPx) / 2).coerceAtLeast(0)
+        applyCircleBackground(inset)
+    }
+
+    /** 调整视觉圆直径（dp）：控件仍按 48dp 热区，只影响看起来多大 */
+    fun setCircleDiameterDp(dp: Int) {
+        circleDiameterPx = (dp * resources.displayMetrics.density).toInt()
+        requestLayout()
+    }
 }
