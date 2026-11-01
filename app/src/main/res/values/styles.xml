@@ -120,9 +120,10 @@
     <item name="android:paddingBottom">10dp</item>
 </style>
 
-<!-- 详情页 Toolbar 标题：居中、主色、加粗（对齐工具页顶栏标题） -->
+<!-- 详情页 Toolbar 标题：居中、主色、加粗（与一级页顶栏同号 20sp）。
+     之前一级页 20sp、二级页 18sp，同一层级差 2sp，肉眼像"没对齐"却说不清哪里不对。 -->
 <style name="AppToolbarTitle" parent="TextAppearance.Material3.TitleLarge">
-    <item name="android:textSize">@dimen/text_title</item>
+    <item name="android:textSize">@dimen/text_headline</item>
     <item name="android:textStyle">bold</item>
     <item name="android:textColor">?attr/colorPrimary</item>
 </style>

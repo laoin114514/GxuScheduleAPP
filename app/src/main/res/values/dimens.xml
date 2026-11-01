@@ -35,4 +35,31 @@
 
     <!-- 时间轴上的开始时间（课名下方的小字） -->
     <dimen name="text_time_axis">10sp</dimen>
+
+    <!-- ===== 布局令牌（UI 方案 §3.3） =====
+         页面边距/卡内边距/行间距统一走这里，别再各写各的：
+         之前全 App 并存 16 / 20 / 24 三套页面边距，工具页内部还有 24/20/16 三条左边缘。 -->
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">12dp</dimen>
+    <dimen name="space_lg">16dp</dimen>
+    <dimen name="space_xl">20dp</dimen>
+    <dimen name="space_2xl">24dp</dimen>
+    <dimen name="space_3xl">32dp</dimen>
+
+    <!-- 页面横向边距：一级页与二级页统一 20dp -->
+    <dimen name="page_margin">20dp</dimen>
+    <!-- 卡片内边距：统一 16dp -->
+    <dimen name="card_padding">16dp</dimen>
+
+    <!-- 圆角令牌：原实际使用的圆角有 2/4/5/8/12/14/16/18/20/24/28/999 共 12 档 -->
+    <dimen name="radius_xs">4dp</dimen>      <!-- 色棒 / 徽标 -->
+    <dimen name="radius_sm">8dp</dimen>      <!-- 输入框 / 课程格子 -->
+    <dimen name="radius_md">12dp</dimen>     <!-- 行卡 / 内联提示 -->
+    <dimen name="radius_lg">16dp</dimen>     <!-- 组件卡 -->
+    <dimen name="radius_xl">24dp</dimen>     <!-- 页面分组卡 / 弹层顶角 -->
+    <dimen name="radius_full">999dp</dimen>  <!-- 胶囊 -->
+
+    <!-- 所有页面顶部栏统一高度（原来一级页写死 52dp、二级页用 ?attr/actionBarSize ≈ 56dp） -->
+    <dimen name="top_bar_height">52dp</dimen>
 </resources>
