@@ -279,11 +279,22 @@ class GpaActivity : BaseActivity() {
     private fun renderSummary() {
         // 有保存的结果就展示保存值（配「上次计算时间」）；从未计算过则展示本地已缓存成绩的即时汇总
         val summary = lastResult?.toSummary() ?: GradeStats.summarize(allGrades)
+        // 等宽数字：四个指标并排，切换学期时数字不会左右抖
+        listOf(gpaText, weightedText, creditsText, coursesText, failedText)
+            .forEach { it.fontFeatureSettings = "'tnum'" }
         gpaText.text = GradeStats.formatGpa(summary.averageGpa)
         weightedText.text = GradeStats.formatGpa(summary.weightedAverageScore)
         creditsText.text = GradeStats.formatCredits(summary.totalCredits)
         coursesText.text = summary.courseCount.toString()
         failedText.text = summary.failedCount.toString()
+        // 不及格是唯一带负向语义的指标：有挂科时才转红，没有时保持中性
+        val errorColor = com.google.android.material.color.MaterialColors.getColor(
+            failedText, com.google.android.material.R.attr.colorError
+        )
+        val neutralColor = com.google.android.material.color.MaterialColors.getColor(
+            failedText, com.google.android.material.R.attr.colorOnSurface
+        )
+        failedText.setTextColor(if (summary.failedCount > 0) errorColor else neutralColor)
         renderLastCalc()
     }
 

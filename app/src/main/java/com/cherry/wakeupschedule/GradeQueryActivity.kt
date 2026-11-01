@@ -211,6 +211,9 @@ class GradeQueryActivity : BaseActivity() {
         semesterGrades = gradeDataManager.loadGrades()
 
         val summary = GradeStats.summarize(semesterGrades)
+        // 等宽数字：两个指标并排时数字宽度一致，切换学期时不会左右抖
+        gpaText.fontFeatureSettings = "'tnum'"
+        creditsText.fontFeatureSettings = "'tnum'"
         gpaText.text = GradeStats.formatGpa(summary.averageGpa)
         creditsText.text = GradeStats.formatCredits(summary.totalCredits)
 

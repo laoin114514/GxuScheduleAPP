@@ -60,6 +60,9 @@ class GradeAdapter(
             category.text = GradeStats.categoryLabel(grade)
             category.visibility = if (category.text.isNullOrBlank()) View.GONE else View.VISIBLE
 
+            // 等宽数字：多行并列时成绩右缘不会随字形抖动
+            score.fontFeatureSettings = "'tnum'"
+            scoreCaption.fontFeatureSettings = "'tnum'"
             score.text = grade.score.ifBlank { grade.percentageScore }.ifBlank { "—" }
             score.setTextColor(if (failed) errorColor else primaryColor)
             scoreCaption.text = if (failed) "不及格" else GradeStats.scoreCaption(grade)

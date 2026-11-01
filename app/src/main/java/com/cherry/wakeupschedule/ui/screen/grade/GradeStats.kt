@@ -113,9 +113,20 @@ object GradeStats {
         else -> grade.courseMark
     }
 
-    /** 右侧成绩下方的小标签：数值给「成绩」，等级制给「等级」 */
-    fun scoreCaption(grade: GradeEntity): String =
-        if (numericScore(grade) != null) "成绩" else "等级"
+    /**
+     * 右侧成绩下方的小标签。
+     *
+     * 原来数值成绩下面恒显示「成绩」两个字（纯占位、没有信息量），
+     * 而"这门课几个绩点"要逐条点开详情才能看到。现在优先显示绩点：
+     * 「绩点 3.7」；没有绩点的（等级制 / 未出分）退回「等级」/「—」。
+     */
+    fun scoreCaption(grade: GradeEntity): String {
+        val gp = grade.gradePoint.trim()
+        if (gp.isNotBlank() && gp.toDoubleOrNull() != null) {
+            return "绩点 $gp"
+        }
+        return if (numericScore(grade) != null) "—" else "等级"
+    }
 
     // ── 筛选 / 排序 ────────────────────────────────────────
 

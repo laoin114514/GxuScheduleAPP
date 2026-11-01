@@ -131,8 +131,8 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="平均学分绩点"
-                            android:textSize="@dimen/text_label"
+                            android:text="本学期平均学分绩点"
+                            android:textSize="@dimen/text_caption"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
                         <TextView
@@ -163,8 +163,8 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="已获学分"
-                            android:textSize="@dimen/text_label"
+                            android:text="本学期已获学分"
+                            android:textSize="@dimen/text_caption"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
                         <TextView
