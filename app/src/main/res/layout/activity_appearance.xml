@@ -48,6 +48,35 @@
                     layout="@layout/item_appearance_preview_card" />
             </LinearLayout>
 
+            <!-- 配色方案：5 套调色板（紫/蓝/青绿/暖棕/玫红）的入口。
+                 之前 ThemeManager 里有 5 套 overlay、10 份配色数据，却没有任何 UI 能选，
+                 等于永远只能用默认的海洋蓝。 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    style="@style/AppSectionHeader"
+                    android:paddingStart="4dp"
+                    android:paddingTop="0dp"
+                    android:text="配色方案" />
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/AppSectionCard"
+                    android:layout_marginTop="8dp">
+
+                    <LinearLayout
+                        android:id="@+id/ll_palette_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="14dp" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
             <!-- 自动切换卡片 -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/AppSectionCard"

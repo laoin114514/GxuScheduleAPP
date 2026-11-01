@@ -41,6 +41,7 @@ import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
 import com.cherry.wakeupschedule.ui.component.createAppChip
+import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.widget.CircleIconButton
 import com.cherry.wakeupschedule.ui.widget.SemesterSceneryView
@@ -149,6 +150,10 @@ class ScheduleFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        PageBackground.apply(view)
+        // 加载遮罩原来写死 @color/bottom_nav_bg（蓝灰），换配色后会和页面脱节
+        view.findViewById<View>(R.id.overlay_loading)?.background =
+            android.graphics.drawable.ColorDrawable(PageBackground.bottomColor(requireContext()))
         settingsManager = SettingsManager(requireContext())
         courseViewModel = ViewModelProvider(requireActivity())[CourseViewModel::class.java]
 

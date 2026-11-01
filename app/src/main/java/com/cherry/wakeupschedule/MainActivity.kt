@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.navOptions
 import androidx.navigation.fragment.NavHostFragment
+import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
 import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
@@ -59,6 +60,10 @@ class MainActivity : BaseActivity() {
         // 主题切换等场景会重建 Activity，NavController 恢复的目的地不一定是首页签，
         // 必须以当前目的地为准（首启动时 currentDestination 为空，回落到课表）
         binding.bottomNav.select(navController.currentDestination?.id ?: R.id.nav_schedule)
+
+        // 底部导航底色与页面渐变底端同色：换配色时整条导航跟着变色，避免出现一条蓝灰色带
+        binding.bottomNav.background =
+            android.graphics.drawable.ColorDrawable(PageBackground.bottomColor(this))
 
         // 角标外观随模式回灌（切换动作由上面的「课表」页签点击触发）
         courseViewModel.overviewMode.observe(this) { binding.bottomNav.setScheduleOverview(it) }

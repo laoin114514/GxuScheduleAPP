@@ -13,6 +13,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.BindJwxtActivity
 import com.cherry.wakeupschedule.ExamScheduleActivity
 import com.cherry.wakeupschedule.GpaActivity
@@ -51,6 +52,8 @@ class ToolsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        // 页面底渐变按当前调色板派生（换配色时页面底色跟着变，而不是永远是蓝灰）
+        PageBackground.apply(view)
 
         binding.recyclerTools.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerTools.adapter = adapter

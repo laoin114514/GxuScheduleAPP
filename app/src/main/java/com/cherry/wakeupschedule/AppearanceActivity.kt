@@ -64,7 +64,81 @@ class AppearanceActivity : BaseActivity() {
         setupPageHeader(binding.toolbar, "主题")
         setupClickListeners()
         buildThemePreviewCards()
+        buildPalettePicker()
         updateUi()
+    }
+
+    // ==================== 配色方案 ====================
+
+    /**
+     * 5 套配色（经典紫 / 海洋蓝 / 青绿 / 暖棕 / 玫红）的选择行。
+     *
+     * 选中态用「主色圆点 + 主题色描边环 + 名称加粗」三重表达；
+     * 点击后写盘并 recreate —— 配色是主题 overlay，只能在 setContentView 之前生效。
+     */
+    private fun buildPalettePicker() {
+        val container = binding.llPaletteList
+        container.removeAllViews()
+        val current = ThemeManager.getPaletteIndex(this)
+        val names = ThemeManager.paletteNames()
+        val density = resources.displayMetrics.density
+        val dot = (34 * density).toInt()
+
+        fun themeColor(attr: Int): Int {
+            val tv = android.util.TypedValue()
+            theme.resolveAttribute(attr, tv, true)
+            return tv.data
+        }
+        val onSurfaceVariant = themeColor(com.google.android.material.R.attr.colorOnSurfaceVariant)
+        val primary = themeColor(com.google.android.material.R.attr.colorPrimary)
+
+        names.forEachIndexed { index, name ->
+            val palette = M3ColorPalette.LIGHT_PALETTES[index]
+            val isSelected = index == current
+
+            val item = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                isClickable = true
+                isFocusable = true
+                setPadding(0, (4 * density).toInt(), 0, (4 * density).toInt())
+            }
+
+            // 色点：内部实色圆点 + 外侧选中环
+            val ring = FrameLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams(dot + (10 * density).toInt(), dot + (10 * density).toInt())
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(Color.TRANSPARENT)
+                    setStroke((2 * density).toInt(), if (isSelected) primary else Color.TRANSPARENT)
+                }
+            }
+            ring.addView(View(this).apply {
+                layoutParams = FrameLayout.LayoutParams(dot, dot, Gravity.CENTER)
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(palette.primary)
+                }
+            })
+            item.addView(ring)
+
+            item.addView(TextView(this).apply {
+                text = name
+                setTextSizeRes(R.dimen.text_caption)
+                gravity = Gravity.CENTER
+                setTextColor(if (isSelected) primary else onSurfaceVariant)
+                if (isSelected) setTypeface(typeface, Typeface.BOLD)
+                setPadding(0, (6 * density).toInt(), 0, 0)
+            })
+
+            item.setOnClickListener {
+                if (index == current) return@setOnClickListener
+                ThemeManager.setPaletteIndex(index, this)
+                recreate()
+            }
+            container.addView(item)
+        }
     }
 
     // ==================== 事件绑定 ====================

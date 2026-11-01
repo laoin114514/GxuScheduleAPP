@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -46,6 +47,7 @@ class ProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        PageBackground.apply(view)
         settingsManager = SettingsManager(requireContext())
         setupClickListeners(view)
         updateDisplay()
