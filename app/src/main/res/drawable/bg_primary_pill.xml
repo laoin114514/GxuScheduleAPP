@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 弹窗主按钮的胶囊底（更新弹窗「立即更新」等）：与 StyledDialog 主按钮同一视觉 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorPrimary" />
+    <corners android:radius="24dp" />
+</shape>

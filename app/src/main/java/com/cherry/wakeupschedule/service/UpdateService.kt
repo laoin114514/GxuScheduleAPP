@@ -305,7 +305,7 @@ class UpdateService(private val context: Context) {
         val btnLater = dialogView.findViewById<TextView>(R.id.btn_later)
         val btnSkipVersion = dialogView.findViewById<TextView>(R.id.btn_skip_version)
 
-        tvVersionInfo.text = "发现新版本: v${info.latestVersionName}\n当前版本: v$currentVersionName"
+        tvVersionInfo.text = "v${info.latestVersionName} · 当前 v$currentVersionName"
 
         // 强制更新时隐藏"跳过此版本"和"稍后"
         btnLater.visibility = if (info.forced) android.view.View.GONE else android.view.View.VISIBLE
@@ -321,12 +321,31 @@ class UpdateService(private val context: Context) {
         webViewNotes.settings.setSupportZoom(true)
         webViewNotes.settings.builtInZoomControls = true
         webViewNotes.settings.displayZoomControls = false
-        webViewNotes.settings.textZoom = 150
+        webViewNotes.settings.textZoom = 100
+
+        // 说明区高度按实际内容量：可更新说明常常只有一两行，
+        // 原来固定 350dp 会在弹窗里留出一大片空白。
+        val density = activity.resources.displayMetrics.density
+        val minNotesHeight = (40 * density).toInt()
+        val maxNotesHeight = (320 * density).toInt()
+        webViewNotes.webViewClient = object : android.webkit.WebViewClient() {
+            override fun onPageFinished(view: android.webkit.WebView, url: String?) {
+                super.onPageFinished(view, url)
+                view.evaluateJavascript("document.body.scrollHeight") { value ->
+                    val cssHeight = value?.trim('"')?.toFloatOrNull() ?: 0f
+                    val target = (cssHeight * density).toInt()
+                        .coerceIn(minNotesHeight, maxNotesHeight)
+                    view.layoutParams = view.layoutParams.apply { height = target }
+                    view.requestLayout()
+                }
+            }
+        }
 
         val htmlContent = markdownToHtml(info.changelog)
         webViewNotes.loadDataWithBaseURL(null, htmlContent, "text/html; charset=UTF-8", "UTF-8", null)
 
         val dialog = StyledDialog.Builder(activity)
+            .title("发现新版本")
             .view(dialogView)
             .show()
 
@@ -920,8 +939,9 @@ class UpdateService(private val context: Context) {
             return """
                 <!DOCTYPE html>
                 <html>
+                <head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
                 <body>
-                    <p style="color: $emptyColor;font-size: 30px;line-height: 1.6;padding: 8px;margin: 8px 0;">暂无更新说明</p>
+                    <p style="color: $emptyColor;font-size: 15px;line-height: 1.6;padding: 8px;margin: 8px 0;">暂无更新说明</p>
                 </body>
                 </html>
             """.trimIndent()
@@ -951,25 +971,26 @@ class UpdateService(private val context: Context) {
             <html>
             <head>
                 <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
                 <style>
                     body {
                         font-family: sans-serif;
-                        font-size: 30px;
+                        font-size: 15px;
                         line-height: 1.6;
-                        padding: 8px;
+                        padding: 4px;
                         margin: 0;
                         color: $bodyColor;
                     }
-                    h1 { font-size: 36px; margin: 10px 0; }
-                    h2 { font-size: 33px; margin: 10px 0; }
-                    h3 { font-size: 31px; margin: 10px 0; }
-                    p { margin: 8px 0; }
-                    li { margin-left: 16px; margin-bottom: 6px; }
+                    h1 { font-size: 18px; margin: 8px 0; }
+                    h2 { font-size: 17px; margin: 8px 0; }
+                    h3 { font-size: 16px; margin: 8px 0; }
+                    p { margin: 6px 0; }
+                    li { margin-left: 16px; margin-bottom: 4px; }
                     code {
                         background: #f0f0f0;
                         padding: 2px 6px;
                         border-radius: 3px;
-                        font-size: 28px;
+                        font-size: 13px;
                     }
                 </style>
             </head>
