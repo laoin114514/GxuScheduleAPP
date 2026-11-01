@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.cherry.wakeupschedule.ui.feedback.AppToast
@@ -137,7 +138,7 @@ class ScheduleFragment : Fragment() {
          * 拖外观滑块时看不到后面的实时效果；封顶后「内容多则滚动、内容少则贴内容」，
          * 课表始终露在上方。
          */
-        private const val MENU_SHEET_MAX_HEIGHT_RATIO = 0.7f
+        private const val MENU_SHEET_MAX_HEIGHT_RATIO = 0.85f
     }
 
     override fun onCreateView(
@@ -657,6 +658,8 @@ class ScheduleFragment : Fragment() {
         val tertiaryContainer = resolveAttr(com.google.android.material.R.attr.colorTertiaryContainer)
         val onSurfaceVariantColor =
             resolveAttr(com.google.android.material.R.attr.colorOnSurfaceVariant)
+        val onPrimaryContainerColor =
+            resolveAttr(com.google.android.material.R.attr.colorOnPrimaryContainer)
         // 未导入课表的学期色块底色（比弹层底色亮一档，才看得出是「一块待选目标」）
         val unimportedBlockColor =
             resolveAttr(com.google.android.material.R.attr.colorSurfaceContainerHighest)
@@ -665,6 +668,9 @@ class ScheduleFragment : Fragment() {
         val sunColor = 0xFFFFD54F.toInt()
 
         // ── 标题副行：当前学期（菜单里唯一显示「现在是哪个学期」的位置） ──
+        // 右上角关闭：内容变长后必须有一个一眼可见的退出方式
+        sheetView.findViewById<View>(R.id.btn_menu_close)?.setOnClickListener { dialog.dismiss() }
+
         val tvSubtitle = sheetView.findViewById<TextView>(R.id.tv_menu_subtitle)
         tvSubtitle.text = if (SemesterManager.getCurrent() == null) {
             "未绑定教务账号"
@@ -814,6 +820,23 @@ class ScheduleFragment : Fragment() {
                         }
                     }
                     blockContainer.addView(scenery)
+                    // 课程数徽标：把"这个学期有课"从装饰性风景变成可读信息
+                    TextView(ctx).apply {
+                        text = (courseCounts[sem.id] ?: 0).toString()
+                        setTextSizeRes(R.dimen.text_course_cell_meta)
+                        setTextColor(onPrimaryContainerColor)
+                        gravity = Gravity.CENTER
+                        setPadding((4 * density).toInt(), 0, (4 * density).toInt(), 0)
+                        background = GradientDrawable().apply {
+                            cornerRadius = 8 * density
+                            setColor(primaryContainer)
+                        }
+                        layoutParams = FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT, (15 * density).toInt(),
+                            Gravity.BOTTOM or Gravity.END
+                        ).apply { setMargins(0, 0, (3 * density).toInt(), (3 * density).toInt()) }
+                        blockContainer.addView(this)
+                    }
                 } else {
                     // 未导入课表的学期：素色块。用 surfaceContainerHighest 而不是
                     // surfaceVariant —— 弹层底色本身就是 surfaceContainer，两者太接近时
@@ -830,6 +853,16 @@ class ScheduleFragment : Fragment() {
                         }
                     }
                     blockContainer.addView(block)
+                    // 未导入学期：中央淡色「+」，点击即联网导入该学期课表
+                    ImageView(ctx).apply {
+                        layoutParams = FrameLayout.LayoutParams(
+                            (18 * density).toInt(), (18 * density).toInt(), Gravity.CENTER
+                        )
+                        setImageResource(R.drawable.ic_add)
+                        setColorFilter(onSurfaceVariantColor)
+                        alpha = 0.75f
+                        blockContainer.addView(this)
+                    }
                 }
                 if (isLoadingBlock) {
                     val spinnerSize = (26 * density).toInt()
@@ -967,9 +1000,9 @@ class ScheduleFragment : Fragment() {
         }
         (sheetView.parent as? ViewGroup)?.removeView(sheetView)
 
-        // ── 高度：由内容决定，但最多占 70% 屏高 ──
+        // ── 高度：由内容决定，但最多占 85% 屏高 ──
         // 先在不受限高度下量一遍内容（此时学期色块、外观控件都已装配完成），
-        // 再取 min(内容高度, 屏高 × 0.7)：短内容仍然贴合，长内容改为菜单内滚动。
+        // 再取 min(内容高度, 屏高 × 0.85)：短内容仍然贴合，长内容改为菜单内滚动。
         val metrics = ctx.resources.displayMetrics
         sheetView.measure(
             View.MeasureSpec.makeMeasureSpec(metrics.widthPixels, View.MeasureSpec.EXACTLY),

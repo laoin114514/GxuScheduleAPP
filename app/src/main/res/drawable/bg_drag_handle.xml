@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 底部弹层的拖拽条：用主题色而不是写死 25% 黑。
+     写死黑色在深色底（surfaceContainer #262429）上几乎不可见；
+     配合布局里的 android:alpha="0.32"，深/浅色下都能看清。 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#40000000" />
+    <solid android:color="?attr/colorOnSurfaceVariant" />
     <corners android:radius="2dp" />
 </shape>

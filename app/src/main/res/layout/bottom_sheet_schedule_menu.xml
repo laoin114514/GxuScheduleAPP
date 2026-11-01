@@ -24,49 +24,75 @@
     android:orientation="vertical"
     android:paddingTop="12dp">
 
-    <!-- 拖拽指示条 -->
+    <!-- 拖拽指示条：主题色 + 布局 alpha，深色底下也能看清 -->
     <View
         android:layout_width="32dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp"
+        android:alpha="0.32"
         android:background="@drawable/bg_drag_handle" />
 
+
+    <!-- 标题区：钉在滚动区之上（不随内容滚走），右端是关闭按钮 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp">
+
+        <TextView
+            android:id="@+id/tv_menu_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="课表菜单"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btn_menu_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="-8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="关闭菜单"
+            android:src="@drawable/ic_close"
+            app:tint="?attr/colorOnSurfaceVariant" />
+    </FrameLayout>
+
+    <!-- 副标题：当前学期，代码里按学期状态填写 -->
+    <TextView
+        android:id="@+id/tv_menu_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="6dp"
+        android:text="未设置学期"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="@dimen/text_caption" />
+
+    <!-- 滚动区：周次 / 学期 / 外观；右侧常驻细滚动条提示「下面还有」 -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll_menu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:overScrollMode="never"
-        android:scrollbars="none">
+        android:scrollbarStyle="insideInset"
+        android:scrollbarSize="3dp"
+        android:scrollbarThumbVertical="?attr/colorOutlineVariant"
+        android:fadeScrollbars="false"
+        android:scrollbars="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
-            android:paddingBottom="20dp">
+            android:paddingBottom="28dp">
 
-            <!-- 标题：居中，与拖拽条同轴 -->
-            <TextView
-                android:id="@+id/tv_menu_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="课表菜单"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="@dimen/text_title"
-                android:textStyle="bold" />
 
-            <!-- 副标题：当前学期，代码里按学期状态填写 -->
-            <TextView
-                android:id="@+id/tv_menu_subtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="6dp"
-                android:text="未设置学期"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="@dimen/text_caption" />
 
             <!-- ═══ 周次 ═══ -->
             <TextView
