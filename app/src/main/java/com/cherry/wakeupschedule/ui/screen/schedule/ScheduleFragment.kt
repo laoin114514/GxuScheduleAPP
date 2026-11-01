@@ -495,7 +495,14 @@ class ScheduleFragment : Fragment() {
             displayWk == currentWk -> "第${displayWk}周 (本周)"
             else -> "第${displayWk}周"
         }
-        tvWeekInfo.text = if (semesterLabel != null) "$weekText · $semesterLabel" else weekText
+        // 系统字体放大后顶栏这一行会挤到 4 行：1.5× 以上去掉学期后缀，只留周次
+        val largeFont = resources.configuration.fontScale >= 1.5f
+        tvWeekInfo.text = when {
+            largeFont -> weekText
+            semesterLabel != null -> "$weekText · $semesterLabel"
+            else -> weekText
+        }
+        if (largeFont) tvCountdown.isVisible = false
     }
 
     /** 第 [week] 周的「M/d – M/d」范围；学期开始日期未设置时返回 null */
@@ -1160,6 +1167,13 @@ class ScheduleFragment : Fragment() {
         val todayCourses = allCourses
             .filter { it.dayOfWeek == adjustedDay && it.isActiveInWeek(getCurrentWeek()) }
             .sortedBy { getCourseStartMinutes(it) }
+
+        // 系统字体放大后顶栏放不下「周次 + 倒计时 + 两个圆钮」，
+        // 倒计时是次要信息，1.5× 以上直接不显示（每秒刷新也要守这条，否则会被重新点亮）
+        if (resources.configuration.fontScale >= 1.5f) {
+            tvCountdown.visibility = View.GONE
+            return
+        }
 
         val currentCourse = todayCourses.find {
             val start = getCourseStartMinutes(it)

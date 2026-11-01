@@ -31,17 +31,21 @@
 
                 <TextView
                     android:id="@+id/tv_week_info"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:text="第5周 (本周)"
                     android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <TextView
                     android:id="@+id/tv_date"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:text="2026/7/28"
                     android:textSize="@dimen/text_title"
                     android:textStyle="bold"
