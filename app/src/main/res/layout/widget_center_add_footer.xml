@@ -12,7 +12,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="未添加"
+        android:text="@string/widget_center_not_added"
         android:textSize="@dimen/text_caption"
         android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -23,7 +23,7 @@
         android:insetTop="4dp"
         android:insetBottom="4dp"
         android:minHeight="0dp"
-        android:text="添加到桌面"
+        android:text="@string/widget_center_add"
         android:textSize="@dimen/text_caption" />
 
 </LinearLayout>

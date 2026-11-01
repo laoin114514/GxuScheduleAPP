@@ -83,7 +83,7 @@
         android:paddingBottom="10dp"
         android:minWidth="96dp"
         android:gravity="center"
-        android:text="关闭"
+        android:text="@string/common_close"
         android:textSize="@dimen/text_body_small"
         android:textStyle="bold"
         android:textColor="?attr/colorOnPrimary"

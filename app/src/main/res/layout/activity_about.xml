@@ -52,7 +52,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="西大课栈"
+                        android:text="@string/app_name"
                         android:textSize="@dimen/text_display"
                         android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold"
@@ -299,7 +299,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="已适配的教务系统"
+                            android:text="@string/about_jwxt_adapted"
                             android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface" />
 

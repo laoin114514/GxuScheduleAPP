@@ -28,7 +28,7 @@
                 android:id="@+id/tv_year_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="年"
+                android:text="@string/date_header_year_label"
                 android:textSize="@dimen/text_label"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 

@@ -20,7 +20,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="跟随系统"
+            android:text="@string/appearance_auto_follow_system"
             android:textSize="@dimen/text_subtitle"
             android:textColor="?attr/colorOnSurface" />
 
@@ -54,7 +54,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="自定时间"
+            android:text="@string/appearance_auto_custom_time"
             android:textSize="@dimen/text_subtitle"
             android:textColor="?attr/colorOnSurface" />
 

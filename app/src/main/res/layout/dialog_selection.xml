@@ -21,7 +21,7 @@
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
         android:layout_marginBottom="12dp"
-        android:text="选择" />
+        android:text="@string/common_choose" />
 
     <!-- 主题色渐变装饰线 -->
     <View
@@ -70,7 +70,7 @@
             android:id="@+id/btn_cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="取消"
+            android:text="@string/common_cancel"
             android:textSize="@dimen/text_body_small"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:paddingStart="16dp"
@@ -87,7 +87,7 @@
             android:id="@+id/btn_confirm"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="确定"
+            android:text="@string/common_confirm"
             android:textSize="@dimen/text_body_small"
             android:textStyle="bold"
             android:textColor="?attr/colorOnPrimary"

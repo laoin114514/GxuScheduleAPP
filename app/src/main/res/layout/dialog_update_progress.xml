@@ -10,7 +10,7 @@
         android:id="@+id/tv_progress_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="正在下载 ..."
+        android:text="@string/update_downloading"
         android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:paddingBottom="12dp" />
@@ -27,7 +27,7 @@
         android:id="@+id/tv_progress_percent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="0%"
+        android:text="@string/update_progress_placeholder"
         android:textSize="@dimen/text_body_small"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:gravity="end"

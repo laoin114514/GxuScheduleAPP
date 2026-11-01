@@ -32,7 +32,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="字体与界面尺寸会一起变化，版面比例保持不变。"
+                android:text="@string/font_size_intro"
                 android:textSize="@dimen/text_body_small"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginBottom="14dp" />
@@ -61,7 +61,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="标准"
+                    android:text="@string/font_size_standard"
                     android:textSize="@dimen/text_headline"
                     android:textStyle="bold"
                     android:textColor="?attr/colorOnSurface" />
@@ -70,7 +70,7 @@
                     android:id="@+id/tv_scale_factor"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1.0×"
+                    android:text="@string/font_size_scale_placeholder"
                     android:textSize="@dimen/text_body"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
@@ -96,7 +96,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="选择后立即生效。桌面小组件由系统桌面绘制，不受此设置影响。"
+                android:text="@string/font_size_footnote"
                 android:textSize="@dimen/text_caption"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginTop="18dp" />

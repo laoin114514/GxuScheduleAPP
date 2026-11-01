@@ -61,7 +61,7 @@
                     style="@style/AppSectionHeader"
                     android:paddingStart="4dp"
                     android:paddingTop="0dp"
-                    android:text="配色方案" />
+                    android:text="@string/appearance_palette_section" />
 
                 <com.google.android.material.card.MaterialCardView
                     style="@style/AppSectionCard"
@@ -100,7 +100,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="自动切换"
+                            android:text="@string/appearance_auto_switch"
                             android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface" />
 
@@ -127,7 +127,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="自动切换方式"
+                            android:text="@string/appearance_auto_switch_mode"
                             android:textSize="@dimen/text_body"
                             android:textColor="?attr/colorOnSurface" />
 
@@ -135,7 +135,7 @@
                             android:id="@+id/tv_auto_switch_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="跟随系统"
+                            android:text="@string/appearance_auto_follow_system"
                             android:textSize="@dimen/text_body_small"
                             android:textColor="?attr/colorPrimary"
                             android:layout_marginEnd="4dp" />
@@ -176,7 +176,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="深色时间"
+                                android:text="@string/appearance_dark_time"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
@@ -184,7 +184,7 @@
                                 android:id="@+id/tv_dark_time"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="18:00"
+                                android:text="@string/appearance_dark_time_placeholder"
                                 android:textSize="@dimen/text_body_small"
                                 android:textColor="?attr/colorPrimary"
                                 android:layout_marginEnd="4dp" />
@@ -211,7 +211,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="浅色时间"
+                                android:text="@string/appearance_light_time"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
@@ -219,7 +219,7 @@
                                 android:id="@+id/tv_light_time"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="07:00"
+                                android:text="@string/appearance_light_time_placeholder"
                                 android:textSize="@dimen/text_body_small"
                                 android:textColor="?attr/colorPrimary"
                                 android:layout_marginEnd="4dp" />
@@ -237,7 +237,7 @@
                             android:id="@+id/tv_dark_period_hint"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="深色时段：18:00 — 次日07:00"
+                            android:text="@string/appearance_dark_period_placeholder"
                             android:textSize="@dimen/text_caption"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             android:layout_marginStart="12dp"

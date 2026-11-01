@@ -128,7 +128,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="—"
+                        android:text="@string/common_na"
                         android:textSize="@dimen/text_display"
                         android:textStyle="bold"
                         android:textColor="?attr/colorPrimary" />
@@ -153,7 +153,7 @@
                                     android:id="@+id/tv_metric_weighted"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="—"
+                                    android:text="@string/common_na"
                                     android:textSize="@dimen/text_headline"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface" />
@@ -177,7 +177,7 @@
                                     android:id="@+id/tv_metric_credits"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="—"
+                                    android:text="@string/common_na"
                                     android:textSize="@dimen/text_headline"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface" />
@@ -210,7 +210,7 @@
                                     android:id="@+id/tv_metric_courses"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="—"
+                                    android:text="@string/common_na"
                                     android:textSize="@dimen/text_headline"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface" />
@@ -234,7 +234,7 @@
                                     android:id="@+id/tv_metric_failed"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="—"
+                                    android:text="@string/common_na"
                                     android:textSize="@dimen/text_headline"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface" />
@@ -407,7 +407,7 @@
                             android:id="@+id/tv_sim_gpa"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="—"
+                            android:text="@string/common_na"
                             android:textSize="@dimen/text_display"
                             android:textStyle="bold"
                             android:textColor="?attr/colorPrimary" />

@@ -7,11 +7,13 @@
     android:fillViewport="true"
     android:overScrollMode="never">
 
+    <!-- 每页只有一张卡：内容在视口内垂直居中，避免底部大片空白 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="@dimen/page_margin">
 
         <!-- 页头：标题与总述不进卡片，双变体也不会重复 -->
         <TextView
