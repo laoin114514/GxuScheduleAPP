@@ -38,8 +38,8 @@
 
             <com.cherry.wakeupschedule.ui.widget.CircleIconButton
                 android:id="@+id/btn_tools_avatar"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:layout_gravity="center_vertical|end"
                 android:layout_marginEnd="16dp"
                 android:src="@drawable/ic_mtrl_person"

@@ -60,7 +60,10 @@ fun Context.createAppChip(
         gravity = Gravity.CENTER_VERTICAL
         isClickable = true
         isFocusable = true
-        setPadding(chipDp(12), chipDp(6), chipDp(12), chipDp(6))
+        // 上下 8dp + 最小高度 40dp：原先是 6dp 内边距（实际高度约 28dp），
+        // 作为「回到本周」「成绩筛选」这类唯一入口时太难点中
+        setPadding(chipDp(12), chipDp(8), chipDp(12), chipDp(8))
+        minimumHeight = chipDp(40)
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply { marginEnd = chipDp(8) }
