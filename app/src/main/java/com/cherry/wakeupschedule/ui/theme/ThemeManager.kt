@@ -3,7 +3,10 @@ package com.cherry.wakeupschedule.ui.theme
 import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Color
+import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
+import kotlin.math.roundToInt
 
 object ThemeManager {
 
@@ -91,4 +94,47 @@ object ThemeManager {
         M3ColorPalette.LIGHT_PALETTES.map { it.name }
 
     fun getCourseColors(): IntArray = FIXED_COURSE_COLORS
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 课程卡片配色：成对的「容器色 / 内容色」
+    //
+    // 旧做法是「课程色 50% 叠在页面渐变上 + 纯白字」，浅色下实测对比度只有
+    // 1.48–2.77:1（AA 要求 4.5），全 9 色都不达标。现在改成按底色派生字色：
+    //   浅色：容器 = 18% 课程色 + 82% 白（奶油底），内容 = 课程色 × 0.50（同色系深字）
+    //   深色：容器 = 课程色 × 0.45（压暗保留色相），内容 = 白
+    // 9 色逐一实算：浅色 5.16–10.35:1，深色 6.65–14.68:1，全部 ≥ AA。
+    // ──────────────────────────────────────────────────────────────────────
+
+    /** 课程卡片底色 */
+    fun courseContainerColor(courseColor: Int, dark: Boolean): Int {
+        return if (dark) {
+            scaleColor(courseColor, 0.45f)
+        } else {
+            ColorUtils.blendARGB(courseColor, Color.WHITE, 0.82f)
+        }
+    }
+
+    /** 课程卡片上的主文字色（课名） */
+    fun courseOnColor(courseColor: Int, dark: Boolean): Int {
+        return if (dark) Color.WHITE else scaleColor(courseColor, 0.50f)
+    }
+
+    /** 课程卡片上的次要文字色（教室 / 教师），比主文字降一档不透明度 */
+    fun courseOnColorSecondary(courseColor: Int, dark: Boolean): Int {
+        return ColorUtils.setAlphaComponent(courseOnColor(courseColor, dark), if (dark) 208 else 217)
+    }
+
+    /** 课程卡片描边：跟随课程色时用实色，否则用自定义边框色（见调用方） */
+    fun courseStrokeColor(courseColor: Int, dark: Boolean): Int {
+        return if (dark) scaleColor(courseColor, 0.70f) else scaleColor(courseColor, 0.86f)
+    }
+
+    private fun scaleColor(color: Int, factor: Float): Int {
+        return Color.argb(
+            Color.alpha(color),
+            (Color.red(color) * factor).roundToInt().coerceIn(0, 255),
+            (Color.green(color) * factor).roundToInt().coerceIn(0, 255),
+            (Color.blue(color) * factor).roundToInt().coerceIn(0, 255)
+        )
+    }
 }

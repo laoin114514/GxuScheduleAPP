@@ -75,8 +75,9 @@ class SettingsManager(context: Context) {
         private const val DEFAULT_SHOW_CLASSROOM = true                        // 默认显示教室
         private const val DEFAULT_SHOW_TEACHER = true                          // 默认显示教师
 
-        /** 边框默认色：50% 半透明白，与历史版本写死的描边完全一致（十六进制超出 Int 范围需 toInt） */
-        private val DEFAULT_CELL_BORDER_COLOR = 0x80FFFFFF.toInt()
+        /** 边框默认色：50% 半透明白，与历史版本写死的描边完全一致（十六进制超出 Int 范围需 toInt）。
+         *  公开给课表渲染层：值等于它说明用户没自定义过边框色，可改为按课程色派生一条更协调的描边。 */
+        val DEFAULT_CELL_BORDER_COLOR = 0x80FFFFFF.toInt()
         private const val DEFAULT_BORDER_FOLLOW_COURSE = false                 // 默认不跟随课程颜色
         private const val DEFAULT_BOTTOM_BLANK = false                         // 默认不留白，与旧版一致
 

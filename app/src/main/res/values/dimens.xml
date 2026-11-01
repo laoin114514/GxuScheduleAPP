@@ -22,4 +22,10 @@
     <dimen name="text_label">10sp</dimen>        <!-- 极小标签 / 课程卡片 -->
     <dimen name="text_micro">9sp</dimen>         <!-- widget 专用极小字 -->
     <dimen name="text_chip_room">8sp</dimen>     <!-- widget 课程块教室行专用 -->
+
+    <!-- 课程格子内文字：课名 11sp / 教室·教师 10sp。
+         格子宽度只有约 50dp（360dp 屏），10sp 的课名只能摆 4–5 个字，
+         所以课名固定 11sp + 最多 3 行截断，元信息 10sp 退一档（见 UI 方案 §3.2）。 -->
+    <dimen name="text_course_cell">11sp</dimen>
+    <dimen name="text_course_cell_meta">10sp</dimen>
 </resources>
