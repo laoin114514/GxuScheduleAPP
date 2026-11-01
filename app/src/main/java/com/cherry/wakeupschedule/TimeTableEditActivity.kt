@@ -4,6 +4,7 @@ import android.app.TimePickerDialog
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.TextView
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import androidx.core.view.WindowCompat
@@ -74,15 +75,20 @@ class TimeTableEditActivity : BaseActivity() {
 
     private fun addTimeSlotView(timeSlot: TimeTableManager.TimeSlot) {
         val view = LayoutInflater.from(this)
-            .inflate(R.layout.item_time_slot_simple, binding.llTimeSlots, false)
+            .inflate(R.layout.item_time_slot_row, binding.llTimeSlots, false)
 
         val tvNode = view.findViewById<TextView>(R.id.tv_node)
         val tvStartTime = view.findViewById<TextView>(R.id.tv_start_time)
         val tvEndTime = view.findViewById<TextView>(R.id.tv_end_time)
 
+        // 第一行不画分隔线（卡片顶边就是边界）
+        if (binding.llTimeSlots.childCount == 0) {
+            view.findViewById<View>(R.id.row_divider).visibility = View.GONE
+        }
         tvNode.text = "第${timeSlot.node}节"
-        tvStartTime.text = timeSlot.startTime
-        tvEndTime.text = timeSlot.endTime
+        // 没配过的节次给一个占位符，不然这一行只剩一个"→"，看不出是没设置还是加载失败
+        tvStartTime.text = timeSlot.startTime.ifBlank { "—" }
+        tvEndTime.text = timeSlot.endTime.ifBlank { "—" }
 
         tvStartTime.setOnClickListener {
             showMaterialTimePicker(tvStartTime)

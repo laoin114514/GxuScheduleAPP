@@ -71,12 +71,18 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Time slot list -->
-            <LinearLayout
-                android:id="@+id/ll_time_slots"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
+            <!-- 时间表：13 节放在一张卡里，行间用发丝线分隔
+                 （原来每节一张卡，13 张卡 + 13 个间距把页面拉得很长） -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppSectionCard">
+
+                <LinearLayout
+                    android:id="@+id/ll_time_slots"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingVertical="4dp" />
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Bottom buttons -->
             <LinearLayout
