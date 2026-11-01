@@ -106,7 +106,7 @@
                         android:background="@drawable/bg_chip_retake"
                         android:paddingHorizontal="6dp"
                         android:paddingVertical="2dp"
-                        android:text="需补考"
+                        android:text="@string/grade_needs_retake"
                         android:textSize="@dimen/text_label"
                         android:textStyle="bold"
                         android:textColor="?attr/colorError"

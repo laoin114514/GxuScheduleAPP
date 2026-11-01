@@ -115,4 +115,25 @@
     <string name="course_weeks">周次</string>
     <string name="course_qq_group">QQ群</string>
     <string name="course_weeks_placeholder">第1-16周</string>
+
+    <!-- ===== 成绩 / 考试 / 绩点 ===== -->
+    <string name="grade_summary_gpa">本学期平均学分绩点</string>
+    <string name="grade_summary_credits">本学期已获学分</string>
+    <string name="common_query">查询</string>
+    <string name="grade_list_header">成绩明细</string>
+    <string name="exam_list_header">考试明细</string>
+    <string name="gpa_intro">遍历全部学期获取成绩，按所有已有成绩计算平均学分绩点</string>
+    <string name="gpa_metric_failed">不及格</string>
+    <string name="common_calculate">计算</string>
+    <string name="gpa_metric_weighted">加权平均分</string>
+    <string name="gpa_metric_courses">课程门数</string>
+    <string name="gpa_sim_result">模拟平均学分绩点</string>
+    <string name="gpa_sim_section">模拟试算</string>
+    <string name="gpa_metric_gpa">平均学分绩点</string>
+    <string name="common_clear">清空</string>
+    <string name="gpa_sim_add">添加一门</string>
+    <string name="gpa_semester_detail">学期明细</string>
+    <string name="gpa_metric_credits">已获学分</string>
+    <string name="gpa_footnote">已获学分只算通过课程；无学分绩点的课程不计入平均绩点</string>
+    <string name="grade_needs_retake">需补考</string>
 </resources>

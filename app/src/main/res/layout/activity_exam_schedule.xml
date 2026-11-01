@@ -64,7 +64,7 @@
                             android:ellipsize="end"
                             android:textSize="@dimen/text_body"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="未设置" />
+                            android:text="@string/common_not_set" />
 
                         <ImageView
                             android:id="@+id/iv_expand"
@@ -100,7 +100,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="查询"
+                            android:text="@string/common_query"
                             android:textSize="@dimen/text_subtitle"
                             android:textStyle="bold"
                             android:textColor="?attr/colorOnPrimary" />
@@ -113,7 +113,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="考试明细"
+                android:text="@string/exam_list_header"
                 android:textSize="@dimen/text_title"
                 android:textStyle="bold"
                 android:textColor="?attr/colorOnSurface"
