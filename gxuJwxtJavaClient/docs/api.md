@@ -199,6 +199,14 @@ Referer: https://jwxt2018.gxu.edu.cn/jwglxt/xsxxxggl/xsgrxxwh_cxXsgrxx.html?gnmk
 参数: 无（自动取当前登录学生）
 ```
 
+> **2026-11 实测更新**：该 JSON 接口当前返回 **HTTP 200 + 空 body（0 字节，无 Content-Type）**，
+> 无论是否带 jqGrid 分页参数、`xh_id`、XHR 请求头或改用 GET，均无数据。同一账号的
+> 个人信息页面 `GET /jwglxt/xsxxxggl/xsgrxxwh_cxXsgrxx.html?gnmkdm=N100801` 仍返回
+> 服务端直出的完整 HTML，字段位于 `id="col_<字段名>"` 的元素中（如 `col_xh`、`col_xm`、
+> `col_njdm_id`、`col_bh_id`、`col_zyh_id`、`col_jg_id`），当前学年/学期在隐藏域
+> `input[name=xnm]` / `input[name=xqm]`。客户端 `ProfileModule` 已做「JSON 为空 → 回退解析页面」。
+> 字段名与下方 JSON keys 基本一致，因此之前的字段映射无需改动。
+
 返回 JSON 对象（实测 keys）：
 
 ```
