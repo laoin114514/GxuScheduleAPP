@@ -61,7 +61,7 @@ class ProfileFragment : Fragment() {
 
         view.findViewById<View>(R.id.item_profile).setOnClickListener {
             if (!JwxtAuthManager.isBound()) {
-                AppToast.warn(requireContext(), "请先绑定教务账号")
+                AppToast.warn(requireContext(), getString(R.string.common_bind_first))
                 return@setOnClickListener
             }
             startActivity(Intent(requireContext(), ProfileActivity::class.java))
@@ -81,7 +81,7 @@ class ProfileFragment : Fragment() {
                     JwxtAuthManager.unbind()
                     updateAccountSection()
                     updateDisplay()
-                    AppToast.success(requireContext(), "已解绑教务账号")
+                    AppToast.success(requireContext(), getString(R.string.profile_unbound_toast))
                 }
                 .negativeButton("取消")
                 .show()
@@ -130,7 +130,7 @@ class ProfileFragment : Fragment() {
                 }
                 startActivity(Intent.createChooser(intent, "发送邮件"))
             } catch (e: Exception) {
-                AppToast.error(requireContext(), "未找到邮件应用")
+                AppToast.error(requireContext(), getString(R.string.profile_no_mail_app))
             }
         }
     }
@@ -138,7 +138,7 @@ class ProfileFragment : Fragment() {
     private fun showSemesterDialog() {
         val semesters = SemesterManager.getAll()
         if (semesters.isEmpty()) {
-            AppToast.warn(requireContext(), "请先绑定教务账号")
+            AppToast.warn(requireContext(), getString(R.string.common_bind_first))
             return
         }
 
@@ -160,7 +160,7 @@ class ProfileFragment : Fragment() {
         if (current != null) {
             tv?.text = "${current.label} · ${current.academicYear}学年 ${current.termName}"
         } else {
-            tv?.text = "未设置"
+            tv?.text = getString(R.string.common_not_set)
         }
 
         val startMs = settingsManager.getSemesterStartDate()

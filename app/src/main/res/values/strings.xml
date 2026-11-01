@@ -47,4 +47,41 @@
     <!-- 无障碍描述：点击「课表」页签会在周课表 / 总课表之间切换 -->
     <string name="nav_schedule_desc_week">课表，当前周课表，再次点击切换到总课表</string>
     <string name="nav_schedule_desc_overview">课表，当前总课表，再次点击切换到周课表</string>
+
+    <!-- ===== 我的 / 关于 ===== -->
+    <string name="profile_title">我的</string>
+    <string name="profile_section_account">账号</string>
+    <string name="profile_bind_jwxt">绑定教务</string>
+    <string name="profile_bind_jwxt_sub">广西大学教务系统</string>
+    <string name="profile_update_password">更新密码</string>
+    <string name="profile_personal_info">个人信息</string>
+    <string name="profile_unbind">解绑教务账号</string>
+    <string name="profile_section_semester">学期</string>
+    <string name="profile_current_semester">当前学期</string>
+    <string name="common_not_set">未设置</string>
+    <string name="profile_semester_range">学期周期</string>
+    <string name="profile_semester_range_hint">刷新课表后获取</string>
+    <string name="profile_semester_weeks">学期周数</string>
+    <string name="profile_section_appearance">外观</string>
+    <string name="profile_theme">主题</string>
+    <string name="profile_theme_follow_system">跟随系统</string>
+    <string name="profile_schedule_appearance">课表外观</string>
+    <string name="profile_schedule_appearance_sub">课表整体、课程格子</string>
+    <string name="profile_font_size">字体大小</string>
+    <string name="profile_font_size_standard">标准</string>
+    <string name="profile_section_general">通用</string>
+    <string name="profile_timetable_settings">时间表设置</string>
+    <string name="profile_widgets">小组件</string>
+    <string name="profile_widgets_sub">一键添加到桌面</string>
+    <string name="profile_section_about">关于</string>
+    <string name="profile_about_app">关于应用</string>
+    <string name="profile_feedback">反馈建议</string>
+    <string name="about_check_update">检查更新</string>
+    <string name="about_website">官网</string>
+    <string name="about_github">本项目 GitHub 仓库</string>
+    <string name="about_licenses">查看开源许可证</string>
+    <string name="common_bind_first">请先绑定教务账号</string>
+    <string name="common_na">—</string>
+    <string name="profile_unbound_toast">已解绑教务账号</string>
+    <string name="profile_no_mail_app">未找到邮件应用</string>
 </resources>

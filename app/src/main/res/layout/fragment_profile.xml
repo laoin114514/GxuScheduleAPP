@@ -16,7 +16,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="我的"
+            android:text="@string/profile_title"
             android:textSize="@dimen/text_headline"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary" />
@@ -39,7 +39,7 @@
             <!-- ═══ 账号 ═══ -->
             <TextView style="@style/AppSectionHeader"
                 android:paddingTop="10dp"
-                android:text="账号" />
+                android:text="@string/profile_section_account" />
 
             <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
@@ -68,13 +68,13 @@
                             android:layout_marginStart="14dp">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="绑定教务"
+                                android:text="@string/profile_bind_jwxt"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="广西大学教务系统"
+                                android:text="@string/profile_bind_jwxt_sub"
                                 android:textSize="@dimen/text_caption"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -135,7 +135,7 @@
                             android:minHeight="40dp"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
-                            android:text="更新密码"
+                            android:text="@string/profile_update_password"
                             android:textAllCaps="false"
                             android:textColor="?attr/colorPrimary"
                             android:textSize="@dimen/text_body_small"
@@ -167,7 +167,7 @@
 
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                             android:layout_weight="1" android:layout_marginStart="14dp"
-                            android:text="个人信息"
+                            android:text="@string/profile_personal_info"
                             android:textSize="@dimen/text_body"
                             android:textColor="?attr/colorOnSurface" />
 
@@ -182,7 +182,7 @@
                         android:id="@+id/btn_unbind"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="解绑教务账号"
+                        android:text="@string/profile_unbind"
                         android:textSize="@dimen/text_body_small"
                         android:textColor="@color/danger_color"
                         android:padding="12dp"
@@ -199,7 +199,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- ═══ 学期 ═══ -->
-            <TextView style="@style/AppSectionHeader" android:text="学期" />
+            <TextView style="@style/AppSectionHeader" android:text="@string/profile_section_semester" />
 
             <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
@@ -227,14 +227,14 @@
                             android:layout_marginStart="14dp">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="当前学期"
+                                android:text="@string/profile_current_semester"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
                             <TextView android:id="@+id/tv_semester_value"
                                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="未设置"
+                                android:text="@string/common_not_set"
                                 android:textSize="@dimen/text_caption"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -269,14 +269,14 @@
                             android:layout_marginStart="14dp">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="学期周期"
+                                android:text="@string/profile_semester_range"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
                             <TextView android:id="@+id/tv_semester_date_range"
                                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="刷新课表后获取"
+                                android:text="@string/profile_semester_range_hint"
                                 android:textSize="@dimen/text_caption"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -308,7 +308,7 @@
                             android:layout_marginStart="14dp">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="学期周数"
+                                android:text="@string/profile_semester_weeks"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
@@ -328,7 +328,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- ═══ 外观 ═══ -->
-            <TextView style="@style/AppSectionHeader" android:text="外观" />
+            <TextView style="@style/AppSectionHeader" android:text="@string/profile_section_appearance" />
 
             <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
@@ -357,14 +357,14 @@
                             android:layout_marginStart="14dp">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="主题"
+                                android:text="@string/profile_theme"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
                             <TextView android:id="@+id/tv_theme_mode_value"
                                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="跟随系统"
+                                android:text="@string/profile_theme_follow_system"
                                 android:textSize="@dimen/text_caption"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -398,14 +398,14 @@
                             android:layout_marginStart="14dp">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="课表外观"
+                                android:text="@string/profile_schedule_appearance"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
                             <TextView android:id="@+id/tv_schedule_cell_height_value"
                                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="课表整体、课程格子"
+                                android:text="@string/profile_schedule_appearance_sub"
                                 android:textSize="@dimen/text_caption"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -441,14 +441,14 @@
                             android:layout_marginStart="14dp">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="字体大小"
+                                android:text="@string/profile_font_size"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
                             <TextView android:id="@+id/tv_font_size_value"
                                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="标准"
+                                android:text="@string/profile_font_size_standard"
                                 android:textSize="@dimen/text_caption"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -465,7 +465,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- ═══ 通用 ═══ -->
-            <TextView style="@style/AppSectionHeader" android:text="通用" />
+            <TextView style="@style/AppSectionHeader" android:text="@string/profile_section_general" />
 
             <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
@@ -490,7 +490,7 @@
 
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                             android:layout_weight="1" android:layout_marginStart="14dp"
-                            android:text="时间表设置"
+                            android:text="@string/profile_timetable_settings"
                             android:textSize="@dimen/text_body"
                             android:textColor="?attr/colorOnSurface" />
 
@@ -521,12 +521,12 @@
                             android:orientation="vertical">
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="小组件"
+                                android:text="@string/profile_widgets"
                                 android:textSize="@dimen/text_body"
                                 android:textColor="?attr/colorOnSurface" />
 
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="一键添加到桌面"
+                                android:text="@string/profile_widgets_sub"
                                 android:textSize="@dimen/text_caption"
                                 android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -543,7 +543,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- ═══ 关于 ═══ -->
-            <TextView style="@style/AppSectionHeader" android:text="关于" />
+            <TextView style="@style/AppSectionHeader" android:text="@string/profile_section_about" />
 
             <com.google.android.material.card.MaterialCardView style="@style/AppSectionCard">
 
@@ -568,7 +568,7 @@
 
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                             android:layout_weight="1" android:layout_marginStart="14dp"
-                            android:text="关于应用"
+                            android:text="@string/profile_about_app"
                             android:textSize="@dimen/text_body"
                             android:textColor="?attr/colorOnSurface" />
 
@@ -603,7 +603,7 @@
 
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                             android:layout_weight="1" android:layout_marginStart="14dp"
-                            android:text="反馈建议"
+                            android:text="@string/profile_feedback"
                             android:textSize="@dimen/text_body"
                             android:textColor="?attr/colorOnSurface" />
 

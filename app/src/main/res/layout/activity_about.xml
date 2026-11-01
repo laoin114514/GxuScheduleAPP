@@ -111,7 +111,7 @@
                             android:layout_marginStart="14dp"
                             android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="检查更新" />
+                            android:text="@string/about_check_update" />
 
                         <ImageView
                             android:id="@+id/dot_update_hint"
@@ -168,7 +168,7 @@
                             android:layout_marginStart="14dp"
                             android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="官网" />
+                            android:text="@string/about_website" />
 
                         <ImageView
                             android:layout_width="24dp"
@@ -217,7 +217,7 @@
                             android:layout_marginStart="14dp"
                             android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="本项目 GitHub 仓库" />
+                            android:text="@string/about_github" />
 
                         <ImageView
                             android:layout_width="24dp"
@@ -266,7 +266,7 @@
                             android:layout_marginStart="14dp"
                             android:textSize="@dimen/text_subtitle"
                             android:textColor="?attr/colorOnSurface"
-                            android:text="查看开源许可证" />
+                            android:text="@string/about_licenses" />
 
                         <ImageView
                             android:layout_width="24dp"
