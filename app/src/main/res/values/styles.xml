@@ -136,6 +136,17 @@
     <item name="contentPadding">0dp</item>
 </style>
 
+<!-- 底部弹层的分组标签（「周次」/「学期」）：小号 + 加粗 + 低对比度。
+     不用主色：主色小字在浅色底上读起来像可点链接，与下面真正可点的卡片抢注意力。 -->
+<style name="SheetSectionLabel">
+    <item name="android:layout_width">wrap_content</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textSize">@dimen/text_body_small</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    <item name="android:letterSpacing">0.04</item>
+</style>
+
 <!-- 全局滑块：宽胶囊轨道 + 白色圆球在轨道内滑动（课表菜单周数 / 字体大小共用）。
      M3 默认手柄是 4dp×44dp 的竖条，必须显式把 thumbWidth/thumbHeight 设为相等
      并配 thumbRadius，才能得到圆形滚球。轨道较粗会埋住刻度，用时请关闭 isTickVisible。 -->

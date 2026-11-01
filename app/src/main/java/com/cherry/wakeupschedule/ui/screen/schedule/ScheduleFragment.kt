@@ -16,6 +16,7 @@ import android.widget.TextView
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import android.app.Dialog
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import androidx.core.graphics.ColorUtils
@@ -128,6 +129,15 @@ class ScheduleFragment : Fragment() {
     companion object {
         /** 成功卡片展示时长 */
         private const val SUCCESS_DISPLAY_MS = 1400L
+
+        /**
+         * 课表菜单最多占屏高的比例。
+         *
+         * 外观控件内联进去以后菜单内容接近一屏，若按内容撑满就整张课表都被盖住，
+         * 拖外观滑块时看不到后面的实时效果；封顶后「内容多则滚动、内容少则贴内容」，
+         * 课表始终露在上方。
+         */
+        private const val MENU_SHEET_MAX_HEIGHT_RATIO = 0.7f
     }
 
     override fun onCreateView(
@@ -627,17 +637,54 @@ class ScheduleFragment : Fragment() {
         val primaryContainer = resolveAttr(com.google.android.material.R.attr.colorPrimaryContainer)
         val secondaryContainer = resolveAttr(com.google.android.material.R.attr.colorSecondaryContainer)
         val tertiaryContainer = resolveAttr(com.google.android.material.R.attr.colorTertiaryContainer)
-        val onSurfaceColor = resolveAttr(com.google.android.material.R.attr.colorOnSurface)
-        val blockColor = resolveAttr(com.google.android.material.R.attr.colorSurfaceVariant)
+        val onSurfaceVariantColor =
+            resolveAttr(com.google.android.material.R.attr.colorOnSurfaceVariant)
+        // 未导入课表的学期色块底色（比弹层底色亮一档，才看得出是「一块待选目标」）
+        val unimportedBlockColor =
+            resolveAttr(com.google.android.material.R.attr.colorSurfaceContainerHighest)
 
         // 风景里的太阳固定暖色，浅色/深色模式下都醒目
         val sunColor = 0xFFFFD54F.toInt()
 
+        // ── 标题副行：当前学期（菜单里唯一显示「现在是哪个学期」的位置） ──
+        val tvSubtitle = sheetView.findViewById<TextView>(R.id.tv_menu_subtitle)
+        tvSubtitle.text = if (SemesterManager.getCurrent() == null) {
+            "未绑定教务账号"
+        } else {
+            "${settingsManager.getCurrentSemester()} · ${settingsManager.getCurrentSemesterFullName()}"
+        }
+
         // ── 周数滑块（Material Slider） ──
         val tvWeekLabel = sheetView.findViewById<TextView>(R.id.tv_week_label)
+        val tvWeekHint = sheetView.findViewById<TextView>(R.id.tv_week_hint)
+        val llWeekAction = sheetView.findViewById<LinearLayout>(R.id.ll_week_action)
         val sbWeek = sheetView.findViewById<com.google.android.material.slider.Slider>(R.id.sb_week)
 
-        /** 同步滑块：范围、当前值与两端周数标注。切换学期后可重复调用。 */
+        /** 「回到本周」chip 建在 refreshWeekSlider 之后（点击又要回调它），先留个引用给它反查。 */
+        var chipThisWeek: View? = null
+
+        /**
+         * 已在本周时右侧的静态标记：没有它「第 8 周」这行右侧空着，整行重心全压在左边。
+         * 用同一套 chip 外观（surface + 描边）但不可点，避免和真按钮长得不一样。
+         */
+        val chipNowWeek = ctx.createAppChip("本周", selected = false) {}.apply {
+            isClickable = false
+            isFocusable = false
+        }
+
+        /**
+         * 周次右侧快捷区：有学期且有「本周」概念时才显示 ——
+         * 不在本周给「回到本周」按钮，已在本周给静态「本周」标记（顶栏也已标注）。
+         * 拖滑块时也要跟着变，所以独立成一个函数让 change listener 复用。
+         */
+        fun syncWeekAction(week: Int) {
+            val hasSemester = SemesterManager.getCurrent() != null
+            val isOnCurrentWeek = week == calculateCurrentWeek()
+            chipThisWeek?.isVisible = hasSemester && !isOnCurrentWeek
+            chipNowWeek.isVisible = hasSemester && isOnCurrentWeek
+        }
+
+        /** 同步滑块：范围、当前值与提示行。切换学期 / 点「回到本周」后可重复调用。 */
         fun refreshWeekSlider() {
             val totalWeeks = settingsManager.getTotalWeeks()
             val week = getDisplayWeek().coerceIn(1, totalWeeks)
@@ -646,15 +693,33 @@ class ScheduleFragment : Fragment() {
             sbWeek.valueTo = totalWeeks.toFloat()
             sbWeek.stepSize = 1f
             sbWeek.value = week.toFloat()
-            // 胶囊轨道较粗，刻度会埋在轨道里，关闭刻度改用两端周数标注
+            // 胶囊轨道较粗，刻度会埋在轨道里，关闭刻度
             sbWeek.isTickVisible = false
-            sheetView.findViewById<TextView>(R.id.tv_week_max)?.text = "第 $totalWeeks 周"
+            // 提示行合并了原来的两端端点标注：轨道左右各被 thumbRadius 内缩，
+            // 端点文字贴在卡片内容边缘会明显对不齐，与其猜内缩值做对齐，
+            // 不如去掉这层「看起来像刻度」的假精度。
+            tvWeekHint.text = "拖动切换周次 · 共 $totalWeeks 周"
+            syncWeekAction(week)
         }
+
+        // 「回到本周」：点击后滑回当前周，菜单保持打开，下方课表同步
+        val chip = ctx.createAppChip("回到本周", selected = false) {
+            val target = calculateCurrentWeek().coerceIn(1, settingsManager.getTotalWeeks())
+            setDisplayWeek(target)
+            sbWeek.value = target.toFloat()
+            viewPager.setCurrentItem(target - 1, false)
+            updateDateTimeHeader()
+            refreshWeekSlider()
+        }
+        chipThisWeek = chip
+        llWeekAction.addView(chip)
+        llWeekAction.addView(chipNowWeek)
 
         sbWeek.addOnChangeListener { _, value, fromUser ->
             val totalWeeks = settingsManager.getTotalWeeks()
             val week = value.roundToInt().coerceIn(1, totalWeeks)
             tvWeekLabel.text = "第 $week 周"
+            syncWeekAction(week)
             if (fromUser) {
                 setDisplayWeek(week)
                 viewPager.setCurrentItem(week - 1, false)
@@ -667,7 +732,7 @@ class ScheduleFragment : Fragment() {
         val llSemesterList = sheetView.findViewById<LinearLayout>(R.id.ll_semester_list)
 
         val blockSize = (58 * density).toInt()
-        val itemMarginEnd = (14 * density).toInt()
+        val itemMarginEnd = (12 * density).toInt()
         val blockRadius = (14 * density).toFloat()
 
         val semesterItems = mutableListOf<View>()
@@ -684,6 +749,9 @@ class ScheduleFragment : Fragment() {
 
             llSemesterList.removeAllViews()
             semesterItems.clear()
+
+            // 未绑定教务时学期表是空的：整组隐藏，别留一个空卡片和一个「学期」标题
+            sheetView.findViewById<View>(R.id.group_semester).isVisible = semesters.isNotEmpty()
 
             semesters.forEachIndexed { index, sem ->
                 val isSelected = index == currentSemesterIndex
@@ -710,7 +778,7 @@ class ScheduleFragment : Fragment() {
                 val isLoadingBlock = index == loadingSemesterIndex
                 val blockContainer = FrameLayout(ctx).apply {
                     layoutParams = LinearLayout.LayoutParams(blockSize, blockSize).apply {
-                        bottomMargin = (8 * density).toInt()
+                        bottomMargin = (9 * density).toInt()
                     }
                 }
                 if (hasCourses) {
@@ -724,19 +792,22 @@ class ScheduleFragment : Fragment() {
                             sunColor = sunColor
                         )
                         if (isSelected) {
-                            setSelectionStroke(primaryColor, 2.5f * density)
+                            setSelectionStroke(primaryColor, 3f * density)
                         }
                     }
                     blockContainer.addView(scenery)
                 } else {
+                    // 未导入课表的学期：素色块。用 surfaceContainerHighest 而不是
+                    // surfaceVariant —— 弹层底色本身就是 surfaceContainer，两者太接近时
+                    // 未选中的块看起来像「缺图」的灰砖头。
                     val block = View(ctx).apply {
                         layoutParams = FrameLayout.LayoutParams(blockSize, blockSize)
                         background = GradientDrawable().apply {
                             shape = GradientDrawable.RECTANGLE
                             cornerRadius = blockRadius
-                            setColor(blockColor)
+                            setColor(unimportedBlockColor)
                             if (isSelected) {
-                                setStroke((2.5f * density).toInt(), primaryColor)
+                                setStroke((3f * density).toInt(), primaryColor)
                             }
                         }
                     }
@@ -756,28 +827,19 @@ class ScheduleFragment : Fragment() {
                 }
                 item.addView(blockContainer)
 
-                // 标签文字（只显示前三个字，如"大一上"）
+                // 标签文字（只显示前三个字，如"大一上"）。
+                // 选中态靠「描边 + 标签主色加粗」双重表达：只换描边在风景色块上不够醒目，
+                // 原来额外的选中圆点会让选中项比其它项高一行，导致整排文字基线不齐。
                 val label = TextView(ctx).apply {
                     text = sem.label.take(3)
                     setTextSizeRes(R.dimen.text_body_small)
                     gravity = Gravity.CENTER
-                    setTextColor(onSurfaceColor)
+                    setTextColor(if (isSelected) primaryColor else onSurfaceVariantColor)
+                    if (isSelected) {
+                        setTypeface(typeface, Typeface.BOLD)
+                    }
                 }
                 item.addView(label)
-
-                // 选中标记
-                if (isSelected) {
-                    val dot = View(ctx).apply {
-                        layoutParams = LinearLayout.LayoutParams(
-                            (6 * density).toInt(), (6 * density).toInt()
-                        ).apply { topMargin = (4 * density).toInt() }
-                        background = GradientDrawable().apply {
-                            shape = GradientDrawable.OVAL
-                            setColor(primaryColor)
-                        }
-                    }
-                    item.addView(dot)
-                }
 
                 item.setOnClickListener {
                     // 加载中禁止并发切换学期
@@ -850,15 +912,11 @@ class ScheduleFragment : Fragment() {
         // 注册色块刷新回调：全局 loading 状态切换时（如刷新按钮触发）同步菜单色块
         menuSemesterRefresher = { refreshSemesterItems(animateEntrance = false) }
 
-        // ── 课表外观（弹出悬浮面板，改动实时生效在面板上方的课表） ──
+        // ── 外观：控件已内联进菜单，这里把它们接上设置（改完即时生效在菜单后面的课表上） ──
         val groupAppearance = sheetView.findViewById<View>(R.id.group_schedule_appearance)
         // 入场前先隐藏，等弹窗展示后再淡入，避免 show() 瞬间闪一下
         groupAppearance.alpha = 0f
-        sheetView.findViewById<View>(R.id.row_schedule_appearance).setOnClickListener {
-            // 面板接替菜单：先关菜单再弹面板，避免两层弹窗叠加
-            dialog.dismiss()
-            ScheduleAppearanceSheet.show(this)
-        }
+        ScheduleAppearanceControls.bind(sheetView, ctx, this)
 
         // 弹窗展示后，学期色块按顺序波浪式入场
         dialog.setOnShowListener {
@@ -890,8 +948,19 @@ class ScheduleFragment : Fragment() {
             )
         }
         (sheetView.parent as? ViewGroup)?.removeView(sheetView)
+
+        // ── 高度：由内容决定，但最多占 70% 屏高 ──
+        // 先在不受限高度下量一遍内容（此时学期色块、外观控件都已装配完成），
+        // 再取 min(内容高度, 屏高 × 0.7)：短内容仍然贴合，长内容改为菜单内滚动。
+        val metrics = ctx.resources.displayMetrics
+        sheetView.measure(
+            View.MeasureSpec.makeMeasureSpec(metrics.widthPixels, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val maxSheetHeight = (metrics.heightPixels * MENU_SHEET_MAX_HEIGHT_RATIO).toInt()
+        val sheetHeight = minOf(sheetView.measuredHeight, maxSheetHeight)
         sheetView.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams.MATCH_PARENT, sheetHeight
         )
         container.addView(View(ctx).apply {
             layoutParams = LinearLayout.LayoutParams(

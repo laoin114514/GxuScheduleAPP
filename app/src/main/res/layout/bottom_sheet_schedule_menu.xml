@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  课表菜单底部弹层。
+
+  版式约定（四组内容一个节奏）：
+  拖拽条 → 居中标 + 副标（当前学期） → 分组标签 → 卡片 → 分组标签 → 卡片 → 分组标签 → 卡片。
+
+  改动历史：
+  1. 标题左对齐、三个蓝色分组标签像链接、学期色块裸浮没有容器 → 统一居中标题 + 低对比度分组标签 + 全部卡片化；
+  2. 周数卡里「第 1 周 / 第 20 周」与滑块轨道端点对不齐（轨道被 thumbRadius 内缩）→ 合并成一行居中提示；
+  3. 「课表外观」原是一行跳转入口，点开还要再弹一层半屏面板 → 现在整组控件直接内联在菜单里
+     （见 view_schedule_appearance_controls.xml），改完即时生效，不用二次点开；
+  4. 外观卡内部再排一遍：默认高度提示只在偏离默认值时贴着刻度显形、40/120 与轨道两端对齐、
+     组间发丝线留 4dp 呼吸，卡片上下内边距对称。
+
+  内容变长后整列放进 NestedScrollView：窗口高度不足时菜单内部滚动，
+  拖拽条固定在顶部不跟着滚。
+-->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingHorizontal="20dp"
-    android:paddingTop="16dp"
-    android:paddingBottom="24dp">
+    android:paddingTop="12dp">
 
     <!-- 拖拽指示条 -->
     <View
@@ -17,180 +32,169 @@
         android:layout_marginBottom="16dp"
         android:background="@drawable/bg_drag_handle" />
 
-    <!-- 标题 -->
-    <TextView
-        android:id="@+id/tv_menu_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="课表菜单"
-        android:textSize="@dimen/text_title"
-        android:textStyle="bold"
-        android:textColor="?attr/colorOnSurface"
-        android:layout_marginBottom="16dp" />
-
-    <!-- ═══ 周数选择 ═══ -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="周数选择"
-        android:textSize="@dimen/text_body_small"
-        android:textColor="?attr/colorPrimary"
-        android:layout_marginBottom="4dp" />
-
-    <com.google.android.material.card.MaterialCardView
-        style="@style/DetailSheetCard"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_menu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
+        android:overScrollMode="never"
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="6dp">
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="20dp">
 
+            <!-- 标题：居中，与拖拽条同轴 -->
+            <TextView
+                android:id="@+id/tv_menu_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="课表菜单"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="@dimen/text_title"
+                android:textStyle="bold" />
+
+            <!-- 副标题：当前学期，代码里按学期状态填写 -->
+            <TextView
+                android:id="@+id/tv_menu_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="6dp"
+                android:text="未设置学期"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="@dimen/text_caption" />
+
+            <!-- ═══ 周次 ═══ -->
+            <TextView
+                style="@style/SheetSectionLabel"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="8dp"
+                android:text="周次" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/DetailSheetCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="14dp">
+
+                    <!-- 当前周 + 快捷回到本周（不在本周时才出现，见 ScheduleFragment.refreshWeekSlider） -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tv_week_label"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="第 1 周"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="@dimen/text_headline"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/ll_week_action"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal" />
+                    </LinearLayout>
+
+                    <!-- 周数滑块：外观见 @style/AppSlider（与字体大小页共用同一套样式）。
+                         labelBehavior 关掉气泡：当前周已经用上面的大号「第 N 周」显示，
+                         气泡既重复又给 Slider 平白撑高约 20dp（卡片内会显得空）。 -->
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sb_week"
+                        style="@style/AppSlider"
+                        android:layout_marginTop="-6dp"
+                        android:valueFrom="1"
+                        android:valueTo="20"
+                        android:stepSize="1"
+                        android:value="1"
+                        app:labelBehavior="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_week_hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="拖动切换周次 · 共 20 周"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="@dimen/text_caption" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ═══ 学期 ═══
+                 未绑定教务时整组隐藏（学期表和色块都为空，留一张空卡片比不显示更奇怪） -->
             <LinearLayout
+                android:id="@+id/group_semester"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tv_week_label"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="第 1 周"
-                    android:textSize="@dimen/text_headline"
-                    android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurface" />
+                    style="@style/SheetSectionLabel"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="学期" />
 
-                <TextView
-                    android:id="@+id/tv_week_hint"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="拖动选择"
-                    android:textSize="@dimen/text_caption"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/DetailSheetCard">
+
+                    <HorizontalScrollView
+                        android:id="@+id/hsv_semester"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:overScrollMode="never"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="14dp"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/ll_semester_list"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingEnd="4dp"
+                            android:paddingBottom="1dp" />
+                    </HorizontalScrollView>
+                </com.google.android.material.card.MaterialCardView>
+
             </LinearLayout>
 
-            <!-- 周数滑块：外观见 @style/AppSlider（与字体大小页共用同一套样式） -->
-            <com.google.android.material.slider.Slider
-                android:id="@+id/sb_week"
-                style="@style/AppSlider"
-                android:valueFrom="1"
-                android:valueTo="20"
-                android:stepSize="1"
-                android:value="1" />
-
-            <!-- 起止周数标注 -->
+            <!-- ═══ 外观 ═══
+                 控件直接内联（不再是一行跳转入口）：一卡四组，组间用发丝线分隔，
+                 顺序按改动粒度排——格子本身 → 格子的边 → 整张表。 -->
             <LinearLayout
+                android:id="@+id/group_schedule_appearance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tv_week_min"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="第1周"
-                    android:textSize="@dimen/text_caption"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    style="@style/SheetSectionLabel"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="外观" />
 
-                <TextView
-                    android:id="@+id/tv_week_max"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="end"
-                    android:text="第20周"
-                    android:textSize="@dimen/text_caption"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                <include layout="@layout/view_schedule_appearance_controls" />
+
             </LinearLayout>
+
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
 
-    <!-- ═══ 学期选择 ═══ -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="学期选择"
-        android:textSize="@dimen/text_body_small"
-        android:textColor="?attr/colorPrimary"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp" />
-
-    <HorizontalScrollView
-        android:id="@+id/hsv_semester"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:overScrollMode="never">
-
-        <LinearLayout
-            android:id="@+id/ll_semester_list"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingEnd="20dp" />
-
-    </HorizontalScrollView>
-
-    <!-- ═══ 课表外观 ═══ -->
-    <LinearLayout
-        android:id="@+id/group_schedule_appearance"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="课表外观"
-            android:textSize="@dimen/text_body_small"
-            android:textColor="?attr/colorPrimary"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.card.MaterialCardView
-            style="@style/DetailSheetCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <!-- 整行进设置页 -->
-            <LinearLayout
-                android:id="@+id/row_schedule_appearance"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="14dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="课表外观设置"
-                    android:textSize="@dimen/text_subtitle"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:src="@drawable/ic_mtrl_chevron_right"
-                    android:contentDescription="@null"
-                    app:tint="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-    </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>

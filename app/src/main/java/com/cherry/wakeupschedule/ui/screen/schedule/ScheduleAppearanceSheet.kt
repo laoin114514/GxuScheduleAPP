@@ -15,31 +15,18 @@ import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
-import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.Switch
-import android.widget.TextView
 import com.cherry.wakeupschedule.R
-import com.cherry.wakeupschedule.service.SettingsManager
-import com.cherry.wakeupschedule.ui.component.StyledDialog
-import com.cherry.wakeupschedule.ui.feedback.AppToast
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.slider.Slider
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
- * 课表外观设置面板：悬浮在课表页下方的底部弹层，改动实时生效在面板上方的课表。
- * 原「我的 → 课表外观」独立页已删除，入口（课表菜单 + 我的页）都落到这里。
+ * 课表外观的**半屏悬浮面板**：只有容器、把手与高度手势，控件本身与课表菜单里内联的那一份
+ * 是同一组 id + 同一份装配代码（[ScheduleAppearanceControls]）。
  *
- * - 格子高度：滑块粗调 + 数值胶囊精确输入，写入即通过 [ScheduleFragment.applyAppearanceChanges]
- *   实时刷进课表
- * - 格子内容：课程名恒显示，教室/教师各一个开关
- * - 边框颜色：色块弹自绘取色器（见 [CellBorderColorPicker]）+「跟随课程格子颜色」开关；
- *   跟随开启时描边 = 各课不透明课程色，取色器入口置灰
- * - 课表整体：底部留白开关——开启后在滚动内容末尾追加约 15% 屏高的空白，
- *   让底部的课程能上滑到屏幕中部查看；高亮当日开关——开启后在日期蓝框之外，
- *   为当日整列追加淡色底（周微缩地图小组件同款画法）
+ * 现在课表菜单已经内联了全部外观控件（点开菜单即可调），这个面板只保留给
+ * 「我的 → 课表外观」入口 —— 从「我的」页点进来时不跳去课表页也能直接调参。
+ *
  * - 面板高度可调：拖顶部把手在「25% ↔ 75% 屏高」间连续跟手（越界有果冻阻尼），松手保持；
  *   轻点把手在「半屏 ↔ 25%」间切换。拖拽只响应把手，与滑块/内容滚动互不干扰；
  *   内容塞不下时在面板内的 NestedScrollView 上下滑动。
@@ -71,9 +58,6 @@ object ScheduleAppearanceSheet {
     /** 打开时的屏占比（半屏），内容更高也由内部滚动承担 */
     private const val DEFAULT_HEIGHT_RATIO = 0.5f
 
-    /** 滑条轨道两侧的水平内边距（dp）：默认刻度按它收窄轨宽，模拟器上与滑块对拍校准（实测 24dp） */
-    private const val TRACK_INSET_DP = 24f
-
     /** 打开面板。[fragment] 用于把设置改动实时刷进课表。 */
     fun show(fragment: ScheduleFragment) {
         val context = fragment.requireContext()
@@ -100,148 +84,8 @@ object ScheduleAppearanceSheet {
         sheetBg.setColor(typedValue.data)
         sheetView.background = sheetBg
 
-        val settingsManager = SettingsManager(context)
-
-        /** 回填开关状态时抑制监听，避免把读出来的值再写回去 */
-        var isUpdatingSwitchState = false
-
-        val outlineValue = TypedValue()
-        context.theme.resolveAttribute(
-            com.google.android.material.R.attr.colorOutline, outlineValue, true
-        )
-
-        // ── 格子高度：滑块粗调，松手落库并实时生效 ──
-        val slider = sheetView.findViewById<Slider>(R.id.slider_cell_height)
-        val btnValue = sheetView.findViewById<MaterialButton>(R.id.btn_cell_height_value)
-        // 范围以代码里的常量为准（XML 里的值只是保证 inflate 时 value 在界内）
-        slider.valueFrom = SettingsManager.COURSE_CELL_HEIGHT_MIN_DP.toFloat()
-        slider.valueTo = SettingsManager.COURSE_CELL_HEIGHT_MAX_DP.toFloat()
-        // 粗轨道会埋住刻度，关掉刻度（与原独立页一致）
-        slider.isTickVisible = false
-
-        // ── 默认值刻度：轨道上的凹槽标出默认高度位置，小字在下方对齐同一坐标；
-        //    滑块压近时凹槽淡出（见 updateMarkerAlpha），避免与圆圈重叠打架 ──
-        val defaultDp = settingsManager.getDefaultCourseCellHeight()
-        val marker = sheetView.findViewById<View>(R.id.view_default_height_marker)
-        val defaultHint = sheetView.findViewById<TextView>(R.id.tv_default_height)
-        val surfaceValue = TypedValue()
-        context.theme.resolveAttribute(
-            com.google.android.material.R.attr.colorSurface, surfaceValue, true
-        )
-        marker.background = GradientDrawable().apply {
-            cornerRadius = density
-            setColor(surfaceValue.data)
-        }
-        defaultHint.text = "默认 ${defaultDp}dp"
-        fun positionDefaultMark() {
-            if (slider.width == 0) return
-            val inset = TRACK_INSET_DP * density
-            val fraction = (defaultDp - slider.valueFrom) / (slider.valueTo - slider.valueFrom)
-            val x = inset + fraction * (slider.width - 2 * inset)
-            marker.visibility = View.VISIBLE
-            defaultHint.visibility = View.VISIBLE
-            marker.translationX = x - marker.width / 2f
-            defaultHint.translationX = x - defaultHint.width / 2f
-        }
-        /** 滑块距默认值 ≤1dp 时凹槽全透明、≥3dp 完全显形，之间线性渐变 */
-        fun updateMarkerAlpha(value: Float) {
-            marker.alpha = ((abs(value - defaultDp) - 1f) / 2f).coerceIn(0f, 1f)
-        }
-        slider.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            slider.post { positionDefaultMark() }
-        }
-        slider.post { positionDefaultMark() }
-
-        slider.addOnChangeListener { _, value, _ ->
-            btnValue.text = "${value.roundToInt()}dp"
-            updateMarkerAlpha(value)
-        }
-        slider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-            override fun onStartTrackingTouch(slider: Slider) = Unit
-
-            override fun onStopTrackingTouch(slider: Slider) {
-                settingsManager.setCourseCellHeight(slider.value.roundToInt())
-                fragment.applyAppearanceChanges()
-            }
-        })
-        btnValue.setOnClickListener {
-            showCellHeightInput(context, fragment, settingsManager, slider, btnValue)
-        }
-
-        // ── 格子内容：教室/教师开关 ──
-        val switchClassroom = sheetView.findViewById<Switch>(R.id.switch_show_classroom)
-        val switchTeacher = sheetView.findViewById<Switch>(R.id.switch_show_teacher)
-        switchClassroom.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            settingsManager.setShowClassroom(isChecked)
-            fragment.applyAppearanceChanges()
-        }
-        switchTeacher.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            settingsManager.setShowTeacher(isChecked)
-            fragment.applyAppearanceChanges()
-        }
-
-        // ── 边框颜色：色块弹自绘取色器，跟随开关实时生效 ──
-        val swatch = sheetView.findViewById<View>(R.id.swatch_border_color)
-        val switchFollow = sheetView.findViewById<Switch>(R.id.switch_border_follow_course)
-
-        /** 色块始终展示自定义色；跟随开关开启时置灰并禁点（描边已交给各课课程色） */
-        fun refreshBorderSwatch() {
-            val follow = settingsManager.isBorderFollowCourse()
-            swatch.background = GradientDrawable().apply {
-                cornerRadius = 8 * density
-                setColor(settingsManager.getCellBorderColor())
-                setStroke((1 * density).toInt(), outlineValue.data)
-            }
-            swatch.alpha = if (follow) 0.38f else 1f
-            swatch.isEnabled = !follow
-        }
-
-        swatch.setOnClickListener {
-            if (settingsManager.isBorderFollowCourse()) return@setOnClickListener
-            CellBorderColorPicker.show(context, settingsManager.getCellBorderColor()) { color ->
-                settingsManager.setCellBorderColor(color)
-                fragment.applyAppearanceChanges()
-                refreshBorderSwatch()
-            }
-        }
-        switchFollow.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            settingsManager.setBorderFollowCourse(isChecked)
-            fragment.applyAppearanceChanges()
-            refreshBorderSwatch()
-        }
-
-        // ── 课表整体：底部留白开关，实时生效 ──
-        val switchBottomBlank = sheetView.findViewById<Switch>(R.id.switch_bottom_blank)
-        switchBottomBlank.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            settingsManager.setBottomBlank(isChecked)
-            fragment.applyAppearanceChanges()
-        }
-
-        // ── 课表整体：高亮当日开关（蓝框外追加当日整列淡底），实时生效 ──
-        val switchHighlightToday = sheetView.findViewById<Switch>(R.id.switch_highlight_today)
-        switchHighlightToday.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            settingsManager.setHighlightToday(isChecked)
-            fragment.applyAppearanceChanges()
-        }
-
-        // 回填当前设置（抑制开关监听，避免读出来又写一遍）
-        val cellHeight = settingsManager.getCourseCellHeight()
-        slider.value = cellHeight.toFloat()
-        btnValue.text = "${cellHeight}dp"
-        updateMarkerAlpha(cellHeight.toFloat())
-        isUpdatingSwitchState = true
-        switchClassroom.isChecked = settingsManager.isShowClassroom()
-        switchTeacher.isChecked = settingsManager.isShowTeacher()
-        switchFollow.isChecked = settingsManager.isBorderFollowCourse()
-        switchBottomBlank.isChecked = settingsManager.isBottomBlank()
-        switchHighlightToday.isChecked = settingsManager.isHighlightToday()
-        isUpdatingSwitchState = false
-        refreshBorderSwatch()
+        // 控件装配只有一份实现（菜单里内联的同一组控件也走它），这里只负责容器与高度手势
+        ScheduleAppearanceControls.bind(sheetView, context, fragment)
 
         // ── 面板高度：把手拖动调节 ──
         setupHeightControl(context, sheetView)
@@ -362,98 +206,6 @@ object ScheduleAppearanceSheet {
         if (sheetView.layoutParams.height == heightPx) return
         sheetView.layoutParams.height = heightPx
         sheetView.requestLayout()
-    }
-
-    // ==================== 格子高度精确输入 ====================
-
-    /** 数值输入弹窗：手动输入精确高度，越界自动夹取（与滑块共用同一设置） */
-    private fun showCellHeightInput(
-        context: Context,
-        fragment: ScheduleFragment,
-        settingsManager: SettingsManager,
-        slider: Slider,
-        btnValue: MaterialButton
-    ) {
-        val dialogView = LayoutInflater.from(context)
-            .inflate(R.layout.dialog_cell_height_input, null)
-        val etHeight = dialogView.findViewById<EditText>(R.id.et_cell_height)
-        val tvRange = dialogView.findViewById<TextView>(R.id.tv_cell_height_range)
-
-        // 越界不拦，应用时自动夹取到最近的边界，规则写在弹窗说明里
-        tvRange.text = "范围 ${SettingsManager.COURSE_CELL_HEIGHT_MIN_DP}-" +
-            "${SettingsManager.COURSE_CELL_HEIGHT_MAX_DP} dp"
-
-        // 预填当前值并全选：直接输入即替换，不用先删
-        etHeight.setText(settingsManager.getCourseCellHeight().toString())
-        etHeight.setSelection(0, etHeight.text.length)
-
-        val dialog = StyledDialog.Builder(context)
-            .title("课程格子高度")
-            .view(dialogView)
-            .positiveButton("应用") {
-                // 空输入视为不修改
-                val typed = etHeight.text.toString().toIntOrNull()
-                if (typed == null) {
-                    AppToast.warn(context, "请输入高度")
-                } else {
-                    applyCellHeight(context, settingsManager, slider, btnValue, typed)
-                    fragment.applyAppearanceChanges()
-                }
-            }
-            .negativeButton("取消")
-            .neutralButton("恢复默认") {
-                // 一键回默认：落库并实时生效（弹窗随后自动关闭）
-                applyCellHeight(
-                    context, settingsManager, slider, btnValue,
-                    settingsManager.getDefaultCourseCellHeight()
-                )
-                fragment.applyAppearanceChanges()
-            }
-            .show()
-
-        // 「恢复默认」推到按钮行最左、其余按钮保持右侧（与取色器弹层同款布局）：
-        // StyledDialog 按钮行是 [取消][中位][应用] 且 gravity=end，直接用会挤在取消旁边
-        dialog.findViewById<View>(R.id.btn_neutral)?.let { btnNeutral ->
-            (btnNeutral.parent as? LinearLayout)?.let { panel ->
-                panel.removeView(btnNeutral)
-                panel.addView(btnNeutral, 0)
-                panel.addView(View(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
-                }, 1)
-            }
-        }
-
-        // 弹窗展示后拉起键盘并聚焦输入框，省掉一次点击
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
-        etHeight.requestFocus()
-        etHeight.setOnEditorActionListener { _, _, _ ->
-            // 键盘回车即应用
-            etHeight.text.toString().toIntOrNull()?.let {
-                applyCellHeight(context, settingsManager, slider, btnValue, it)
-                fragment.applyAppearanceChanges()
-            }
-            dialog.dismiss()
-            true
-        }
-    }
-
-    /** 应用手动输入的高度：夹取到允许范围后落库，并让滑块跳到同一位置 */
-    private fun applyCellHeight(
-        context: Context,
-        settingsManager: SettingsManager,
-        slider: Slider,
-        btnValue: MaterialButton,
-        typedDp: Int
-    ) {
-        val applied = typedDp.coerceIn(
-            SettingsManager.COURSE_CELL_HEIGHT_MIN_DP,
-            SettingsManager.COURSE_CELL_HEIGHT_MAX_DP
-        )
-        settingsManager.setCourseCellHeight(applied)
-        // 滑块位置变化会通过 onChange 同步数值文字，这里再显式设一次兜底
-        slider.value = applied.toFloat()
-        btnValue.text = "${applied}dp"
-        if (applied != typedDp) AppToast.info(context, "已取范围边界 ${applied}dp")
     }
 
     // ==================== 生命周期 ====================
