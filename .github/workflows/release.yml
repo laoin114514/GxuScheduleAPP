@@ -90,8 +90,11 @@ jobs:
             } >> "$GITHUB_OUTPUT"
           fi
 
-      # 上传 universal 包到更新服务器（软失败：后端临时故障不阻断 GitHub Release）
+      # 上传 universal 包到更新服务器（软失败：后端临时故障不阻断 GitHub Release；
+      # 最终由最后一步把失败标红，避免 CI 绿但更新服务器没包）
       - name: Upload universal APK to update server
+        id: update_server
+        continue-on-error: true
         env:
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           UPDATE_SERVER_API_KEY: ${{ secrets.UPDATE_SERVER_API_KEY }}
@@ -110,15 +113,18 @@ jobs:
           # versionCode 口径：AGP 的 ABI splits 会把 BuildConfig.VERSION_CODE 生成为 base*10（universal 口径），
           # App 上报的就是这个值，因此上传时也必须传 base*10，否则更新检查永远判成已是最新。
           UNIVERSAL_VERSION_CODE=$(( ${{ steps.version.outputs.VERSION_CODE }} * 10 ))
-          curl -sS --retry 3 --retry-delay 2 -f -X POST "${UPDATE_SERVER_URL}/api/v1/releases/upload" \
+          # --retry-all-errors: 连 curl (92)/HTTP 408 这类弱网错误也重试（默认不会）
+          # --fail-with-body: HTTP 4xx/5xx 时仍打印后端 JSON，方便定位 401/409/413
+          curl -sS --fail-with-body \
+            --retry 3 --retry-all-errors --retry-delay 3 --retry-max-time 600 \
+            -X POST "${UPDATE_SERVER_URL}/api/v1/releases/upload" \
             -H "X-API-Key: ${UPDATE_SERVER_API_KEY}" \
             -F "appKey=schedule" \
             -F "versionCode=${UNIVERSAL_VERSION_CODE}" \
             -F "versionName=${{ steps.version.outputs.VERSION }}" \
             -F "name=西大课栈" \
             -F "changelog=</tmp/changelog.txt" \
-            -F "file=@${UNIVERSAL_APK}" \
-            || echo "::warning::上传更新服务器失败（已忽略，GitHub Release 正常发布）"
+            -F "file=@${UNIVERSAL_APK}"
 
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
@@ -126,3 +132,11 @@ jobs:
           name: v${{ steps.version.outputs.VERSION }}
           files: app/build/outputs/apk/release/*.apk
           body: ${{ steps.release_notes.outputs.notes }}
+
+      # GitHub Release 已发布后再标红：既保证主产物不受更新服务器故障影响，
+      # 又不会出现“CI 绿色但用户收不到更新”的静默失败。
+      - name: Fail if update server upload failed
+        if: steps.update_server.outcome == 'failure'
+        run: |
+          echo "::error::更新服务器上传失败；GitHub Release 已发布，请检查上方日志后重试或手动补传"
+          exit 1
