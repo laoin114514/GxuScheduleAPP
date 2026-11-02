@@ -20,8 +20,8 @@
     <dimen name="text_body_small">14sp</dimen>   <!-- 次要正文 / 说明 -->
     <dimen name="text_caption">12sp</dimen>      <!-- 辅助说明 / 值 -->
     <dimen name="text_label">10sp</dimen>        <!-- 极小标签 / 课程卡片 -->
-    <dimen name="text_micro">10sp</dimen>        <!-- widget 专用小字（原 9sp，桌面上一眼读不出） -->
-    <dimen name="text_chip_room">10sp</dimen>    <!-- widget 课程块教室行（原 8sp，低于可读下限） -->
+    <dimen name="text_micro">9sp</dimen>         <!-- widget 专用极小字 -->
+    <dimen name="text_chip_room">8sp</dimen>     <!-- widget 课程块教室行专用 -->
 
 
     <!-- 课表左侧时间轴列宽：恢复 7158991 的 32dp 贴边样式（时间轴三行：

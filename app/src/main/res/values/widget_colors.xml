@@ -38,5 +38,5 @@
     <color name="widget_bar_neutral">#94A3B8</color>
 
     <!-- 周视图课程块教室行文字（白 70%，主题无关） -->
-    <color name="widget_chip_room_text">#E6FFFFFF</color>
+    <color name="widget_chip_room_text">#B3FFFFFF</color>
 </resources>

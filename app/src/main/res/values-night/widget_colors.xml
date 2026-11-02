@@ -18,12 +18,4 @@
     <color name="widget_pill_text_gray">#8D9199</color>
 
     <color name="widget_bar_neutral">#64748B</color>
-
-    <!-- 缺口补齐：浅色定义了这些，夜间却漏了，深色下会取到浅色值
-         （例：upcoming 徽标 #94A3B8 压在深色行卡上只有 2.34:1） -->
-    <color name="widget_badge_finished">#93C5FD</color>
-    <color name="widget_badge_active">#D8B4FE</color>
-    <color name="widget_badge_upcoming">#CBD5E1</color>
-    <color name="widget_day_text_today">#0D1117</color>
-    <color name="widget_chip_room_text">#E6FFFFFF</color>
 </resources>
