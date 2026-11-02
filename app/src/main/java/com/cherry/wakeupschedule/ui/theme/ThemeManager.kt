@@ -96,38 +96,66 @@ object ThemeManager {
     fun getCourseColors(): IntArray = FIXED_COURSE_COLORS
 
     // ──────────────────────────────────────────────────────────────────────
-    // 课程卡片配色：成对的「容器色 / 内容色」
+    // 课程卡片配色：浓色块 + 白字（原版观感）
     //
-    // 旧做法是「课程色 50% 叠在页面渐变上 + 纯白字」，浅色下实测对比度只有
-    // 1.48–2.77:1（AA 要求 4.5），全 9 色都不达标。现在改成按底色派生字色：
-    //   浅色：容器 = 18% 课程色 + 82% 白（奶油底），内容 = 课程色 × 0.50（同色系深字）
-    //   深色：容器 = 课程色 × 0.45（压暗保留色相），内容 = 白
-    // 9 色逐一实算：浅色 5.16–10.35:1，深色 6.65–14.68:1，全部 ≥ AA。
+    // 原版做法是「课程色 50% 半透明 + 纯白字」，色块够艳但字读不出来
+    // （浅色实测 1.48–2.77:1）。这里保留"浓色块 + 白字"的观感，只做一件事：
+    // 对每个课程色求出"白字仍满足 4.5:1 的最亮程度"，够亮的颜色原样保留，
+    // 亮色（绿/橙/浅蓝等）按需压暗。9 色实算后最差也有 4.6:1。
     // ──────────────────────────────────────────────────────────────────────
 
-    /** 课程卡片底色 */
-    fun courseContainerColor(courseColor: Int, dark: Boolean): Int {
-        return if (dark) {
-            scaleColor(courseColor, 0.45f)
-        } else {
-            ColorUtils.blendARGB(courseColor, Color.WHITE, 0.82f)
+    /** 白字可读的最低对比度（AA 正文 4.5，留一点余量避免取整掉到线下） */
+    private const val MIN_TEXT_CONTRAST = 4.6
+
+    /** 每种课程色解出来的色块色（同一颜色只算一次） */
+    private val blockColorCache = HashMap<Int, Int>()
+
+    /** 课程卡片底色：白字可读前提下的"最接近原色"的浓色块 */
+    fun courseContainerColor(courseColor: Int, dark: Boolean): Int =
+        blockColorCache.getOrPut(courseColor) { solveBlockColor(courseColor) }
+
+    /** 课程卡片上的主文字色（课名）：浓色块上恒为白色 */
+    fun courseOnColor(courseColor: Int, dark: Boolean): Int = Color.WHITE
+
+    /** 课程卡片上的次要文字色（教室 / 教师）：白字降一档不透明度 */
+    fun courseOnColorSecondary(courseColor: Int, dark: Boolean): Int =
+        ColorUtils.setAlphaComponent(Color.WHITE, if (dark) 216 else 224)
+
+    /**
+     * 求「白字对比度 ≥ [MIN_TEXT_CONTRAST] 时最亮的那个色」。
+     *
+     * 从原色开始按 4% 步长压暗，第一个达标的就返回 —— 这样红/蓝/深橙这类
+     * 本来够深的颜色几乎保持原样，只有绿/橙/浅蓝这种高明度色会明显压深。
+     */
+    private fun solveBlockColor(color: Int): Int {
+        var factor = 1.0f
+        while (factor > 0.30f) {
+            val candidate = scaleColor(color, factor)
+            if (contrastWithWhite(candidate) >= MIN_TEXT_CONTRAST) return candidate
+            factor -= 0.04f
         }
+        return scaleColor(color, 0.30f)
     }
 
-    /** 课程卡片上的主文字色（课名） */
-    fun courseOnColor(courseColor: Int, dark: Boolean): Int {
-        return if (dark) Color.WHITE else scaleColor(courseColor, 0.50f)
+    /** WCAG 相对亮度 */
+    private fun relativeLuminance(color: Int): Double {
+        fun channel(v: Int): Double {
+            val c = v / 255.0
+            return if (c <= 0.03928) c / 12.92 else Math.pow((c + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * channel(Color.red(color)) +
+                0.7152 * channel(Color.green(color)) +
+                0.0722 * channel(Color.blue(color))
     }
 
-    /** 课程卡片上的次要文字色（教室 / 教师），比主文字降一档不透明度 */
-    fun courseOnColorSecondary(courseColor: Int, dark: Boolean): Int {
-        return ColorUtils.setAlphaComponent(courseOnColor(courseColor, dark), if (dark) 208 else 217)
+    private fun contrastWithWhite(color: Int): Double {
+        val lum = relativeLuminance(color)
+        return 1.05 / (lum + 0.05)
     }
 
-    /** 课程卡片描边：跟随课程色时用实色，否则用自定义边框色（见调用方） */
-    fun courseStrokeColor(courseColor: Int, dark: Boolean): Int {
-        return if (dark) scaleColor(courseColor, 0.70f) else scaleColor(courseColor, 0.86f)
-    }
+    /** 课程卡片描边：跟随课程色时用半透明白（浓色块与原版观感一致） */
+    fun courseStrokeColor(courseColor: Int, dark: Boolean): Int =
+        ColorUtils.setAlphaComponent(Color.WHITE, if (dark) 72 else 56)
 
     private fun scaleColor(color: Int, factor: Float): Int {
         return Color.argb(
