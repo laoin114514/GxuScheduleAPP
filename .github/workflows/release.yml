@@ -1,5 +1,9 @@
 name: Build and Release APK
 
+# 发版：给提交打 annotated tag 并推送（tag 注释就是默认更新说明）：
+#   git tag -a v0.5.4 -m "标题" -m "更新说明（可多行）"
+#   git push origin v0.5.4
+# 也可以先在 GitHub Release 页面写描述：工作流会优先读取它（见 Resolve release notes）。
 on:
   push:
     tags:
@@ -65,28 +69,54 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: Extract release notes from tag
+      - name: Resolve release notes
         id: release_notes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # 描述严格取自 annotated tag 自身的注释，绝不回退到 tag 所指提交的提交信息：
-          # actions/checkout 是按 commit SHA 拉取的（refspec 为 +<sha>:refs/tags/<tag>），
-          # 本地 refs/tags/<tag> 因此是轻量 tag、没有 tag 对象，直接读 %(contents) 会拿到提交信息。
-          # 这里显式按 tag ref 再拉一次以取回真正的 tag 对象；轻量 tag（无注释对象）=> 描述为空。
+          # 更新说明来源优先级：
+          # 1) GitHub Release 描述（很多人是在 Release 页面写更新说明的）；
+          # 2) annotated tag 自身的注释；
+          # 3) 两者都空 => 输出空并打 warning。
+          # 绝不回退到 tag 所指提交的提交信息（避免把 commit message 当更新日志）。
           TAG_NAME=${GITHUB_REF#refs/tags/}
+
+          TAG_NOTES=""
           git fetch --depth=1 --no-tags --force origin "+refs/tags/${TAG_NAME}:refs/tags/${TAG_NAME}" \
-            || echo "::warning::拉取 tag 对象失败，本次更新描述为空"
-          NOTES=""
+            || echo "::warning::拉取 tag 对象失败，将尝试读取 Release 描述"
           if [ "$(git cat-file -t "refs/tags/${TAG_NAME}" 2>/dev/null)" = "tag" ]; then
-            NOTES=$(git tag -l --format='%(contents)' "$TAG_NAME")
+            TAG_NOTES=$(git tag -l --format='%(contents)' "$TAG_NAME")
           fi
-          # 多行输出用 heredoc 方式写入 GITHUB_OUTPUT；注释为空则显式置空
-          if [ -z "$(printf '%s' "$NOTES" | tr -d '[:space:]')" ]; then
+
+          # Release 可能还没创建（手动 push tag），404/401 时按空处理
+          RELEASE_BODY=$(curl -fsS --max-time 20 \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG_NAME}" \
+            | python3 -c 'import sys,json; print(json.load(sys.stdin).get("body") or "")' \
+              2>/dev/null || true)
+
+          NOTES=""
+          SOURCE=""
+          if [ -n "$(printf '%s' "${RELEASE_BODY}" | tr -d '[:space:]')" ]; then
+            NOTES="${RELEASE_BODY}"
+            SOURCE="GitHub Release 描述"
+          elif [ -n "$(printf '%s' "${TAG_NOTES}" | tr -d '[:space:]')" ]; then
+            NOTES="${TAG_NOTES}"
+            SOURCE="annotated tag 注释"
+          fi
+
+          # 多行输出用 heredoc 方式写入 GITHUB_OUTPUT；两者都为空则显式置空并告警
+          if [ -z "$(printf '%s' "${NOTES}" | tr -d '[:space:]')" ]; then
+            echo "::warning::tag ${TAG_NAME} 没有注释，也没有 Release 描述；本次更新说明为空"
             echo 'notes=' >> "$GITHUB_OUTPUT"
           else
+            echo "::notice::更新说明来源：${SOURCE}"
+            DELIMITER="EOF_${RANDOM}_$(date +%s)"
             {
-              echo 'notes<<EOF'
-              printf '%s\n' "$NOTES"
-              echo EOF
+              echo "notes<<${DELIMITER}"
+              printf '%s\n' "${NOTES}"
+              echo "${DELIMITER}"
             } >> "$GITHUB_OUTPUT"
           fi
 
