@@ -31,21 +31,17 @@
 
                 <TextView
                     android:id="@+id/tv_week_info"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:maxLines="1"
                     android:text="@string/schedule_week_placeholder"
                     android:textSize="@dimen/text_caption"
                     android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <TextView
                     android:id="@+id/tv_date"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:ellipsize="end"
-                    android:maxLines="1"
                     android:text="2026/7/28"
                     android:textSize="@dimen/text_title"
                     android:textStyle="bold"
@@ -65,8 +61,8 @@
 
             <com.cherry.wakeupschedule.ui.widget.CircleIconButton
                 android:id="@+id/btn_refresh"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:src="@drawable/ic_mtrl_refresh"
                 android:contentDescription="刷新课表">
 
@@ -85,8 +81,8 @@
 
             <com.cherry.wakeupschedule.ui.widget.CircleIconButton
                 android:id="@+id/btn_menu"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_marginStart="8dp"
                 android:src="@drawable/ic_mtrl_menu"
                 android:contentDescription="课表菜单" />

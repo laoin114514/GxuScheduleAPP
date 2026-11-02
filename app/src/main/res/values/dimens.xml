@@ -24,11 +24,11 @@
     <dimen name="text_chip_room">10sp</dimen>    <!-- widget 课程块教室行（原 8sp，低于可读下限） -->
 
 
-    <!-- 课表左侧时间轴列宽：32dp 装 "08:00"(10sp ≈ 25dp) 只剩 4dp 余量，
-         系统字体放大就折行；加到 40dp 并把文字居中，左边距约 7dp -->
-    <dimen name="time_axis_width">40dp</dimen>
+    <!-- 课表左侧时间轴列宽：恢复 7158991 的 32dp 贴边样式（时间轴三行：
+         节次 / 开始 / 结束，文字内边距仅 4px，视觉上贴着屏幕左缘）。 -->
+    <dimen name="time_axis_width">32dp</dimen>
 
-    <!-- 时间轴上的开始时间（课名下方的小字） -->
+    <!-- 课表菜单「学期色块」角标小字（原时间轴开始时间，时间轴已恢复 text_label） -->
     <dimen name="text_time_axis">10sp</dimen>
 
     <!-- ===== 布局令牌（UI 方案 §3.3） =====

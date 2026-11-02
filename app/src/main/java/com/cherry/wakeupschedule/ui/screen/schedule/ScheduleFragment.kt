@@ -480,13 +480,10 @@ class ScheduleFragment : Fragment() {
             return
         }
 
+        val cal = Calendar.getInstance()
+        tvDate.text = dateFormat.format(cal.time)
         val displayWk = getDisplayWeek()
         val currentWk = getCurrentWeek()
-
-        // 大日期显示「当前浏览那一周」的周一–周日，而不是永远显示今天：
-        // 翻到第 12 周时顶栏还写着今天日期，会和页内日期栏自相矛盾。
-        // 没设学期开始日期时退回今天的日期（与改造前一致）。
-        tvDate.text = formatWeekRange(displayWk) ?: dateFormat.format(Calendar.getInstance().time)
 
         val rangeStatus = getSemesterRangeStatus()
         val weekText = when {
@@ -495,29 +492,7 @@ class ScheduleFragment : Fragment() {
             displayWk == currentWk -> "第${displayWk}周 (本周)"
             else -> "第${displayWk}周"
         }
-        // 系统字体放大后顶栏这一行会挤到 4 行：1.5× 以上去掉学期后缀，只留周次
-        val largeFont = resources.configuration.fontScale >= 1.5f
-        tvWeekInfo.text = when {
-            largeFont -> weekText
-            semesterLabel != null -> "$weekText · $semesterLabel"
-            else -> weekText
-        }
-        if (largeFont) tvCountdown.isVisible = false
-    }
-
-    /** 第 [week] 周的「M/d – M/d」范围；学期开始日期未设置时返回 null */
-    private fun formatWeekRange(week: Int): String? {
-        val startDate = settingsManager.getSemesterStartDate()
-        if (startDate == 0L) return null
-        val cal = Calendar.getInstance().apply {
-            timeInMillis = startDate
-            add(Calendar.WEEK_OF_YEAR, week - 1)
-            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-        }
-        val monday = "${cal.get(Calendar.MONTH) + 1}/${cal.get(Calendar.DAY_OF_MONTH)}"
-        cal.add(Calendar.DAY_OF_MONTH, 6)
-        val sunday = "${cal.get(Calendar.MONTH) + 1}/${cal.get(Calendar.DAY_OF_MONTH)}"
-        return "$monday – $sunday"
+        tvWeekInfo.text = if (semesterLabel != null) "$weekText · $semesterLabel" else weekText
     }
 
     /** 返回 -1=未开始, 0=进行中, 1=已结束 */
@@ -1167,13 +1142,6 @@ class ScheduleFragment : Fragment() {
         val todayCourses = allCourses
             .filter { it.dayOfWeek == adjustedDay && it.isActiveInWeek(getCurrentWeek()) }
             .sortedBy { getCourseStartMinutes(it) }
-
-        // 系统字体放大后顶栏放不下「周次 + 倒计时 + 两个圆钮」，
-        // 倒计时是次要信息，1.5× 以上直接不显示（每秒刷新也要守这条，否则会被重新点亮）
-        if (resources.configuration.fontScale >= 1.5f) {
-            tvCountdown.visibility = View.GONE
-            return
-        }
 
         val currentCourse = todayCourses.find {
             val start = getCourseStartMinutes(it)
