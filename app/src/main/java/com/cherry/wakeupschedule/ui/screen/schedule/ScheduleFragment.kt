@@ -908,7 +908,7 @@ class ScheduleFragment : Fragment() {
                     // 课程数徽标：把"这个学期有课"从装饰性风景变成可读信息
                     TextView(ctx).apply {
                         text = (courseCounts[sem.id] ?: 0).toString()
-                        setTextSizeRes(R.dimen.text_course_cell_meta)
+                        setTextSizeRes(R.dimen.text_time_axis)
                         setTextColor(onPrimaryContainerColor)
                         gravity = Gravity.CENTER
                         setPadding((4 * density).toInt(), 0, (4 * density).toInt(), 0)

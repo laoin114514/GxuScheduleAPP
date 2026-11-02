@@ -10,7 +10,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.OvershootInterpolator
-import android.text.TextUtils
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -19,7 +18,6 @@ import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
-import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.screen.schedule.SchedulePageDetailDialog
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
@@ -394,16 +392,12 @@ class WeekPagerAdapter(
 
             // ── 重建课程卡片 ──
             courseContainer.removeAllViews()
-            // 单元格间距：2dp → 1.5dp。时间轴从 32dp 加到 40dp 后每列少了 3.4dp，
-            // 4 个汉字的课名（44dp）刚好卡在临界，这里把横向空间还给文字。
-            val gapPx = (1.5f * density).toInt()
+            val gapPx = (2 * density).toInt()
             val cellWidth = contentWidth / 7f
             // 「课表整体 → 高亮当日」：当日列淡底垫在卡片之下（clear 后第 0 位，先于卡片循环）
             bindTodayColumn(highlightToday, cellWidth)
+            val textColor = Color.WHITE
             val colors = courseColors
-            val isDark = ThemeManager.isDarkMode(ctx)
-            // 非本周的课程整体压低一档，让「当前在看哪一周」一眼可辨（原来完全没有弱化）
-            val weekAlpha = if (week == currentWeek) 1f else 0.86f
 
             // 按 (day, startTime, endTime) 分组检测重叠
             val groups = weekCourses.groupBy {
@@ -416,22 +410,12 @@ class WeekPagerAdapter(
                 val primary = sorted[0]
 
                 val ci = if (primary.color > 0) (primary.color - 1) % colors.size else 0
-                val courseColor = colors[ci]
-                // 成对的「容器色 / 内容色」：浅色为奶油底 + 同色系深字，深色为压暗色块 + 白字，
-                // 两种模式下文字对比度都在 5:1 以上（旧做法浅色只有 1.48–2.77）
-                val containerColor = ThemeManager.courseContainerColor(courseColor, isDark)
-                val onColor = ThemeManager.courseOnColor(courseColor, isDark)
-                val onColorSecondary = ThemeManager.courseOnColorSecondary(courseColor, isDark)
-                // 描边：三档语义
-                //  1) 用户勾了「跟随课程颜色」→ 课程色实色描边；
-                //  2) 用户没动过边框色（仍是默认半透明白）→ 按内容色派生一条淡描边（浅色下白描边在奶油底上等于没有）；
-                //  3) 用户自定义了颜色 → 尊重用户。
-                val strokeColor = when {
-                    borderFollowCourse -> ThemeManager.courseStrokeColor(courseColor, isDark)
-                    borderColor == SettingsManager.DEFAULT_CELL_BORDER_COLOR ->
-                        ColorUtils.setAlphaComponent(onColor, if (isDark) 56 else 40)
-                    else -> borderColor
-                }
+                val isDark = ThemeManager.isDarkMode(ctx)
+                val alpha = if (isDark) 191 else 128
+                val bgColor = ColorUtils.setAlphaComponent(colors[ci], alpha)
+                // 描边：跟随课程色时取该课不透明课程色（填充仍是半透明，实色描边轮廓清晰）；
+                // 否则用「课表外观 → 边框颜色」的自定义色（默认半透明白）
+                val strokeColor = if (borderFollowCourse) colors[ci] else borderColor
 
                 val rowStart = (primary.startTime - 1).coerceIn(0, maxNodes - 1)
                 val span = (primary.endTime - primary.startTime + 1).coerceAtLeast(1)
@@ -444,10 +428,9 @@ class WeekPagerAdapter(
                 val topMargin = rowStart * cellHeight + gapPx
 
                 val cardBg = GradientDrawable().apply {
-                    setColor(containerColor)
-                    // 旧值是 14f（px），在 420dpi 上只有 5.3dp；这里改成真正的 8dp
-                    cornerRadius = 8 * density
-                    setStroke((1.2f * density).roundToInt().coerceAtLeast(1), strokeColor)
+                    setColor(bgColor)
+                    cornerRadius = 14f
+                    setStroke((2 * density).toInt(), strokeColor)
                 }
 
                 val card = FrameLayout(ctx).apply {
@@ -455,7 +438,6 @@ class WeekPagerAdapter(
                         setMargins(leftMargin, topMargin, 0, 0)
                     }
                     background = cardBg
-                    alpha = weekAlpha
                     setOnClickListener {
                         if (sorted.size > 1) {
                             showOverlapPicker(ctx, sorted, colors)
@@ -481,65 +463,21 @@ class WeekPagerAdapter(
                     }
                 }
 
-                // ── 课程卡内容：按格子实际高度分级，任何高度都不裁字 ──
-                //  < 56dp：只放课名（最多 2 行）
-                //  56–88dp：课名 2 行 + 1 行元信息
-                //  ≥ 88dp：课名 3 行 + 2 行元信息
-                val cardHeightDp = cardH / density
-                val nameMaxLines = if (cardHeightDp >= 88f) 3 else 2
-                val metaMaxLines = when {
-                    cardHeightDp < 56f -> 0
-                    cardHeightDp >= 88f -> 2
-                    else -> 1
-                }
-                val metas = buildList {
-                    if (showClassroom && primary.classroom.isNotBlank()) add(primary.classroom)
-                    if (showTeacher && primary.teacher.isNotBlank()) add(primary.teacher)
-                }
+                // 课程名恒显示；教室/教师按「课表外观 → 课程内容」的开关取舍，空值本来就跳过
+                val parts = mutableListOf(primary.name)
+                if (showClassroom && primary.classroom.isNotBlank()) parts.add(primary.classroom)
+                if (showTeacher && primary.teacher.isNotBlank()) parts.add(primary.teacher)
 
-                val content = LinearLayout(ctx).apply {
-                    orientation = LinearLayout.VERTICAL
+                val tv = TextView(ctx).apply {
+                    text = parts.joinToString("\n")
+                    setTextSizeRes(R.dimen.text_label)
+                    setTextColor(textColor)
                     gravity = Gravity.CENTER
-                    // 左右留 3dp：格子本身只有约 52dp 宽，5dp 的留白会让「数据结构」这种
-                    // 4 字课名折成 3+1 两行，视觉上像断词
-                    setPadding(
-                        (3 * density).toInt(), (3 * density).toInt(),
-                        (3 * density).toInt(), (3 * density).toInt()
-                    )
-                }
-
-                content.addView(TextView(ctx).apply {
-                    text = primary.name
-                    setTextSizeRes(R.dimen.text_course_cell)
-                    setTextColor(onColor)
-                    gravity = Gravity.CENTER
-                    maxLines = nameMaxLines
-                    ellipsize = TextUtils.TruncateAt.END
+                    setPadding((4 * density).toInt(), (2 * density).toInt(),
+                        (4 * density).toInt(), (2 * density).toInt())
                     setTypeface(Typeface.DEFAULT_BOLD)
-                    setLineSpacing(0f, 1.12f)
-                })
-
-                if (metaMaxLines > 0 && metas.isNotEmpty()) {
-                    // 元信息一行一个 TextView：长教室名只截断自己那一行，不会把教师行整行吃掉
-                    metas.take(metaMaxLines).forEach { meta ->
-                        content.addView(TextView(ctx).apply {
-                            text = meta
-                            setTextSizeRes(R.dimen.text_course_cell_meta)
-                            setTextColor(onColorSecondary)
-                            gravity = Gravity.CENTER
-                            maxLines = 1
-                            ellipsize = TextUtils.TruncateAt.END
-                        }, LinearLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
-                        ).apply { setMargins(0, (1 * density).toInt(), 0, 0) })
-                    }
                 }
-
-                card.addView(content, FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                ))
+                card.addView(tv)
 
                 // 角标：组内多于1门课时显示 +N
                 if (sorted.size > 1) {

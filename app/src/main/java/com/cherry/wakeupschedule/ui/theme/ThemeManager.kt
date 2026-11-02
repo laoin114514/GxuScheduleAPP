@@ -3,10 +3,7 @@ package com.cherry.wakeupschedule.ui.theme
 import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
-import android.graphics.Color
-import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
-import kotlin.math.roundToInt
 
 object ThemeManager {
 
@@ -94,75 +91,4 @@ object ThemeManager {
         M3ColorPalette.LIGHT_PALETTES.map { it.name }
 
     fun getCourseColors(): IntArray = FIXED_COURSE_COLORS
-
-    // ──────────────────────────────────────────────────────────────────────
-    // 课程卡片配色：浓色块 + 白字（原版观感）
-    //
-    // 原版做法是「课程色 50% 半透明 + 纯白字」，色块够艳但字读不出来
-    // （浅色实测 1.48–2.77:1）。这里保留"浓色块 + 白字"的观感，只做一件事：
-    // 对每个课程色求出"白字仍满足 4.5:1 的最亮程度"，够亮的颜色原样保留，
-    // 亮色（绿/橙/浅蓝等）按需压暗。9 色实算后最差也有 4.6:1。
-    // ──────────────────────────────────────────────────────────────────────
-
-    /** 白字可读的最低对比度（AA 正文 4.5，留一点余量避免取整掉到线下） */
-    private const val MIN_TEXT_CONTRAST = 4.6
-
-    /** 每种课程色解出来的色块色（同一颜色只算一次） */
-    private val blockColorCache = HashMap<Int, Int>()
-
-    /** 课程卡片底色：白字可读前提下的"最接近原色"的浓色块 */
-    fun courseContainerColor(courseColor: Int, dark: Boolean): Int =
-        blockColorCache.getOrPut(courseColor) { solveBlockColor(courseColor) }
-
-    /** 课程卡片上的主文字色（课名）：浓色块上恒为白色 */
-    fun courseOnColor(courseColor: Int, dark: Boolean): Int = Color.WHITE
-
-    /** 课程卡片上的次要文字色（教室 / 教师）：白字降一档不透明度 */
-    fun courseOnColorSecondary(courseColor: Int, dark: Boolean): Int =
-        ColorUtils.setAlphaComponent(Color.WHITE, if (dark) 216 else 224)
-
-    /**
-     * 求「白字对比度 ≥ [MIN_TEXT_CONTRAST] 时最亮的那个色」。
-     *
-     * 从原色开始按 4% 步长压暗，第一个达标的就返回 —— 这样红/蓝/深橙这类
-     * 本来够深的颜色几乎保持原样，只有绿/橙/浅蓝这种高明度色会明显压深。
-     */
-    private fun solveBlockColor(color: Int): Int {
-        var factor = 1.0f
-        while (factor > 0.30f) {
-            val candidate = scaleColor(color, factor)
-            if (contrastWithWhite(candidate) >= MIN_TEXT_CONTRAST) return candidate
-            factor -= 0.04f
-        }
-        return scaleColor(color, 0.30f)
-    }
-
-    /** WCAG 相对亮度 */
-    private fun relativeLuminance(color: Int): Double {
-        fun channel(v: Int): Double {
-            val c = v / 255.0
-            return if (c <= 0.03928) c / 12.92 else Math.pow((c + 0.055) / 1.055, 2.4)
-        }
-        return 0.2126 * channel(Color.red(color)) +
-                0.7152 * channel(Color.green(color)) +
-                0.0722 * channel(Color.blue(color))
-    }
-
-    private fun contrastWithWhite(color: Int): Double {
-        val lum = relativeLuminance(color)
-        return 1.05 / (lum + 0.05)
-    }
-
-    /** 课程卡片描边：跟随课程色时用半透明白（浓色块与原版观感一致） */
-    fun courseStrokeColor(courseColor: Int, dark: Boolean): Int =
-        ColorUtils.setAlphaComponent(Color.WHITE, if (dark) 72 else 56)
-
-    private fun scaleColor(color: Int, factor: Float): Int {
-        return Color.argb(
-            Color.alpha(color),
-            (Color.red(color) * factor).roundToInt().coerceIn(0, 255),
-            (Color.green(color) * factor).roundToInt().coerceIn(0, 255),
-            (Color.blue(color) * factor).roundToInt().coerceIn(0, 255)
-        )
-    }
 }
