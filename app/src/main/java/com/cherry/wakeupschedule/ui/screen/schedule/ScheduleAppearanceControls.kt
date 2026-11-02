@@ -35,7 +35,6 @@ import kotlin.math.roundToInt
  * - 格子高度：滑块粗调 + 数值胶囊精确输入（40–120dp，越界夹取）
  * - 格子内容：课程名恒显示，教室 / 教师各一个开关
  * - 边框：自定义色块（点开自绘取色器）+「跟随课程颜色」开关；跟随开启时色块置灰禁点
- * - 课表整体：底部留白、高亮当日
  */
 object ScheduleAppearanceControls {
 
@@ -183,21 +182,6 @@ object ScheduleAppearanceControls {
             refreshBorderSwatch()
         }
 
-        // ── 课表整体：底部留白 / 高亮当日 ──
-        val switchBottomBlank = root.findViewById<Switch>(R.id.switch_bottom_blank)
-        switchBottomBlank.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            settingsManager.setBottomBlank(isChecked)
-            fragment.applyAppearanceChanges()
-        }
-
-        val switchHighlightToday = root.findViewById<Switch>(R.id.switch_highlight_today)
-        switchHighlightToday.setOnCheckedChangeListener { _, isChecked ->
-            if (isUpdatingSwitchState) return@setOnCheckedChangeListener
-            settingsManager.setHighlightToday(isChecked)
-            fragment.applyAppearanceChanges()
-        }
-
         // 回填当前设置（抑制开关监听，避免读出来又写一遍）
         val cellHeight = settingsManager.getCourseCellHeight()
         slider.value = cellHeight.toFloat()
@@ -207,8 +191,6 @@ object ScheduleAppearanceControls {
         switchClassroom.isChecked = settingsManager.isShowClassroom()
         switchTeacher.isChecked = settingsManager.isShowTeacher()
         switchFollow.isChecked = settingsManager.isBorderFollowCourse()
-        switchBottomBlank.isChecked = settingsManager.isBottomBlank()
-        switchHighlightToday.isChecked = settingsManager.isHighlightToday()
         isUpdatingSwitchState = false
         refreshBorderSwatch()
     }

@@ -2,10 +2,11 @@
 <!--
   课表外观控件（内联进课表菜单的那一份）。
 
-  排版规则：**一张卡、三条发丝线、四个语义组**，不再给每组套一层「小字标签 + 独立卡片」——
+  排版规则：**一张卡、两条发丝线、三个语义组**，不再给每组套一层「小字标签 + 独立卡片」——
   原来 5 张卡 + 4 个卡外标签 + 2 级标题（课表整体 / 课程格子）叠在一起，视觉上找不到层次。
 
-  组内顺序按「改动的粒度」排：格子本身（高度、显示什么）→ 格子的边（边框色）→ 整张表（留白、当日）。
+  组内顺序按「改动的粒度」排：格子本身（高度、显示什么）→ 格子的边（边框色）。
+  「底部留白 / 高亮当日」两个开关已移除，课表行为沿用 SettingsManager 里的现有值。
 
   排版细节（这一版修的三处）：
   1. 格子高度：默认值不再作为一条浮在「40 / 120」中间的主色小字，
@@ -234,57 +235,6 @@
 
             <Switch
                 android:id="@+id/switch_border_follow_course"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:theme="@style/SwitchTheme" />
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:layout_marginTop="4dp"
-            android:background="?attr/colorOutlineVariant" />
-
-        <!-- ── 组 4：整张课表 ── -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:minHeight="48dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/appearance_bottom_blank"
-                android:textSize="@dimen/text_body"
-                android:textColor="?attr/colorOnSurface" />
-
-            <Switch
-                android:id="@+id/switch_bottom_blank"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:theme="@style/SwitchTheme" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:minHeight="48dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/appearance_highlight_today"
-                android:textSize="@dimen/text_body"
-                android:textColor="?attr/colorOnSurface" />
-
-            <Switch
-                android:id="@+id/switch_highlight_today"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:theme="@style/SwitchTheme" />

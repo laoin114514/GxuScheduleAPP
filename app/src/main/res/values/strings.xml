@@ -100,8 +100,6 @@
     <string name="menu_section_week">周次</string>
     <string name="appearance_border_follow">边框跟随课程颜色</string>
     <string name="appearance_border_color">边框颜色</string>
-    <string name="appearance_bottom_blank">底部留白</string>
-    <string name="appearance_highlight_today">高亮当日</string>
     <string name="appearance_cell_height">格子高度</string>
     <string name="appearance_show_teacher">显示教师</string>
     <string name="appearance_show_classroom">显示教室</string>
