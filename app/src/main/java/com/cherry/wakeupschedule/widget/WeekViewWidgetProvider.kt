@@ -3,7 +3,6 @@ package com.cherry.wakeupschedule.widget
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
@@ -116,16 +115,25 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
         )
 
         fun triggerUpdate(context: Context) {
-            val intent = Intent(context, WeekViewWidgetProvider::class.java).apply {
-                action = ACTION_REFRESH
-            }
-            context.sendBroadcast(intent)
+            // 无实例纯内存返回；有实例直接进程内刷新，不再 sendBroadcast 走 AMS
+            if (!WidgetPresence.isPresent(context, WeekViewWidgetProvider::class.java)) return
+            updateAllWidgets(context)
+        }
+
+        private fun updateAllWidgets(context: Context) {
+            val appWidgetIds = WidgetPresence.widgetIds(context, WeekViewWidgetProvider::class.java)
+            if (appWidgetIds.isEmpty()) return
+            WeekViewWidgetProvider().onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds)
         }
     }
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+        // 系统回调带来当前完整的实例列表：顺手校准进程内缓存
+        WidgetPresence.markUpdated(WeekViewWidgetProvider::class.java, appWidgetIds)
+        if (appWidgetIds.isNotEmpty()) {
+            // 各实例内容完全一致：只构建一份 RemoteViews，一次 IPC 批量下发
+            val views = buildRemoteViews(context)
+            appWidgetManager.updateAppWidget(appWidgetIds, views)
         }
     }
 
@@ -137,6 +145,18 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
         ScheduleWidgetUpdateService.triggerUpdate(context)
     }
 
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        WidgetPresence.markAbsent(WeekViewWidgetProvider::class.java)
+        // 本组件自己不带闹钟；若它是桌面上最后一个小组件，顺手停掉 30 分钟兜底链
+        ScheduleWidgetUpdateService.onProviderDisabled(context)
+    }
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        WidgetPresence.markDeleted(WeekViewWidgetProvider::class.java, appWidgetIds)
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         when (intent.action) {
@@ -145,15 +165,7 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun updateAllWidgets(context: Context) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, WeekViewWidgetProvider::class.java))
-        if (appWidgetIds.isNotEmpty()) {
-            onUpdate(context, appWidgetManager, appWidgetIds)
-        }
-    }
-
-    private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
+    private fun buildRemoteViews(context: Context): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_week_view)
         views.setOnClickPendingIntent(
             R.id.widget_container,
@@ -167,7 +179,7 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
             )
         )
         updateWidgetContent(context, views)
-        appWidgetManager.updateAppWidget(appWidgetId, views)
+        return views
     }
 
     private fun updateWidgetContent(context: Context, views: RemoteViews) {

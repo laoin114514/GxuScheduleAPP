@@ -70,6 +70,14 @@ class WeekPagerAdapter(
 
     private var allCourses: List<Course> = emptyList()
 
+    /**
+     * 每周预计算的课程分组（过滤「本周有课 + 有固定时间」→ 按重叠分组 → 组内优先级排序）。
+     * 只依赖课程数据，bind 不再每次全量 filter + groupBy + sort；updateData 时整体失效。
+     *
+     * 结构：外层 = 卡片（组），内层 = 该格重叠的课程（已按优先级排序，第 0 个即主课程）。
+     */
+    private val weekGroupsCache = arrayOfNulls<List<List<Course>>>(totalWeeks)
+
     /** 学期开始日期（epoch ms；0 = 未设置 → 日期栏保留占位文案） */
     private var semesterStartDate: Long = 0L
 
@@ -77,8 +85,33 @@ class WeekPagerAdapter(
     private var currentWeek: Int = 0
 
     fun updateData(courses: List<Course>) {
+        // 同一份列表重复下发（LiveData 重复通知）时内容不会变，没必要整页重绑
+        if (courses === allCourses) return
         allCourses = courses
+        // 课程数据变了：按周预计算的筛选/分组结果全部失效（外观设置变化不影响它）
+        weekGroupsCache.fill(null)
         notifyDataSetChanged()
+    }
+
+    /**
+     * 取第 [week] 周要渲染的课程分组（首次访问该周时计算并缓存）。
+     * 分组顺序与旧实现一致：groupBy 保持「首次出现顺序」，决定卡片叠放（z 序）；
+     * 组内用 sortedBy（稳定排序）与旧实现的 sortedWith(compareBy) 结果逐一相同。
+     */
+    private fun weekCourseGroups(week: Int): List<List<Course>> {
+        val index = week - 1
+        if (index !in weekGroupsCache.indices) return emptyList()
+        weekGroupsCache[index]?.let { return it }
+        // 实践课没有固定星期/节次，放不进网格（只在总课表列出）
+        val weekCourses = allCourses.filter { it.isActiveInWeek(week) && it.hasFixedTime() }
+        val groups: List<List<Course>> = if (weekCourses.isEmpty()) {
+            emptyList()
+        } else {
+            weekCourses.groupBy { Triple(it.dayOfWeek, it.startTime, it.endTime) }
+                .map { (_, group) -> group.sortedBy { courseSortKey(it) } }
+        }
+        weekGroupsCache[index] = groups
+        return groups
     }
 
     /**
@@ -149,7 +182,7 @@ class WeekPagerAdapter(
 
     override fun onBindViewHolder(holder: WeekViewHolder, position: Int) {
         val week = position + 1
-        holder.bind(week, allCourses, cellHeightDp, semesterStartDate, currentWeek,
+        holder.bind(week, weekCourseGroups(week), cellHeightDp, semesterStartDate, currentWeek,
             showClassroom, showTeacher, borderColor, borderFollowCourse, bottomBlankEnabled,
             highlightToday)
     }
@@ -188,6 +221,9 @@ class WeekPagerAdapter(
         /** 「高亮当日」的当日列淡底：holder 级复用，attach/detach 由 bindTodayColumn 管理 */
         private val todayColumnView = View(itemView.context)
 
+        /** 当日列淡底的 drawable：holder 级复用，每次按当前主题重设颜色/圆角（避免每 bind new 一个） */
+        private val todayColumnDrawable = GradientDrawable()
+
         /** 今天在本页的列下标（bindDateHeader 算出；-1 = 学期未设置或今天不在本页） */
         private var todayColumnIndex = -1
 
@@ -196,7 +232,12 @@ class WeekPagerAdapter(
 
         /** 日期栏渲染复用实例，避免每次 bind 重新分配 Calendar / Formatter */
         private val headerCal = Calendar.getInstance()
+        private val todayCal = Calendar.getInstance()
         private val headerDateFormat = SimpleDateFormat("M/d", Locale.getDefault())
+
+        /** 解析主题属性复用的 TypedValue（bind / 时间轴构建里会多次用到，避免每次 new） */
+        private val themeTypedValue = android.util.TypedValue()
+        private val slotTypedValue = android.util.TypedValue()
 
         private var axisBuilt = false
         private var builtNodes = 0
@@ -245,7 +286,9 @@ class WeekPagerAdapter(
             headerCal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
             yearView.text = headerCal.get(Calendar.YEAR).toString()
 
-            val today = Calendar.getInstance()
+            val today = todayCal
+            // 复用同一个 Calendar，只更新时间；取到的年月日与每次新建实例完全一致
+            today.timeInMillis = System.currentTimeMillis()
             // 今天方块底色是 colorPrimary（浅色主题为深色、深色主题为亮色），
             // 字体用 colorOnPrimary 与之反色：浅色主题白字、深色主题深字
             val todayTextColor = themeColor(com.google.android.material.R.attr.colorOnPrimary)
@@ -260,11 +303,12 @@ class WeekPagerAdapter(
                         headerCal.get(Calendar.YEAR) == today.get(Calendar.YEAR)
                 if (isToday) {
                     tv.setBackgroundResource(R.drawable.bg_date_selected)
-                    tv.setTextColor(todayTextColor)
+                    // 颜色没变不重设：setTextColor(int) 每次都会新建 ColorStateList
+                    if (tv.currentTextColor != todayTextColor) tv.setTextColor(todayTextColor)
                     todayColumnIndex = index
                 } else {
                     tv.background = null
-                    tv.setTextColor(normalTextColor)
+                    if (tv.currentTextColor != normalTextColor) tv.setTextColor(normalTextColor)
                 }
                 headerCal.add(Calendar.DAY_OF_MONTH, 1)
             }
@@ -286,29 +330,38 @@ class WeekPagerAdapter(
             }
             if (todayColumnView.parent == null) courseContainer.addView(todayColumnView, 0)
             val density = itemView.context.resources.displayMetrics.density
-            todayColumnView.background = GradientDrawable().apply {
-                cornerRadius = 8 * density
-                setColor(
-                    ColorUtils.setAlphaComponent(
-                        themeColor(com.google.android.material.R.attr.colorPrimary), 26
-                    )
+            // 复用同一个 drawable，只重设颜色/圆角：最终视觉与「每次新建同参数 drawable」逐像素一致
+            todayColumnDrawable.cornerRadius = 8 * density
+            todayColumnDrawable.setColor(
+                ColorUtils.setAlphaComponent(
+                    themeColor(com.google.android.material.R.attr.colorPrimary), 26
                 )
+            )
+            if (todayColumnView.background !== todayColumnDrawable) {
+                todayColumnView.background = todayColumnDrawable
             }
-            todayColumnView.layoutParams = FrameLayout.LayoutParams(
-                lastCellWidthPx.toInt(), ViewGroup.LayoutParams.MATCH_PARENT
-            ).apply { marginStart = (todayColumnIndex * lastCellWidthPx).toInt() }
+            val widthPx = lastCellWidthPx.toInt()
+            val marginPx = (todayColumnIndex * lastCellWidthPx).toInt()
+            val lp = todayColumnView.layoutParams
+            // 宽/位置没变就不重设 LayoutParams，省掉一次整列淡底的重新布局
+            if (lp !is FrameLayout.LayoutParams || lp.width != widthPx ||
+                lp.height != ViewGroup.LayoutParams.MATCH_PARENT || lp.marginStart != marginPx
+            ) {
+                todayColumnView.layoutParams = FrameLayout.LayoutParams(
+                    widthPx, ViewGroup.LayoutParams.MATCH_PARENT
+                ).apply { marginStart = marginPx }
+            }
         }
 
         /** 取主题色（浅色/深色自适应） */
         private fun themeColor(attr: Int): Int {
-            val typedValue = android.util.TypedValue()
-            itemView.context.theme.resolveAttribute(attr, typedValue, true)
-            return typedValue.data
+            itemView.context.theme.resolveAttribute(attr, themeTypedValue, true)
+            return themeTypedValue.data
         }
 
         fun bind(
             week: Int,
-            allCourses: List<Course>,
+            groups: List<List<Course>>,
             cellHeightDp: Int,
             semesterStartDate: Long,
             currentWeek: Int,
@@ -324,22 +377,22 @@ class WeekPagerAdapter(
             bindDateHeader(week, semesterStartDate, currentWeek)
 
             val ctx = itemView.context
-            val maxNodes = TimeTableManager.getInstance(ctx).getMaxNodes()
+            val timeTable = TimeTableManager.getInstance(ctx)
+            val maxNodes = timeTable.getMaxNodes()
             val density = ctx.resources.displayMetrics.density
             // 按 dp × 当前密度换算：与「字体大小」档位（改写 densityDpi）保持一致，格子与文字同步缩放
             val cellHeight = (cellHeightDp * density).roundToInt()
 
-            // ── 网格背景（只配置一次；7158991 版不画网格线） ──
-            if (!axisBuilt || builtNodes != maxNodes) {
+            // ── 网格背景 + 时间轴（只构建一次，或节点数/格子高度变化时重建） ──
+            // 网格背景的配置合并进这个分支：旧实现每次 bind 都重设一遍 gridColor，
+            // 而它的 setter 会无条件 invalidate 整页，纯属白重绘（7158991 版本来就不画网格线）
+            if (!axisBuilt || builtNodes != maxNodes || builtCellHeight != cellHeight) {
                 gridBg.rowCount = maxNodes
                 gridBg.columnCount = 7
                 gridBg.gridColor = Color.TRANSPARENT
-            }
 
-            // ── 时间轴（只构建一次，或节点数/格子高度变化时重建） ──
-            if (!axisBuilt || builtNodes != maxNodes || builtCellHeight != cellHeight) {
                 timeAxis.removeAllViews()
-                val slots = TimeTableManager.getInstance(ctx).getTimeSlots()
+                val slots = timeTable.getTimeSlots()
                 for (node in 1..maxNodes) {
                     val slot = slots.find { it.node == node }
                     val timeView = buildTimeSlotView(ctx, node, slot?.startTime, slot?.endTime, cellHeight)
@@ -350,12 +403,9 @@ class WeekPagerAdapter(
                 builtCellHeight = cellHeight
             }
 
-            // ── 筛选本周课程 ──
-            // 实践课没有固定星期/节次，放不进网格（只在总课表列出）
-            val weekCourses = allCourses.filter { it.isActiveInWeek(week) && it.hasFixedTime() }
-
             // ── 空状态 ──
-            if (weekCourses.isEmpty()) {
+            // groups 已在 adapter 层按周预计算：「本周有课 + 有固定时间」且已分好重叠组
+            if (groups.isEmpty()) {
                 emptyView.visibility = View.VISIBLE
                 courseContainer.removeAllViews()
                 return
@@ -371,9 +421,13 @@ class WeekPagerAdapter(
             //    让底部课程能上滑到屏幕中部查看；空白不带时间轴与行线，与页面背景无缝 ──
             if (bottomBlankEnabled) {
                 bottomSpacer.visibility = View.VISIBLE
-                bottomSpacer.layoutParams.height =
+                val blankHeight =
                     (ctx.resources.displayMetrics.heightPixels * BOTTOM_BLANK_RATIO).toInt()
-                bottomSpacer.requestLayout()
+                // 高度没变就不重排滚动内容（旧实现每次 bind 都 requestLayout 一次）
+                if (bottomSpacer.layoutParams.height != blankHeight) {
+                    bottomSpacer.layoutParams.height = blankHeight
+                    bottomSpacer.requestLayout()
+                }
             } else {
                 bottomSpacer.visibility = View.GONE
             }
@@ -386,20 +440,14 @@ class WeekPagerAdapter(
             bindTodayColumn(highlightToday, cellWidth)
             val textColor = Color.WHITE
             val colors = courseColors
+            // 深色模式 / 透明度只取决于主题，提到循环外（旧实现每个重叠分组都重新读一遍配置）
+            val alpha = if (ThemeManager.isDarkMode(ctx)) 191 else 128
 
-            // 按 (day, startTime, endTime) 分组检测重叠
-            val groups = weekCourses.groupBy {
-                Triple(it.dayOfWeek, it.startTime, it.endTime)
-            }
-
-            for ((_, group) in groups) {
-                // 组内按优先级排序
-                val sorted = group.sortedWith(compareBy { courseSortKey(it) })
+            for (sorted in groups) {
+                // 组内已按优先级排序：第 0 个就是主课程（决定颜色/位置）
                 val primary = sorted[0]
 
                 val ci = if (primary.color > 0) (primary.color - 1) % colors.size else 0
-                val isDark = ThemeManager.isDarkMode(ctx)
-                val alpha = if (isDark) 191 else 128
                 val bgColor = ColorUtils.setAlphaComponent(colors[ci], alpha)
                 // 描边：跟随课程色时取该课不透明课程色（填充仍是半透明，实色描边轮廓清晰）；
                 // 否则用「课表外观 → 边框颜色」的自定义色（默认半透明白）
@@ -452,12 +500,14 @@ class WeekPagerAdapter(
                 }
 
                 // 课程名恒显示；教室/教师按「课表外观 → 课程内容」的开关取舍，空值本来就跳过
-                val parts = mutableListOf(primary.name)
-                if (showClassroom && primary.classroom.isNotBlank()) parts.add(primary.classroom)
-                if (showTeacher && primary.teacher.isNotBlank()) parts.add(primary.teacher)
+                val label = buildString {
+                    append(primary.name)
+                    if (showClassroom && primary.classroom.isNotBlank()) append('\n').append(primary.classroom)
+                    if (showTeacher && primary.teacher.isNotBlank()) append('\n').append(primary.teacher)
+                }
 
                 val tv = TextView(ctx).apply {
-                    text = parts.joinToString("\n")
+                    text = label
                     setTextSizeRes(R.dimen.text_label)
                     setTextColor(textColor)
                     gravity = Gravity.CENTER
@@ -504,49 +554,28 @@ class WeekPagerAdapter(
                     text = node.toString()
                     setTextSizeRes(R.dimen.text_caption)
                     setTypeface(null, Typeface.BOLD)
-                    val typedValue = android.util.TypedValue()
                     ctx.theme.resolveAttribute(
-                        com.google.android.material.R.attr.colorOnSurface, typedValue, true
+                        com.google.android.material.R.attr.colorOnSurface, slotTypedValue, true
                     )
-                    setTextColor(typedValue.data)
+                    setTextColor(slotTypedValue.data)
                 })
                 addView(TextView(ctx).apply {
                     text = start?.takeIf { it.isNotBlank() } ?: "--:--"
                     setTextSizeRes(R.dimen.text_label)
-                    val typedValue = android.util.TypedValue()
                     ctx.theme.resolveAttribute(
-                        com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
+                        com.google.android.material.R.attr.colorOnSurfaceVariant, slotTypedValue, true
                     )
-                    setTextColor(typedValue.data)
+                    setTextColor(slotTypedValue.data)
                 })
                 addView(TextView(ctx).apply {
                     text = end?.takeIf { it.isNotBlank() } ?: "--:--"
                     setTextSizeRes(R.dimen.text_label)
-                    val typedValue = android.util.TypedValue()
                     ctx.theme.resolveAttribute(
-                        com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
+                        com.google.android.material.R.attr.colorOnSurfaceVariant, slotTypedValue, true
                     )
-                    setTextColor(typedValue.data)
+                    setTextColor(slotTypedValue.data)
                 })
             }
-        }
-
-        // 课程类别优先级（数字越小越优先）
-        private fun categoryPriority(category: String): Int = when {
-            category.contains("专业核心") -> 1
-            category.contains("学类核心") -> 2
-            category.contains("通识必修") -> 3
-            category.contains("集中实践必修") -> 4
-            category.contains("专业选修") -> 5
-            else -> 99
-        }
-
-        // 课程优先级排序：实体课 > 虚拟教室；同级按类别排序
-        private fun courseSortKey(course: Course): Int {
-            val isVirtual = course.classroom.contains("虚拟") ||
-                            course.classroom.contains("慕课")
-            val tier = if (isVirtual) 2 else 1
-            return tier * 100 + categoryPriority(course.courseCategory)
         }
 
         private fun showOverlapPicker(
@@ -596,6 +625,8 @@ class WeekPagerAdapter(
          */
         private fun buildPageRoot(context: Context): LinearLayout {
             val density = context.resources.displayMetrics.density
+            // 同一函数内多次解析主题属性，复用同一个 TypedValue 即可（结果立刻取走）
+            val typedValue = android.util.TypedValue()
 
             // 右侧内容区
             val gridBg = GridBackgroundView(context).apply {
@@ -618,7 +649,6 @@ class WeekPagerAdapter(
                 ).apply { gravity = Gravity.CENTER }
                 setImageResource(R.drawable.ic_mtrl_calendar_month)
                 alpha = 0.3f
-                val typedValue = android.util.TypedValue()
                 context.theme.resolveAttribute(
                     com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
                 )
@@ -631,7 +661,6 @@ class WeekPagerAdapter(
                 ).apply { topMargin = (16 * density).toInt() }
                 text = "暂无课程"
                 setTextSizeRes(R.dimen.text_subtitle)
-                val typedValue = android.util.TypedValue()
                 context.theme.resolveAttribute(
                     com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true
                 )
@@ -723,3 +752,27 @@ class WeekPagerAdapter(
         }
     }
 }
+
+/**
+ * 课程类别优先级（数字越小越优先）
+ */
+private fun categoryPriority(category: String): Int = when {
+    category.contains("专业核心") -> 1
+    category.contains("学类核心") -> 2
+    category.contains("通识必修") -> 3
+    category.contains("集中实践必修") -> 4
+    category.contains("专业选修") -> 5
+    else -> 99
+}
+
+/**
+ * 课程优先级排序：实体课 > 虚拟教室；同级按类别排序。
+ * 提前到文件级：既被 Adapter 的按周预计算使用，也被重叠课程弹窗使用，保证两处排序规则同一份实现。
+ */
+private fun courseSortKey(course: Course): Int {
+    val isVirtual = course.classroom.contains("虚拟") ||
+                    course.classroom.contains("慕课")
+    val tier = if (isVirtual) 2 else 1
+    return tier * 100 + categoryPriority(course.courseCategory)
+}
+

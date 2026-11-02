@@ -11,7 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
-import com.cherry.wakeupschedule.service.CourseDataManager
+import com.cherry.wakeupschedule.service.AppInitializer
 import com.cherry.wakeupschedule.widget.ScheduleWideWidgetProvider
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
@@ -84,34 +84,21 @@ class App : Application() {
 
         android.util.Log.d("App", "Application onCreate called")
 
-        // 初始化教务账号管理器
-        com.cherry.wakeupschedule.service.JwxtAccountManager.init(this)
-
-        // 初始化持久化 CookieJar（教务系统会话 cookie 存 Room，重启后复用）
-        com.cherry.wakeupschedule.service.RoomCookieJar.init(this)
-
-        // 初始化学期管理器（内部自动恢复当前学期索引）
-        com.cherry.wakeupschedule.service.SemesterManager.init(this)
-
-        try {
-            CourseDataManager.getInstance(this)
-            android.util.Log.d("App", "CourseDataManager initialized successfully")
-        } catch (e: Exception) {
-            android.util.Log.e("App", "Failed to initialize CourseDataManager", e)
-        }
-
-        try {
-            ScheduleWidgetUpdateService.scheduleNextUpdate(this)
-            WidgetMidnightReceiver.scheduleMidnightUpdate(this)
-            android.util.Log.d("App", "Widget update chains initialized")
-        } catch (e: Exception) {
-            android.util.Log.e("App", "Failed to initialize widget update chains", e)
-        }
+        // 教务账号 / CookieJar / 学期缓存 / 课程缓存的初始化全部是同步 Room 查询
+        // （首次查询还会触发建库与迁移链），是冷启动最大的主线程成本。
+        // 这里统一交给后台线程，与闪屏 400ms 展示窗口及页面启动本身重叠；
+        // 需要这些缓存的入口（MainActivity、冷启动恢复的页面、小组件接收器）在读取前
+        // 用 AppInitializer.awaitReady() 兜底，语义与"onCreate 里已同步加载完"一致。
+        //
+        // 小组件闹钟链的建立一并放到初始化线程：它们只碰 AlarmManager / AppWidgetManager 的
+        // binder 调用，不需要主线程，省掉主线程 8~10 次 IPC（低端机上每次 ~0.1~0.3ms）；
+        // 15/30 分钟级兜底闹钟提前几毫秒挂上没有行为差异。
+        AppInitializer.start(this) { scheduleWidgetUpdateChains() }
 
         try {
             registerTimeTickReceiver()
         } catch (e: Exception) {
-            android.util.Log.e("App", "Failed to register time tick receiver", e)
+            Log.e("App", "Failed to register time tick receiver", e)
         }
 
         try {
@@ -131,10 +118,32 @@ class App : Application() {
         startAutoThemeCheck()
     }
 
+    /**
+     * 建立小组件后台刷新链（30 分钟精确链 + 午夜链）。
+     *
+     * 从 App.onCreate 主线程挪到 [AppInitializer] 的初始化线程执行：
+     * 这里只有 AlarmManager / AppWidgetManager 的 binder 调用（无 UI、无数据依赖），
+     * 但每次启动会在主线程付 8~10 次 IPC；低端机上这部分会直接进入冷启动首帧耗时。
+     * 时序上无差异：两条链的目标时刻都在几十分钟后，早挂/晚挂几毫秒不会被观察到。
+     * 内部仍各自判断桌面是否有小组件实例（无实例用户 0 唤醒），行为不变。
+     */
+    private fun scheduleWidgetUpdateChains() {
+        try {
+            ScheduleWidgetUpdateService.scheduleNextUpdate(this)
+            WidgetMidnightReceiver.scheduleMidnightUpdate(this)
+            Log.d("App", "Widget update chains initialized")
+        } catch (e: Exception) {
+            Log.e("App", "Failed to initialize widget update chains", e)
+        }
+    }
+
     private fun registerTimeTickReceiver() {
         timeTickReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 context ?: return
+                // 桌面没有任何小组件实例时，这一分钟的刷新没有任何可见效果：
+                // 4 次广播 + 后续 AppWidgetManager IPC 全是无用功，直接跳过（判断走内存缓存，成本接近零）
+                if (!ScheduleWidgetUpdateService.hasAnyWidget(context)) return
                 ScheduleWidgetProvider.triggerUpdate(context)
                 ScheduleWideWidgetProvider.triggerUpdate(context)
                 MinimalWidgetProvider.triggerUpdate(context)
@@ -187,11 +196,22 @@ class App : Application() {
     private fun startSecondTick() {
         if (!isScreenOn) return
         stopSecondTick()
+        // 冷启动时课程/学期缓存还没就绪：等后台初始化完成后再开始 tick，
+        // 避免还没数据就先刷一次小组件（也避免未就绪时在主线程等初始化）
+        if (!AppInitializer.isReady) {
+            AppInitializer.runOnMainWhenReady { startSecondTick() }
+            return
+        }
         secondTickRunnable = object : Runnable {
             override fun run() {
                 if (!isScreenOn) return
-                // 仅倒计时组件需要逐秒跳字；其余组件由分钟 tick / TIME_SET / 周期与切换闹钟覆盖
-                MinimalWidgetProvider.triggerUpdate(this@App)
+                // 仅倒计时组件需要逐秒跳字；其余组件由分钟 tick / TIME_SET / 周期与切换闹钟覆盖。
+                // 桌面没有该实例时，每秒广播 + IPC 都是无用功（低端机主线程 jank 来源），
+                // 跳过更新但仍保留 1s 循环：用户随时可能在桌面上添加组件，循环在则下一秒自动恢复刷新。
+                // isPlaced 是工作流 C 提供的内存缓存判断，成本接近零。
+                if (MinimalWidgetProvider.isPlaced(this@App)) {
+                    MinimalWidgetProvider.triggerUpdate(this@App)
+                }
                 secondTickHandler.postDelayed(this, 1000L)
             }
         }

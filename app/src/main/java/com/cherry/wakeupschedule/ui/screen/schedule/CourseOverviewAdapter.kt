@@ -49,14 +49,25 @@ class CourseOverviewAdapter : RecyclerView.Adapter<CourseOverviewAdapter.GroupVi
         private val teacher: TextView = itemView.findViewById(R.id.tv_course_teacher)
         private val weeks: TextView = itemView.findViewById(R.id.tv_course_weeks)
 
+        /** 头像/标签背景 holder 级复用：只改颜色，不每次 bind 都新建 drawable（外观逐像素一致） */
+        private val avatarBg = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+        }
+        private val typeBadgeBg = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 999f
+        }
+
+        init {
+            avatar.background = avatarBg
+            typeBadge.background = typeBadgeBg
+        }
+
         fun bind(group: CourseOverviewGroup, courseColors: IntArray) {
             val ctx = itemView.context
 
             avatar.text = group.name.trim().take(1).ifEmpty { "课" }
-            avatar.background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(courseColor(group, courseColors))
-            }
+            avatarBg.setColor(courseColor(group, courseColors))
 
             name.text = group.name
             teacher.text = group.teachers.ifBlank { "未知" }
@@ -79,11 +90,7 @@ class CourseOverviewAdapter : RecyclerView.Adapter<CourseOverviewAdapter.GroupVi
             )
             typeBadge.text = if (isPractice) "实践课" else "理论课"
             typeBadge.setTextColor(color)
-            typeBadge.background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = 999f
-                setColor(ColorUtils.setAlphaComponent(color, 0x26))
-            }
+            typeBadgeBg.setColor(ColorUtils.setAlphaComponent(color, 0x26))
         }
 
         private fun courseColor(group: CourseOverviewGroup, courseColors: IntArray): Int {

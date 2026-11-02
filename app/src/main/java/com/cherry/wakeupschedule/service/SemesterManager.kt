@@ -88,10 +88,24 @@ object SemesterManager {
 
     // ── 查询（同步，内存缓存） ──
 
-    fun getAll(): List<SemesterEntity> = cached ?: emptyList()
+    /**
+     * 冷启动兜底：后台初始化（[AppInitializer]）还没完成时先等它就绪，避免读到空学期缓存。
+     * 初始化线程自身调用会立即返回（不会自己等自己）；就绪后只是一次 volatile 读。
+     */
+    private fun awaitInit() {
+        AppInitializer.awaitReady()
+    }
+
+    fun getAll(): List<SemesterEntity> {
+        awaitInit()
+        return cached ?: emptyList()
+    }
 
     fun getCurrent(): SemesterEntity? {
-        val idx = getCurrentIndex()
+        awaitInit()
+        // 直接读 currentIndex，不再走 getCurrentIndex()：避免重复就绪判断
+        // （极端超时场景下会把等待时间翻倍）
+        val idx = currentIndex
         if (idx < 0) return null
         return cached?.getOrNull(idx)
     }
@@ -125,5 +139,9 @@ object SemesterManager {
         prefs?.edit()?.putInt(KEY_CURRENT_SEMESTER_INDEX, index)?.apply()
     }
 
-    fun getCurrentIndex(): Int = currentIndex
+    fun getCurrentIndex(): Int {
+        // 同上：冷启动时索引也是 init 里从 SP 恢复的，未就绪就读会得到 -1
+        awaitInit()
+        return currentIndex
+    }
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.navOptions
 import androidx.navigation.fragment.NavHostFragment
+import com.cherry.wakeupschedule.service.AppInitializer
 import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
 import com.cherry.wakeupschedule.service.UpdateService
@@ -23,6 +24,12 @@ class MainActivity : BaseActivity() {
         // MUST be called before setContentView() so all ?attr/ references resolve correctly
         ThemeManager.init(this)
         ThemeManager.applyToTheme(this)
+
+        // 下面的 setContentView 会立即创建 NavHostFragment 并执行各页面的 onViewCreated，
+        // 那里开始读课表/学期/账号缓存。从桌面小组件直接点开本页面（不经过 Splash）时，
+        // App.onCreate 启动的后台初始化可能还没结束，这里兜底等它完成：
+        // 已就绪时只是一次 volatile 读，不引入任何多余主线程工作。
+        AppInitializer.awaitReady()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

@@ -59,6 +59,11 @@ class WidgetCourseListFactory(
     /** 内存中的课程数据快照 */
     private var items: List<WidgetCourseItem> = emptyList()
 
+    // 徽标颜色只在构造时解析一次：原先每渲染一行都要 getColor 一次（资源查找 + 主题解析）
+    private val badgeFinishedColor: Int = context.getColor(R.color.widget_badge_finished)
+    private val badgeActiveColor: Int = context.getColor(R.color.widget_badge_active)
+    private val badgeUpcomingColor: Int = context.getColor(R.color.widget_badge_upcoming)
+
     override fun onCreate() {
         // 在 Service 创建时立即加载数据
         loadItems()
@@ -147,9 +152,9 @@ class WidgetCourseListFactory(
     }
 
     private fun badgeColor(status: WidgetCourseStatus?): Int = when (status) {
-        WidgetCourseStatus.FINISHED -> context.getColor(R.color.widget_badge_finished)
-        WidgetCourseStatus.ACTIVE -> context.getColor(R.color.widget_badge_active)
-        else -> context.getColor(R.color.widget_badge_upcoming)
+        WidgetCourseStatus.FINISHED -> badgeFinishedColor
+        WidgetCourseStatus.ACTIVE -> badgeActiveColor
+        else -> badgeUpcomingColor
     }
 
     private fun rowBackgroundRes(status: WidgetCourseStatus?): Int = when (status) {

@@ -89,3 +89,9 @@ GxuScheduleWebsite/
 .opencode/
 develop
 website
+
+# 本地构建用 Gradle 缓存（容器内 /root 与宿主 gradle 目录只读，需拷到工作区才能构建）
+.gradle-home/
+# 本地模拟器验证用的 AVD 副本
+.android-avd/
+.android-home/

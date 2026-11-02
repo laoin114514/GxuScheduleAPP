@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.view.View
@@ -27,20 +26,29 @@ import java.util.Calendar
  * 取数范围只含今天与明天。
  *
  * 刷新：15 分钟周期闹钟 + 状态切换点（上课/下课/0 点跨天）精确闹钟 + App 分钟 tick + 0 点跨天。
+ *
+ * 性能口径（工作流 C）：无实例纯内存短路；有实例直接进程内刷新（不走广播）；
+ * 一份 RemoteViews 批量下发；15 分钟周期与状态切换精确闹钟都按「已挂 / 目标时刻」去重。
  */
 class NextCourseWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_REFRESH = "com.cherry.wakeupschedule.widget.next.ACTION_REFRESH"
-        private const val NEXT_COURSE_PERIODIC_REQUEST_CODE = 10009
         private const val NEXT_COURSE_TRANSITION_REQUEST_CODE = 10010
-        private const val PERIODIC_UPDATE_INTERVAL = 15 * 60 * 1000L
+
+        @Volatile
+        private var clickPendingIntent: PendingIntent? = null
+
+        @Volatile
+        private var transitionPendingIntent: PendingIntent? = null
+
+        /** 已挂的状态切换精确闹钟目标时刻（0 = 当前没挂），目标不变就不再重复 setExact */
+        @Volatile
+        private var transitionAlarmTarget = 0L
 
         fun triggerUpdate(context: Context) {
-            val intent = Intent(context, NextCourseWidgetProvider::class.java).apply {
-                action = ACTION_REFRESH
-            }
-            context.sendBroadcast(intent)
+            if (!WidgetPresence.isPresent(context, NextCourseWidgetProvider::class.java)) return
+            updateAllWidgets(context)
         }
 
         private fun formatMinutes(minutes: Int): String =
@@ -71,11 +79,44 @@ class NextCourseWidgetProvider : AppWidgetProvider() {
             R.drawable.widget_bar_4, R.drawable.widget_bar_5, R.drawable.widget_bar_6,
             R.drawable.widget_bar_7, R.drawable.widget_bar_8, R.drawable.widget_bar_9
         )
+
+        private fun clickPendingIntent(context: Context): PendingIntent =
+            clickPendingIntent ?: PendingIntent.getActivity(
+                context, 0,
+                Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ).also { clickPendingIntent = it }
+
+        private fun alarmPendingIntent(
+            context: Context,
+            requestCode: Int,
+            receiverClass: Class<*>,
+            cached: PendingIntent?
+        ): PendingIntent = cached ?: PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            Intent(context, receiverClass),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        private fun updateAllWidgets(context: Context) {
+            val appWidgetIds = WidgetPresence.widgetIds(context, NextCourseWidgetProvider::class.java)
+            if (appWidgetIds.isEmpty()) return
+            NextCourseWidgetProvider().onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds)
+        }
     }
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+        // 系统回调带来当前完整的实例列表：顺手校准进程内缓存
+        WidgetPresence.markUpdated(NextCourseWidgetProvider::class.java, appWidgetIds)
+        if (appWidgetIds.isNotEmpty()) {
+            // 各实例内容完全一致：只构建一份 RemoteViews，一次 IPC 批量下发
+            val views = RemoteViews(context.packageName, R.layout.widget_next_course)
+            views.setOnClickPendingIntent(R.id.widget_container, clickPendingIntent(context))
+            updateWidgetContent(context, views)
+            appWidgetManager.updateAppWidget(appWidgetIds, views)
         }
         schedulePeriodicUpdate(context)
     }
@@ -91,12 +132,19 @@ class NextCourseWidgetProvider : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
+        WidgetPresence.markAbsent(NextCourseWidgetProvider::class.java)
         try {
-            cancelPeriodicUpdate(context)
             cancelTransitionUpdate(context)
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        // 如果这是桌面上最后一个小组件，顺手停掉 30 分钟兜底链
+        ScheduleWidgetUpdateService.onProviderDisabled(context)
+    }
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        WidgetPresence.markDeleted(NextCourseWidgetProvider::class.java, appWidgetIds)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -105,31 +153,6 @@ class NextCourseWidgetProvider : AppWidgetProvider() {
             ACTION_REFRESH,
             "com.cherry.wakeupschedule.widget.ACTION_PERIODIC_UPDATE" -> updateAllWidgets(context)
         }
-    }
-
-    private fun updateAllWidgets(context: Context) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, NextCourseWidgetProvider::class.java))
-        if (appWidgetIds.isNotEmpty()) {
-            onUpdate(context, appWidgetManager, appWidgetIds)
-        }
-    }
-
-    private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-        val views = RemoteViews(context.packageName, R.layout.widget_next_course)
-        views.setOnClickPendingIntent(
-            R.id.widget_container,
-            PendingIntent.getActivity(
-                context,
-                0,
-                Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                },
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        )
-        updateWidgetContent(context, views)
-        appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
     /**
@@ -319,6 +342,7 @@ class NextCourseWidgetProvider : AppWidgetProvider() {
     /**
      * 在下一个状态切换点（上课/下课/明天开课）安排精确刷新；
      * 若切换点已过则不安排（15 分钟周期与分钟 tick 兜底）。
+     * 目标时刻没变就不再重复 setExact（分钟 tick 每分钟都会调到这里）。
      */
     private fun scheduleNextTransitionUpdate(context: Context, targetMillis: Long?) {
         try {
@@ -326,69 +350,46 @@ class NextCourseWidgetProvider : AppWidgetProvider() {
                 cancelTransitionUpdate(context)
                 return
             }
+            if (targetMillis == transitionAlarmTarget) return
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val pendingIntent = PendingIntent.getBroadcast(
+            val pendingIntent = alarmPendingIntent(
                 context,
                 NEXT_COURSE_TRANSITION_REQUEST_CODE,
-                Intent(context, NextCourseTransitionReceiver::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                NextCourseTransitionReceiver::class.java,
+                transitionPendingIntent
             )
-            alarmManager.cancel(pendingIntent)
+            transitionPendingIntent = pendingIntent
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, targetMillis, pendingIntent)
+            // 只有 set 成功才记目标：尊重 Android 14+ 精确闹钟被拒时的原有失败回退语义
+            transitionAlarmTarget = targetMillis
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     private fun cancelTransitionUpdate(context: Context) {
+        if (transitionAlarmTarget == 0L) return
+        transitionAlarmTarget = 0L
         try {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                NEXT_COURSE_TRANSITION_REQUEST_CODE,
-                Intent(context, NextCourseTransitionReceiver::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            alarmManager.cancel(
+                alarmPendingIntent(
+                    context,
+                    NEXT_COURSE_TRANSITION_REQUEST_CODE,
+                    NextCourseTransitionReceiver::class.java,
+                    transitionPendingIntent
+                )
             )
-            alarmManager.cancel(pendingIntent)
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
+    /**
+     * 周期刷新：并入「所有小组件共用的一条 15 分钟闹钟」
+     * （见 [ScheduleWidgetUpdateService.ensurePeriodicUpdate]），不再单独挂一条。
+     */
     fun schedulePeriodicUpdate(context: Context) {
-        try {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, NextCoursePeriodicReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                NEXT_COURSE_PERIODIC_REQUEST_CODE,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.cancel(pendingIntent)
-            alarmManager.setInexactRepeating(
-                AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + PERIODIC_UPDATE_INTERVAL,
-                PERIODIC_UPDATE_INTERVAL,
-                pendingIntent
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun cancelPeriodicUpdate(context: Context) {
-        try {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                NEXT_COURSE_PERIODIC_REQUEST_CODE,
-                Intent(context, NextCoursePeriodicReceiver::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.cancel(pendingIntent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        ScheduleWidgetUpdateService.ensurePeriodicUpdate(context)
     }
 }

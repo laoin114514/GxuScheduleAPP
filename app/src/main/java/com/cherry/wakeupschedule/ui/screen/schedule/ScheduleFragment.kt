@@ -103,6 +103,9 @@ class ScheduleFragment : Fragment() {
     /** 总课表全部条目（按课程名归并后，未筛选）；筛选只作用于渲染 */
     private var overviewGroups: List<CourseOverviewGroup> = emptyList()
 
+    /** 生成 [overviewGroups] 所用的课程列表快照；课程数据没变（引用相同）就不重复归并 */
+    private var overviewGroupsSource: List<Course>? = null
+
     /** 总课表条目总数，用于顶栏「本学期共 N 门课程」 */
     private var overviewGroupCount = 0
 
@@ -128,9 +131,33 @@ class ScheduleFragment : Fragment() {
     private val countdownHandler = Handler(Looper.getMainLooper())
     private var countdownRunnable: Runnable? = null
 
+    /** 倒计时复用的 Calendar：旧实现每秒 new 一个（低端机上每秒一次的固定垃圾） */
+    private val countdownCalendar = Calendar.getInstance()
+
+    /** 倒计时文本/可见性缓存：值没变就不重复 setText/setVisibility，避免每秒白触发一次重绘 */
+    private var countdownShownVisible: Boolean? = null
+    private var countdownShownText: String? = null
+
+    /**
+     * 倒计时「今日课程」缓存：课程列表 / 当前周 / 自然日 / 时间表 任一变化时才重建。
+     * 旧实现每秒都做一次全量 filter + 按时间槽解析分钟排序（比较器里还要反复读时间表），
+     * 今日课程与起止分钟其实一天内不变，缓存后每秒只剩一次固定大小的遍历。
+     */
+    private var countdownCacheCourses: List<Course>? = null
+    private var countdownCacheWeek = Int.MIN_VALUE
+    private var countdownCacheDay = Int.MIN_VALUE
+    private var countdownCacheSlots: List<TimeTableManager.TimeSlot>? = null
+    private var countdownTodayCourses: List<Course> = emptyList()
+    private var countdownStartMinutes = IntArray(0)
+    /** 结束分钟：按需解析（[END_MINUTES_UNSET] = 还没算过），保持旧实现的解析时机 */
+    private var countdownEndMinutes = IntArray(0)
+
     companion object {
         /** 成功卡片展示时长 */
         private const val SUCCESS_DISPLAY_MS = 1400L
+
+        /** 倒计时缓存里「这门课的结束分钟还没解析」的标记（合法分钟数不会取到负值） */
+        private const val END_MINUTES_UNSET = -1
 
         /**
          * 课表菜单最多占屏高的比例。
@@ -161,7 +188,21 @@ class ScheduleFragment : Fragment() {
         setupViewPager()
         setupObservers()
         updateDateTimeHeader()
+        // 视图重建后 TextView 是新的：清掉「已展示文本」的缓存，首次 onStart 会立刻重刷
+        countdownShownVisible = null
+        countdownShownText = null
+        // 倒计时在 onStart 启动、onStop 停止（见下方），页面不可见时不再空转
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // 只有页面可见时才每秒刷新倒计时；App 退后台 / 切到其他 tab 后停掉，低端机不再白跑
         startCountdown()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        stopCountdown()
     }
 
     override fun onResume() {
@@ -412,9 +453,13 @@ class ScheduleFragment : Fragment() {
      * 取色与周课表一致（[ThemeManager.getCourseColors]）。
      */
     private fun refreshOverview() {
-        overviewGroups = CourseOverviewGroup.build(
-            CourseDataManager.getInstance(requireContext()).getAllCourses()
-        )
+        // 切换「周课表 ⇄ 总课表」是高频操作，归并结果只取决于课程数据：
+        // 引用没变（DataManager 的列表是整体替换的不可变快照）就复用上次结果，不再全量 groupBy 一遍
+        val courses = CourseDataManager.getInstance(requireContext()).getAllCourses()
+        if (overviewGroupsSource !== courses) {
+            overviewGroups = CourseOverviewGroup.build(courses)
+            overviewGroupsSource = courses
+        }
         overviewGroupCount = overviewGroups.size
         applyOverviewFilter()
     }
@@ -1072,8 +1117,13 @@ class ScheduleFragment : Fragment() {
 
     // ── 距下课/下节课倒计时 ─────────────────────────────
 
-    /** 每秒刷新顶部倒计时提示（距下课 / 下节课 / 今日课程已结束） */
+    /**
+     * 每秒刷新顶部倒计时提示（距下课 / 下节课 / 今日课程已结束）。
+     * 只在页面可见期间运行（onStart 启动 / onStop 停止），避免 App 退后台后每秒空转。
+     */
     private fun startCountdown() {
+        // 先清掉旧的，防止 onStart 被重复调用时叠加多个循环
+        stopCountdown()
         countdownRunnable = object : Runnable {
             override fun run() {
                 updateCountdown()
@@ -1083,50 +1133,127 @@ class ScheduleFragment : Fragment() {
         countdownHandler.post(countdownRunnable!!)
     }
 
+    private fun stopCountdown() {
+        countdownRunnable?.let { countdownHandler.removeCallbacks(it) }
+        countdownRunnable = null
+    }
+
     private fun updateCountdown() {
-        val cal = Calendar.getInstance()
+        val cal = countdownCalendar
+        // 复用同一个 Calendar 实例，只更新时间；字段取值与旧实现（每秒 new 一个）完全一致
+        cal.timeInMillis = System.currentTimeMillis()
         val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
         val adjustedDay = if (dayOfWeek == Calendar.SUNDAY) 7 else dayOfWeek - 1
+        val nowMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
         val currentSeconds = cal.get(Calendar.HOUR_OF_DAY) * 3600 +
                 cal.get(Calendar.MINUTE) * 60 + cal.get(Calendar.SECOND)
 
-        val todayCourses = allCourses
-            .filter { it.dayOfWeek == adjustedDay && it.isActiveInWeek(getCurrentWeek()) }
-            .sortedBy { getCourseStartMinutes(it) }
+        val week = getCurrentWeek()
+        val slots = TimeTableManager.getInstance(requireContext()).getTimeSlots()
+        ensureCountdownTodayCourses(adjustedDay, week, slots)
 
-        val currentCourse = todayCourses.find {
-            val start = getCourseStartMinutes(it)
-            val end = getCourseEndMinutes(it)
-            cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE) in start..end
+        // 今日课程已按开始分钟升序缓存：第一个命中的就是「当前课」，与旧 find 语义一致。
+        // 结束分钟按需解析并回填缓存（旧实现也只在 find 当前课的路径上解析结束时间，
+        // 这里保持同样的解析时机，不把历史行为里可能的解析异常提前到别的课程）。
+        var currentIndex = -1
+        for (i in countdownTodayCourses.indices) {
+            var endMinutes = countdownEndMinutes[i]
+            if (endMinutes == END_MINUTES_UNSET) {
+                endMinutes = getCourseEndMinutes(countdownTodayCourses[i], slots)
+                countdownEndMinutes[i] = endMinutes
+            }
+            if (nowMinutes in countdownStartMinutes[i]..endMinutes) {
+                currentIndex = i
+                break
+            }
         }
-        val nextCourse = todayCourses.find {
-            cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE) < getCourseStartMinutes(it)
+        // 没有当前课时才需要「下节课」；旧实现两遍 find 都会跑，但 find 无副作用，结果完全相同
+        var nextIndex = -1
+        if (currentIndex < 0) {
+            for (i in countdownTodayCourses.indices) {
+                if (nowMinutes < countdownStartMinutes[i]) {
+                    nextIndex = i
+                    break
+                }
+            }
         }
 
         when {
-            currentCourse != null -> {
-                val endSeconds = getCourseEndMinutes(currentCourse) * 60
+            currentIndex >= 0 -> {
+                val endSeconds = countdownEndMinutes[currentIndex] * 60
                 val remaining = (endSeconds - currentSeconds).coerceAtLeast(0)
-                tvCountdown.visibility = View.VISIBLE
-                tvCountdown.text = getString(R.string.countdown_class_end, formatDuration(remaining))
+                showCountdown(getString(R.string.countdown_class_end, formatDuration(remaining)))
             }
-            nextCourse != null -> {
-                val startSeconds = getCourseStartMinutes(nextCourse) * 60
+            nextIndex >= 0 -> {
+                val startSeconds = countdownStartMinutes[nextIndex] * 60
                 val remaining = (startSeconds - currentSeconds).coerceAtLeast(0)
-                tvCountdown.visibility = View.VISIBLE
-                tvCountdown.text = getString(R.string.countdown_format, formatDuration(remaining))
+                showCountdown(getString(R.string.countdown_format, formatDuration(remaining)))
             }
-            todayCourses.isNotEmpty() -> {
-                tvCountdown.visibility = View.VISIBLE
-                tvCountdown.text = getString(R.string.countdown_no_more_classes)
-            }
-            else -> tvCountdown.visibility = View.GONE
+            countdownTodayCourses.isNotEmpty() ->
+                showCountdown(getString(R.string.countdown_no_more_classes))
+            else -> hideCountdown()
+        }
+    }
+
+    /**
+     * 重建「今日课程（按开始分钟升序）+ 每门课起止分钟」缓存。
+     *
+     * 只有课程列表 / 当前周 / 自然日 / 时间表（用户可能在外观页改了节次时间）变化时才重算：
+     * 旧实现每秒都要 filter 全量课程、反复读时间表解析分钟、再排序，这些在一天内都是不变的。
+     */
+    private fun ensureCountdownTodayCourses(
+        adjustedDay: Int,
+        week: Int,
+        slots: List<TimeTableManager.TimeSlot>
+    ) {
+        if (countdownCacheCourses === allCourses &&
+            countdownCacheWeek == week &&
+            countdownCacheDay == adjustedDay &&
+            countdownCacheSlots === slots
+        ) {
+            return
+        }
+
+        // 与旧实现逐字段一致：先按（星期、当前周有课）过滤，再按开始分钟升序（稳定排序，
+        // 开始时间相同的课程保持 allCourses 里的相对顺序）
+        val courses = allCourses.filter { it.dayOfWeek == adjustedDay && it.isActiveInWeek(week) }
+        val startMinutes = IntArray(courses.size)
+        courses.forEachIndexed { i, course ->
+            startMinutes[i] = getCourseStartMinutes(course, slots)
+        }
+        val order = courses.indices.sortedBy { startMinutes[it] }
+
+        countdownTodayCourses = order.map { courses[it] }
+        countdownStartMinutes = IntArray(order.size) { startMinutes[order[it]] }
+        // 结束分钟先留空，等 updateCountdown 真正要判断「当前课」时再解析并回填
+        countdownEndMinutes = IntArray(order.size) { END_MINUTES_UNSET }
+        countdownCacheCourses = allCourses
+        countdownCacheWeek = week
+        countdownCacheDay = adjustedDay
+        countdownCacheSlots = slots
+    }
+
+    /** 显示倒计时：文本/可见性没变就不动 View，避免每秒一次无谓的 setText + 重绘 */
+    private fun showCountdown(text: String) {
+        if (countdownShownVisible != true) {
+            tvCountdown.visibility = View.VISIBLE
+            countdownShownVisible = true
+        }
+        if (countdownShownText != text) {
+            tvCountdown.text = text
+            countdownShownText = text
+        }
+    }
+
+    private fun hideCountdown() {
+        if (countdownShownVisible != false) {
+            tvCountdown.visibility = View.GONE
+            countdownShownVisible = false
         }
     }
 
     /** 课程开始节次对应的分钟数（从当日 0 点起算） */
-    private fun getCourseStartMinutes(course: Course): Int {
-        val slots = TimeTableManager.getInstance(requireContext()).getTimeSlots()
+    private fun getCourseStartMinutes(course: Course, slots: List<TimeTableManager.TimeSlot>): Int {
         val slot = slots.find { it.node == course.startTime }
         return if (slot != null) {
             val parts = slot.startTime.split(":")
@@ -1135,8 +1262,7 @@ class ScheduleFragment : Fragment() {
     }
 
     /** 课程结束节次对应的分钟数（从当日 0 点起算） */
-    private fun getCourseEndMinutes(course: Course): Int {
-        val slots = TimeTableManager.getInstance(requireContext()).getTimeSlots()
+    private fun getCourseEndMinutes(course: Course, slots: List<TimeTableManager.TimeSlot>): Int {
         val slot = slots.find { it.node == course.endTime }
         return if (slot != null) {
             val parts = slot.endTime.split(":")
@@ -1154,7 +1280,7 @@ class ScheduleFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        countdownRunnable?.let { countdownHandler.removeCallbacks(it) }
+        stopCountdown()
     }
 
 }

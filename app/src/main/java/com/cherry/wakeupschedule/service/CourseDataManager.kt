@@ -35,6 +35,17 @@ class CourseDataManager private constructor(context: Context) {
     @Volatile
     private var currentSemesterId: Long = 0L
 
+    /**
+     * 各学期课程数量缓存（学期ID → 数量）。
+     *
+     * 供课表菜单「学期色块」与学期滚轮选择器使用；旧实现每次都同步查一次数据库
+     * （`executeDb { dao.getAllCourses() }` 在打开菜单/弹窗时阻塞主线程）。
+     * 现在由 Room 的 Flow 监听顺带算出；写操作后先置空，下一次读取回退到一次查询以保证准确，
+     * 之后 Flow 新值到达再回填 —— 读取语义与旧实现一致（永远反映当前数据库内容）。
+     */
+    @Volatile
+    private var semesterCountsCache: Map<Long, Int>? = null
+
     // 单线程 Executor，保证写操作串行，Room 自身也线程安全
     private val dbExecutor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "course-db").apply { isDaemon = true }
@@ -53,6 +64,8 @@ class CourseDataManager private constructor(context: Context) {
         scope.launch {
             dao.getAllCoursesFlow().collect { courses ->
                 val semId = currentSemesterId
+                // 顺带更新「各学期课程数量」缓存（同一份全量数据，零额外查询）
+                semesterCountsCache = courses.groupingBy { it.semesterId }.eachCount()
                 _coursesFlow.value = courses.filter { it.semesterId == semId }
             }
         }
@@ -132,8 +145,14 @@ class CourseDataManager private constructor(context: Context) {
      * 各学期课程数量统计（学期ID → 数量）。
      * 供课表菜单标识"已填充课表"的学期（风景色块）。
      */
-    fun getSemesterCourseCounts(): Map<Long, Int> =
-        executeDb { dao.getAllCourses() }.groupingBy { it.semesterId }.eachCount()
+    fun getSemesterCourseCounts(): Map<Long, Int> {
+        // 快路径：Flow 监听已顺带算好（打开菜单/学期弹窗时不再同步查库）
+        semesterCountsCache?.let { return it }
+        // 兜底：缓存尚未就绪（极早期）或刚写完尚未收到 Flow 新值时，仍按旧实现查一次库
+        val counts = executeDb { dao.getAllCourses() }.groupingBy { it.semesterId }.eachCount()
+        semesterCountsCache = counts
+        return counts
+    }
 
     // ── 读操作（内存缓存，不访问数据库） ──
 
@@ -183,6 +202,8 @@ class CourseDataManager private constructor(context: Context) {
         val colorIndex = assignColorIndex(course.name, course.teacher)
         val courseToInsert = course.copy(id = 0, color = colorIndex, semesterId = currentSemesterId)
         val newId = executeDb { dao.insertCourse(courseToInsert) }
+        // 写后先失效各学期课程数缓存：Flow 新值到达前若打开菜单，走一次查询保证数字准确
+        semesterCountsCache = null
         return courseToInsert.copy(id = newId)
     }
 
@@ -195,18 +216,22 @@ class CourseDataManager private constructor(context: Context) {
                     color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
             })
         }
+        semesterCountsCache = null
     }
 
     fun updateCourse(course: Course) {
         executeDb { dao.updateCourse(course) }
+        semesterCountsCache = null
     }
 
     fun deleteCourse(course: Course) {
         executeDb { dao.deleteCourse(course) }
+        semesterCountsCache = null
     }
 
     fun clearAllCourses() {
         executeDb { dao.deleteAllCourses() }
+        semesterCountsCache = null
     }
 
     fun replaceAllCourses(courses: List<Course>) {
@@ -225,6 +250,7 @@ class CourseDataManager private constructor(context: Context) {
                     color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
             })
         }
+        semesterCountsCache = null
     }
 
     fun refreshCourses() {
@@ -254,6 +280,11 @@ class CourseDataManager private constructor(context: Context) {
         const val COURSE_COLOR_COUNT = 9
 
         fun getInstance(context: Context): CourseDataManager {
+            // 冷启动兜底：后台初始化完成前不要碰数据库/学期缓存。
+            // 小组件广播可能在 App.onCreate 返回后立刻拉起（数据库还在后台恢复中），
+            // 此时若直接构造本类，会读到还没恢复的学期缓存，把课程按 semesterId=0 加载成空表。
+            // 初始化线程自己构造实例时 awaitReady 会立即返回（不会自己等自己）。
+            AppInitializer.awaitReady()
             return instance ?: synchronized(this) {
                 instance ?: CourseDataManager(context.applicationContext).also {
                     instance = it

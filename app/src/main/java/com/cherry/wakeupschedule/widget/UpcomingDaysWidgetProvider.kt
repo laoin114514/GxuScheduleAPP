@@ -1,45 +1,93 @@
 package com.cherry.wakeupschedule.widget
 
-import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import com.cherry.wakeupschedule.MainActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
-import com.cherry.wakeupschedule.service.CourseDataManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+/**
+ * 近日课程小组件：今天 / 明天两个课程列表。
+ *
+ * 性能口径（工作流 C）：
+ * - 无实例纯内存短路，不再每次 getAppWidgetIds / 实例化 provider；
+ * - 一份 RemoteViews 批量下发；两个 ListView 只在「可见内容签名」变化时才通知重载
+ *   （旧实现每次刷新都通知，两个 RemoteViewsFactory 就各重载一遍，还会重置滚动条）；
+ * - 15 分钟周期闹钟挂上后不再重复 set。
+ */
 class UpcomingDaysWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_REFRESH = "com.cherry.wakeupschedule.widget.upcoming.ACTION_REFRESH"
-        private const val PERIODIC_UPDATE_INTERVAL = 15 * 60 * 1000L
+
+        /** 上次通知 ListView 重载时的列表内容签名（进程级缓存；null 表示未知，首次必通知） */
+        @Volatile
+        private var lastListSignature: String? = null
+
+        @Volatile
+        private var clickPendingIntent: PendingIntent? = null
+
+        /** 两个列表共用的行点击模板（requestCode 20002；进程内复用） */
+        @Volatile
+        private var rowClickPendingIntent: PendingIntent? = null
 
         fun triggerUpdate(context: Context) {
-            val intent = Intent(context, UpcomingDaysWidgetProvider::class.java).apply {
-                action = ACTION_REFRESH
-            }
-            context.sendBroadcast(intent)
+            if (!WidgetPresence.isPresent(context, UpcomingDaysWidgetProvider::class.java)) return
+            updateAllWidgets(context)
+        }
+
+        private fun clickPendingIntent(context: Context): PendingIntent =
+            clickPendingIntent ?: PendingIntent.getActivity(
+                context, 0,
+                Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ).also { clickPendingIntent = it }
+
+        /** 列表行点击模板 PendingIntent（进程内复用，避免每次刷新都申请一遍） */
+        private fun rowClickPendingIntent(context: Context): PendingIntent =
+            rowClickPendingIntent ?: PendingIntent.getActivity(
+                context, 20002,
+                Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_IMMUTABLE
+            ).also { rowClickPendingIntent = it }
+
+        private fun updateAllWidgets(context: Context) {
+            val appWidgetIds = WidgetPresence.widgetIds(context, UpcomingDaysWidgetProvider::class.java)
+            if (appWidgetIds.isEmpty()) return
+            UpcomingDaysWidgetProvider().onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds)
         }
     }
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+        // 系统回调带来当前完整的实例列表：顺手校准进程内缓存
+        WidgetPresence.markUpdated(UpcomingDaysWidgetProvider::class.java, appWidgetIds)
+        if (appWidgetIds.isNotEmpty()) {
+            // 各实例内容完全一致：一份 RemoteViews 一次 IPC 批量下发
+            appWidgetManager.updateAppWidget(appWidgetIds, buildRemoteViews(context))
+
+            // 通知两个 ListView 数据变化。列表内容只在跨天 / 课程数据 / 课程状态变化时才会变，
+            // 用签名去重，避免每次刷新都让两个 RemoteViewsFactory 全量重载（还会重置滚动条）
+            val signature = WidgetListSignature.upcomingSignature(context)
+            if (signature != lastListSignature) {
+                lastListSignature = signature
+                @Suppress("DEPRECATION")
+                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_today_courses)
+                @Suppress("DEPRECATION")
+                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_tomorrow_courses)
+            }
         }
-        // 通知两个 ListView 数据变化
-        @Suppress("DEPRECATION")
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_today_courses)
-        @Suppress("DEPRECATION")
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lv_tomorrow_courses)
         schedulePeriodicUpdate(context)
     }
 
@@ -53,11 +101,14 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        try {
-            cancelPeriodicUpdate(context)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        WidgetPresence.markAbsent(UpcomingDaysWidgetProvider::class.java)
+        // 如果这是桌面上最后一个小组件，顺手停掉 30 分钟兜底链
+        ScheduleWidgetUpdateService.onProviderDisabled(context)
+    }
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        WidgetPresence.markDeleted(UpcomingDaysWidgetProvider::class.java, appWidgetIds)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -67,78 +118,21 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    /**
+     * 周期刷新：并入「所有小组件共用的一条 15 分钟闹钟」
+     * （见 [ScheduleWidgetUpdateService.ensurePeriodicUpdate]），不再单独挂一条。
+     */
     fun schedulePeriodicUpdate(context: Context) {
-        try {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, UpcomingDaysPeriodicReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                10010,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            // 先取消现有的闹钟，避免重复调度
-            alarmManager.cancel(pendingIntent)
-            // 再设置新的闹钟
-            alarmManager.setInexactRepeating(
-                AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + PERIODIC_UPDATE_INTERVAL,
-                PERIODIC_UPDATE_INTERVAL,
-                pendingIntent
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        ScheduleWidgetUpdateService.ensurePeriodicUpdate(context)
     }
 
-    private fun cancelPeriodicUpdate(context: Context) {
+    private fun buildRemoteViews(context: Context): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_upcoming_days)
         try {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, UpcomingDaysPeriodicReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                10010,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.cancel(pendingIntent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun updateAllWidgets(context: Context) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, UpcomingDaysWidgetProvider::class.java))
-        if (appWidgetIds.isNotEmpty()) {
-            onUpdate(context, appWidgetManager, appWidgetIds)
-        }
-    }
-
-    private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-        try {
-            val views = RemoteViews(context.packageName, R.layout.widget_upcoming_days)
-            try {
-                views.setOnClickPendingIntent(
-                    R.id.widget_container,
-                    PendingIntent.getActivity(
-                        context, 0,
-                        Intent(context, MainActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        },
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                )
-            } catch (e: Exception) { e.printStackTrace() }
-            updateWidgetContent(context, views)
-            appWidgetManager.updateAppWidget(appWidgetId, views)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            try {
-                val views = RemoteViews(context.packageName, R.layout.widget_upcoming_days)
-                appWidgetManager.updateAppWidget(appWidgetId, views)
-            } catch (e2: Exception) { e2.printStackTrace() }
-        }
+            views.setOnClickPendingIntent(R.id.widget_container, clickPendingIntent(context))
+        } catch (e: Exception) { e.printStackTrace() }
+        updateWidgetContent(context, views)
+        return views
     }
 
     private fun updateWidgetContent(context: Context, views: RemoteViews) {
@@ -171,13 +165,7 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
             views.setEmptyView(R.id.lv_tomorrow_courses, android.R.id.empty)
 
             // 点击模板
-            val clickIntentTemplate = PendingIntent.getActivity(
-                context, 20002,
-                Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                },
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_IMMUTABLE
-            )
+            val clickIntentTemplate = rowClickPendingIntent(context)
             views.setPendingIntentTemplate(R.id.lv_today_courses, clickIntentTemplate)
             views.setPendingIntentTemplate(R.id.lv_tomorrow_courses, clickIntentTemplate)
         } catch (e: Exception) {
@@ -236,5 +224,4 @@ class UpcomingDaysWidgetProvider : AppWidgetProvider() {
         }
         return (((calendar.timeInMillis - startDate) / (1000 * 60 * 60 * 24)).toInt() / 7 + 1).coerceIn(1, settingsManager.getTotalWeeks())
     }
-
 }

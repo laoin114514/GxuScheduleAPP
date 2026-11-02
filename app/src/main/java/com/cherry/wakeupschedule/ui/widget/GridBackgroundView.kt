@@ -48,6 +48,9 @@ class GridBackgroundView @JvmOverloads constructor(
     @ColorInt
     var gridColor: Int = 0x33000000
         set(value) {
+            // 颜色没变就跳过（不要无谓 invalidate）：课表页每次 bind 都会配置一次网格，
+            // 旧实现即使颜色相同也会重设 Paint 并触发整页重绘
+            if (paint.color == value) return
             paint.color = value
             invalidate()
         }
