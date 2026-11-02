@@ -6,7 +6,7 @@
   弹窗里于是出现一大片空白；三个按钮是 8dp 内边距的裸 TextView（约 34dp 高），
   标题还是左对齐 20sp，与全 App 其它弹窗（居中 18sp）不是一套。
 
-  现在：说明区高度由内容决定（最小 120dp / 最大 320dp，代码里按 scrollHeight 量），
+  现在：说明区高度由内容决定（最小 120dp / 最大 320dp，代码里按 WebView.contentHeight 量），
   按钮统一 ≥48dp，「立即更新」用主色胶囊。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

@@ -323,23 +323,14 @@ class UpdateService(private val context: Context) {
         webViewNotes.settings.displayZoomControls = false
         webViewNotes.settings.textZoom = 100
 
-        // 说明区高度按实际内容量：可更新说明常常只有一两行，
-        // 原来固定 350dp 会在弹窗里留出一大片空白。
+        // 说明区高度按实际内容量：短说明不留空白、长说明在弹窗内滚动。
+        // 注意：WebView 的 JS 是关掉的（内容来自远端，避免执行脚本），所以不能用
+        // evaluateJavascript 量 document.body.scrollHeight —— JS 禁用时它永远返回 null，
+        // 高度会掉到最小值，长更新说明就被挤在一个小框里。
+        // 这里改用 WebView 原生的 contentHeight，并在弹窗展示、布局完成后测量。
         val density = activity.resources.displayMetrics.density
-        val minNotesHeight = (40 * density).toInt()
+        val minNotesHeight = (120 * density).toInt()
         val maxNotesHeight = (320 * density).toInt()
-        webViewNotes.webViewClient = object : android.webkit.WebViewClient() {
-            override fun onPageFinished(view: android.webkit.WebView, url: String?) {
-                super.onPageFinished(view, url)
-                view.evaluateJavascript("document.body.scrollHeight") { value ->
-                    val cssHeight = value?.trim('"')?.toFloatOrNull() ?: 0f
-                    val target = (cssHeight * density).toInt()
-                        .coerceIn(minNotesHeight, maxNotesHeight)
-                    view.layoutParams = view.layoutParams.apply { height = target }
-                    view.requestLayout()
-                }
-            }
-        }
 
         val htmlContent = markdownToHtml(info.changelog)
         webViewNotes.loadDataWithBaseURL(null, htmlContent, "text/html; charset=UTF-8", "UTF-8", null)
@@ -348,6 +339,28 @@ class UpdateService(private val context: Context) {
             .title("发现新版本")
             .view(dialogView)
             .show()
+
+        /**
+         * 按 WebView 内容高度调整说明区（contentHeight 为 CSS px，乘 density 换算成 px）。
+         * contentHeight 在页面/布局就绪前可能为 0，因此最多重试 10 次（约 1s）。
+         */
+        fun applyNotesHeight(attempt: Int = 0) {
+            val contentPx = webViewNotes.contentHeight
+            if (contentPx > 0) {
+                val target = (contentPx * density).toInt()
+                    .coerceIn(minNotesHeight, maxNotesHeight)
+                if (webViewNotes.layoutParams.height != target) {
+                    webViewNotes.layoutParams = webViewNotes.layoutParams.apply { height = target }
+                    webViewNotes.requestLayout()
+                }
+                Log.d(TAG, "update notes height: content=$contentPx -> ${target / density}dp")
+            } else if (attempt < 10) {
+                webViewNotes.postDelayed({ applyNotesHeight(attempt + 1) }, 100)
+            } else {
+                Log.w(TAG, "update notes height unavailable, keep ${webViewNotes.height}px")
+            }
+        }
+        webViewNotes.post { applyNotesHeight() }
 
         btnUpdateNow.setOnClickListener {
             dialog.dismiss()
