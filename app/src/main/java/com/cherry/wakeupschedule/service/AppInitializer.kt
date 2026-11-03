@@ -142,6 +142,7 @@ object AppInitializer {
             // CookieJar → 学期缓存 → 课程缓存。全部在后台线程跑。
             JwxtAccountManager.init(app)
             RoomCookieJar.init(app)
+            JwxtSessionHealthStore.init(app)
             SemesterManager.init(app)
             CourseDataManager.getInstance(app)
             Log.d(TAG, "后台初始化完成")

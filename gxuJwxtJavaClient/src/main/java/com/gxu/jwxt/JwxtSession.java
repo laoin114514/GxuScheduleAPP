@@ -3,6 +3,7 @@ package com.gxu.jwxt;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.gxu.jwxt.exceptions.CaptchaRequiredException;
+import com.gxu.jwxt.exceptions.KickedOutException;
 import com.gxu.jwxt.exceptions.LoginException;
 import com.gxu.jwxt.exceptions.NotLoggedInException;
 import com.gxu.jwxt.exceptions.SessionExpiredException;
@@ -21,6 +22,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -226,6 +228,46 @@ public class JwxtSession {
         return body.contains("name=\"csrftoken\"") && body.contains("name=\"yhm\"");
     }
 
+    /**
+     * 检查响应及其 OkHttp 重定向链是否带被踢标记 {@code kickout=1}。
+     *
+     * <p>会话被其它设备踢下线时，业务请求 302 → {@code login_slogin.html?kickout=1}
+     * → 200 登录页。OkHttp 自动跟随重定向后，最终 {@link Response} 只保留登录页响应体，
+     * 302 及其 {@code Location} 头只能通过 {@link Response#priorResponse()} 链回看；
+     * 若中间还有额外跳转（如 http↔https）把 query 丢掉，则需同时检查每一跳的请求 URL。</p>
+     *
+     * <p>写法上是防御式的：遍历整条 priorResponse 链，只要任意一跳的
+     * {@code Location} 头或请求 URL 包含 {@code kickout=1}（大小写不敏感）即命中。</p>
+     */
+    private boolean redirectChainHasKickout(Response resp) {
+        for (Response hop = resp; hop != null; hop = hop.priorResponse()) {
+            String location = hop.header("Location");
+            if (location != null && location.toLowerCase(Locale.ROOT).contains("kickout=1")) {
+                return true;
+            }
+            Request hopRequest = hop.request();
+            if (hopRequest != null
+                    && hopRequest.url().toString().toLowerCase(Locale.ROOT).contains("kickout=1")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 若响应体是登录页且重定向链带 {@code kickout=1}，标记未登录并抛出
+     * {@link KickedOutException}。
+     *
+     * <p>登录流程路径（login_slogin / login_getPublicKey / login_logoutAccount）
+     * 由 {@link #isLoginPage(String, String)} 统一豁免，不会被误判为被踢。</p>
+     */
+    private void throwIfKickedOut(Response resp, String body, String requestedPath) {
+        if (!isLoginPage(body, requestedPath)) return;
+        if (!redirectChainHasKickout(resp)) return;
+        loggedIn.set(false);
+        throw new KickedOutException(requestedPath);
+    }
+
     // ---- 工具 ----
 
     private void sleep(long ms) {
@@ -260,6 +302,8 @@ public class JwxtSession {
                 if (resp.isSuccessful()) {
                     String body = resp.body() != null ? resp.body().string() : "";
                     lastRequestTime = System.currentTimeMillis();
+                    // 正常响应也可能是「被踢 → 登录页」：此时重定向链带 kickout=1
+                    throwIfKickedOut(resp, body, path);
                     return body;
                 }
 
@@ -321,6 +365,8 @@ public class JwxtSession {
                 if (resp.isSuccessful()) {
                     String body = resp.body() != null ? resp.body().string() : "";
                     lastRequestTime = System.currentTimeMillis();
+                    // 正常响应也可能是「被踢 → 登录页」：此时重定向链带 kickout=1
+                    throwIfKickedOut(resp, body, path);
                     return body;
                 }
 
@@ -422,11 +468,15 @@ public class JwxtSession {
                 Response resp = httpClient.newCall(req).execute();
                 if (resp.isSuccessful()) {
                     lastRequestTime = System.currentTimeMillis();
-                    // 检测 session 过期
+                    // 检测 session 过期 / 被踢
                     String body = resp.peekBody(Long.MAX_VALUE).string();
                     if (isLoginPage(body, path)) {
+                        boolean kickedOut = redirectChainHasKickout(resp);
                         resp.close();
                         loggedIn.set(false);
+                        if (kickedOut) {
+                            throw new KickedOutException(path);
+                        }
                         throw new SessionExpiredException(path);
                     }
                     return resp;
@@ -521,23 +571,51 @@ public class JwxtSession {
     }
 
     /**
+     * 主动探测会话状态（三态）。
+     *
+     * <p><b>总是发送一次真实的认证探测请求</b>（GET initMenu），不复用
+     * {@code loggedIn} 缓存状态，因此可用于 App 前台预热、决定是否需要重登录。</p>
+     *
+     * <ul>
+     *   <li>{@link SessionProbeResult#ALIVE}：响应是正常业务页 → 会话有效，
+     *       标记已登录并返回；</li>
+     *   <li>{@link SessionProbeResult#EXPIRED}：响应是登录页（普通空闲过期或
+     *       被其它设备踢下线）→ 标记未登录并返回；</li>
+     *   <li>{@link SessionProbeResult#NETWORK_ERROR}：网络/连接异常导致无法判断 →
+     *       不改变当前登录状态。</li>
+     * </ul>
+     *
+     * <p>被踢下线（{@link KickedOutException}）是 {@link SessionExpiredException}
+     * 的子类，归入 {@link SessionProbeResult#EXPIRED}。</p>
+     *
+     * @return 探测结果；只有 {@link SessionProbeResult#EXPIRED} 表示需要重新登录
+     */
+    public SessionProbeResult probeSession() {
+        try {
+            get(INIT_MENU_PATH + "?jsdm=xs&_t=" + System.currentTimeMillis() + "&echarts=1");
+            loggedIn.set(true);
+            return SessionProbeResult.ALIVE;
+        } catch (SessionExpiredException e) {
+            loggedIn.set(false);
+            return SessionProbeResult.EXPIRED;
+        } catch (IOException e) {
+            return SessionProbeResult.NETWORK_ERROR;
+        }
+    }
+
+    /**
      * 尝试用 CookieJar 中已持久化的 cookie 恢复会话（免完整登录）。
      *
      * <p>用轻量认证请求（initMenu）探测会话是否仍有效：
      * 响应不是登录页 → 会话有效，标记已登录并返回 true；
-     * 否则（无 cookie / 已过期 / 网络异常）返回 false，由调用方决定走完整登录。</p>
+     * 否则（无 cookie / 已过期 / 被踢 / 网络异常）返回 false，由调用方决定走完整登录。</p>
+     *
+     * <p>本方法保持既有外部语义（布尔二态）；需要区分「已失效」与「网络异常」时
+     * 改用 {@link #probeSession()}。</p>
      */
     public boolean resumeSession() {
         if (loggedIn.get()) return true;
-        try {
-            get(INIT_MENU_PATH + "?jsdm=xs&_t=" + System.currentTimeMillis() + "&echarts=1");
-            loggedIn.set(true);
-            return true;
-        } catch (SessionExpiredException e) {
-            return false;
-        } catch (IOException e) {
-            return false;
-        }
+        return probeSession() == SessionProbeResult.ALIVE;
     }
 
     /**

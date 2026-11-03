@@ -210,6 +210,11 @@ class ScheduleFragment : Fragment() {
         // 不在 onResume 触发教务刷新，避免每次切tab都重建课表
         // 手动刷新按钮 + 首次启动已覆盖数据更新场景
 
+        // 但教务会话可以做"前台预热"：只探测/必要时静默重登录，不刷新课表数据。
+        // 距上次确认会话有效超过阈值才会真正联网（阈值见 JwxtAuthPolicy.PREWARM_AGE_MS），
+        // 命中时用户点刷新不用现场等一次完整重登录。
+        JwxtAuthManager.prewarmInBackground("schedule-resume")
+
         // 但「课表」外观页改过的格子高度要在这里同步（脏检查，没变就不动）
         syncCellHeightIfChanged()
         // 同上，课程格子里的教室/教师开关也在外观页

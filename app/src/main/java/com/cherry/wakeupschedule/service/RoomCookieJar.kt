@@ -55,6 +55,23 @@ object RoomCookieJar : ClearableCookieJar {
         runBlocking(Dispatchers.IO) { dao.deleteAll() }
     }
 
+    /**
+     * 读取指定名称 cookie 的当前值（只读，供会话诊断使用）。
+     *
+     * 主要用于取 `route`：它标识当前会话被粘在哪个后端节点，是判断
+     * "是否需要换节点、上次落在哪个节点"的唯一依据（不参与 cookie 回放逻辑）。
+     * 初始化未完成或没有该 cookie 时返回 null。
+     */
+    fun cookieValue(name: String): String? {
+        if (!this::dao.isInitialized) return null
+        val now = System.currentTimeMillis()
+        return runBlocking(Dispatchers.IO) {
+            dao.getAll()
+                .firstOrNull { it.name == name && (it.expiresAt == 0L || it.expiresAt >= now) }
+                ?.value
+        }
+    }
+
     // ── 转换 ──
 
     private fun Cookie.toEntity() = CookieEntity(

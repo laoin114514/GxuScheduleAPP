@@ -9,6 +9,7 @@ import androidx.navigation.fragment.NavHostFragment
 import com.cherry.wakeupschedule.service.AppInitializer
 import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
+import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
@@ -81,6 +82,10 @@ class MainActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        // 教务会话前台预热：距上次确认有效超过阈值时，在后台探测/静默重登录，
+        // 避免用户点刷新时才发现会话过期（实测一次完整重登录约 8 秒）。
+        // 阈值节流（默认 25 分钟）+ 进程内客户端复用，正常切前后台不会产生多余请求。
+        JwxtAuthManager.prewarmInBackground("main-resume")
         // 主题切换等场景重建后，Fragment 恢复时序不定，此处兜底校准导航栏高亮
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment ?: return

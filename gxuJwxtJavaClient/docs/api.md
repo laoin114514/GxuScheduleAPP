@@ -144,9 +144,21 @@ GET /jwglxt/xtgl/index_initMenu.html?jsdm=xs&_t=<毫秒时间戳>&echarts=1
 
 该页面用于建立学生角色的会话上下文。若登录 POST 自动跟随重定向，客户端通常已经访问过此 URL；关闭自动重定向时需要显式请求 `Location`。重复请求不是必需步骤。
 
-### 2.5 会话过期检测
+### 2.5 会话过期与被踢识别
 
 session 过期后，需要认证的数据接口通常会被重定向到登录页。OkHttp 自动跟随后拿到登录页 HTML，可用 `name="csrftoken"` + `name="yhm"` 两个特征同时存在来判断；同时记录最终 URL，避免把登录页的 HTTP 200 当作业务成功。
+
+**被踢下线**（同一后端节点上该账号在其它设备重新登录）与普通空闲过期表现形态基本相同，唯一区分依据是重定向链：被踢时 302 响应的 `Location` 带 `kickout=1`（`…/jwglxt/xtgl/login_slogin.html?kickout=1`），普通过期、route 丢失都不带。检查时需遍历 `Response.priorResponse()` 链上每一跳的 `Location` 头（也检查每跳的请求 URL，防止后续跳转丢掉 query），不能只看最终响应。
+
+> 会话是否失效由「本机 cookie + 负载均衡 `route` 节点 + 该节点空闲 TTL」共同决定；同节点多设备互踢、不同节点 TTL 不同。详见仓库 `docs/登录状态失效规律实测.md`。
+
+客户端（`gxuJwxtJavaClient`）对应实现：
+
+- `JwxtClient.probeSession()` / `JwxtSession.probeSession()`：三态探测，**总是**发送一次真实的 `GET /jwglxt/xtgl/index_initMenu.html?jsdm=xs&_t=…&echarts=1`，返回
+  `SessionProbeResult.ALIVE`（会话有效）/ `EXPIRED`（登录页：过期或被踢）/ `NETWORK_ERROR`（网络异常，无法判断，不应清除本地凭据）。适合 App 前台预热与失败分类。
+- 业务请求命中「响应是登录页 + 重定向链含 `kickout=1`」→ 抛 `com.gxu.jwxt.exceptions.KickedOutException`（`SessionExpiredException` 子类，消息「账号已在其它设备登录（会话被踢下线）」+ path），上层可据此区分提示；普通过期仍抛 `SessionExpiredException`。
+- 登录流程路径（`login_slogin` / `login_getPublicKey` / `login_logoutAccount`）不参与登录页/被踢判定。
+- `resumeSession()` 保持原有布尔语义：已登录直接 `true`，否则等价于 `probeSession() == ALIVE`。
 
 ### 2.6 退出
 

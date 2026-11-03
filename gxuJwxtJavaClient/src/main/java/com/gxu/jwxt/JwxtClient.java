@@ -94,6 +94,24 @@ public class JwxtClient {
     }
 
     /**
+     * 主动探测会话状态（三态）：总是发送一次真实的认证请求，不复用本地登录状态。
+     *
+     * <ul>
+     *   <li>{@link SessionProbeResult#ALIVE}：会话有效，可继续调用业务接口；</li>
+     *   <li>{@link SessionProbeResult#EXPIRED}：会话已失效（空闲过期或被其它设备
+     *       踢下线），需要 {@link #relogin()} 或 {@link #login()}；</li>
+     *   <li>{@link SessionProbeResult#NETWORK_ERROR}：网络异常，无法判断会话状态，
+     *       不应据此清除本地凭据或提示用户重新登录。</li>
+     * </ul>
+     *
+     * <p>与 {@link #resumeSession()} 的区别：本方法总是发探测请求，适合 App
+     * 前台预热与失败分类；resumeSession 在已登录时直接返回 true（语义保持不变）。</p>
+     */
+    public SessionProbeResult probeSession() {
+        return session.probeSession();
+    }
+
+    /**
      * 抹除浏览器身份：清空全部 Cookie（含持久化的）+ 轮换 User-Agent。
      *
      * <p>用于登录触发服务端验证码保护后重置会话标识。登录流程内部
