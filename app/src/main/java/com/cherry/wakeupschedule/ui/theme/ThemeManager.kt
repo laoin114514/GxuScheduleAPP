@@ -64,6 +64,28 @@ object ThemeManager {
         activity.theme.applyStyle(overlayResId, true)
     }
 
+    /**
+     * 把当前调色板 overlay 叠加到**弹窗自己的主题**上（构造完 Dialog、setContentView 之前调用）。
+     *
+     * 为什么弹窗需要单独补一次：居中弹窗以 [com.cherry.wakeupschedule.R.style.RoundedDialog] 为窗口主题，
+     * Dialog 的 ContextThemeWrapper 会先复制 Activity 主题（其中已 applyStyle 了当前调色板 overlay），
+     * 再叠加 RoundedDialog；而 RoundedDialog 继承了完整的 Theme.Material3.DayNight.Dialog，
+     * 其父链重新声明了 M3 基线色板（colorSurfaceContainerHigh = #ECE6F0、colorPrimary = #6750A4 等），
+     * 把调色板 overlay 覆盖掉。表现就是弹窗底色比页面偏粉/偏紫、按钮变回基线紫，
+     * 与 5 套调色板 / 深浅色不联动。
+     *
+     * 在弹窗主题上再 apply 一次 overlay 后，弹窗布局里的 `?attr/colorXxx` 就重新跟随当前调色板；
+     * 窗口行为（透明圆角底、点击外部关闭、软键盘 adjustResize 等）仍由 RoundedDialog 的 M3 Dialog
+     * 父链提供，不受影响。
+     *
+     * 适用于所有 `Dialog(context, R.style.RoundedDialog)` 子类：
+     * StyledDialog / SelectionDialog / SemesterWheelDialog / GradeDetailDialog。
+     */
+    fun applyPaletteOverlay(dialog: android.app.Dialog) {
+        val index = getPaletteIndex(dialog.context).coerceIn(0, 4)
+        dialog.context.theme.applyStyle(OVERLAY_STYLES[index], true)
+    }
+
     fun getPaletteIndex(context: Context): Int {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getInt(KEY_PALETTE_INDEX, 1)

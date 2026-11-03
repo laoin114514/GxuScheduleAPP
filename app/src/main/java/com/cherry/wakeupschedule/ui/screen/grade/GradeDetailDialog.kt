@@ -42,6 +42,8 @@ class GradeDetailDialog private constructor(
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 补调色板 overlay：避免弹窗底色/文字回落到 M3 基线色板（偏粉/偏紫）
+        ThemeManager.applyPaletteOverlay(this)
         setContentView(R.layout.dialog_grade_detail)
 
         window?.apply {

@@ -79,6 +79,9 @@ class StyledDialog private constructor(
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 弹窗主题默认会回落到 M3 基线色板（偏粉/偏紫），这里补一次调色板 overlay，
+        // 让弹窗底色/文字/主色跟随当前主题（详见 ThemeManager.applyPaletteOverlay）
+        ThemeManager.applyPaletteOverlay(this)
         setContentView(R.layout.dialog_styled)
 
         val hasTitle = !config.title.isNullOrBlank()

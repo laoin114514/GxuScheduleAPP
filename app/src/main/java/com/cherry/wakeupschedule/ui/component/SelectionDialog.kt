@@ -69,6 +69,8 @@ class SelectionDialog private constructor(
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 同 StyledDialog：补调色板 overlay，避免弹窗底色回落到 M3 基线色板
+        ThemeManager.applyPaletteOverlay(this)
         setContentView(R.layout.dialog_selection)
 
         setupWindow()
