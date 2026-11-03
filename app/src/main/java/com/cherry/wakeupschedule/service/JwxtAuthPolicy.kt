@@ -54,6 +54,20 @@ object JwxtAuthPolicy {
     const val QUICK_EXPIRY_MS = 10 * 60_000L
 
     /**
+     * 预热阈值下限：即使学到了很短的节点 TTL，也不低于 1 分钟一次探测，
+     * 避免异常数据导致频繁探测（耗电/触发风控）。
+     */
+    const val MIN_PREWARM_AGE_MS = 60_000L
+
+    /**
+     * 运行时学习到的异常节点保留时长（7 天）。
+     *
+     * <p>学习可能来自偶发情况（人工 logout、服务端清理、密码变更导致会话失效等），
+     * 不必永久避让；超过该时长自动失效，让正常节点重新参与随机落点。</p>
+     */
+    const val BAD_ROUTE_TTL_MS = 7 * 24 * 60 * 60_000L
+
+    /**
      * 凭据/验证码类失败后的自动重登冷却：避免本地密码错误时每次前台预热都重试，
      * 反复累加服务端失败次数触发验证码保护甚至账号锁定（实测客户端 3 次失败即出验证码）。
      */
@@ -72,8 +86,22 @@ object JwxtAuthPolicy {
     val KNOWN_BAD_ROUTES: Set<String> = setOf("2a353708a723ad925112de2eb5f2f993")
 
     /** 是否到了该做前台预热的时机（从未确认过有效时也预热一次）。 */
-    fun shouldPrewarm(now: Long, lastOkAt: Long): Boolean =
-        lastOkAt <= 0L || now - lastOkAt >= PREWARM_AGE_MS
+    fun shouldPrewarm(now: Long, lastOkAt: Long, ttlUpperMs: Long? = null): Boolean =
+        lastOkAt <= 0L || now - lastOkAt >= prewarmAgeFor(ttlUpperMs)
+
+    /**
+     * 按"该节点已学到的 TTL 上界"计算预热阈值。
+     *
+     * <p>默认按 60 分钟档的 3/4 = 45 分钟，但被 [PREWARM_AGE_MS]（25 分钟，覆盖 30 分钟档）
+     * 压住；若该节点学到更短 TTL（例如失败样本显示 20 分钟内必失效），则提前到 15 分钟预热，
+     * 避免用户操作时才发现过期。下限 [MIN_PREWARM_AGE_MS] 防止异常数据导致高频探测。</p>
+     */
+    fun prewarmAgeFor(ttlUpperMs: Long?): Long =
+        ((ttlUpperMs ?: DEFAULT_NODE_TTL_MS) * 3 / 4).coerceIn(MIN_PREWARM_AGE_MS, PREWARM_AGE_MS)
+
+    /** 运行时学习到的异常节点是否仍在有效期内（超过 [BAD_ROUTE_TTL_MS] 自动失效）。 */
+    fun isLearnedBadRoute(badSince: Long?, now: Long): Boolean =
+        badSince != null && now - badSince < BAD_ROUTE_TTL_MS
 
     /** 会话在"确认有效后很短时间"内就失效 → 该节点 TTL 异常。 */
     fun isNodeSuspicious(aliveSpanMs: Long): Boolean =

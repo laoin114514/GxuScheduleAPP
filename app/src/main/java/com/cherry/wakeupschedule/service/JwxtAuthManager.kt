@@ -11,6 +11,9 @@ import com.gxu.jwxt.exceptions.SessionExpiredException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -21,6 +24,26 @@ import java.io.IOException
  * 登录流程的可上报阶段，用于绑定页展示分步进度。
  */
 enum class JwxtLoginStep { LOGIN, PROFILE, SEMESTER, SCHEDULE }
+
+/**
+ * 登录态事件（由 [BaseActivity] 收集后用 AppToast 提示）。
+ *
+ * <p>只上报**用户操作触发**的自动恢复（`doWithAuth` 路径）；前台预热的静默重登录不上报，
+ * 否则每次冷启动都弹提示会很吵。失败提示仍由各调用方按 `Result.failure` 展示。</p>
+ */
+enum class JwxtAuthNotice {
+    /** 检测到教务会话过期，开始自动重登录。 */
+    RECOVERING_EXPIRED,
+
+    /** 检测到账号在其它设备登录（本会话被踢），开始自动重登录。 */
+    RECOVERING_KICKED,
+
+    /** 自动重登录完成（普通过期）。 */
+    RECOVERED,
+
+    /** 自动重登录完成（被踢恢复）。 */
+    RECOVERED_KICKED,
+}
 
 /**
  * 教务系统认证管理器。
@@ -67,6 +90,10 @@ object JwxtAuthManager {
 
     /** 后台预热/静默恢复用的应用级作用域：不随页面销毁取消（进程级）。 */
     private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** 登录态事件流（用户可感知的恢复过程），由 BaseActivity 收集展示。 */
+    private val _notices = MutableSharedFlow<JwxtAuthNotice>(extraBufferCapacity = 8)
+    val notices: SharedFlow<JwxtAuthNotice> = _notices.asSharedFlow()
 
     @Volatile
     private var client: JwxtClient? = null
@@ -271,7 +298,7 @@ object JwxtAuthManager {
 
                 SessionProbeResult.EXPIRED -> {
                     Log.d(TAG, "前台预热（$reason）：会话已失效，后台静默重新登录")
-                    markQuickExpiryIfSuspicious()
+                    noteSessionExpiry()
                     try {
                         fullReloginLocked(c)
                         Log.d(TAG, "前台预热（$reason）：重新登录完成")
@@ -291,11 +318,12 @@ object JwxtAuthManager {
         }
     }
 
-    /** 是否需要预热：已绑定 + 距上次确认有效够久 + 不在凭据失败冷却期。 */
+    /** 是否需要预热：已绑定 + 距上次确认有效够久（按该节点学到的 TTL 上界收紧）+ 不在凭据失败冷却期。 */
     private fun needsPrewarm(now: Long): Boolean {
         if (!JwxtAccountManager.isBound()) return false
         val health = JwxtSessionHealthStore.load()
-        if (!JwxtAuthPolicy.shouldPrewarm(now, health.lastOkAt)) return false
+        val ttlUpper = health.route?.let { health.routeTtlUpperMs[it] }
+        if (!JwxtAuthPolicy.shouldPrewarm(now, health.lastOkAt, ttlUpper)) return false
         return JwxtAuthPolicy.shouldAutoReloginAfterFailure(health.lastFailKind, health.lastFailAt, now)
     }
 
@@ -321,8 +349,8 @@ object JwxtAuthManager {
             }
 
             SessionProbeResult.EXPIRED -> {
-                // 已经持有 cookie 却探测失效：若距上次确认有效很近，说明节点 TTL 异常
-                markQuickExpiryIfSuspicious()
+                // 已经持有 cookie 却探测失效：快速失效记为异常节点，否则学习该节点 TTL 上界
+                noteSessionExpiry()
                 JwxtSessionHealthStore.markFailure(JwxtAuthFailureKind.EXPIRED)
                 fullReloginLocked(c)
             }
@@ -351,18 +379,22 @@ object JwxtAuthManager {
             return current
         }
 
-        if (cause !is KickedOutException) {
-            markQuickExpiryIfSuspicious()
+        val kicked = cause is KickedOutException
+        if (!kicked) {
+            noteSessionExpiry()
         }
         JwxtSessionHealthStore.markFailure(
-            if (cause is KickedOutException) JwxtAuthFailureKind.KICKED else JwxtAuthFailureKind.EXPIRED
+            if (kicked) JwxtAuthFailureKind.KICKED else JwxtAuthFailureKind.EXPIRED
         )
-        if (cause is KickedOutException) {
+        if (kicked) {
             Log.d(TAG, "会话被其它设备踢下线，清身份重新登录以打断互踢链")
         }
 
         val target = current ?: stale
+        // 用户操作触发的恢复才提示（RECOVERING → 完成后 RECOVERED）；前台预热保持静默
+        emitNotice(if (kicked) JwxtAuthNotice.RECOVERING_KICKED else JwxtAuthNotice.RECOVERING_EXPIRED)
         fullReloginLocked(target)
+        emitNotice(if (kicked) JwxtAuthNotice.RECOVERED_KICKED else JwxtAuthNotice.RECOVERED)
         return target
     }
 
@@ -396,13 +428,28 @@ object JwxtAuthManager {
         }
     }
 
-    /** 若距上次确认有效的时间很短就失效，把当前节点记为异常（正常档 TTL 最短也有 30 分钟）。 */
-    private fun markQuickExpiryIfSuspicious() {
+    /**
+     * 会话失效时更新节点健康（不改变恢复动作本身）：
+     * <ul>
+     *   <li>登录/确认有效后 10 分钟内就失效（[JwxtAuthPolicy.isNodeSuspicious]）→ 该节点 TTL 异常，
+     *       记入 `badRoutes`，后续登录避开；</li>
+     *   <li>其余情况（正常档节点）→ 把本次存活时长作为该节点 TTL 的**上界**，
+     *       用于把下次预热阈值调早（[JwxtAuthPolicy.prewarmAgeFor]）。</li>
+     * </ul>
+     * 被踢/网络失败不算 TTL 证据，不应调用本方法。
+     */
+    private fun noteSessionExpiry() {
         val health = JwxtSessionHealthStore.load()
+        val route = health.route ?: return
         val aliveSpan = System.currentTimeMillis() - health.lastOkAt
-        if (health.route != null && JwxtAuthPolicy.isNodeSuspicious(aliveSpan)) {
-            Log.w(TAG, "节点在 ${aliveSpan / 1000}s 后就失效，标记为异常节点 route=${health.route.take(8)}…")
-            JwxtSessionHealthStore.markRouteBad(health.route)
+        if (aliveSpan <= 0L) return
+        if (JwxtAuthPolicy.isNodeSuspicious(aliveSpan)) {
+            Log.w(TAG, "节点在 ${aliveSpan / 1000}s 后就失效，标记为异常节点 route=${route.take(8)}…")
+            JwxtSessionHealthStore.markRouteBad(route)
+        } else if (aliveSpan < JwxtAuthPolicy.DEFAULT_NODE_TTL_MS) {
+            // 只学习比默认 60min 更短的 TTL；更长的上界对预热阈值没有收紧作用
+            JwxtSessionHealthStore.markRouteTtlUpper(route, aliveSpan)
+            Log.d(TAG, "学习节点 TTL 上界：route=${route.take(8)}… ≤ ${aliveSpan / 60_000}min")
         }
     }
 
@@ -466,5 +513,10 @@ object JwxtAuthManager {
 
     private fun destroyClient() {
         client = null
+    }
+
+    /** 发一条登录态事件给 UI（非挂起、缓冲 8 条；无收集方时直接丢弃，不影响流程）。 */
+    private fun emitNotice(notice: JwxtAuthNotice) {
+        _notices.tryEmit(notice)
     }
 }
