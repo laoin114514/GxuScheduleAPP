@@ -1,10 +1,9 @@
 package com.gxu.jwxt.module;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.gxu.jwxt.model.ScheduleAdjustment;
 
-import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,11 +20,17 @@ import java.util.List;
  * 与反斜杠转义），最后交给 Gson 反序列化为 {@link ScheduleAdjustment} 列表。
  * 页面结构缺失、括号不配对或 JSON 畸形时统一返回空列表，绝不抛异常 —— 调课标记只是
  * 锦上添花，解析失败应降级为「无调课标签」而不是让整次课表导入失败。</p>
+ *
+ * <p><b>注意</b>：这里刻意用 {@code ScheduleAdjustment[].class} 反序列化，而不是
+ * {@code TypeToken<List<ScheduleAdjustment>>}。R8 会合并/优化匿名 TypeToken 子类，
+ * 即使加了 {@code -keepattributes Signature} 仍可能丢掉泛型父类签名，release 包在
+ * 运行时抛 {@code IllegalStateException: TypeToken must be created with a type argument}
+ * 且发生在静态初始化里、无法被这里的 catch 接住（v0.5.7 release 实测刷新闪退）。
+ * 数组的 Class 不依赖泛型签名，对混淆天然安全。</p>
  */
 public final class ScheduleAdjustmentParser {
 
     private static final Gson GSON = new Gson();
-    private static final Type LIST_TYPE = new TypeToken<List<ScheduleAdjustment>>() {}.getType();
 
     private ScheduleAdjustmentParser() {}
 
@@ -42,10 +47,15 @@ public final class ScheduleAdjustmentParser {
         if (json == null) return List.of();
 
         try {
-            List<ScheduleAdjustment> records = GSON.fromJson(json, LIST_TYPE);
-            return records != null ? records : List.of();
+            ScheduleAdjustment[] array = GSON.fromJson(json, ScheduleAdjustment[].class);
+            if (array == null || array.length == 0) return List.of();
+            List<ScheduleAdjustment> records = new ArrayList<>(array.length);
+            for (ScheduleAdjustment record : array) {
+                if (record != null) records.add(record);
+            }
+            return records;
         } catch (RuntimeException e) {
-            // JsonSyntaxException / IllegalStateException 等：坏数据按无记录处理
+            // JsonSyntaxException 等坏数据：按无记录处理
             return List.of();
         }
     }

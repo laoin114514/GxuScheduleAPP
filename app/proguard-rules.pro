@@ -16,6 +16,13 @@
 -keepattributes InnerClasses
 -keepattributes EnclosingMethod
 
+# ── Gson TypeToken ──
+# 仅保留 Signature 属性还不够：R8 会把「匿名 TypeToken 子类」合并/优化掉，
+# 运行到 clinit 时抛 IllegalStateException: TypeToken must be created with a type argument
+# （v0.5.7 release 包刷新课表闪退的根因）。这里保所有 TypeToken 子类不被裁剪/合并。
+-keep class * extends com.google.gson.reflect.TypeToken
+-keep class com.google.gson.reflect.TypeToken { *; }
+
 # ── Gson 反射面 ──
 # 教务客户端模型全部由 Gson 按字段名反序列化，字段名不能混淆
 -keep class com.gxu.jwxt.model.** { *; }
