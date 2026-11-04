@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
@@ -46,6 +47,7 @@ class CourseOverviewAdapter : RecyclerView.Adapter<CourseOverviewAdapter.GroupVi
         private val avatar: TextView = itemView.findViewById(R.id.iv_course_avatar)
         private val name: TextView = itemView.findViewById(R.id.tv_course_name)
         private val typeBadge: TextView = itemView.findViewById(R.id.tv_type_badge)
+        private val adjustBadge: TextView = itemView.findViewById(R.id.tv_adjust_badge)
         private val teacher: TextView = itemView.findViewById(R.id.tv_course_teacher)
         private val weeks: TextView = itemView.findViewById(R.id.tv_course_weeks)
 
@@ -58,9 +60,22 @@ class CourseOverviewAdapter : RecyclerView.Adapter<CourseOverviewAdapter.GroupVi
             cornerRadius = 999f
         }
 
+        /** 「调课」pill 背景：琥珀色固定不随主题变，holder 级复用、在 init 里设一次 */
+        private val adjustBadgeBg = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 999f
+            setColor(ContextCompat.getColor(itemView.context, R.color.adjust_tag_bg))
+        }
+
         init {
             avatar.background = avatarBg
             typeBadge.background = typeBadgeBg
+            // 「调课」标签自带琥珀底 + 深棕字（浅深色主题通用），颜色在 init 里设一次，
+            // bind 只切换显隐，避免每次重绑都新建 ColorStateList
+            adjustBadge.setTextColor(
+                ContextCompat.getColor(itemView.context, R.color.adjust_tag_text)
+            )
+            adjustBadge.background = adjustBadgeBg
         }
 
         fun bind(group: CourseOverviewGroup, courseColors: IntArray) {
@@ -73,6 +88,9 @@ class CourseOverviewAdapter : RecyclerView.Adapter<CourseOverviewAdapter.GroupVi
             teacher.text = group.teachers.ifBlank { "未知" }
             weeks.text = formatWeekRanges(group.weekBitmap)
             bindTypeBadge(group.isPractice)
+            // 调课标志是教学班级别：组内任一行有调课记录就显示。
+            // 详情弹层的「调课周次」行会精确说明具体哪几周被调课，避免误读成整学期。
+            adjustBadge.visibility = if (group.hasAdjustment) View.VISIBLE else View.GONE
 
             itemView.setOnClickListener {
                 SchedulePageDetailDialog.show(

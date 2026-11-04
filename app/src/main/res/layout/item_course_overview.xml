@@ -54,6 +54,22 @@
                 android:textStyle="bold"
                 android:textColor="?attr/colorOnSurface" />
 
+            <!-- 「调课」标签：整教学班有教务调课记录时显示（默认 gone，显隐由 Adapter 控制）。
+                 放在类型标签左侧、紧跟课程名：调课是需要留意的偶发状态，紧邻课程名更容易被扫到；
+                 同时理论课/实践课标签的位置不会因调课标签有无而左右跳。
+                 具体被调课的周次在详情弹层「调课周次」行里精确说明。 -->
+            <TextView
+                android:id="@+id/tv_adjust_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:text="@string/course_adjusted_tag"
+                android:textSize="@dimen/text_caption"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
             <!-- 理论课 / 实践课标签，底色与文字色在 CourseOverviewAdapter 里按类型设置 -->
             <TextView
                 android:id="@+id/tv_type_badge"

@@ -19,6 +19,8 @@ data class CourseOverviewSession(
  * 归并规则见 [build]；[courses] 保留原始成员，供课程详情弹层聚合展示。
  * 实践课（教务 sjkList）没有星期/节次：[hasFixedTime] 为 false 且 [sessions] 为空，
  * [isPractice] 为 true，用于列表的类型标签与顶部筛选。
+ * [hasAdjustment] 是「整个教学班」级别：任一行有教务调课记录即整条带「调课」标签；
+ * 具体被调课的周次由详情弹层的「调课周次」行说明。
  */
 data class CourseOverviewGroup(
     val name: String,
@@ -29,6 +31,7 @@ data class CourseOverviewGroup(
     val weekBitmap: Long,
     val hasFixedTime: Boolean,
     val isPractice: Boolean,
+    val hasAdjustment: Boolean,
     val sessions: List<CourseOverviewSession>,
     val courses: List<Course>
 ) {
@@ -82,6 +85,8 @@ data class CourseOverviewGroup(
                         hasFixedTime = fixedMembers.isNotEmpty(),
                         // 同名课程理论上不会又理论又实践；出现混合时按实践课归类
                         isPractice = members.any { it.isPractice },
+                        // 调课标志是教学班级别：同一教学班的所有行都带标志，任一行命中即整条标记
+                        hasAdjustment = members.any { it.isAdjusted },
                         sessions = sessions,
                         courses = members
                     )

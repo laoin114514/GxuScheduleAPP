@@ -17,6 +17,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
@@ -128,6 +129,11 @@ object SchedulePageDetailDialog {
             (sheetView.findViewById<View>(R.id.ll_detail_extra)?.parent as? View)?.visibility =
                 View.GONE
         }
+
+        // 「调课」标签与来源无关：两种详情都展示。
+        // 总课表详情的「课程信息」卡另有「调课周次」行精确说明具体哪几周被调课，
+        // 避免把课程级标签误读成「整个学期的课都是调课来的」。
+        bindAdjustBadge(sheetView, courses.any { it.isAdjusted })
 
         setupQqGroupJump(sheetView, courses.firstOrNull { it.qqGroup.isNotBlank() } ?: primary)
 
@@ -281,6 +287,28 @@ object SchedulePageDetailDialog {
     }
 
     /**
+     * 头部「调课」标签：整教学班有教务调课记录时显示。
+     *
+     * 固定琥珀底 + 深棕字（与总课表列表 pill、周课表角标同一套颜色，浅深色主题通用）。
+     * 该标签只表达「这门课有调课记录」，具体周次由总课表详情的「调课周次」行说明；
+     * 不要新增网络请求去解析调课明细。
+     */
+    private fun bindAdjustBadge(view: View, hasAdjustment: Boolean) {
+        val badge = view.findViewById<TextView>(R.id.tv_detail_adjust) ?: return
+        if (!hasAdjustment) {
+            badge.visibility = View.GONE
+            return
+        }
+        badge.visibility = View.VISIBLE
+        badge.setTextColor(ContextCompat.getColor(view.context, R.color.adjust_tag_text))
+        badge.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 999f
+            setColor(ContextCompat.getColor(view.context, R.color.adjust_tag_bg))
+        }
+    }
+
+    /**
      * 填充「课程信息」卡：教务返回的补充字段逐行展示，值为空的整行不渲染；
      * 一行都没有时整张卡隐藏。行布局 item_course_detail_row.xml，行间补一条细分隔线。
      */
@@ -288,7 +316,13 @@ object SchedulePageDetailDialog {
         val container = view.findViewById<LinearLayout>(R.id.ll_detail_extra) ?: return
         container.removeAllViews()
 
+        // 调课周次：总课表头部的「调课」pill 是课程级的，这里展开成具体周次（组内各行位图并集），
+        // 精确回答「到底哪几周被调课」，避免误读成整学期调课；没有调课周次时不渲染该行。
+        // 本函数只在总课表（OVERVIEW）来源调用，周课表详情保持原版式。
+        val adjustWeeks = courses.fold(0L) { acc, c -> acc or c.adjustWeeksBitmap }
         val rows = listOf(
+            view.context.getString(R.string.course_adjust_weeks) to
+                if (adjustWeeks != 0L) formatWeekRanges(adjustWeeks) else "",
             "课程性质" to firstNonBlank(courses) { it.courseNature },
             "课程代码" to firstNonBlank(courses) { it.courseCode },
             "教学班" to firstNonBlank(courses) { it.teachingClass },

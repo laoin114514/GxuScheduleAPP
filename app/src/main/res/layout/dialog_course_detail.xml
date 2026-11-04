@@ -78,6 +78,21 @@
                         android:visibility="gone" />
                 </LinearLayout>
 
+                <!-- 「调课」标签：整教学班有教务调课记录时显示（默认 gone，显隐在 SchedulePageDetailDialog 里控制）。
+                     与总课表列表一致：琥珀底 + 深棕字 pill，放在类型标签左侧；
+                     具体被调课的周次由下方「课程信息」卡里的「调课周次」行精确说明 -->
+                <TextView
+                    android:id="@+id/tv_detail_adjust"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:text="@string/course_adjusted_tag"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
                 <!-- 理论课 / 实践课标签，底色与文字色在 SchedulePageDetailDialog 里设置 -->
                 <TextView
                     android:id="@+id/tv_detail_type"

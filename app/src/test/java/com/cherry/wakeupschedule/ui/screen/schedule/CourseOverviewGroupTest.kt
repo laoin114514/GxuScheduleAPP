@@ -21,7 +21,8 @@ class CourseOverviewGroupTest {
         credits: String = "",
         category: String = "",
         color: Int = 1,
-        isPractice: Boolean = false
+        isPractice: Boolean = false,
+        isAdjusted: Boolean = false
     ) = Course(
         name = name,
         teacher = teacher,
@@ -33,7 +34,8 @@ class CourseOverviewGroupTest {
         credits = credits,
         courseCategory = category,
         color = color,
-        isPractice = isPractice
+        isPractice = isPractice,
+        isAdjusted = isAdjusted
     )
 
     // ── 归并 ─────────────────────────────────────────────
@@ -243,6 +245,34 @@ class CourseOverviewGroupTest {
     @Test
     fun `筛选标签与顺序固定`() {
         assertEquals(listOf("全部", "理论课", "实践课"), CourseTypeFilter.entries.map { it.label })
+    }
+
+    // ── 调课标记 ─────────────────────────────────────────
+
+    @Test
+    fun `任一行调课则整组标记调课`() {
+        // 调课标志是教学班级别：同一教学班多行里任一行命中，整条都要显示标签
+        val groups = CourseOverviewGroup.build(
+            listOf(
+                course("高等数学", dayOfWeek = 1, startTime = 1, endTime = 2, isAdjusted = false),
+                course("高等数学", dayOfWeek = 3, startTime = 3, endTime = 4, isAdjusted = true)
+            )
+        )
+
+        assertEquals(1, groups.size)
+        assertTrue(groups[0].hasAdjustment)
+    }
+
+    @Test
+    fun `全部无调课则整组不标记调课`() {
+        val groups = CourseOverviewGroup.build(
+            listOf(
+                course("高等数学", dayOfWeek = 1, startTime = 1, endTime = 2),
+                course("大学英语", dayOfWeek = 2, startTime = 3, endTime = 4)
+            )
+        )
+
+        assertTrue(groups.none { it.hasAdjustment })
     }
 
     // ── 选课人数文案 ─────────────────────────────────────

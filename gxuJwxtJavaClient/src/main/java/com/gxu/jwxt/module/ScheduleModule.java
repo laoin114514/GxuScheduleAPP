@@ -2,9 +2,11 @@ package com.gxu.jwxt.module;
 
 import com.google.gson.Gson;
 import com.gxu.jwxt.JwxtSession;
+import com.gxu.jwxt.exceptions.SessionExpiredException;
 import com.gxu.jwxt.model.ClassScheduleResponse;
 import com.gxu.jwxt.model.PageQuery;
 import com.gxu.jwxt.model.PeriodLevel;
+import com.gxu.jwxt.model.ScheduleAdjustment;
 import com.gxu.jwxt.model.ScheduleResponse;
 import com.gxu.jwxt.model.ScheduleDisplayField;
 import com.gxu.jwxt.model.TeachingTimeModel;
@@ -15,6 +17,8 @@ import com.gxu.jwxt.model.TimeSegment;
 import com.gxu.jwxt.model.WeekInfo;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +27,9 @@ import java.util.Map;
 public class ScheduleModule {
 
     private static final String GNMKDM = "N2151";
+    /** 学生课表页，业务请求统一作为 Referer（在校生课表相关接口要求带课表页来源）。 */
+    private static final String SCHEDULE_REFERER =
+        "/jwglxt/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=" + GNMKDM;
     private static final Gson gson = new Gson();
 
     private final JwxtSession session;
@@ -87,6 +94,35 @@ public class ScheduleModule {
             "/jwglxt/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=" + GNMKDM
         );
         return gson.fromJson(body, ScheduleResponse.class);
+    }
+
+    /**
+     * 教学班调课记录（弹层「查看教学班调课记录」）。
+     *
+     * <p>对应 {@code GET /jwglxt/kbdy/xskbdy_cxJxbtkjlView.html?gnmkdm=N2151&jxb_id=...}，
+     * 返回 HTML（内嵌 modelList），由 {@link ScheduleAdjustmentParser} 解析。</p>
+     *
+     * <p>失败策略：调课记录只是课表上的「调课」标记来源，缺失时降级为无标记即可，
+     * 不能让一次课表导入失败。因此非 200、网络错误、登录页 / 会话过期等情况
+     * 一律返回空列表（不抛异常）；只有「未登录」属于调用方编程错误，仍照常抛出。</p>
+     *
+     * @param classId 教学班 ID（课表条目的 {@code jxb_id}），会做 URL 编码；空值返回空列表
+     */
+    public List<ScheduleAdjustment> adjustmentRecords(String classId) throws IOException {
+        if (classId == null || classId.trim().isEmpty()) return List.of();
+        session.ensureLogin();
+        String path = "/jwglxt/kbdy/xskbdy_cxJxbtkjlView.html?gnmkdm=" + GNMKDM
+                + "&jxb_id=" + URLEncoder.encode(classId.trim(), StandardCharsets.UTF_8);
+        try {
+            String body = session.get(path, SCHEDULE_REFERER);
+            return ScheduleAdjustmentParser.parse(body);
+        } catch (SessionExpiredException e) {
+            // 登录页：静默降级为无调课记录（再次登录由上层统一处理）
+            return List.of();
+        } catch (IOException e) {
+            // 非 200 / 网络异常：同样降级，不打断整次课表导入
+            return List.of();
+        }
     }
 
     /** 每日节次及其起止时间。 */

@@ -72,7 +72,7 @@ public class CourseEntry {
     private String classId;             // 教学班 ID
 
     @SerializedName("jxbsftkbj")
-    private String classSuspended;      // 教学班是否停开（"1" 为停开）
+    private String adjustmentFlag;      // 教学班是否有调课记录（"1" 有调课，需与顶层 xskbsfxstkzt=="1" 同时成立才显示调课状态）
 
     // ---- 教室 ----
     @SerializedName("cdmc")
@@ -220,7 +220,16 @@ public class CourseEntry {
     public String getClassName() { return className; }
     public String getClassComposition() { return classComposition; }
     public String getClassId() { return classId; }
-    public String getClassSuspended() { return classSuspended; }
+
+    /**
+     * 该教学班是否存在调课记录（教务字段 {@code jxbsftkbj}，"1" 表示有）。
+     *
+     * <p>注意：这只是条目级标志，不是最终显示条件。教务学生课表页的显示条件是
+     * 顶层 {@code xskbsfxstkzt == "1"} 且本字段等于 {@code "1"}，两者同时成立才给课程名
+     * 加【调】标记。判定逻辑见 {@code ScheduleResponse#isAdjustmentStatusVisible()}。</p>
+     */
+    public boolean hasAdjustment() { return "1".equals(adjustmentFlag); }
+
     public String getClassroom() { return classroom; }
     public String getClassroomId() { return classroomId; }
     public String getClassroomCode() { return classroomCode; }

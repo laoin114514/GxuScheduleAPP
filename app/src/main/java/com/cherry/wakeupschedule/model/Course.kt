@@ -49,6 +49,12 @@ data class Course(
     @ColumnInfo(name = "is_practice", defaultValue = "0")
     val isPractice: Boolean = false,          // 是否实践课（教务 sfsjk）
 
+    @ColumnInfo(name = "is_adjusted", defaultValue = "0")
+    val isAdjusted: Boolean = false,          // 本行是否有被调课的周次（v2 语义：= adjustWeeksBitmap != 0）
+
+    @ColumnInfo(name = "adjust_weeks", defaultValue = "0")
+    val adjustWeeksBitmap: Long = 0,          // 被调课的周次位图（bit0=第1周，语义同 weekBitmap；由调课记录精确匹配）
+
     @ColumnInfo(name = "course_code", defaultValue = "")
     val courseCode: String = "",               // 课程代码（kch）
 
@@ -106,6 +112,17 @@ data class Course(
     fun isActiveInWeek(week: Int): Boolean {
         if (week < 1 || week > 64) return false
         return (weekBitmap shr (week - 1)) and 1L == 1L
+    }
+
+    /**
+     * 判断课程在指定周是否「被调课」——只标记具体课次/周次，而不是整门课。
+     *
+     * 来源：教务调课记录按教学班匹配到本行后，把命中的周次并成 [adjustWeeksBitmap]。
+     * 同一门课的其他周、以及同教学班的其他课表行不会被误标。
+     */
+    fun isAdjustedInWeek(week: Int): Boolean {
+        if (week < 1 || week > 64) return false
+        return (adjustWeeksBitmap shr (week - 1)) and 1L == 1L
     }
 
     /**

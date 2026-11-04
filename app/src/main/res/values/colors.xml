@@ -15,4 +15,10 @@
     <!-- 语义色：负向（校验失败 / 挂科 / 危险操作）。
          与 danger_color 同源，单独命名是为了让"错误提示"和"危险按钮"语义分开 -->
     <color name="semantic_negative">#B3261E</color>
+
+    <!-- 调课标签（周课表角标 / 总课表 pill / 详情 pill）：暖琥珀底 + 深棕字。
+         琥珀色在 9 种课程色上都能跳出来，深棕字在琥珀底上对比度足够；
+         标签自带底色，浅深色主题通用，不需要 values-night 变体 -->
+    <color name="adjust_tag_bg">#FFFFC107</color>
+    <color name="adjust_tag_text">#FF3E2723</color>
 </resources>

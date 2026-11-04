@@ -113,6 +113,10 @@
     <string name="course_weeks">周次</string>
     <string name="course_qq_group">QQ群</string>
     <string name="course_weeks_placeholder">第1-16周</string>
+    <!-- 调课标签：整教学班有教务调课记录时的角标/徽章文案 -->
+    <string name="course_adjusted_tag">调课</string>
+    <!-- 详情弹层「课程信息」卡里的调课周次行标签 -->
+    <string name="course_adjust_weeks">调课周次</string>
 
     <!-- ===== 成绩 / 考试 / 绩点 ===== -->
     <string name="grade_summary_gpa">本学期平均学分绩点</string>

@@ -35,7 +35,7 @@ public class ScheduleResponse {
     private String displayMode;                 // 是否显示地点
 
     @SerializedName("xskbsfxstkzt")
-    private String scheduleStatus;              // 学生课表显示状态标记
+    private String adjustmentStatusFlag;        // 学生课表是否显示调课状态（"1" 显示）
 
     @SerializedName("sxgykbbz")
     private String scheduleMark;                // 课表标记
@@ -52,7 +52,22 @@ public class ScheduleResponse {
     public List<ScheduleType> getScheduleTypes() { return scheduleTypes; }
     public String getTermFlag() { return termFlag; }
     public boolean isPracticeOpen() { return practiceOpen; }
-    public String getScheduleStatus() { return scheduleStatus; }
+
+    /**
+     * 原始字段值（{@code xskbsfxstkzt}）：学生课表是否显示调课状态，"1" 表示显示。
+     * 一般用 {@link #isAdjustmentStatusVisible()} 判定，不要直接比对字符串。
+     */
+    public String getScheduleStatus() { return adjustmentStatusFlag; }
+
+    /**
+     * 学生课表是否显示调课状态（教务顶层字段 {@code xskbsfxstkzt == "1"}）。
+     *
+     * <p>正方学生课表页的调课标记判定式是
+     * {@code xskbsfxstkzt == "1" && jxbsftkbj == "1"}：本方法是前半段（全局开关），
+     * 条目级后半段是 {@link CourseEntry#hasAdjustment()}。顶层字段缺失或非 "1" 时
+     * 一律视为不显示，与教务网页行为一致。</p>
+     */
+    public boolean isAdjustmentStatusVisible() { return "1".equals(adjustmentStatusFlag); }
     public String getScheduleMark() { return scheduleMark; }
     public boolean isCourseSelectionOpen() { return courseSelectionOpen; }
 

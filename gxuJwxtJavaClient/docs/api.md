@@ -385,11 +385,14 @@ zckbsfxssj, djdzList, kblx, jxhjkcList, xnxqsfkz
   "sksj": "星期一第1-2节{1-16周};...",
   "jsxm": "<教师姓名>", "jgh_id": "<教师ID>",
   "kczxs": "48", "khfsmc": "考试",
+  "jxbsftkbj": "0",
   "sjkList": [...], "shms": {...}, "xb": "理论"
 }
 ```
 
 > 注：`kbList` 中不含教师字段的场景，教师信息在 `xsbjList`/`sjkList` 或通过教学班查询。个人课表实测条目不直接含 `jsmc` 时，可看 `jxbmc`（教学班名）。
+>
+> `jxbsftkbj` 是「教学班是否有调课记录」标记，需与顶层 `xskbsfxstkzt`（是否显示调课状态）配合使用，详见 [4.11 调课信息](#411-调课信息实测-2026-11)。
 
 ### 4.2 教师课表
 
@@ -501,6 +504,65 @@ POST /jwglxt/kbdy/bjkbdy_cxXnxqsfkz.html?gnmkdm=N214505
 ```
 
 返回 `application/json`，响应体是 JSON 字符串 `"true"` 或 `"false"`。实测快照为 `"false"`，不是 JSON 布尔值。
+
+### 4.11 调课信息（实测 2026-11）
+
+学生个人课表是否显示调课信息，由个人课表响应里的两个字段共同决定。判定逻辑取自官方学生课表页 JS（`/jwglxt/js/comp/jwglxt/pkgl/kbcx/xskbcx.js`）：
+
+- 顶层 `xskbsfxstkzt`：**学生课表是否显示调课状态**，`"1"` 显示、`"0"` 不显示。官方 JS 按 `data.xskbsfxstkzt||0` 取值，缺失视为 0。
+- 课程条目 `jxbsftkbj`：该**教学班**是否有调课记录，`"1"` 有、`"0"` 无。注意这是教学班级标记：同一教学班的 `kbList` 每一行都会是 `"1"`，不能据此判断「哪一次课被调」。
+- 官方学生课表页当 `xskbsfxstkzt == 1 && jxbsftkbj == 1` 时，把课程名渲染成「【调】课程名」，并挂上查看调课记录的链接。
+
+实测（2026-2027 学年第 1 学期）：`xskbsfxstkzt = "1"`；21 条 `kbList` 中 2 条 `jxbsftkbj = "1"`（属于同一教学班）。历史学期同样存在该标记，例如 2025-2026 学年第 2 学期 36 条中有 9 条为 `"1"`。
+
+调课记录弹层（服务端渲染的 **HTML**，不是 JSON）：
+
+```
+GET /jwglxt/kbdy/xskbdy_cxJxbtkjlView.html?gnmkdm=N2151&jxb_id=<教学班ID>
+Referer: https://jwxt2018.gxu.edu.cn/jwglxt/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=N2151
+```
+
+- `gnmkdm=N2151` 必需；缺失时返回 HTTP 200 的「错误提示」页。
+- 响应 HTML 里 jqGrid 的数据源直接内嵌为 `var modelList= eval([{...}]);`，数组元素就是调课记录，不需要再请求子接口。
+
+记录字段（实测）：
+
+| 字段 | 含义 |
+|---|---|
+| `ttk_id` / `ttkxx_id` | 调课单 / 调课明细 ID |
+| `jxb_id` / `jxbmc` / `kcmc` | 教学班 ID、教学班名、课程名 |
+| `tklxmc` / `tklxdm` | 调课类型名 / 代码（如 `调课`、`01`） |
+| `yjsxm` / `xjsxm` | 原教师 / 现教师 |
+| `ycdmc` / `xcdmc` | 原教室 / 现教室 |
+| `yzcd` / `xzcd` | 原周次 / 现周次（如 `7周`） |
+| `yxqj` / `xxqj` | 原星期 / 现星期（汉字，如 `一`） |
+| `yjc` / `xjc` | 原节次 / 现节次（如 `第7-8节`） |
+| `yylb` / `tkyy` / `tksm` | 原因类别 / 调动原因 / 调课说明 |
+| `xnm` / `xqm` | 学年 / 学期编码 |
+
+`tklxmc`（调课类型）实测有三种，字段填充方式不同：
+
+- `调课`：原时间 → 现时间，`yzcd/yxqj/yjc` 与 `xzcd/xxqj/xjc` 都有值（可相同也可不同，教师/教室可换）；
+- `补课`：只有现字段（`yzcd/yxqj/yjc` 为 null），相当于新增一次课；
+- `停课`：只有原字段（`xzcd/xxqj/xjc` 为 null），该周课表里本就没有这节课的行。
+
+> 因此 `jxbsftkbj` 只能说明「教学班有调停课记录」，不能直接拿来给整门课逐次打标。若要精确到某一次课/某一周：把个人课表 `kbList` 的行按「现星期 + 现节次 +（现周次位图 ∩ 行周次位图 非空）」匹配调课记录，命中行取交集周次；`停课` 记录没有现时间，跳过（对应周次在课表里已无卡片）。
+
+示例（脱敏）：
+
+```json
+[{
+  "ttk_id": "<id>", "ttkxx_id": "<id>", "jxb_id": "<教学班ID>",
+  "kcmc": "大学生就业与创业指导", "jxbmc": "大学生就业与创业指导-0024",
+  "tklxmc": "调课", "tklxdm": "01",
+  "yjsxm": "<原教师>", "xjsxm": "<现教师>",
+  "ycdmc": "西2-501", "xcdmc": "西2-501",
+  "yzcd": "7周", "xzcd": "7周", "yxqj": "一", "xxqj": "一",
+  "yjc": "第7-8节", "xjc": "第7-8节",
+  "yylb": "<原因类别>", "tkyy": "<调动原因>", "tksm": null,
+  "xnm": "2026", "xqm": "3"
+}]
+```
 
 ---
 
@@ -1273,6 +1335,7 @@ for item in r.json()["items"]:
 
 - 验证账号：学生账号（学号及个人资料已从文档中移除）
 - 验证日期：2026-07-31
+- 补充实测：2026-11-04 补测调课相关字段（4.1 的 `jxbsftkbj`、顶层的 `xskbsfxstkzt`）与调课记录弹层（4.11），取证来源为真实个人课表响应 + 学生课表页 JS（`xskbcx.js`）
 - 验证方式：真实登录 + 逐接口实测请求，记录状态码、Content-Type、响应体大小、返回结构 keys、示例数据
 - 全流程原始响应保存在 `probe/responses/` 目录（gitignored，含凭据相关）
 

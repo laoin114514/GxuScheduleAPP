@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 object AppDatabaseMigrations {
 
     /** 当前 schema 版本。与 `@Database(version = ...)` 同源。 */
-    const val LATEST_VERSION = 14
+    const val LATEST_VERSION = 16
 
     /**
      * 手写迁移覆盖到的最早版本。
@@ -221,6 +221,33 @@ object AppDatabaseMigrations {
         }
     }
 
+    private val MIGRATION_14_15 = object : Migration(14, 15) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v1 中间版迁移（曾用于开发/模拟器，未对外发布）：courses 表新增「调课」标志（教务个人课表条目 jxbsftkbj，
+            // 且顶层 xskbsfxstkzt == "1" 时才显示），供周课表/总课表给课程名加【调】。
+            // 非空字段必须带 NOT NULL 且给非空默认值：Room 依 Course 生成的结构是
+            // NOT NULL + DEFAULT，迁移后的列需与其一致，否则启动时表结构校验失败闪退。
+            db.execSQL("ALTER TABLE courses ADD COLUMN is_adjusted INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
+    private val MIGRATION_15_16 = object : Migration(15, 16) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v2：调课标记精确到「具体课次/周次」，courses 表新增 adjust_weeks 位图列
+            // （bit0=第1周，语义同 week_bitmap）。
+            // 15 号 schema 存在两代：v1 发布版只有 is_adjusted；v2 开发中间版 14→15 已带两列。
+            // 因此按列是否存在做幂等补列，两类旧库都能升级，且不会重复 ADD COLUMN。
+            // 非空字段必须带 NOT NULL 且给非空默认值，与 Room 依 Course 生成的结构一致。
+            if (!hasColumn(db, "courses", "adjust_weeks")) {
+                db.execSQL("ALTER TABLE courses ADD COLUMN adjust_weeks INTEGER NOT NULL DEFAULT 0")
+            }
+            // v1 是按「教学班级」标志 jxbsftkbj 给整门课所有行打调课标（一次调课整学期误标，
+            // 用户已反馈）。升级时清空该派生列，等下次导入按调课记录精确重算；
+            // adjust_weeks 本身默认 0，不需要额外处理。
+            db.execSQL("UPDATE courses SET is_adjusted = 0")
+        }
+    }
+
     /**
      * 全部迁移，按起始版本升序。顺序即执行顺序，[AppDatabaseMigrationsTest] 会强制校验。
      *
@@ -240,7 +267,21 @@ object AppDatabaseMigrations {
         MIGRATION_11_12,
         MIGRATION_12_13,
         MIGRATION_13_14,
+        MIGRATION_14_15,
+        MIGRATION_15_16,
     )
+
+    /** 表里是否已有某列（15→16 幂等迁移用；PRAGMA table_info 在 Android SQLite 上稳定可用）。 */
+    private fun hasColumn(db: SupportSQLiteDatabase, table: String, column: String): Boolean {
+        db.query("PRAGMA table_info(`$table`)").use { cursor ->
+            val nameIndex = cursor.getColumnIndex("name")
+            if (nameIndex < 0) return false
+            while (cursor.moveToNext()) {
+                if (cursor.getString(nameIndex) == column) return true
+            }
+        }
+        return false
+    }
 
     /** grades 表建表 + 索引，7→8 与 8→9 共用，保证两处结构永远一致。 */
     private fun createGradesTable(db: SupportSQLiteDatabase) {

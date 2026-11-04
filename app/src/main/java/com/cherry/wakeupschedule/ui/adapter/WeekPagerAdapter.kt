@@ -14,6 +14,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
@@ -506,16 +507,37 @@ class WeekPagerAdapter(
                     if (showTeacher && primary.teacher.isNotBlank()) append('\n').append(primary.teacher)
                 }
 
+                // 调课是按「具体周次」命中的：只有本周这次课被调课才标角标。
+                // v1 用的是课程级 isAdjusted，导致某周有调课整学期都显示；v2 改为按当前绑定周判断
+                val adjustedThisWeek = primary.isAdjustedInWeek(week)
+
                 val tv = TextView(ctx).apply {
                     text = label
                     setTextSizeRes(R.dimen.text_label)
                     setTextColor(textColor)
                     gravity = Gravity.CENTER
-                    setPadding((4 * density).toInt(), (2 * density).toInt(),
-                        (4 * density).toInt(), (2 * density).toInt())
+                    // 本周调课：顶部让出角标高度，课程名（及教室/教师行）从角标下方开始，避免被压住。
+                    // 卡片足够高时底部补同样 14dp，让文字块仍以卡片中心居中、与同排普通卡基线齐平；
+                    // 矮卡片（主要是单节卡）优先保证不压字，底部保持 2dp（补齐会把仅有的文字空间挤没）。
+                    // 本周未调课的卡片保持原来的 (4,2,4,2) 内边距不变
+                    val padTopDp = if (adjustedThisWeek) ADJUST_TAG_TEXT_TOP_DP else 2
+                    val padBottomDp = if (adjustedThisWeek &&
+                        cardH >= ADJUST_TAG_CENTER_MIN_CARD_HEIGHT_DP * density
+                    ) ADJUST_TAG_TEXT_TOP_DP else 2
+                    setPadding(
+                        (4 * density).toInt(), (padTopDp * density).toInt(),
+                        (4 * density).toInt(), (padBottomDp * density).toInt()
+                    )
                     setTypeface(Typeface.DEFAULT_BOLD)
                 }
                 card.addView(tv)
+
+                // 「调课」角标：仅当本周这次课命中教务调课记录时标在右上角。
+                // 判断粒度是「课程 × 周次」（同一门课其他周仍正常显示），与右下角 +N 重叠角标错开位置；
+                // 点击事件不单独处理，交给卡片本身（点角标等同点卡片并弹出课程详情）
+                if (adjustedThisWeek) {
+                    card.addView(buildAdjustTag(ctx, density))
+                }
 
                 // 角标：组内多于1门课时显示 +N
                 if (sorted.size > 1) {
@@ -536,6 +558,47 @@ class WeekPagerAdapter(
                 }
 
                 courseContainer.addView(card)
+            }
+        }
+
+        /**
+         * 周课表卡片的「调课」角标（右上角）。
+         *
+         * 调用方仅在 `primary.isAdjustedInWeek(week)` 为 true（本周这次课被调课）时添加本 View；
+         * 卡片宽度只有约 50dp，若把标签做成占一整行的 pill 会挤掉课程名，
+         * 因此在角上压一个 8sp 小角标（琥珀底 + 深棕字），并配合课程文字的 top padding
+         * [ADJUST_TAG_TEXT_TOP_DP] 让课程名从角标下方开始，保证二者不重叠。
+         * 角标用代码构建而非 XML：周网格本就是零 XML inflation 的代码构建体系。
+         */
+        private fun buildAdjustTag(ctx: Context, density: Float): TextView {
+            return TextView(ctx).apply {
+                text = ctx.getString(R.string.course_adjusted_tag)
+                setTextSizeRes(R.dimen.text_tag)
+                setTypeface(Typeface.DEFAULT_BOLD)
+                setTextColor(ContextCompat.getColor(ctx, R.color.adjust_tag_text))
+                // 8sp 中文在默认字体内边距下上下各会多出约 1dp 空白，角标会更「胖」，
+                // 在多行课程名旁边容易压到第一行字；关掉字体内边距让角标尽量紧凑
+                includeFontPadding = false
+                setPadding(
+                    (ADJUST_TAG_HORIZONTAL_PADDING_DP * density).toInt(), (1 * density).toInt(),
+                    (ADJUST_TAG_HORIZONTAL_PADDING_DP * density).toInt(), (1 * density).toInt()
+                )
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = 4 * density
+                    setColor(ContextCompat.getColor(ctx, R.color.adjust_tag_bg))
+                    // 1dp 半透明深色描边：琥珀角标落在橙/浅橙课程卡上时亮度对比只有约 1.14:1，
+                    // 加一圈深色轮廓让它在任何课程色上边界都清晰；描边画在形状边界内，不增加 View 高度
+                    setStroke((1 * density).toInt(), ADJUST_TAG_STROKE_COLOR)
+                }
+                layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    gravity = Gravity.TOP or Gravity.END
+                    topMargin = (3 * density).toInt()
+                    marginEnd = (3 * density).toInt()
+                }
             }
         }
 
@@ -617,6 +680,18 @@ class WeekPagerAdapter(
 
         /** 底部留白高度占屏高的比例（课表整体 → 底部留白） */
         private const val BOTTOM_BLANK_RATIO = 0.15f
+
+        /** 本周调课卡片课程文字的 top padding（dp）：为右上角「调课」角标让位；本周未调课仍为 2dp */
+        private const val ADJUST_TAG_TEXT_TOP_DP = 14
+
+        /** 调课卡片文字上下对称内边距的启用门槛（dp）：卡片足够高时底部才补同样 14dp 保持居中 */
+        private const val ADJUST_TAG_CENTER_MIN_CARD_HEIGHT_DP = 90
+
+        /** 调课角标左右内边距（dp）：比 v1 的 4dp 收紧 1dp，给约 50dp 宽的卡片减宽约 2dp */
+        private const val ADJUST_TAG_HORIZONTAL_PADDING_DP = 3
+
+        /** 调课角标描边色：约 35% 黑；琥珀底在橙/浅橙课卡上对比不足，靠深色轮廓划出清晰边界 */
+        private const val ADJUST_TAG_STROKE_COLOR = 0x59000000
 
         /**
          * 用代码构建页面根布局。

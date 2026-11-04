@@ -22,6 +22,7 @@
     <dimen name="text_label">10sp</dimen>        <!-- 极小标签 / 课程卡片 -->
     <dimen name="text_micro">9sp</dimen>         <!-- widget 专用极小字 -->
     <dimen name="text_chip_room">8sp</dimen>     <!-- widget 课程块教室行专用 -->
+    <dimen name="text_tag">8sp</dimen>           <!-- 课表课程卡片角标（如「调课」） -->
 
 
     <!-- 课表左侧时间轴列宽：恢复 7158991 的 32dp 贴边样式（时间轴三行：
