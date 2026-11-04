@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  课表导出预览弹窗。
+
+  内容 = 工具页「课表导出」生成的整页课表 PNG 预览 + 「保存到相册」/「分享」两个操作。
+  弹窗高度由 ScheduleExportDialog 按屏高比例设置（约 88%），中间预览区可上下滑动：
+  导出的长图按屏幕宽度等比缩放，完整课表比一屏高，滑动即可看全。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_selection_dialog"
+    android:paddingTop="20dp"
+    android:paddingBottom="16dp">
+
+    <!-- 标题行：居中标题 + 右端关闭 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/export_preview_title"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btn_export_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="-8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/export_close_preview"
+            android:src="@drawable/ic_close"
+            app:tint="?attr/colorOnSurfaceVariant" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_export_week_caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="12dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="@dimen/text_caption" />
+
+    <!-- 预览区：长图按宽度等比缩放，超出部分上下滑动查看 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="false"
+        android:overScrollMode="never"
+        android:paddingHorizontal="16dp"
+        android:scrollbars="none">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="@dimen/radius_lg"
+            app:cardElevation="0dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp">
+
+            <ImageView
+                android:id="@+id/iv_export_preview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/export_preview_image_desc"
+                android:scaleType="fitCenter" />
+        </com.google.android.material.card.MaterialCardView>
+    </ScrollView>
+
+    <!-- 操作区：保存到相册（主操作）/ 分享（先只提供入口） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="14dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_export_save"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="@string/export_save_to_gallery"
+            android:textAllCaps="false"
+            android:textSize="@dimen/text_body_small"
+            app:cornerRadius="@dimen/radius_lg" />
+
+        <Space
+            android:layout_width="12dp"
+            android:layout_height="1dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_export_share"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="@string/export_share"
+            android:textAllCaps="false"
+            android:textSize="@dimen/text_body_small"
+            app:cornerRadius="@dimen/radius_lg"
+            app:icon="@drawable/ic_mtrl_share"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconTint="?attr/colorPrimary" />
+    </LinearLayout>
+</LinearLayout>
