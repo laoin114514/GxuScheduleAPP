@@ -96,7 +96,7 @@
     <string name="common_bind_first">请先绑定教务账号</string>
     <string name="common_na">—</string>
     <string name="profile_unbound_toast">已解绑教务账号</string>
-    <string name="profile_no_mail_app">未找到邮件应用</string>
+    <string name="profile_no_browser_app">未找到浏览器应用</string>
 
     <!-- ===== 课表 / 课表菜单 / 课程详情 ===== -->
     <string name="schedule_empty_semester">本学期暂无课程</string>
@@ -130,6 +130,8 @@
     <string name="course_adjusted_tag">调课</string>
     <!-- 详情弹层「课程信息」卡里的调课周次行标签 -->
     <string name="course_adjust_weeks">调课周次</string>
+    <!-- 周课表课程详情里的调课原因行标签（仅被调课的那一节显示） -->
+    <string name="course_adjust_reason">调课原因</string>
 
     <!-- ===== 成绩 / 考试 / 绩点 ===== -->
     <string name="grade_summary_gpa">本学期平均学分绩点</string>

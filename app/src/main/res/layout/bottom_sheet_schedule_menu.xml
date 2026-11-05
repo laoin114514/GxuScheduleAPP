@@ -13,6 +13,9 @@
   4. 外观卡内部再排一遍：默认高度提示只在偏离默认值时贴着刻度显形、40/120 与轨道两端对齐、
      组间发丝线留 4dp 呼吸，卡片上下内边距对称。
 
+  5. 「课表外观」改为折叠分组：标题行常驻（用户一眼知道有这个设置），点开才展开控件，
+     展开状态记在设置里，下次打开菜单保持上次状态；展开不改变菜单高度，只在菜单内下滑查看。
+
   内容变长后整列放进 NestedScrollView：窗口高度不足时菜单内部滚动，
   拖拽条固定在顶部不跟着滚。
 -->
@@ -219,21 +222,56 @@
             </LinearLayout>
 
             <!-- ═══ 外观 ═══
-                 控件常驻内联、默认展开（不再折叠成一行摘要）：一卡三组，
-                 顺序按改动粒度排——格子本身 → 格子的边。 -->
+                 折叠分组：标题行常驻（用户一眼知道有外观设置），点开才展开控件；
+                 展开状态由 SettingsManager 持久化，下次打开菜单保持上次状态。
+                 控件一卡三组，顺序按改动粒度排——格子本身 → 格子的边。 -->
             <LinearLayout
                 android:id="@+id/group_schedule_appearance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <TextView
-                    style="@style/SheetSectionLabel"
+                <LinearLayout
+                    android:id="@+id/row_appearance_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="8dp"
-                    android:text="@string/menu_section_appearance" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="2dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
 
-                <include layout="@layout/view_schedule_appearance_controls" />
+                    <TextView
+                        style="@style/SheetSectionLabel"
+                        android:text="@string/menu_section_appearance" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <ImageView
+                        android:id="@+id/iv_appearance_arrow"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_mtrl_expand_more"
+                        android:tint="?attr/colorOnSurfaceVariant"
+                        android:contentDescription="@string/menu_section_appearance" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/group_schedule_appearance_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <include layout="@layout/view_schedule_appearance_controls" />
+
+                </LinearLayout>
 
             </LinearLayout>
 

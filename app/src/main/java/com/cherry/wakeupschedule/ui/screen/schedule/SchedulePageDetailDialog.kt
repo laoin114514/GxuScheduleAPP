@@ -40,12 +40,15 @@ object SchedulePageDetailDialog {
      * 展示课程详情。
      *
      * [courses] 为同一门课的全部课程行：周课表传入单门；总课表传入同名课程的全部时段。
+     * [displayWeek] 周课表当前打开的周次（1..显示总周数；0 = 未知）。仅周课表来源使用：
+     * 只有这一周确实被调课时，才在详情里展示「调课原因」行。
      */
     fun show(
         context: Context,
         courses: List<Course>,
         courseColors: IntArray,
-        source: Source
+        source: Source,
+        displayWeek: Int = 0
     ) {
         if (courses.isEmpty()) return
         // 防止连点打开多个详情弹窗（旧弹窗可能已随 Activity 销毁，安全关闭）
@@ -129,6 +132,9 @@ object SchedulePageDetailDialog {
             (sheetView.findViewById<View>(R.id.ll_detail_extra)?.parent as? View)?.visibility =
                 View.GONE
         }
+
+        // 「调课原因」行只有周课表详情展示，且仅当本次打开的这一周确实被调课时出现
+        bindAdjustReason(sheetView, courses, displayWeek, isOverview)
 
         // 「调课」标签与来源无关：两种详情都展示。
         // 总课表详情的「课程信息」卡另有「调课周次」行精确说明具体哪几周被调课，
@@ -284,6 +290,38 @@ object SchedulePageDetailDialog {
             cornerRadius = 6 * density
             setColor(ColorUtils.setAlphaComponent(color, 38))
         }
+    }
+
+    /**
+     * 「调课原因」卡（仅周课表详情，放在详情最底部）。
+     *
+     * 显示条件：本次是从周课表某一周打开、且该课程行在**这一周**确实被调课（按
+     * [Course.adjustWeeksBitmap] 判断），同时记录里带回了原因文案。这样同一门课只在
+     * 被调课的那一节显示原因，正常周次不显示。总课表详情（OVERVIEW）一律隐藏该卡。
+     */
+    private fun bindAdjustReason(
+        view: View,
+        courses: List<Course>,
+        displayWeek: Int,
+        isOverview: Boolean
+    ) {
+        val card = view.findViewById<View>(R.id.card_detail_adjust_reason) ?: return
+        if (isOverview || displayWeek !in 1..64) {
+            card.visibility = View.GONE
+            return
+        }
+        val reason = courses
+            .filter { it.isAdjustedInWeek(displayWeek) }
+            .map { it.adjustReason.trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .joinToString("；")
+        if (reason.isEmpty()) {
+            card.visibility = View.GONE
+            return
+        }
+        card.visibility = View.VISIBLE
+        view.findViewById<TextView>(R.id.tv_detail_adjust_reason)?.text = reason
     }
 
     /**

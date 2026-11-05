@@ -17,11 +17,10 @@
 -keepattributes EnclosingMethod
 
 # ── Gson TypeToken ──
-# R8 会把「同形状」的匿名 TypeToken 子类做类合并（线上 v0.5.7 release 包
-# 刷新课表闪退的根因）：合并后泛型签名丢失，TypeToken 构造时抛
-# "Missing type parameter."，静态初始化直接崩。这里禁止合并/混淆所有
-# TypeToken 子类；代码侧也尽量改用 TypeToken.getParameterized(...) 或数组反序列化。
--keep class * extends com.google.gson.reflect.TypeToken { *; }
+# 仅保留 Signature 属性还不够：R8 会把「匿名 TypeToken 子类」合并/优化掉，
+# 运行到 clinit 时抛 IllegalStateException: TypeToken must be created with a type argument
+# （v0.5.7 release 包刷新课表闪退的根因）。这里保所有 TypeToken 子类不被裁剪/合并。
+-keep class * extends com.google.gson.reflect.TypeToken
 -keep class com.google.gson.reflect.TypeToken { *; }
 
 # ── Gson 反射面 ──

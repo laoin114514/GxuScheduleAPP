@@ -3,7 +3,7 @@ package com.gxu.jwxt.module;
 import com.google.gson.Gson;
 import com.gxu.jwxt.model.ScheduleAdjustment;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,14 +17,16 @@ import java.util.List;
  *
  * <p>解析策略：定位 {@code modelList} 之后的 {@code eval}，再从 {@code eval} 后第一个
  * {@code '['} 开始做<b>括号配对</b>取到匹配的 {@code ']'}（跳过 JSON 字符串内部的括号
- * 与反斜杠转义），最后交给 Gson 反序列化为 {@link ScheduleAdjustment} 数组再转列表。
+ * 与反斜杠转义），最后交给 Gson 反序列化为 {@link ScheduleAdjustment} 列表。
  * 页面结构缺失、括号不配对或 JSON 畸形时统一返回空列表，绝不抛异常 —— 调课标记只是
  * 锦上添花，解析失败应降级为「无调课标签」而不是让整次课表导入失败。</p>
  *
- * <p><b>为什么用数组而不是 {@code TypeToken<List<...>>}：</b>R8 会把匿名 TypeToken 子类
- * 做类合并，合并后泛型签名丢失，TypeToken 构造时抛 "Missing type parameter"，
- * 表现为 release 包一刷新课表就闪退。数组反序列化不依赖泛型签名，天然免疫该问题
- * （与线上 v0.5.8 的修复保持一致）。</p>
+ * <p><b>注意</b>：这里刻意用 {@code ScheduleAdjustment[].class} 反序列化，而不是
+ * {@code TypeToken<List<ScheduleAdjustment>>}。R8 会合并/优化匿名 TypeToken 子类，
+ * 即使加了 {@code -keepattributes Signature} 仍可能丢掉泛型父类签名，release 包在
+ * 运行时抛 {@code IllegalStateException: TypeToken must be created with a type argument}
+ * 且发生在静态初始化里、无法被这里的 catch 接住（v0.5.7 release 实测刷新闪退）。
+ * 数组的 Class 不依赖泛型签名，对混淆天然安全。</p>
  */
 public final class ScheduleAdjustmentParser {
 
@@ -45,10 +47,15 @@ public final class ScheduleAdjustmentParser {
         if (json == null) return List.of();
 
         try {
-            ScheduleAdjustment[] records = GSON.fromJson(json, ScheduleAdjustment[].class);
-            return records != null ? Arrays.asList(records) : List.of();
+            ScheduleAdjustment[] array = GSON.fromJson(json, ScheduleAdjustment[].class);
+            if (array == null || array.length == 0) return List.of();
+            List<ScheduleAdjustment> records = new ArrayList<>(array.length);
+            for (ScheduleAdjustment record : array) {
+                if (record != null) records.add(record);
+            }
+            return records;
         } catch (RuntimeException e) {
-            // JsonSyntaxException / IllegalStateException 等：坏数据按无记录处理
+            // JsonSyntaxException 等坏数据：按无记录处理
             return List.of();
         }
     }

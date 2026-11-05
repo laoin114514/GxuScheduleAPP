@@ -63,7 +63,7 @@ class JwxtImportServiceAdjustmentTest {
     ): String =
         """{"xskbsfxstkzt":"$visible","kbList":[${rows.joinToString(",")}],"sjkList":[${practiceRows.joinToString(",")}]}"""
 
-    /** 一条调课记录；停课不传 current 系列即可 */
+    /** 一条调课记录；停课不传 current 系列即可。reason 对应 tkyy，reasonCategory 对应 yylb，remark 对应 tksm */
     private fun adjustRecord(
         classId: String,
         type: String,
@@ -77,6 +77,8 @@ class JwxtImportServiceAdjustmentTest {
         xjc: String? = null,
         xjsxm: String? = null,
         xcdmc: String? = null,
+        reason: String? = null,
+        reasonCategory: String? = null,
         remark: String? = null,
     ): String {
         val fields = mutableListOf<String>()
@@ -95,6 +97,8 @@ class JwxtImportServiceAdjustmentTest {
         add("xjc", xjc)
         add("xjsxm", xjsxm)
         add("xcdmc", xcdmc)
+        add("tkyy", reason)
+        add("yylb", reasonCategory)
         add("tksm", remark)
         add("xnm", "2026")
         add("xqm", "3")
@@ -148,6 +152,7 @@ class JwxtImportServiceAdjustmentTest {
                     "JXB-0024", "调课",
                     yzcd = "7周", yxqj = "一", yjc = "第7-8节", yjsxm = "龙紫璐", ycdmc = "西2-501",
                     xzcd = "7周", xxqj = "一", xjc = "第7-8节", xjsxm = "胡刚", xcdmc = "西2-501",
+                    reason = "因龙老师参加区国创赛工作与课程冲突",
                 )
             )
         )
@@ -162,10 +167,12 @@ class JwxtImportServiceAdjustmentTest {
         assertTrue(hu.isAdjustedInWeek(7))
         assertFalse("第6周没有调课", hu.isAdjustedInWeek(6))
         assertFalse("第8周没有调课", hu.isAdjustedInWeek(8))
+        assertEquals("被调课行应带回调课原因", "因龙老师参加区国创赛工作与课程冲突", hu.adjustReason)
 
         val long = find(courses, "龙紫璐", 1, 7, "西2-501")
         assertFalse("原教师行不应被标记（v1 的整班误标已修复）", long.isAdjusted)
         assertEquals(0L, long.adjustWeeksBitmap)
+        assertEquals("未调课行不携带原因", "", long.adjustReason)
 
         assertEquals(1, adjustedRows(courses).size)
     }
@@ -221,6 +228,7 @@ class JwxtImportServiceAdjustmentTest {
                 adjustRecord(
                     "JXB-MIX", "补课",
                     xzcd = "4周", xxqj = "日", xjc = "第11-12节", xjsxm = "蒙祖强", xcdmc = "东10B-404",
+                    reason = "补课",
                 ),
                 // 停课：第4周 周二 3-4节（课表里本来就没有这行，跳过）
                 adjustRecord(
@@ -236,6 +244,8 @@ class JwxtImportServiceAdjustmentTest {
                 adjustRecord(
                     "JXB-MIX", "补课",
                     xzcd = "5周", xxqj = "四", xjc = "第3-4节", xjsxm = "蒙祖强", xcdmc = "东10B-404",
+                    reason = "补课",
+                    remark = "第6周星期二3，4节的课已停，补这次课。",
                 ),
             ),
             "JXB-A" to listOf(
@@ -244,6 +254,7 @@ class JwxtImportServiceAdjustmentTest {
                     "JXB-A", "调课",
                     yzcd = "13周", yxqj = "四", yjc = "第3-4节", yjsxm = "蒙祖强", ycdmc = "西综合313",
                     xzcd = "14周", xxqj = "二", xjc = "第3-4节", xjsxm = "蒙祖强", xcdmc = "计电202",
+                    reason = "参加自治区政协界别协商会",
                 ),
                 // 停课：第6周 周二 3-4节
                 adjustRecord(
@@ -254,6 +265,8 @@ class JwxtImportServiceAdjustmentTest {
                 adjustRecord(
                     "JXB-A", "补课",
                     xzcd = "6周", xxqj = "日", xjc = "第11-12节", xjsxm = "蒙祖强", xcdmc = "西综合313",
+                    reason = "补课",
+                    remark = "第6周星期四3，4节的课已停，补这次课。",
                 ),
             ),
             "JXB-XS" to listOf(
@@ -262,12 +275,14 @@ class JwxtImportServiceAdjustmentTest {
                     "JXB-XS", "调课",
                     yzcd = "12-13周", yxqj = "六", yjc = "第5-8节", yjsxm = "熊浩", ycdmc = "大礼堂",
                     xzcd = "12-13周", xxqj = "六", xjc = "第5-8节", xjsxm = "李响", xcdmc = "大礼堂",
+                    reason = "赴区外参加培训",
                 ),
                 // 另一条同时间记录（李响→蓝波涛），周次与上一行取并集
                 adjustRecord(
                     "JXB-XS", "调课",
                     yzcd = "12-13周", yxqj = "六", yjc = "第5-8节", yjsxm = "李响", ycdmc = "大礼堂",
                     xzcd = "12-13周", xxqj = "六", xjc = "第5-8节", xjsxm = "蓝波涛", xcdmc = "大礼堂",
+                    reason = "李响老师参加教学创新大赛国赛，需备赛，特此与蓝波涛老师协调申请代课",
                 ),
             ),
         )
@@ -286,6 +301,23 @@ class JwxtImportServiceAdjustmentTest {
         assertEquals(listOf(4), weeksOf(find(courses, "蒙祖强", 7, 11, "东10B-404")))
         // 5) 数据库原理 星期日11-12 第6周 西综合313 → {6}
         assertEquals(listOf(6), weeksOf(find(courses, "蒙祖强", 7, 11, "西综合313")))
+
+        // 调课原因：具体原因直接展示；补课记录的 tkyy 只是「补课」时优先用 tksm 说明
+        assertEquals("参加自治区政协界别协商会", find(courses, "蒙祖强", 2, 3, "计电202").adjustReason)
+        assertEquals("补课", find(courses, "蒙祖强", 7, 11, "东10B-404").adjustReason)
+        assertEquals(
+            "第6周星期二3，4节的课已停，补这次课。",
+            find(courses, "蒙祖强", 4, 3, "东10B-404").adjustReason,
+        )
+        assertEquals(
+            "第6周星期四3，4节的课已停，补这次课。",
+            find(courses, "蒙祖强", 7, 11, "西综合313").adjustReason,
+        )
+        // 同一行被两条记录命中时，原因去重合并（真实数据里同一时段先后换了两位老师）
+        assertEquals(
+            "赴区外参加培训；李响老师参加教学创新大赛国赛，需备赛，特此与蓝波涛老师协调申请代课",
+            find(courses, "蓝波涛,金顺南,赵双良", 6, 5, "大礼堂").adjustReason,
+        )
 
         // 停课对应的原时间行、以及无关行都不标
         assertFalse("停课没有现时间行，不标", find(courses, "蒙祖强", 2, 3, "西综合308").isAdjusted)

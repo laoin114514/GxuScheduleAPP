@@ -503,10 +503,11 @@ class WeekPagerAdapter(
                     background = cardBg
                     setOnClickListener {
                         if (sorted.size > 1) {
-                            showOverlapPicker(ctx, sorted, colors)
+                            showOverlapPicker(ctx, sorted, colors, week)
                         } else {
                             SchedulePageDetailDialog.show(
-                                ctx, listOf(primary), colors, SchedulePageDetailDialog.Source.WEEK
+                                ctx, listOf(primary), colors,
+                                SchedulePageDetailDialog.Source.WEEK, displayWeek = week
                             )
                         }
                     }
@@ -577,7 +578,7 @@ class WeekPagerAdapter(
                             setMargins(0, 0, (4 * density).toInt(), (4 * density).toInt())
                         }
                         setOnClickListener {
-                            showOverlapPicker(ctx, sorted, colors)
+                            showOverlapPicker(ctx, sorted, colors, week)
                         }
                     }
                     card.addView(badge)
@@ -695,7 +696,8 @@ class WeekPagerAdapter(
         private fun showOverlapPicker(
             ctx: Context,
             courses: List<Course>,
-            colors: IntArray
+            colors: IntArray,
+            week: Int
         ) {
             val items = courses.mapIndexed { _, c ->
                 val priority = when {
@@ -711,7 +713,8 @@ class WeekPagerAdapter(
                 .setTitle("重叠课程 (${courses.size}门)")
                 .setItems(items.toTypedArray()) { _, which ->
                     SchedulePageDetailDialog.show(
-                        ctx, listOf(courses[which]), colors, SchedulePageDetailDialog.Source.WEEK
+                        ctx, listOf(courses[which]), colors,
+                        SchedulePageDetailDialog.Source.WEEK, displayWeek = week
                     )
                 }
                 .setNegativeButton("取消", null)

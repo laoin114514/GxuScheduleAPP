@@ -1,6 +1,7 @@
 package com.cherry.wakeupschedule.ui.screen.profile
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -36,6 +37,9 @@ import kotlinx.coroutines.CoroutineScope
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+
+/** 反馈建议问卷（腾讯问卷）：点击「反馈建议」跳转浏览器填写 */
+private const val FEEDBACK_SURVEY_URL = "https://wj.qq.com/s2/28554281/u3po/"
 
 class ProfileFragment : Fragment() {
 
@@ -121,16 +125,12 @@ class ProfileFragment : Fragment() {
             startActivity(Intent(requireContext(), AboutActivity::class.java))
         }
 
+        // 反馈建议：跳转腾讯问卷（浏览器打开），不再走邮件
         view.findViewById<View>(R.id.item_feedback).setOnClickListener {
             try {
-                val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = android.net.Uri.parse("mailto:")
-                    putExtra(Intent.EXTRA_EMAIL, arrayOf("2908451607@qq.com"))
-                    putExtra(Intent.EXTRA_SUBJECT, "西大课栈 应用反馈")
-                }
-                startActivity(Intent.createChooser(intent, "发送邮件"))
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_SURVEY_URL)))
             } catch (e: Exception) {
-                AppToast.error(requireContext(), getString(R.string.profile_no_mail_app))
+                AppToast.error(requireContext(), getString(R.string.profile_no_browser_app))
             }
         }
     }

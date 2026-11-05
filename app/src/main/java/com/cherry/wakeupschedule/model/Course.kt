@@ -55,6 +55,9 @@ data class Course(
     @ColumnInfo(name = "adjust_weeks", defaultValue = "0")
     val adjustWeeksBitmap: Long = 0,          // 被调课的周次位图（bit0=第1周，语义同 weekBitmap；由调课记录精确匹配）
 
+    @ColumnInfo(name = "adjust_reason", defaultValue = "")
+    val adjustReason: String = "",             // 调课原因（教务调课记录 tkyy/说明；仅被调课周次对应的行有值）
+
     @ColumnInfo(name = "course_code", defaultValue = "")
     val courseCode: String = "",               // 课程代码（kch）
 
