@@ -108,7 +108,9 @@ class CourseDataManager private constructor(context: Context) {
             }
 
             val gson = Gson()
-            val type = object : TypeToken<List<Course>>() {}.type
+            // 用 getParameterized 而不是匿名 TypeToken 子类：R8 会合并匿名子类并丢泛型签名，
+            // 导致 TypeToken 构造时抛 "Missing type parameter."（release 包闪退）
+            val type = TypeToken.getParameterized(List::class.java, Course::class.java).type
             val courses: List<Course> = gson.fromJson(coursesJson, type)
 
             if (courses.isNotEmpty()) {

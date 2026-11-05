@@ -188,6 +188,31 @@ class WeekPagerAdapter(
             highlightToday)
     }
 
+    /**
+     * 导出用：按当前数据 + 外观设置构建「第 [week] 周」的整页课表视图（未 attach 到窗口）。
+     *
+     * 与屏幕上显示的一页复用同一套代码（[WeekViewHolder.buildPageRoot] 建结构 +
+     * [WeekViewHolder.bind] 绑数据），只是把容器从「屏幕内滚动」改成「按内容展开」，
+     * 见 [WeekViewHolder.prepareForExport]。调用方（[ScheduleExportRenderer]）负责
+     * 离屏 measure/layout/draw，因此这里返回的 View 不要再手动加到任何父容器。
+     */
+    fun createExportPage(context: Context, week: Int): View {
+        val holder = WeekViewHolder(context)
+        holder.bind(
+            week, weekCourseGroups(week), cellHeightDp, semesterStartDate, currentWeek,
+            showClassroom, showTeacher, borderColor, borderFollowCourse,
+            // 底部留白只服务于屏幕滚动，导出图里不要
+            bottomBlankEnabled = false,
+            highlightToday = highlightToday
+        )
+        val density = context.resources.displayMetrics.density
+        holder.prepareForExport(
+            maxNodes = TimeTableManager.getInstance(context).getMaxNodes(),
+            cellHeightPx = (cellHeightDp * density).roundToInt()
+        )
+        return holder.itemView
+    }
+
     /** 只有日期栏上下文变化时走这条轻量分支，避免整页重建课程卡片 */
     override fun onBindViewHolder(
         holder: WeekViewHolder,
@@ -211,6 +236,7 @@ class WeekPagerAdapter(
         private val scrollView: VerticalScrollView
         private val gridBg: GridBackgroundView
         private val timeAxis: LinearLayout
+        private val contentArea: FrameLayout
         private val courseContainer: FrameLayout
         private val emptyView: LinearLayout
         private val bottomSpacer: View
@@ -260,7 +286,7 @@ class WeekPagerAdapter(
             val contentLayout = scrollContent.getChildAt(0) as LinearLayout
             bottomSpacer = scrollContent.getChildAt(1)
             timeAxis = contentLayout.getChildAt(0) as LinearLayout
-            val contentArea = contentLayout.getChildAt(1) as FrameLayout
+            contentArea = contentLayout.getChildAt(1) as FrameLayout
             gridBg = contentArea.getChildAt(0) as GridBackgroundView
             courseContainer = contentArea.getChildAt(1) as FrameLayout
             emptyView = contentArea.getChildAt(2) as LinearLayout
@@ -560,6 +586,31 @@ class WeekPagerAdapter(
 
                 courseContainer.addView(card)
             }
+        }
+
+        /**
+         * 导出成整页图片前的排版调整：把「填满屏幕、内部滚动」的页面改成
+         * 「宽度不变、高度按内容展开」的整页，供离屏 measure/layout/draw 直接绘制。
+         *
+         * 只改容器约束，不动任何子 View 的内容/样式：日期栏、时间轴、课程卡片的
+         * 构建与绑定代码与屏幕上完全同一套，所以导出的像素就是课表 UI 本身。
+         *
+         * - 滚动容器：height=0 + weight=1（撑满剩余空间）→ wrap_content
+         * - 右侧内容区：MATCH_PARENT（跟随滚动容器高度）→ 固定为「节次数 × 格子高度」，
+         *   让网格背景、课程容器、「暂无课程」空态在离屏测量时也能拿到完整高度
+         * - 底部留白是「屏幕可滚动」的交互补偿，导出图不需要，[bind] 时已传 false
+         */
+        fun prepareForExport(maxNodes: Int, cellHeightPx: Int) {
+            scrollView.layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            scrollView.isFillViewport = false
+            contentArea.layoutParams = LinearLayout.LayoutParams(
+                0, cellHeightPx * maxNodes, 1f
+            )
+            itemView.layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            )
         }
 
         /**
