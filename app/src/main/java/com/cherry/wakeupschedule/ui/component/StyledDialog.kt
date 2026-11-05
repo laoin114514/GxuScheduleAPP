@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
@@ -82,6 +83,8 @@ class StyledDialog private constructor(
         // 弹窗主题默认会回落到 M3 基线色板（偏粉/偏紫），这里补一次调色板 overlay，
         // 让弹窗底色/文字/主色跟随当前主题（详见 ThemeManager.applyPaletteOverlay）
         ThemeManager.applyPaletteOverlay(this)
+        // 登记为提示宿主：本弹窗显示期间的 AppToast 渲染在弹窗窗口之上，不被遮罩压暗
+        AppToast.registerDialogHost(this)
         setContentView(R.layout.dialog_styled)
 
         val hasTitle = !config.title.isNullOrBlank()

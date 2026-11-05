@@ -101,6 +101,8 @@ class SemesterWheelDialog(
         super.onCreate(savedInstanceState)
         // 补调色板 overlay：弹窗内 ?attr 文案/按钮色与代码里取的主题色保持同一套
         ThemeManager.applyPaletteOverlay(this)
+        // 登记为提示宿主：本弹窗显示期间的 AppToast 渲染在弹窗窗口之上，不被遮罩压暗
+        AppToast.registerDialogHost(this)
         setContentView(R.layout.dialog_semester_wheel)
 
         setupWindow()

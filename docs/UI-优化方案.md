@@ -381,6 +381,7 @@ AA 需 4.5（正文）/3.0（大字）。**9/9 全部不达标。**
    - 短期方案：`StyledDialog` 增加可拦截关闭的校验回调；非法输入时**不关窗**，在输入框下方显示内联错误（`colorError` 12sp）+ 输入框描边转错误色。
    - 中期方案：`ToastManager` 支持"弹层宿主"——弹层打开时提示渲染进弹层自己的容器（顶部 banner），而不是 Activity content。
    - 验收：菜单里输 `999` 点应用 → 能看到"已取范围 120dp"；断网切学期 → 能看到错误原因。
+   - **落地（2026-11-05）**：中期方案已实现。`ToastManager` 维护"窗口宿主栈"（Activity content → 最上层弹层 DecorView），`AppToast.registerDialogHost(dialog)` 在弹层 `show()` 前登记；弹层打开时容器搬进弹层窗口，关闭后自动搬回。已接线 12 处弹层（课表菜单 / 课程详情 / 外观面板 / 取色器 / 学期滚轮 / StyledDialog / SelectionDialog / 成绩详情 / 导出预览 / 主题-自动切换面板 / 更新弹窗 / 重叠课程选择器），普通场景行为不变。debug 变体提供 `tools/ToastZOrderProbeActivity` 做层级自检（`--es mode dialog|sheet|plain`）。
 2. **Sheet 规范**：`SheetStyle`（24dp 顶角 + `surfaceContainer` + 居中 18sp 标题 + 48dp 关闭 + 可拖拖拽条），三处底部弹层统一；删掉"假拖拽条"。
 3. **Dialog 规范**：`DialogStyle`（20dp + `surfaceContainerHigh` + 18sp 标题）；分割线 `#20FFFFFF` → `colorOutlineVariant` 60%；按钮高度 ≥48dp；宽度规则统一（`min(屏宽×0.88, 400dp)`）。
 4. **课程详情**：5 张卡 → 2 张卡（主信息卡吸收时间/教师/教室/周次/学分；动态信息卡可折叠默认 3 行）；标签列宽统一（`wrap_content + minWidth 64dp`）；QQ 行热区 ≥48dp。

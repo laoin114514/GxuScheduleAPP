@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 只编入 debug 变体的工具入口：把静态预览布局渲染成 previewImage 素材 -->
+<!-- 只编入 debug 变体的工具入口：小组件预览图生成、AppToast 弹层层级自检 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
@@ -9,6 +9,14 @@
             android:exported="true"
             android:noHistory="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- AppToast 层级自检：先弹 StyledDialog 再触发提示，验证提示卡渲染在弹层窗口之上 -->
+        <activity
+            android:name=".tools.ToastZOrderProbeActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@style/Theme.WakeupSchedule" />
     </application>
 
 </manifest>

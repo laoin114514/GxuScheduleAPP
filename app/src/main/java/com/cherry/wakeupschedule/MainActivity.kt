@@ -115,14 +115,17 @@ class MainActivity : BaseActivity() {
                 append("：").append(if (message.length > 140) message.take(140) + "…" else message)
             }
         }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(R.string.db_recovery_title)
             .setMessage(getString(R.string.db_recovery_message, reason))
             .setCancelable(false)
             .setPositiveButton(R.string.db_recovery_reset) { _, _ -> resetLocalDataAndRestart() }
             .setNeutralButton(R.string.db_recovery_share) { _, _ -> shareLocalDataDiagnostics(failure) }
             .setNegativeButton(R.string.db_recovery_exit) { _, _ -> finishAffinity() }
-            .show()
+            .create()
+        // 登记为提示宿主：弹窗显示期间的 AppToast（如分享失败提示）渲染在弹窗窗口之上
+        com.cherry.wakeupschedule.ui.feedback.AppToast.registerDialogHost(dialog)
+        dialog.show()
     }
 
     /**

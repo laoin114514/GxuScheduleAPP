@@ -18,6 +18,7 @@ import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.databinding.ActivityAppearanceBinding
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.ThemeModeManager
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.theme.M3ColorPalette
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
@@ -415,6 +416,8 @@ class AppearanceActivity : BaseActivity() {
         currentSheetDialog?.dismiss()
         val dialog = Dialog(this, R.style.BottomSheetDialog)
         currentSheetDialog = dialog
+        // 登记为提示宿主：本弹层显示期间的 AppToast 渲染在弹层窗口之上
+        AppToast.registerDialogHost(dialog)
         dialog.setOnDismissListener { currentSheetDialog = null }
 
         val sheetView = layoutInflater.inflate(R.layout.dialog_auto_switch_sheet, null)

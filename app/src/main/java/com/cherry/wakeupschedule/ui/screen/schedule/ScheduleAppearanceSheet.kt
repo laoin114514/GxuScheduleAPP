@@ -17,6 +17,7 @@ import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.widget.LinearLayout
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -65,6 +66,8 @@ object ScheduleAppearanceSheet {
         dismissCurrent()
         val dialog = Dialog(context, R.style.BottomSheetDialog)
         currentDialog = dialog
+        // 登记为提示宿主：面板打开期间的 AppToast 渲染在面板窗口之上，不被遮罩压住
+        AppToast.registerDialogHost(dialog)
         dialog.setOnDismissListener { currentDialog = null }
 
         val sheetView = LayoutInflater.from(context)

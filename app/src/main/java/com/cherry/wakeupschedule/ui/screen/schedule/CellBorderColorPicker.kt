@@ -48,6 +48,8 @@ object CellBorderColorPicker {
         dismissCurrent()
         val dialog = Dialog(context, R.style.BottomSheetDialog)
         currentDialog = dialog
+        // 登记为提示宿主：取色器打开期间的 AppToast（hex 校验失败）渲染在弹层窗口之上
+        AppToast.registerDialogHost(dialog)
         dialog.setOnDismissListener { currentDialog = null }
 
         val density = context.resources.displayMetrics.density

@@ -1,6 +1,7 @@
 package com.cherry.wakeupschedule.ui.feedback
 
 import android.app.Activity
+import android.app.Dialog
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Color
@@ -10,6 +11,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.animation.LayoutTransition
 import android.widget.FrameLayout
@@ -52,6 +54,25 @@ internal object ToastManager {
     private var container: ToastContainer? = null
     private var nextId = 1L
 
+    /**
+     * 提示卡可承载的窗口栈：栈底是 Activity 的 `android.R.id.content`，栈顶是当前最上层窗口。
+     *
+     * 本项目所有弹层（课表菜单、课程详情、外观面板、学期滚轮、StyledDialog、AlertDialog…）
+     * 都是独立 Dialog 窗口 —— 挂在 Activity content 里的 View 永远位于它们之下，会被弹层
+     * 遮罩压暗、或被弹层内容盖住（即 docs/UI-优化方案.md 里的「Toast 暗区」P0）。
+     * 所以弹层打开时把同一个容器搬进弹层自己的 DecorView（成为窗口内最上层 View），
+     * 提示卡就渲染在弹层之上；弹层关闭后再搬回下一个宿主。
+     */
+    private class WindowHost(
+        val root: ViewGroup,
+        val isDialog: Boolean,
+    )
+
+    private val hosts = ArrayList<WindowHost>()
+
+    /** 弹层先于 Activity 宿主就绪时（如恢复弹窗在 onCreate 里弹出）暂存 DecorView，等宿主就绪补挂 */
+    private val pendingDialogDecors = ArrayList<WeakReference<View>>()
+
     private class PendingRequest(
         val type: AppToast.Type,
         val message: String,
@@ -60,27 +81,28 @@ internal object ToastManager {
         val createdAtMs: Long,
     )
 
-    // ── 宿主生命周期（仅由 App 的 ActivityLifecycleCallbacks 调用）─────
+    // ── 宿主生命周期（App 的 ActivityLifecycleCallbacks 与弹层注册回调）─────
 
     fun onHostResumed(activity: Activity) {
         if (hostRef?.get() === activity && container != null) {
             // 同一页面从后台回来（如被系统弹窗/桌面短暂压住后焦点返还）：
             // 容器还挂着无需重建，但后台期间暂存的提示要在此时补发
+            pruneDetachedDialogHosts()
             flushPending()
             return
         }
         detachContainer()
+        hosts.clear()
         hostRef = WeakReference(activity)
         val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
+        hosts.add(WindowHost(content, isDialog = false))
+        // 弹层先于页面就绪的极端场景（启动即弹恢复框）：补挂到栈顶
+        adoptPendingDialogHosts(activity)
+
         val host = ToastContainer(activity)
-        content.addView(
-            host,
-            ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-            ),
-        )
         container = host
+        // 栈顶若有已打开的弹层，容器直接挂到弹层窗口，避免先落页面再搬的闪动
+        attachContainerToTopHost()
 
         // 按新主题重画在飞的卡片（不播入场动画，避免页面切换时闪一下）
         val now = SystemClock.uptimeMillis()
@@ -95,6 +117,81 @@ internal object ToastManager {
         if (hostRef?.get() !== activity) return
         detachContainer()
         hostRef = null
+        hosts.clear()
+        pendingDialogDecors.clear()
+    }
+
+    /** 弹层窗口显示（DecorView attach）：压入宿主栈并把容器搬到该窗口 */
+    fun onDialogAttached(dialog: Dialog) {
+        val decor = dialog.window?.decorView as? ViewGroup ?: return
+        val activity = hostRef?.get()
+        val dialogActivity = dialog.context.findActivity()
+        if (activity == null || dialogActivity !== activity) {
+            // 页面宿主还没就绪（或弹层属于别的页面）：先记下，等 onHostResumed 补挂
+            rememberPendingDialog(decor)
+            return
+        }
+        if (hosts.any { it.root === decor }) return
+        hosts.add(WindowHost(decor, isDialog = true))
+        attachContainerToTopHost()
+    }
+
+    /** 弹层窗口关闭（DecorView detach）：弹出宿主栈并把容器搬回下一个宿主 */
+    fun onDialogDetached(dialog: Dialog) {
+        val decor = dialog.window?.decorView as? ViewGroup ?: return
+        pendingDialogDecors.removeAll { it.get() === decor }
+        if (hosts.removeAll { it.root === decor }) attachContainerToTopHost()
+    }
+
+    private fun rememberPendingDialog(decor: View) {
+        prunePendingDialogDecors()
+        if (pendingDialogDecors.none { it.get() === decor }) {
+            pendingDialogDecors.add(WeakReference(decor))
+        }
+    }
+
+    private fun adoptPendingDialogHosts(activity: Activity) {
+        prunePendingDialogDecors()
+        val alive = pendingDialogDecors.mapNotNull { it.get() }
+            .filter { it.isAttachedToWindow && it.context.findActivity() === activity }
+        pendingDialogDecors.clear()
+        alive.forEach { decor ->
+            if (decor is ViewGroup && hosts.none { it.root === decor }) {
+                hosts.add(WindowHost(decor, isDialog = true))
+            }
+        }
+    }
+
+    private fun prunePendingDialogDecors() {
+        pendingDialogDecors.removeAll { ref ->
+            val decor = ref.get()
+            decor == null || (!decor.isAttachedToWindow && decor.parent == null)
+        }
+    }
+
+    /**
+     * 兜底清理：弹层已关闭却没收到 detach（系统回收、异常路径）时，把失效宿主移出栈，
+     * 避免后续提示一直被渲染进已经不存在的窗口。
+     */
+    private fun pruneDetachedDialogHosts() {
+        if (hosts.size <= 1) return
+        val removed = hosts.removeAll { it.isDialog && !it.root.isAttachedToWindow }
+        if (removed) attachContainerToTopHost()
+    }
+
+    /** 把容器挂到当前栈顶宿主：Activity content 或最上层弹层的 DecorView */
+    private fun attachContainerToTopHost() {
+        val host = container ?: return
+        val target = hosts.lastOrNull() ?: return
+        if (host.parent === target.root) return
+        (host.parent as? ViewGroup)?.removeView(host)
+        target.root.addView(
+            host,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
+        )
     }
 
     private fun detachContainer() {
@@ -317,7 +414,9 @@ internal object ToastManager {
     }
 
     private fun maxTextWidthPx(activity: Activity): Int {
-        val widthPixels = activity.resources.displayMetrics.widthPixels
+        // 宿主若是居中小弹窗，卡片最大宽度要跟着弹窗窗口收窄，否则会被窗口边缘裁掉
+        val hostWidth = hosts.lastOrNull()?.root?.width?.takeIf { it > 0 }
+        val widthPixels = hostWidth ?: activity.resources.displayMetrics.widthPixels
         val maxCard = minOf(widthPixels - dp(activity, 32), dp(activity, 420))
         return (maxCard - dp(activity, 92)).coerceAtLeast(dp(activity, 120))
     }
@@ -336,11 +435,16 @@ internal object ToastManager {
 }
 
 /**
- * 整屏透明的提示卡堆叠容器。
+ * 提示卡堆叠容器（整窗透明的覆盖层）。
+ *
+ * 平时挂在 Activity 的 `android.R.id.content` 上；弹层打开时被 [ToastManager] 搬进弹层
+ * 自己的 DecorView，成为该窗口内最上层 View（见 [ToastManager.WindowHost]）。
  *
  * 自身不消费触摸（`isClickable = false`），空白区域的点击会穿透到底层页面；
  * 顶部内边距按状态栏 inset 让位，因此 edge-to-edge 的 MainActivity 与非 edge-to-edge
  * 的独立页面共用同一套定位逻辑（非 edge-to-edge 下 inset 已被 decor 消费，值为 0）。
+ * 挂在居中小弹窗（[com.cherry.wakeupschedule.R.style.RoundedDialog]）时窗口本身很小，
+ * 提示卡呈"弹窗顶部 banner"形态，宽度由 [ToastManager.maxTextWidthPx] 收敛到窗口内。
  */
 internal class ToastContainer(context: Context) : FrameLayout(context) {
 

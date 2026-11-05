@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.GradeEntity
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -44,6 +45,8 @@ class GradeDetailDialog private constructor(
         super.onCreate(savedInstanceState)
         // 补调色板 overlay：避免弹窗底色/文字回落到 M3 基线色板（偏粉/偏紫）
         ThemeManager.applyPaletteOverlay(this)
+        // 登记为提示宿主：本弹窗显示期间的 AppToast 渲染在弹窗窗口之上，不被遮罩压暗
+        AppToast.registerDialogHost(this)
         setContentView(R.layout.dialog_grade_detail)
 
         window?.apply {

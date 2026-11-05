@@ -681,6 +681,8 @@ class ScheduleFragment : Fragment() {
         activeMenuDialog?.dismiss()
         val dialog = Dialog(ctx, R.style.BottomSheetDialog)
         activeMenuDialog = dialog
+        // 登记为提示宿主：菜单打开期间的 AppToast 渲染在菜单窗口之上，不被遮罩压住
+        AppToast.registerDialogHost(dialog)
         dialog.setOnDismissListener {
             if (activeMenuDialog === dialog) activeMenuDialog = null
             // 菜单关闭后注销色块刷新回调（全局 loading 不再尝试刷新已销毁的菜单）

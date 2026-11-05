@@ -16,6 +16,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
@@ -71,6 +72,8 @@ class SelectionDialog private constructor(
         super.onCreate(savedInstanceState)
         // 同 StyledDialog：补调色板 overlay，避免弹窗底色回落到 M3 基线色板
         ThemeManager.applyPaletteOverlay(this)
+        // 登记为提示宿主：本弹窗显示期间的 AppToast 渲染在弹窗窗口之上，不被遮罩压暗
+        AppToast.registerDialogHost(this)
         setContentView(R.layout.dialog_selection)
 
         setupWindow()

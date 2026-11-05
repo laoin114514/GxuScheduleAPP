@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.TimeTableManager
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.screen.schedule.SchedulePageDetailDialog
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.widget.GridBackgroundView
@@ -720,6 +721,8 @@ class WeekPagerAdapter(
                 .setNegativeButton("取消", null)
                 .create()
             overlapPickerDialog = dialog
+            // 登记为提示宿主：本弹窗显示期间的 AppToast 渲染在弹窗窗口之上
+            AppToast.registerDialogHost(dialog)
             dialog.setOnDismissListener { if (overlapPickerDialog === dialog) overlapPickerDialog = null }
             dialog.show()
         }

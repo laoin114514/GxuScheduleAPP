@@ -1,9 +1,11 @@
 package com.cherry.wakeupschedule.ui.feedback
 
 import android.app.Activity
+import android.app.Dialog
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import androidx.annotation.StringRes
 
 /**
@@ -11,8 +13,10 @@ import androidx.annotation.StringRes
  *
  * ### 为什么不用系统 Toast
  * 系统 Toast 是 `TYPE_TOAST` 系统窗口：退出应用后仍悬浮在桌面上，且样式完全不受
- * App 主题控制。本组件的提示卡挂在当前页面的 `android.R.id.content` 里，属于应用窗口，
+ * App 主题控制。本组件的提示卡平时挂在当前页面的 `android.R.id.content` 里，属于应用窗口，
  * 退到桌面即不可见；配色走 M3 主题属性，自动跟随 5 套调色板、深色模式与 App 内字号档位。
+ * **弹层打开时**容器会搬进最上层弹层的窗口（见 [registerDialogHost]），保证提示显示在
+ * 弹层遮罩/弹层内容之上，而不是被压暗或盖住。
  *
  * ### 用法
  * ```kotlin
@@ -147,6 +151,31 @@ object AppToast {
         } else {
             mainHandler.post { ToastManager.cancelAll() }
         }
+    }
+
+    // ── 弹层宿主接线（由各 Dialog 创建处调用）──────────────
+
+    /**
+     * 把一个弹层登记为提示宿主：弹层显示期间，提示卡会渲染进该弹层自己的窗口顶部，
+     * 从而不会被独立 Dialog 窗口的遮罩压暗、也不会被弹层内容盖住
+     * （对应 docs/UI-优化方案.md「Toast 暗区」）。
+     *
+     * 内部只监听弹层 DecorView 的 attach/detach（即窗口显示/关闭），不占用弹层自身的
+     * [Dialog.setOnShowListener] / [Dialog.setOnDismissListener]，对弹层现有逻辑零侵入。
+     * 在弹层 `show()` 之前调用即可。
+     */
+    fun registerDialogHost(dialog: Dialog) {
+        if (Looper.myLooper() != Looper.getMainLooper()) return
+        val decor = dialog.window?.decorView ?: return
+        decor.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                ToastManager.onDialogAttached(dialog)
+            }
+
+            override fun onViewDetachedFromWindow(v: View) {
+                ToastManager.onDialogDetached(dialog)
+            }
+        })
     }
 
     // ── 生命周期接线（仅供 App 的 ActivityLifecycleCallbacks 调用）──────

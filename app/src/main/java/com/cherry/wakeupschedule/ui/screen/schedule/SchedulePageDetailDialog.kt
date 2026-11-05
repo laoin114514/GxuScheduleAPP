@@ -55,6 +55,8 @@ object SchedulePageDetailDialog {
         dismissCurrent()
         val dialog = Dialog(context, R.style.BottomSheetDialog)
         currentDialog = dialog
+        // 登记为提示宿主：本弹层显示期间的 AppToast 渲染在弹层窗口之上，不被遮罩压住
+        AppToast.registerDialogHost(dialog)
         dialog.setOnDismissListener { currentDialog = null }
         val inflater = LayoutInflater.from(context)
         val sheetView = inflater.inflate(R.layout.dialog_course_detail, null)

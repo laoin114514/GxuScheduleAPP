@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 
 /**
@@ -33,6 +34,8 @@ class ScheduleExportDialog private constructor(
         super.onCreate(savedInstanceState)
         // 弹窗自己的主题会覆盖 M3 基线色板，补一次调色板 overlay 才能跟随当前配色/深浅色
         ThemeManager.applyPaletteOverlay(this)
+        // 登记为提示宿主：本弹窗显示期间的 AppToast 渲染在弹窗窗口之上，不被遮罩压暗
+        AppToast.registerDialogHost(this)
         setContentView(R.layout.dialog_schedule_export_preview)
 
         window?.apply {
