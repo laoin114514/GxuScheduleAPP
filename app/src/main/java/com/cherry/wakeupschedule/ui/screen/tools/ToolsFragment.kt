@@ -35,6 +35,7 @@ import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.screen.export.ScheduleExportDialog
 import com.cherry.wakeupschedule.ui.screen.export.ScheduleExportRenderer
 import com.cherry.wakeupschedule.ui.screen.export.ScheduleImageSaver
+import com.cherry.wakeupschedule.ui.screen.export.ScheduleShare
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import kotlinx.coroutines.launch
 
@@ -55,6 +56,9 @@ class ToolsFragment : Fragment() {
     /** Android 9 及以下保存相册要先申请存储权限：暂存待保存的图片与周次 */
     private var pendingSaveBitmap: Bitmap? = null
     private var pendingSaveWeek: Int = 1
+
+    /** 分享准备中（写缓存 + 拉起面板）：防止连点弹出多个分享面板 */
+    private var shareInFlight = false
 
     /** 存储权限结果：授权后继续保存刚才的导出图，拒绝则提示 */
     private val storagePermissionLauncher = registerForActivityResult(
@@ -128,6 +132,8 @@ class ToolsFragment : Fragment() {
         exportDialog?.dismiss()
         exportDialog = null
         pendingSaveBitmap = null
+        // 协程会被 viewLifecycleOwner 取消，复位防抖标记，避免同一实例重建后永远点不动分享
+        shareInFlight = false
         _binding = null
     }
 
@@ -214,9 +220,11 @@ class ToolsFragment : Fragment() {
         }
 
         exportDialog?.dismiss()
-        exportDialog = ScheduleExportDialog.show(ctx, bitmap, week) {
-            saveBitmapToGallery(bitmap, week)
-        }
+        exportDialog = ScheduleExportDialog.show(
+            ctx, bitmap, week,
+            onSave = { saveBitmapToGallery(bitmap, week) },
+            onShare = { shareBitmap(bitmap, week) },
+        )
     }
 
     /**
@@ -249,6 +257,38 @@ class ToolsFragment : Fragment() {
                 AppToast.success(requireContext(), R.string.export_saved_success)
             } else {
                 AppToast.error(requireContext(), R.string.export_saved_failed)
+            }
+        }
+    }
+
+    /**
+     * 分享：先把整页课表写成 cache 里的 PNG，再用 FileProvider 的 content:// URI
+     * 拉起系统分享面板（不需要存储权限；接收方能否收到取决于系统已安装的应用）。
+     * 失败或没有可分享应用时提示重试。分享期间弹窗保持打开，返回后仍可保存/关闭。
+     */
+    private fun shareBitmap(bitmap: Bitmap, week: Int) {
+        if (shareInFlight) return
+        val ctx = context ?: return
+        shareInFlight = true
+        val appContext = ctx.applicationContext
+        val fileName = ScheduleExportRenderer.buildFileName(week)
+        viewLifecycleOwner.lifecycleScope.launch {
+            val file = ScheduleShare.prepareShareFile(appContext, bitmap, fileName)
+            shareInFlight = false
+            if (file == null) {
+                if (isAdded) AppToast.error(requireContext(), R.string.export_share_failed)
+                return@launch
+            }
+            if (!isAdded) return@launch
+            try {
+                val chooser = ScheduleShare.buildShareIntent(
+                    requireContext(), file,
+                    requireContext().getString(R.string.export_share_chooser_title)
+                )
+                requireContext().startActivity(chooser)
+            } catch (t: Throwable) {
+                Log.e(TAG, "launch share chooser failed", t)
+                AppToast.error(requireContext(), R.string.export_share_failed)
             }
         }
     }
