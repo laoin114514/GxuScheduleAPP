@@ -47,9 +47,10 @@
     <string name="export_close_preview">关闭预览</string>
     <string name="export_save_to_gallery">保存到相册</string>
     <string name="export_share">分享</string>
+    <string name="export_share_chooser_title">分享课表</string>
+    <string name="export_share_failed">分享失败，请稍后重试</string>
     <string name="export_saved_success">已保存到相册</string>
     <string name="export_saved_failed">保存失败，请稍后重试</string>
-    <string name="export_share_coming_soon">分享功能即将上线</string>
     <string name="export_generate_failed">课表图片生成失败</string>
     <string name="export_storage_permission_denied">需要存储权限才能保存到相册</string>
 
