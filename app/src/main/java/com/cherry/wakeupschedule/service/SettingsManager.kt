@@ -58,6 +58,7 @@ class SettingsManager(context: Context) {
         private const val KEY_BORDER_FOLLOW_COURSE = "border_follow_course" // 边框是否跟随课程颜色
         private const val KEY_BOTTOM_BLANK = "bottom_blank"            // 课表底部是否留白
         private const val KEY_HIGHLIGHT_TODAY = "highlight_today"      // 高亮当日（蓝框外追加整列淡底）
+        private const val KEY_MENU_APPEARANCE_EXPANDED = "menu_appearance_expanded" // 课表菜单「外观」分组是否展开
         private const val DEFAULT_HIDE_HOLIDAY_COURSES = false              // 默认不隐藏
         private const val DEFAULT_THEME_MODE = "system"                  // 默认跟随系统
         private const val DEFAULT_AUTO_SWITCH_THEME = false              // 默认不自动切换
@@ -339,6 +340,20 @@ class SettingsManager(context: Context) {
 
     fun setHighlightToday(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_HIGHLIGHT_TODAY, enabled).apply()
+    }
+
+    /**
+     * 课表菜单「外观」分组是否展开。
+     *
+     * 默认折叠：菜单打开时高度更克制，但「外观」标题行始终可见，用户知道有这个设置；
+     * 展开后控件区展开，状态持久化，下次打开菜单保持上次状态。
+     */
+    fun isScheduleMenuAppearanceExpanded(): Boolean {
+        return sharedPreferences.getBoolean(KEY_MENU_APPEARANCE_EXPANDED, false)
+    }
+
+    fun setScheduleMenuAppearanceExpanded(expanded: Boolean) {
+        sharedPreferences.edit().putBoolean(KEY_MENU_APPEARANCE_EXPANDED, expanded).apply()
     }
 
     /**

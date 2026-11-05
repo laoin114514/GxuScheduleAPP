@@ -1,5 +1,6 @@
 package com.cherry.wakeupschedule.ui.screen.schedule
 
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -21,6 +22,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -1046,8 +1049,15 @@ class ScheduleFragment : Fragment() {
         // 注册色块刷新回调：全局 loading 状态切换时（如刷新按钮触发）同步菜单色块
         menuSemesterRefresher = { refreshSemesterItems(animateEntrance = false) }
 
-        // ── 外观：控件已内联进菜单，这里把它们接上设置（改完即时生效在菜单后面的课表上） ──
+        // ── 外观：折叠分组（标题行常驻，点开才展开控件；展开状态记忆在设置里） ──
         val groupAppearance = sheetView.findViewById<View>(R.id.group_schedule_appearance)
+        val rowAppearanceHeader = sheetView.findViewById<View>(R.id.row_appearance_header)
+        val ivAppearanceArrow = sheetView.findViewById<ImageView>(R.id.iv_appearance_arrow)
+        val appearanceContent =
+            sheetView.findViewById<View>(R.id.group_schedule_appearance_content)
+        val initiallyExpanded = settingsManager.isScheduleMenuAppearanceExpanded()
+        appearanceContent.isVisible = initiallyExpanded
+        ivAppearanceArrow.rotation = if (initiallyExpanded) 180f else 0f
         // 入场前先隐藏，等弹窗展示后再淡入，避免 show() 瞬间闪一下
         groupAppearance.alpha = 0f
         ScheduleAppearanceControls.bind(sheetView, ctx, this)
@@ -1083,10 +1093,23 @@ class ScheduleFragment : Fragment() {
         }
         (sheetView.parent as? ViewGroup)?.removeView(sheetView)
 
-        // ── 高度：由内容决定，但最多占 85% 屏高 ──
-        // 先在不受限高度下量一遍内容（此时学期色块、外观控件都已装配完成），
+        // ── 高度：由内容决定，但最多占 85% 屏高；外观分组折叠/展开后动态重算 ──
+        // 先在不受限高度下量一遍内容（此时学期色块、外观控件/折叠状态都已装配完成），
         // 再取 min(内容高度, 屏高 × 0.85)：短内容仍然贴合，长内容改为菜单内滚动。
         val metrics = ctx.resources.displayMetrics
+        // 弹窗是整屏的：底部系统手势条会压住弹层最后一排内容，给根布局补上底部内边距，
+        // 折叠态菜单也不会把内容藏到手势条下面。
+        val navigationBarBottom = ViewCompat
+            .getRootWindowInsets(requireActivity().window.decorView)
+            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+        if (navigationBarBottom > 0) {
+            sheetView.setPadding(
+                sheetView.paddingLeft,
+                sheetView.paddingTop,
+                sheetView.paddingRight,
+                navigationBarBottom
+            )
+        }
         sheetView.measure(
             View.MeasureSpec.makeMeasureSpec(metrics.widthPixels, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
@@ -1096,6 +1119,42 @@ class ScheduleFragment : Fragment() {
         sheetView.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, sheetHeight
         )
+
+        /** 外观分组折叠/展开后重新量内容并调整菜单高度（展开超屏高时内部滚动）。 */
+        fun syncSheetHeight(animate: Boolean) {
+            sheetView.measure(
+                View.MeasureSpec.makeMeasureSpec(metrics.widthPixels, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            val target = minOf(sheetView.measuredHeight, maxSheetHeight)
+            val params = sheetView.layoutParams as? LinearLayout.LayoutParams ?: return
+            if (!animate || params.height == target) {
+                params.height = target
+                sheetView.layoutParams = params
+                return
+            }
+            ValueAnimator.ofInt(params.height, target).apply {
+                duration = 200
+                addUpdateListener { animator ->
+                    (sheetView.layoutParams as? LinearLayout.LayoutParams)?.let {
+                        it.height = animator.animatedValue as Int
+                        sheetView.layoutParams = it
+                    }
+                }
+                start()
+            }
+        }
+
+        rowAppearanceHeader.setOnClickListener {
+            val expanded = !appearanceContent.isVisible
+            appearanceContent.isVisible = expanded
+            ivAppearanceArrow.animate()
+                .rotation(if (expanded) 180f else 0f)
+                .setDuration(180)
+                .start()
+            settingsManager.setScheduleMenuAppearanceExpanded(expanded)
+            syncSheetHeight(animate = true)
+        }
         container.addView(View(ctx).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
