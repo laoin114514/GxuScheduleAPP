@@ -16,6 +16,14 @@
 -keepattributes InnerClasses
 -keepattributes EnclosingMethod
 
+# ── Gson TypeToken ──
+# R8 会把「同形状」的匿名 TypeToken 子类做类合并（线上 v0.5.7 release 包
+# 刷新课表闪退的根因）：合并后泛型签名丢失，TypeToken 构造时抛
+# "Missing type parameter."，静态初始化直接崩。这里禁止合并/混淆所有
+# TypeToken 子类；代码侧也尽量改用 TypeToken.getParameterized(...) 或数组反序列化。
+-keep class * extends com.google.gson.reflect.TypeToken { *; }
+-keep class com.google.gson.reflect.TypeToken { *; }
+
 # ── Gson 反射面 ──
 # 教务客户端模型全部由 Gson 按字段名反序列化，字段名不能混淆
 -keep class com.gxu.jwxt.model.** { *; }
