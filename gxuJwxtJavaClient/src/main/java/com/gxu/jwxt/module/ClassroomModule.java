@@ -66,7 +66,7 @@ public class ClassroomModule {
             + term.code() + "&xqh_id=" + campusId, REFERER);
         if ("null".equals(body.trim())) return List.of();
         return JsonSupport.GSON.fromJson(body,
-            new com.google.gson.reflect.TypeToken<List<String>>() {}.getType());
+            com.google.gson.reflect.TypeToken.getParameterized(List.class, String.class).getType());
     }
 
     /** 当前教学周、星期及整学期可选周。 */
@@ -83,6 +83,6 @@ public class ClassroomModule {
         String body = session.post("/jwglxt/cdjy/cdjy_cxDateInforma.html?gnmkdm=" + GNMKDM,
             Map.of("xnm", year, "xqm", term.code(), "xqj", weekdays, "zcd", week), REFERER);
         return JsonSupport.GSON.fromJson(body,
-            new com.google.gson.reflect.TypeToken<List<String>>() {}.getType());
+            com.google.gson.reflect.TypeToken.getParameterized(List.class, String.class).getType());
     }
 }
