@@ -45,6 +45,23 @@ object AppInitializer {
     @Volatile
     private var started = false
 
+    /**
+     * 初始化失败原因（null = 成功）。
+     *
+     * 旧实现只把异常写进日志然后放行，应用会带着一个不可用的数据库继续跑：启动界面看起来
+     * 正常，等用户第一次触发数据库读写（最典型就是「刷新课表」）才在别的线程崩溃 ——
+     * 用户看到的就是「一刷新课表就闪退」，而真实原因（Room schema/identity 校验失败、
+     * 库损坏等）藏在启动日志里。
+     *
+     * 现在保留失败原因，由 [com.cherry.wakeupschedule.MainActivity] 在启动时给出明确的
+     * 恢复路径（重置本地数据），并在诊断日志里保留异常栈。
+     */
+    @Volatile
+    private var failure: Throwable? = null
+
+    /** 后台初始化失败原因；null 表示初始化成功。[awaitReady] 返回后即可安全读取。 */
+    fun initFailure(): Throwable? = failure
+
     /** 初始化所在线程：它自己不得等待，否则自己等自己直接死锁 */
     @Volatile
     private var initThread: Thread? = null
@@ -150,6 +167,9 @@ object AppInitializer {
             // 兜底所有异常：失败也要放行等待方，否则主线程会一直等到超时。
             // 旧实现是在 App.onCreate 里直接抛出（DB 损坏时崩溃）；这里改为记录后放行，
             // 让应用以空数据启动，不再因启动期 I/O 失败直接闪退。
+            // 失败原因必须保留下来：MainActivity 会据此在启动时给出「重置本地数据」的恢复路径，
+            // 避免带着不可用的数据库继续运行、把崩溃推迟到「刷新课表」等其它时机。
+            failure = t
             Log.e(TAG, "后台初始化失败", t)
         } finally {
             // 置 ready 与取走待执行回调在同一把锁里完成，保证等待方/回调注册方看到一致状态：

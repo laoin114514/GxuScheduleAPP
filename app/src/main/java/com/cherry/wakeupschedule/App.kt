@@ -12,6 +12,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import com.cherry.wakeupschedule.service.AppInitializer
+import com.cherry.wakeupschedule.service.CrashLogger
 import com.cherry.wakeupschedule.widget.ScheduleWideWidgetProvider
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
@@ -77,6 +78,13 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // 崩溃现场落盘：用户报「一刷新课表就闪退」时往往拿不到 logcat，
+        // 这里保留最近一次未捕获异常的完整栈（内部 + 外部私有目录），便于事后定位。
+        try {
+            CrashLogger.install(this)
+        } catch (t: Throwable) {
+            Log.e("App", "安装崩溃记录器失败", t)
+        }
         registerActivityLifecycleCallbacks(activityTracker)
 
         // 应用主题模式（浅色/深色/跟随系统）

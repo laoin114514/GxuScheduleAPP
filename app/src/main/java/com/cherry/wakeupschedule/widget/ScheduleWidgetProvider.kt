@@ -186,7 +186,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             val currentTimeMinutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
             val currentWeek = CourseTimeUtils.getCurrentWeek(SettingsManager(context))
 
-            val todayEndCourses = CourseDataManager.getInstance(context).getAllCourses()
+            val todayEndCourses = CourseDataManager.getAllCoursesSafely(context)
                 .filter { it.dayOfWeek == dayOfWeek && it.isActiveInWeek(currentWeek) }
                 .mapNotNull { val end = CourseTimeUtils.getEndMinutes(context, it); if (end > currentTimeMinutes) end to it else null }
                 .sortedBy { it.first }
@@ -256,7 +256,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             val dayOfWeek = if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else calendar.get(Calendar.DAY_OF_WEEK) - 1
             val currentWeek = CourseTimeUtils.getCurrentWeek(settingsManager)
 
-            val todayCount = CourseDataManager.getInstance(context).getAllCourses().count {
+            val todayCount = CourseDataManager.getAllCoursesSafely(context).count {
                 it.dayOfWeek == dayOfWeek && it.isActiveInWeek(currentWeek)
             }
             val weekLabel = arrayOf("", "周一", "周二", "周三", "周四", "周五", "周六", "周日")[dayOfWeek]

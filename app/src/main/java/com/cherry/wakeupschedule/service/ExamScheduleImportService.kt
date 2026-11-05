@@ -1,6 +1,7 @@
 package com.cherry.wakeupschedule.service
 
 import android.content.Context
+import android.util.Log
 import com.cherry.wakeupschedule.model.ExamScheduleEntity
 import com.cherry.wakeupschedule.model.SemesterEntity
 import com.gxu.jwxt.model.ExamScheduleEntry
@@ -15,6 +16,8 @@ import com.gxu.jwxt.model.Term
  * 课程清单，不属于考试安排，不导入。
  */
 object ExamScheduleImportService {
+
+    private const val TAG = "ExamScheduleImportService"
 
     /** 单次最多取 500 条（教务单学期考试远少于此） */
     private const val PAGE_SIZE = 500
@@ -37,12 +40,18 @@ object ExamScheduleImportService {
             client.exams().schedules(year, term, PageQuery(1, PAGE_SIZE)).items
         }
 
-        return result.map { entries ->
-            val now = System.currentTimeMillis()
-            val exams = entries.map { it.toEntity(semester.id, now) }
-            ExamScheduleDataManager.getInstance(context)
-                .replaceExamsForSemester(exams, semester.id)
-            exams.size
+        // 与课表/成绩导入同款兜底：落库异常收敛为 Result.failure，不逃出协程导致闪退。
+        return try {
+            result.map { entries ->
+                val now = System.currentTimeMillis()
+                val exams = entries.map { it.toEntity(semester.id, now) }
+                ExamScheduleDataManager.getInstance(context)
+                    .replaceExamsForSemester(exams, semester.id)
+                exams.size
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "保存考试安排失败（已兜底，不闪退）", t)
+            Result.failure(t)
         }
     }
 

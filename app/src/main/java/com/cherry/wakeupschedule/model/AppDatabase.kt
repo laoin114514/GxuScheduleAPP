@@ -56,5 +56,29 @@ abstract class AppDatabase : RoomDatabase() {
                     .also { INSTANCE = it }
             }
         }
+
+        /**
+         * 应急恢复：关闭并删除本地数据库文件。
+         *
+         * 仅用于 [com.cherry.wakeupschedule.service.AppInitializer] 初始化失败后，
+         * 用户在启动恢复弹窗里**主动选择**「重置本地数据」的场景（典型原因：库结构/identity
+         * 校验失败、库文件损坏，且没有安全的自动修复手段）。
+         *
+         * 注意：
+         * - 会清空本机全部课表、成绩、考试、教务账号与持久化 Cookie，用户需要重新绑定教务；
+         * - 各 Manager 单例里还持有旧缓存，所以调用方重置后必须结束进程重启，
+         *   不能只重建数据库实例（见 MainActivity 的恢复流程）。
+         */
+        @Synchronized
+        fun resetForRecovery(context: Context) {
+            try {
+                INSTANCE?.close()
+            } catch (t: Throwable) {
+                android.util.Log.w("AppDatabase", "关闭数据库实例失败，继续删除库文件", t)
+            }
+            INSTANCE = null
+            val deleted = context.applicationContext.deleteDatabase(DB_NAME)
+            android.util.Log.w("AppDatabase", "应急重置本地数据库：deleteDatabase=$deleted")
+        }
     }
 }

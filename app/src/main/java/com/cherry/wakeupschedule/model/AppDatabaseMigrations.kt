@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 object AppDatabaseMigrations {
 
     /** 当前 schema 版本。与 `@Database(version = ...)` 同源。 */
-    const val LATEST_VERSION = 17
+    const val LATEST_VERSION = 18
 
     /**
      * 手写迁移覆盖到的最早版本。
@@ -258,6 +258,114 @@ object AppDatabaseMigrations {
     }
 
     /**
+     * v4：**结构自愈**——把 `courses` 表按当前标准结构重建，旧数据逐行搬迁。
+     *
+     * 为什么需要这一步（2026-11-05 实测复现）：
+     * - 3→4 / 4→5 是 2026-07 的早期迁移。当时为了兼容老 SQLite，`ADD COLUMN` / `CREATE TABLE`
+     *   里没有写 `NOT NULL`，由此产生的库中 `week_bitmap` / `course_category` /
+     *   `alarm_enabled` / `alarm_minutes_before` / `color` / `cover_image_path`
+     *   六列是**可空**的，而当前实体与 schema 要求 `NOT NULL` + 默认值。
+     * - Room 在升级结束时会用最终 schema 校验整表结构，不一致直接抛
+     *   `IllegalStateException: Migration didn't properly handle: courses(...)` 闪退。
+     *   实测：v0.1.5（DB3）官方包直跳 v0.5.9 必现；v0.2.12（DB7）/v0.3.18（DB14）正常。
+     * - 已经发布过的迁移 SQL 是历史事实、不能改（改了对已经跑过它的库没有意义），
+     *   所以在链尾加一步「按当前 schema 重建表」：所有历史路径（含漂移库）最终都收敛到
+     *   同一结构，数据原样搬运，不丢数据、不需要清库。
+     *
+     * 只重建 `courses`：其余表（account / semesters / cookies / grades / exam_schedules）
+     * 要么由 Room 建表、要么由后续迁移用与当前实体一致的 SQL 创建；旧库实测与当前 schema 一致。
+     *
+     * 幂等性：先 DROP 临时表再建，重复执行/中断后重跑都不会脏。
+     */
+    private val MIGRATION_17_18 = object : Migration(17, 18) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("DROP TABLE IF EXISTS `courses_v18`")
+            db.execSQL(coursesCreateSql("courses_v18"))
+            db.execSQL(
+                """
+                INSERT INTO `courses_v18` (${COURSES_COLUMNS_SQL})
+                SELECT ${COURSES_COPY_SELECT_SQL} FROM `courses`
+                """.trimIndent()
+            )
+            db.execSQL("DROP TABLE `courses`")
+            db.execSQL("ALTER TABLE `courses_v18` RENAME TO `courses`")
+        }
+    }
+
+    /** `courses` 表的全部列名（与 [coursesCreateSql] 一一对应，顺序即复制顺序）。 */
+    private val COURSES_COLUMNS = listOf(
+        "id", "name", "teacher", "classroom", "day_of_week", "start_time", "end_time",
+        "week_bitmap", "course_category", "credits", "qq_group", "is_practice", "is_adjusted",
+        "adjust_weeks", "adjust_reason", "course_code", "course_nature", "teaching_class",
+        "class_composition", "total_hours", "hour_composition", "classroom_type",
+        "assessment_method", "exam_form", "practice_detail", "enrolled", "max_students",
+        "alarm_enabled", "alarm_minutes_before", "color", "cover_image_path", "semester_id",
+    )
+
+    /** 复制列清单（`INSERT INTO ... (列)`）。 */
+    private val COURSES_COLUMNS_SQL: String = COURSES_COLUMNS.joinToString(", ") { "`$it`" }
+
+    /**
+     * 复制数据时的 SELECT 表达式：对历史漂移列做 COALESCE 兜底。
+     *
+     * 漂移库的这些列可为 NULL（老迁移 ADD COLUMN 时只给了 DEFAULT 没给 NOT NULL，
+     * 之后又被 Gson/代码写过 null 的极端情况），而新表是 NOT NULL；直接搬运会触发
+     * `NOT NULL constraint failed`。COALESCE 把 NULL 收敛到实体默认值，等价于「迁移回填」。
+     */
+    private val COURSES_COPY_SELECT_SQL: String = COURSES_COLUMNS.joinToString(", ") { column ->
+        val default = when (column) {
+            "id" -> null
+            "week_bitmap", "is_practice", "is_adjusted", "adjust_weeks", "color", "semester_id" -> "0"
+            "alarm_enabled" -> "1"
+            "alarm_minutes_before" -> "15"
+            "day_of_week", "start_time", "end_time" -> "0"
+            else -> "''"
+        }
+        if (default == null) "`$column`" else "COALESCE(`$column`, $default)"
+    }
+
+    /**
+     * `courses` 表的标准建表 SQL（与 Room 依 [Course] 生成的完全一致；18 号 schema 快照为物证）。
+     * 17→18 自愈迁移与将来的历史修复都复用它，保证「标准结构」只有一处定义。
+     */
+    private fun coursesCreateSql(tableName: String): String = """
+        CREATE TABLE IF NOT EXISTS `$tableName` (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            `name` TEXT NOT NULL,
+            `teacher` TEXT NOT NULL,
+            `classroom` TEXT NOT NULL,
+            `day_of_week` INTEGER NOT NULL,
+            `start_time` INTEGER NOT NULL,
+            `end_time` INTEGER NOT NULL,
+            `week_bitmap` INTEGER NOT NULL DEFAULT 0,
+            `course_category` TEXT NOT NULL DEFAULT '',
+            `credits` TEXT NOT NULL DEFAULT '',
+            `qq_group` TEXT NOT NULL DEFAULT '',
+            `is_practice` INTEGER NOT NULL DEFAULT 0,
+            `is_adjusted` INTEGER NOT NULL DEFAULT 0,
+            `adjust_weeks` INTEGER NOT NULL DEFAULT 0,
+            `adjust_reason` TEXT NOT NULL DEFAULT '',
+            `course_code` TEXT NOT NULL DEFAULT '',
+            `course_nature` TEXT NOT NULL DEFAULT '',
+            `teaching_class` TEXT NOT NULL DEFAULT '',
+            `class_composition` TEXT NOT NULL DEFAULT '',
+            `total_hours` TEXT NOT NULL DEFAULT '',
+            `hour_composition` TEXT NOT NULL DEFAULT '',
+            `classroom_type` TEXT NOT NULL DEFAULT '',
+            `assessment_method` TEXT NOT NULL DEFAULT '',
+            `exam_form` TEXT NOT NULL DEFAULT '',
+            `practice_detail` TEXT NOT NULL DEFAULT '',
+            `enrolled` TEXT NOT NULL DEFAULT '',
+            `max_students` TEXT NOT NULL DEFAULT '',
+            `alarm_enabled` INTEGER NOT NULL DEFAULT 1,
+            `alarm_minutes_before` INTEGER NOT NULL DEFAULT 15,
+            `color` INTEGER NOT NULL DEFAULT 0,
+            `cover_image_path` TEXT NOT NULL DEFAULT '',
+            `semester_id` INTEGER NOT NULL DEFAULT 0
+        )
+    """.trimIndent()
+
+    /**
      * 全部迁移，按起始版本升序。顺序即执行顺序，[AppDatabaseMigrationsTest] 会强制校验。
      *
      * 注意：必须声明在所有 MIGRATION_* 之后 —— Kotlin 对象属性按书写顺序初始化，
@@ -279,6 +387,7 @@ object AppDatabaseMigrations {
         MIGRATION_14_15,
         MIGRATION_15_16,
         MIGRATION_16_17,
+        MIGRATION_17_18,
     )
 
     /** 表里是否已有某列（15→16 幂等迁移用；PRAGMA table_info 在 Android SQLite 上稳定可用）。 */

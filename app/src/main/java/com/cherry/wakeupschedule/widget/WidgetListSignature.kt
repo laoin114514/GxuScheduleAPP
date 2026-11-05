@@ -22,7 +22,7 @@ object WidgetListSignature {
         else calendar.get(Calendar.DAY_OF_WEEK) - 1
         val nowMinutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
         val currentWeek = CourseTimeUtils.getCurrentWeek(settingsManager)
-        val courses = CourseDataManager.getInstance(context).getAllCourses()
+        val courses = CourseDataManager.getAllCoursesSafely(context)
             .filter { it.dayOfWeek == todayDayOfWeek && it.isActiveInWeek(currentWeek) }
             .sortedBy { CourseTimeUtils.getStartMinutes(context, it) }
         courses.joinToString("|") { course ->
@@ -51,7 +51,7 @@ object WidgetListSignature {
         else calendar.get(Calendar.DAY_OF_WEEK) - 1
         val nowMinutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
         val currentWeek = CourseTimeUtils.getCurrentWeek(settingsManager)
-        val allCourses = CourseDataManager.getInstance(context).getAllCourses()
+        val allCourses = CourseDataManager.getAllCoursesSafely(context)
 
         // 今天：今日列表只展示未结束的课，"已上完"标记决定某门课是否还在列表里
         val todayPart = allCourses

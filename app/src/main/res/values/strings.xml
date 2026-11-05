@@ -85,6 +85,15 @@
     <string name="profile_unbound_toast">已解绑教务账号</string>
     <string name="profile_no_browser_app">未找到浏览器应用</string>
 
+    <!-- ===== 本地数据初始化失败的启动恢复（见 MainActivity.showLocalDataRecoveryDialog） ===== -->
+    <string name="db_recovery_title">本地数据初始化失败</string>
+    <!-- %1$s：异常类型与简要原因 -->
+    <string name="db_recovery_message">应用初始化本地数据失败，暂时无法读取课表。\n\n原因：%1$s\n\n可以重置本地数据恢复使用：本机的课表、成绩、考试与教务绑定都会被清空，之后需要重新绑定教务账号并重新导入。</string>
+    <string name="db_recovery_reset">重置本地数据</string>
+    <string name="db_recovery_share">分享日志</string>
+    <string name="db_recovery_share_failed">未找到可分享的应用</string>
+    <string name="db_recovery_exit">退出</string>
+
     <!-- ===== 课表 / 课表菜单 / 课程详情 ===== -->
     <string name="schedule_empty_semester">本学期暂无课程</string>
     <string name="schedule_import_done_placeholder">成功导入 0 门课程</string>

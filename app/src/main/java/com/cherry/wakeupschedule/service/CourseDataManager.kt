@@ -1,6 +1,7 @@
 package com.cherry.wakeupschedule.service
 
 import android.content.Context
+import androidx.room.withTransaction
 import com.cherry.wakeupschedule.model.AppDatabase
 import com.cherry.wakeupschedule.model.Course
 import com.google.gson.Gson
@@ -157,7 +158,6 @@ class CourseDataManager private constructor(context: Context) {
     // ── 读操作（内存缓存，不访问数据库） ──
 
     fun getAllCourses(): List<Course> = _coursesFlow.value
-
     fun getCoursesForWeek(week: Int): List<Course> {
         return _coursesFlow.value.filter { course ->
             course.isActiveInWeek(week)
@@ -240,15 +240,21 @@ class CourseDataManager private constructor(context: Context) {
 
     /**
      * 替换指定学期的所有课程（显式传入学期 ID，避免并发切换时误存到错误学期）。
+     *
+     * 「先删后插」必须在同一个事务里：旧实现是两条独立的 Room 事务，插入一旦失败
+     * （磁盘满、库损坏、约束/触发器异常等）删除已经提交，用户该学期课表会被清空 ——
+     * 刷新失败本来只是「数据没更新」，不应该变成「数据没了」。
      */
     fun replaceAllCoursesForSemester(courses: List<Course>, semesterId: Long) {
         val colorMap = assignColorsForBatch(courses)
         executeDb {
-            dao.deleteCoursesBySemesterId(semesterId)
-            dao.insertCourses(courses.map {
-                it.copy(id = 0, semesterId = semesterId,
-                    color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
-            })
+            db.withTransaction {
+                dao.deleteCoursesBySemesterId(semesterId)
+                dao.insertCourses(courses.map {
+                    it.copy(id = 0, semesterId = semesterId,
+                        color = it.color.takeIf { c -> c != 0 } ?: (colorMap[it.name] ?: assignColorIndex(it.name, it.teacher)))
+                })
+            }
         }
         semesterCountsCache = null
     }
@@ -290,6 +296,25 @@ class CourseDataManager private constructor(context: Context) {
                     instance = it
                 }
             }
+        }
+
+        /**
+         * 供小组件等**系统回调入口**使用：数据库不可用或读取异常时返回空列表，绝不抛异常。
+         *
+         * 为什么需要：AppWidgetProvider / RemoteViewsService 由系统直接回调，进程里没有
+         * MainActivity 的恢复流程兜底；如果用户本地库损坏（AppInitializer 初始化失败），
+         * 系统触发的组件刷新会让整个应用进程直接崩掉。小组件宁可显示空/旧数据，也不能崩 ——
+         * 用户打开 App 后会看到「本地数据初始化失败」的恢复弹窗。
+         */
+        fun getAllCoursesSafely(context: Context): List<Course> = try {
+            getInstance(context).getAllCourses()
+        } catch (t: Throwable) {
+            android.util.Log.e(
+                "CourseDataManager",
+                "系统回调读取课程失败（已兜底，返回空列表）",
+                t,
+            )
+            emptyList()
         }
 
         /**

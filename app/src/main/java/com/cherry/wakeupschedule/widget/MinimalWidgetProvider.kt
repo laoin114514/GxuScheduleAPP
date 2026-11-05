@@ -156,7 +156,7 @@ class MinimalWidgetProvider : AppWidgetProvider() {
             adjustedDayOfWeek: Int,
             currentWeek: Int
         ): TodayCourses {
-            val allCourses = CourseDataManager.getInstance(context).getAllCourses()
+            val allCourses = CourseDataManager.getAllCoursesSafely(context)
             val slots = TimeTableManager.getInstance(context).getTimeSlots()
             if (allCourses === cachedTodaySource &&
                 adjustedDayOfWeek == cachedTodayDay &&
@@ -355,7 +355,7 @@ class MinimalWidgetProvider : AppWidgetProvider() {
             val currentTimeMinutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
             val currentWeek = calculateCurrentWeek(SettingsManager(context))
 
-            val todayEndCourses = CourseDataManager.getInstance(context).getAllCourses()
+            val todayEndCourses = CourseDataManager.getAllCoursesSafely(context)
                 .filter { it.dayOfWeek == dayOfWeek && it.isActiveInWeek(currentWeek) }
                 .mapNotNull { val end = getCourseEndMinutes(context, it); if (end > currentTimeMinutes) end to it else null }
                 .sortedBy { it.first }

@@ -1,6 +1,7 @@
 package com.cherry.wakeupschedule.service
 
 import android.content.Context
+import android.util.Log
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.model.SemesterEntity
 import com.gxu.jwxt.model.ClassScheduleResponse
@@ -16,6 +17,8 @@ import java.util.Locale
  * 教务系统课表导入转换服务。
  */
 object JwxtImportService {
+
+    private const val TAG = "JwxtImportService"
 
     /** 教务用来占位的「空值」写法 */
     private val PLACEHOLDER_VALUES = setOf("", "无", "*", "-", "/")
@@ -551,25 +554,34 @@ object JwxtImportService {
             Triple(scheduleResp, adjustments, classDetail)
         }
 
-        return result.map { (response, adjustments, classDetail) ->
-            val (courses, _) = convertScheduleResponse(response, adjustments)
+        // 兜底：result.map 的 lambda 在 doWithAuth 的 try/catch 之外 —— 转换/落库阶段的任何
+        // 异常（SQLite 写入失败、R8 反射类错误、老库结构异常等）以前会直接逃出调用方协程，
+        // release 包表现就是「一刷新课表就闪退」。现在统一收敛成 Result.failure：
+        // 页面展示错误、进程不崩，同时保留完整异常栈便于定位。
+        return try {
+            result.map { (response, adjustments, classDetail) ->
+                val (courses, _) = convertScheduleResponse(response, adjustments)
 
-            CourseDataManager.getInstance(context)
-                .replaceAllCoursesForSemester(courses, semester.id)
+                CourseDataManager.getInstance(context)
+                    .replaceAllCoursesForSemester(courses, semester.id)
 
-            // 更新学期日期
-            if (classDetail != null) {
-                val startStr = classDetail.semesterStartDate
-                val weeks = classDetail.weeks?.size ?: 0
-                if (startStr != null && weeks > 0) {
-                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    val startMs = sdf.parse(startStr)?.time ?: 0
-                    SemesterManager.updateDates(semester.sortOrder, startMs, weeks)
+                // 更新学期日期
+                if (classDetail != null) {
+                    val startStr = classDetail.semesterStartDate
+                    val weeks = classDetail.weeks?.size ?: 0
+                    if (startStr != null && weeks > 0) {
+                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        val startMs = sdf.parse(startStr)?.time ?: 0
+                        SemesterManager.updateDates(semester.sortOrder, startMs, weeks)
+                    }
                 }
-            }
 
-            // 提示按「同名课程算一门」的口径报数，与总课表条目数一致
-            Course.distinctNameCount(courses)
+                // 提示按「同名课程算一门」的口径报数，与总课表条目数一致
+                Course.distinctNameCount(courses)
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "保存课表失败（已兜底，不闪退）", t)
+            Result.failure(t)
         }
     }
 }

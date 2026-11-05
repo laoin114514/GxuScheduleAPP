@@ -177,7 +177,7 @@ class NextCourseWidgetProvider : AppWidgetProvider() {
             val nowMinutes = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
             val currentWeek = CourseTimeUtils.getCurrentWeek(settingsManager)
 
-            val allCourses = CourseDataManager.getInstance(context).getAllCourses()
+            val allCourses = CourseDataManager.getAllCoursesSafely(context)
             val todayCourses = allCourses
                 .filter { it.dayOfWeek == todayDayOfWeek && it.isActiveInWeek(currentWeek) }
                 .sortedBy { CourseTimeUtils.getStartMinutes(context, it) }

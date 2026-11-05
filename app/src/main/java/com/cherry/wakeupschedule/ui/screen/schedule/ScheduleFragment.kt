@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -155,6 +156,8 @@ class ScheduleFragment : Fragment() {
     private var countdownEndMinutes = IntArray(0)
 
     companion object {
+        private const val TAG = "ScheduleFragment"
+
         /** 成功卡片展示时长 */
         private const val SUCCESS_DISPLAY_MS = 1400L
 
@@ -180,7 +183,9 @@ class ScheduleFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         PageBackground.apply(view)
-        // 加载遮罩原来写死 @color/bottom_nav_bg（蓝灰），换配色后会和页面脱节
+        // 加载遮罩背景必须由代码设置：布局里写 @color/状态色列表 在 API<=29 深色模式下
+        // 会因 res/color-night-*/ 路径被当普通 Drawable 解析而 inflate 崩溃（见
+        // ColorStateListAsDrawableTest）。颜色取页面渐变底端色，换配色/深浅色都跟着变。
         view.findViewById<View>(R.id.overlay_loading)?.background =
             android.graphics.drawable.ColorDrawable(PageBackground.bottomColor(requireContext()))
         settingsManager = SettingsManager(requireContext())
@@ -628,22 +633,36 @@ class ScheduleFragment : Fragment() {
         if (isLoadingSchedule) return
         if (!JwxtAuthManager.isBound()) return
         val curSem = SemesterManager.getCurrent() ?: return
+        // 协程里不用 requireContext()：刷新可能耗时数秒，期间页面被销毁时 requireContext()
+        // 会抛 IllegalStateException 直接闪退。这里提前取 applicationContext 固定下来。
+        val ctx = context?.applicationContext ?: return
 
         setScheduleLoading(true, semesterIndex = settingsManager.getCurrentSemesterIndex())
         lifecycleScope.launch(Dispatchers.IO) {
-            val result = JwxtImportService.fetchAndSaveScheduleForSemester(requireContext(), curSem)
+            // 兜底：fetchAndSave 只保证「取数」阶段的异常进 Result；转换/落库阶段的异常
+            // 以前会从协程里逃逸 → release 包用户看到的就是「一刷新课表就闪退」。
+            // 这里统一收敛成 Result.failure，由页面展示错误而不是打断进程。
+            val result = try {
+                JwxtImportService.fetchAndSaveScheduleForSemester(ctx, curSem)
+            } catch (t: Throwable) {
+                Log.e(TAG, "刷新课表时出现未捕获异常（已兜底，不闪退）", t)
+                Result.failure(t)
+            }
             withContext(Dispatchers.Main) {
+                if (!isAdded || view == null) return@withContext
                 result.onSuccess { count ->
                     courseViewModel.currentWeek = calculateCurrentWeek()
-                    allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
-                    adapter.updateData(allCourses)
+                    allCourses = CourseDataManager.getInstance(ctx).getAllCourses()
+                    if (::adapter.isInitialized) adapter.updateData(allCourses)
                     if (isOverview) refreshOverview() else updateDateTimeHeader()
                     // 成功：遮罩换成"成功导入 N 门课程"卡片，替代全局 toast
                     showLoadSuccess(count)
                 }.onFailure { e ->
                     setScheduleLoading(false)
                     if (showError) {
-                        AppToast.error(requireContext(), "刷新失败: ${e.message}")
+                        // 把异常类型也带出来：用户反馈截图即可定位，不用再猜是网络还是本地库问题
+                        val detail = e.message?.take(160) ?: e.javaClass.simpleName
+                        AppToast.error(ctx, "刷新失败：$detail")
                     }
                 }
             }
@@ -988,8 +1007,15 @@ class ScheduleFragment : Fragment() {
                         // 全局 loading：刷新按钮转圈 + 课表页遮罩 + 色块转圈
                         setScheduleLoading(true, semesterIndex = index)
                         lifecycleScope.launch(Dispatchers.IO) {
-                            val result = JwxtImportService.fetchAndSaveScheduleForSemester(ctx, sem)
+                            // 与刷新按钮同款兜底：转换/落库异常不允许逃出协程导致闪退
+                            val result = try {
+                                JwxtImportService.fetchAndSaveScheduleForSemester(ctx, sem)
+                            } catch (t: Throwable) {
+                                Log.e(TAG, "切换学期导入课表出现未捕获异常（已兜底，不闪退）", t)
+                                Result.failure(t)
+                            }
                             withContext(Dispatchers.Main) {
+                                if (!isAdded || view == null) return@withContext
                                 result.onSuccess { count ->
                                     // 更新 ViewPager 总页数
                                     appliedCellHeightDp = settingsManager.getCourseCellHeight()

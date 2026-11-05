@@ -200,7 +200,7 @@ class WeekViewWidgetProvider : AppWidgetProvider() {
 
             // 本周每天的课程，按开始节次排序；库里可能存在星期为 0 的异常数据（实践课），需过滤
             val dayCourses = Array(7) { mutableListOf<Course>() }
-            CourseDataManager.getInstance(context).getAllCourses().forEach { course ->
+            CourseDataManager.getAllCoursesSafely(context).forEach { course ->
                 if (course.dayOfWeek in 1..7 && course.isActiveInWeek(currentWeek)) {
                     dayCourses[course.dayOfWeek - 1].add(course)
                 }

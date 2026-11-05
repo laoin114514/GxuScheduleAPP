@@ -1,6 +1,7 @@
 package com.cherry.wakeupschedule.service
 
 import android.content.Context
+import android.util.Log
 import com.cherry.wakeupschedule.model.GradeEntity
 import com.cherry.wakeupschedule.model.SemesterEntity
 import com.gxu.jwxt.model.GradeEntry
@@ -14,6 +15,8 @@ import com.gxu.jwxt.model.Term
  * （见 [GradeDataManager.replaceGradesForSemester]），且不修改学期日期。
  */
 object GradeImportService {
+
+    private const val TAG = "GradeImportService"
 
     /** 单次最多取 500 条（教务单学期成绩远少于此） */
     private const val PAGE_SIZE = 500
@@ -36,12 +39,19 @@ object GradeImportService {
             client.grades().term(year, term, PageQuery(1, PAGE_SIZE)).items
         }
 
-        return result.map { entries ->
-            val now = System.currentTimeMillis()
-            val grades = entries.map { it.toEntity(semester.id, now) }
-            GradeDataManager.getInstance(context)
-                .replaceGradesForSemester(grades, semester.id)
-            grades.size
+        // 与课表导入同款兜底：result.map 在 doWithAuth 的 try/catch 之外，
+        // 落库异常以前会逃出调用方协程导致闪退，这里收敛为 Result.failure。
+        return try {
+            result.map { entries ->
+                val now = System.currentTimeMillis()
+                val grades = entries.map { it.toEntity(semester.id, now) }
+                GradeDataManager.getInstance(context)
+                    .replaceGradesForSemester(grades, semester.id)
+                grades.size
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "保存成绩失败（已兜底，不闪退）", t)
+            Result.failure(t)
         }
     }
 

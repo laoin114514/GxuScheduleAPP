@@ -208,7 +208,7 @@ class WidgetCourseListFactory(
         val currentWeek = CourseTimeUtils.getCurrentWeek(SettingsManager(context))
         val timeSlots = TimeTableManager.getInstance(context).getTimeSlots()
 
-        val todayCourses = CourseDataManager.getInstance(context).getAllCourses()
+        val todayCourses = CourseDataManager.getAllCoursesSafely(context)
             .filter {
                 it.dayOfWeek == dayOfWeek && it.isActiveInWeek(currentWeek)
             }
@@ -272,7 +272,7 @@ class WidgetCourseListFactory(
         val timeSlots = timeTableManager.getTimeSlots()
         val colors = ThemeManager.getCourseColors()
 
-        val allCourses = CourseDataManager.getInstance(context).getAllCourses()
+        val allCourses = CourseDataManager.getAllCoursesSafely(context)
         val todayCourses = allCourses
             .filter {
                 it.dayOfWeek == dayOfWeek &&
@@ -321,7 +321,7 @@ class WidgetCourseListFactory(
         val timeSlots = timeTableManager.getTimeSlots()
         val colors = ThemeManager.getCourseColors()
 
-        val allCourses = CourseDataManager.getInstance(context).getAllCourses()
+        val allCourses = CourseDataManager.getAllCoursesSafely(context)
         val tomorrowCourses = allCourses
             .filter {
                 it.dayOfWeek == dayOfWeek &&
