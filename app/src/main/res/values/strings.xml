@@ -83,7 +83,7 @@
     <string name="common_bind_first">请先绑定教务账号</string>
     <string name="common_na">—</string>
     <string name="profile_unbound_toast">已解绑教务账号</string>
-    <string name="profile_no_mail_app">未找到邮件应用</string>
+    <string name="profile_no_browser_app">未找到浏览器应用</string>
 
     <!-- ===== 课表 / 课表菜单 / 课程详情 ===== -->
     <string name="schedule_empty_semester">本学期暂无课程</string>

@@ -40,4 +40,4 @@
 ## 问题反馈
 
 - GitHub Issues: https://github.com/laoin114514/GxuScheduleAPP/issues
-- 邮箱: 2908451607@qq.com
+- 在线问卷（推荐）: https://wj.qq.com/s2/28554281/u3po/
