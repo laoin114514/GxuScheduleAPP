@@ -293,11 +293,11 @@ object SchedulePageDetailDialog {
     }
 
     /**
-     * 「调课原因」行（仅周课表详情）。
+     * 「调课原因」卡（仅周课表详情，放在详情最底部）。
      *
      * 显示条件：本次是从周课表某一周打开、且该课程行在**这一周**确实被调课（按
      * [Course.adjustWeeksBitmap] 判断），同时记录里带回了原因文案。这样同一门课只在
-     * 被调课的那一节显示原因，正常周次不显示。总课表详情（OVERVIEW）一律隐藏该行。
+     * 被调课的那一节显示原因，正常周次不显示。总课表详情（OVERVIEW）一律隐藏该卡。
      */
     private fun bindAdjustReason(
         view: View,
@@ -305,9 +305,9 @@ object SchedulePageDetailDialog {
         displayWeek: Int,
         isOverview: Boolean
     ) {
-        val group = view.findViewById<View>(R.id.group_detail_adjust_reason) ?: return
+        val card = view.findViewById<View>(R.id.card_detail_adjust_reason) ?: return
         if (isOverview || displayWeek !in 1..64) {
-            group.visibility = View.GONE
+            card.visibility = View.GONE
             return
         }
         val reason = courses
@@ -317,10 +317,10 @@ object SchedulePageDetailDialog {
             .distinct()
             .joinToString("；")
         if (reason.isEmpty()) {
-            group.visibility = View.GONE
+            card.visibility = View.GONE
             return
         }
-        group.visibility = View.VISIBLE
+        card.visibility = View.VISIBLE
         view.findViewById<TextView>(R.id.tv_detail_adjust_reason)?.text = reason
     }
 
