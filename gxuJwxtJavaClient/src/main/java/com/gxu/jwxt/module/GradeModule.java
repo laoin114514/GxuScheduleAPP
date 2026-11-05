@@ -72,7 +72,7 @@ public class GradeModule {
         String body = session.get("/jwglxt/cjcx/cjcx_cxXmblbzlist.html?xnm=" + year
             + "&xqm=" + term.code(), REFERER);
         return JsonSupport.GSON.fromJson(body,
-            new com.google.gson.reflect.TypeToken<List<String>>() {}.getType());
+            com.google.gson.reflect.TypeToken.getParameterized(List.class, String.class).getType());
     }
 
     /**

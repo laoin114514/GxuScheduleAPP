@@ -1,10 +1,9 @@
 package com.gxu.jwxt.module;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.gxu.jwxt.model.ScheduleAdjustment;
 
-import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -18,14 +17,18 @@ import java.util.List;
  *
  * <p>解析策略：定位 {@code modelList} 之后的 {@code eval}，再从 {@code eval} 后第一个
  * {@code '['} 开始做<b>括号配对</b>取到匹配的 {@code ']'}（跳过 JSON 字符串内部的括号
- * 与反斜杠转义），最后交给 Gson 反序列化为 {@link ScheduleAdjustment} 列表。
+ * 与反斜杠转义），最后交给 Gson 反序列化为 {@link ScheduleAdjustment} 数组再转列表。
  * 页面结构缺失、括号不配对或 JSON 畸形时统一返回空列表，绝不抛异常 —— 调课标记只是
  * 锦上添花，解析失败应降级为「无调课标签」而不是让整次课表导入失败。</p>
+ *
+ * <p><b>为什么用数组而不是 {@code TypeToken<List<...>>}：</b>R8 会把匿名 TypeToken 子类
+ * 做类合并，合并后泛型签名丢失，TypeToken 构造时抛 "Missing type parameter"，
+ * 表现为 release 包一刷新课表就闪退。数组反序列化不依赖泛型签名，天然免疫该问题
+ * （与线上 v0.5.8 的修复保持一致）。</p>
  */
 public final class ScheduleAdjustmentParser {
 
     private static final Gson GSON = new Gson();
-    private static final Type LIST_TYPE = new TypeToken<List<ScheduleAdjustment>>() {}.getType();
 
     private ScheduleAdjustmentParser() {}
 
@@ -42,8 +45,8 @@ public final class ScheduleAdjustmentParser {
         if (json == null) return List.of();
 
         try {
-            List<ScheduleAdjustment> records = GSON.fromJson(json, LIST_TYPE);
-            return records != null ? records : List.of();
+            ScheduleAdjustment[] records = GSON.fromJson(json, ScheduleAdjustment[].class);
+            return records != null ? Arrays.asList(records) : List.of();
         } catch (RuntimeException e) {
             // JsonSyntaxException / IllegalStateException 等：坏数据按无记录处理
             return List.of();
