@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 内置浏览器右上角菜单：只保留「刷新 / 在浏览器中打开」两项，纯文字项不占图标资源 -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_refresh"
+        android:title="@string/in_app_browser_refresh"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_open_external"
+        android:title="@string/in_app_browser_open_external"
+        app:showAsAction="never" />
+</menu>

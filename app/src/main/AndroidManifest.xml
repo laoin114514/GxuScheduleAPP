@@ -54,6 +54,13 @@
             android:name=".GpaActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- 内置浏览器：应用内所有网页跳转的统一宿主（见 ui/browser/InAppBrowser）。
+             不导出，只允许 App 内部通过 Intent 打开；问卷有输入框，键盘弹出时压缩页面。 -->
+        <activity
+            android:name=".ui.browser.InAppBrowserActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- 桌面小部件 - 今日课程 -->
         <receiver
             android:name=".widget.ScheduleWidgetProvider"

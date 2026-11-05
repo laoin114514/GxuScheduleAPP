@@ -1,7 +1,5 @@
 package com.cherry.wakeupschedule
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
@@ -11,6 +9,7 @@ import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.UpdateService
+import com.cherry.wakeupschedule.ui.browser.InAppBrowser
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.google.android.material.appbar.MaterialToolbar
@@ -41,11 +40,20 @@ class AboutActivity : BaseActivity() {
 
         llCheckUpdate.setOnClickListener { updateService.checkForUpdate(showNoUpdateToast = true) }
 
-        llOfficialWebsite.setOnClickListener { openUrl("https://easo.laoin.work/schedule") }
+        llOfficialWebsite.setOnClickListener {
+            openUrl("https://easo.laoin.work/schedule", getString(R.string.about_website))
+        }
 
-        llGithub.setOnClickListener { openUrl("https://github.com/laoin114514/GxuScheduleAPP") }
+        llGithub.setOnClickListener {
+            openUrl("https://github.com/laoin114514/GxuScheduleAPP", getString(R.string.about_github))
+        }
 
-        llLicense.setOnClickListener { openUrl("https://github.com/laoin114514/GxuScheduleAPP/blob/main/LICENSE") }
+        llLicense.setOnClickListener {
+            openUrl(
+                "https://github.com/laoin114514/GxuScheduleAPP/blob/main/LICENSE",
+                getString(R.string.about_licenses)
+            )
+        }
 
         // 隐藏"已适配的教务系统"入口及其上方的分割线
         llUpdateAdapter.visibility = View.GONE
@@ -71,12 +79,10 @@ class AboutActivity : BaseActivity() {
             if (SettingsManager(this).hasNewUpdateHint()) View.VISIBLE else View.GONE
     }
 
-    private fun openUrl(url: String) {
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            startActivity(intent)
-        } catch (e: Exception) {
-            AppToast.error(this, "无法打开链接")
+    /** 统一走内置浏览器，失败时提示（不再把用户甩到外部浏览器） */
+    private fun openUrl(url: String, title: String) {
+        if (!InAppBrowser.open(this, url, title)) {
+            AppToast.error(this, getString(R.string.in_app_browser_no_handler))
         }
     }
 }

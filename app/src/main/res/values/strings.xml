@@ -210,4 +210,14 @@
     <string name="common_cancel">取消</string>
     <string name="common_confirm">确定</string>
     <string name="common_close">关闭</string>
+
+    <!-- ===== 内置浏览器（应用内网页跳转统一入口，见 ui/browser） ===== -->
+    <string name="in_app_browser_title">网页</string>
+    <string name="in_app_browser_refresh">刷新</string>
+    <string name="in_app_browser_open_external">在浏览器中打开</string>
+    <string name="in_app_browser_error">网页加载失败，请检查网络后重试</string>
+    <string name="in_app_browser_ssl_error">网页证书校验失败，已停止加载</string>
+    <string name="in_app_browser_invalid_url">链接无效</string>
+    <string name="in_app_browser_retry">重试</string>
+    <string name="in_app_browser_no_handler">未找到可打开该链接的应用</string>
 </resources>

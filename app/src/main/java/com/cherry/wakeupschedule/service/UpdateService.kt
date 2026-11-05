@@ -15,12 +15,15 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.TextView
 import androidx.core.content.FileProvider
 import com.cherry.wakeupschedule.App
 import com.cherry.wakeupschedule.BuildConfig
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.browser.InAppBrowser
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -322,6 +325,18 @@ class UpdateService(private val context: Context) {
         webViewNotes.settings.builtInZoomControls = true
         webViewNotes.settings.displayZoomControls = false
         webViewNotes.settings.textZoom = 100
+
+        // 更新说明若含网页链接，统一交给内置浏览器：弹窗里的小 WebView 没有地址栏/返回键，
+        // 让它自己跳转会把弹窗变成"没有出口"的浏览器。
+        webViewNotes.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView,
+                request: WebResourceRequest
+            ): Boolean {
+                InAppBrowser.open(activity, request.url.toString())
+                return true
+            }
+        }
 
         // 说明区高度按实际内容量：短说明不留空白、长说明在弹窗内滚动。
         // 注意：WebView 的 JS 是关掉的（内容来自远端，避免执行脚本），所以不能用

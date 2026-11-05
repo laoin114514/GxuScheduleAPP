@@ -1,7 +1,6 @@
 package com.cherry.wakeupschedule.ui.screen.profile
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -28,6 +27,7 @@ import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.service.UiScaleManager
 import com.cherry.wakeupschedule.service.UpdateService
+import com.cherry.wakeupschedule.ui.browser.InAppBrowser
 import com.cherry.wakeupschedule.ui.component.SemesterWheelDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.screen.schedule.ScheduleAppearanceSheet
@@ -38,7 +38,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-/** 反馈建议问卷（腾讯问卷）：点击「反馈建议」跳转浏览器填写 */
+/** 反馈建议问卷（腾讯问卷）：点击「反馈建议」用内置浏览器填写 */
 private const val FEEDBACK_SURVEY_URL = "https://wj.qq.com/s2/28554281/u3po/"
 
 class ProfileFragment : Fragment() {
@@ -125,11 +125,14 @@ class ProfileFragment : Fragment() {
             startActivity(Intent(requireContext(), AboutActivity::class.java))
         }
 
-        // 反馈建议：跳转腾讯问卷（浏览器打开），不再走邮件
+        // 反馈建议：内置浏览器打开腾讯问卷（不再走邮件、也不再甩到外部浏览器）
         view.findViewById<View>(R.id.item_feedback).setOnClickListener {
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_SURVEY_URL)))
-            } catch (e: Exception) {
+            val opened = InAppBrowser.open(
+                requireContext(),
+                FEEDBACK_SURVEY_URL,
+                getString(R.string.profile_feedback)
+            )
+            if (!opened) {
                 AppToast.error(requireContext(), getString(R.string.profile_no_browser_app))
             }
         }
