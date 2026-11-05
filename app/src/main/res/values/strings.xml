@@ -220,4 +220,8 @@
     <string name="in_app_browser_invalid_url">链接无效</string>
     <string name="in_app_browser_retry">重试</string>
     <string name="in_app_browser_no_handler">未找到可打开该链接的应用</string>
+    <string name="in_app_browser_unsupported_link">不支持打开该类型链接</string>
+    <!-- 内置浏览器页头用的短标题（完整行文案见 about_github / about_licenses） -->
+    <string name="about_github_title">GitHub</string>
+    <string name="about_license_title">开源许可证</string>
 </resources>

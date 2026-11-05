@@ -4,11 +4,10 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.webkit.WebView
-import android.widget.Toast
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 
 /**
  * 应用内网页跳转的统一入口。
@@ -43,7 +42,7 @@ object InAppBrowser {
 
         return when (BrowserUrlPolicy.classify(target)) {
             BrowserDestination.IN_APP ->
-                if (supportsWebView(context)) {
+                if (supportsWebView()) {
                     startInApp(context, target, title)
                 } else {
                     // 系统没有 WebView 实现（极少数定制 ROM / 精简系统）时退回外部浏览器，
@@ -70,7 +69,7 @@ object InAppBrowser {
             context.startActivity(intent)
             true
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(context, R.string.in_app_browser_no_handler, Toast.LENGTH_SHORT).show()
+            AppToast.error(context, R.string.in_app_browser_no_handler)
             false
         } catch (e: Exception) {
             false
@@ -94,11 +93,8 @@ object InAppBrowser {
     }
 
     /** 系统是否提供 WebView 实现（`getCurrentWebViewPackage()` 为 null 表示没有）。 */
-    private fun supportsWebView(context: Context): Boolean {
+    private fun supportsWebView(): Boolean {
         return try {
-            if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_WEBVIEW)) {
-                return false
-            }
             WebView.getCurrentWebViewPackage() != null
         } catch (e: Exception) {
             false

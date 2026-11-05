@@ -45,13 +45,13 @@ class AboutActivity : BaseActivity() {
         }
 
         llGithub.setOnClickListener {
-            openUrl("https://github.com/laoin114514/GxuScheduleAPP", getString(R.string.about_github))
+            openUrl("https://github.com/laoin114514/GxuScheduleAPP", getString(R.string.about_github_title))
         }
 
         llLicense.setOnClickListener {
             openUrl(
                 "https://github.com/laoin114514/GxuScheduleAPP/blob/main/LICENSE",
-                getString(R.string.about_licenses)
+                getString(R.string.about_license_title)
             )
         }
 

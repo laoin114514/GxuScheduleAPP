@@ -1,7 +1,10 @@
 package com.cherry.wakeupschedule.ui.browser
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.net.http.SslError
 import android.os.Bundle
 import android.view.Menu
@@ -9,6 +12,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.SslErrorHandler
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -16,10 +20,12 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.BaseActivity
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.databinding.ActivityInAppBrowserBinding
+import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 
@@ -62,6 +68,17 @@ class InAppBrowserActivity : BaseActivity() {
         }
     }
 
+    /** 页面 `<input type="file">` 的文件选择回调（问卷上传截图/附件等场景） */
+    private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+
+    /** 系统文件选择器：页面请求上传时打开，把选中的 Uri 回传给 WebView */
+    private val fileChooserLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val callback = fileChooserCallback ?: return@registerForActivityResult
+            fileChooserCallback = null
+            callback.onReceiveValue(resolveFileChooserResult(result.resultCode, result.data))
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyToTheme(this)
         super.onCreate(savedInstanceState)
@@ -84,7 +101,10 @@ class InAppBrowserActivity : BaseActivity() {
         if (savedInstanceState != null && webView.restoreState(savedInstanceState) != null) {
             // 屏幕旋转 / 重建：恢复页面与前进后退历史，不重新加载
             hideError()
-        } else if (!initialUrl.isNullOrBlank()) {
+        } else if (!initialUrl.isNullOrBlank() &&
+            BrowserUrlPolicy.classify(initialUrl) == BrowserDestination.IN_APP
+        ) {
+            // 入口侧已经过滤过，这里再兜一道：本 Activity 永远不加载非 http(s) 的地址
             webView.loadUrl(initialUrl)
         } else {
             showError(getString(R.string.in_app_browser_invalid_url))
@@ -178,9 +198,12 @@ class InAppBrowserActivity : BaseActivity() {
         webView.webViewClient = BrowserClient()
         webView.webChromeClient = BrowserChromeClient()
 
-        // WebView 不处理文件下载：点下载链接时交给系统浏览器（更新包下载仍走 App 内 OkHttp 链路）
+        // WebView 不处理文件下载：点 http(s) 下载链接时交给系统浏览器
+        //（更新包下载仍走 App 内 OkHttp 链路；data:/blob: 等伪协议不触发外部跳转）
         webView.setDownloadListener { url, _, _, _, _ ->
-            InAppBrowser.openExternally(this, url)
+            if (BrowserUrlPolicy.classify(url) == BrowserDestination.IN_APP) {
+                InAppBrowser.openExternally(this, url)
+            }
         }
     }
 
@@ -191,14 +214,23 @@ class InAppBrowserActivity : BaseActivity() {
     }
 
     /** 链接拦截：内置可加载的返回 false 交给 WebView，系统协议转交系统应用，其余拒绝。 */
-    private fun interceptUrl(url: String?): Boolean {
+    private fun interceptUrl(request: WebResourceRequest): Boolean {
+        val url = request.url?.toString()
         return when (BrowserUrlPolicy.classify(url)) {
             BrowserDestination.IN_APP -> false
             BrowserDestination.EXTERNAL -> {
-                InAppBrowser.openExternally(this, url)
+                // 只响应用户点击：页面加载时自动触发的 tel:/market: 不应拉起系统应用
+                if (request.hasGesture()) InAppBrowser.openExternally(this, url)
                 true
             }
-            BrowserDestination.BLOCKED -> true
+            BrowserDestination.BLOCKED -> {
+                // 用户主动点了不支持的协议（weixin:// / alipays:// 等）时给一次反馈，
+                // 自动触发的不弹提示，避免页面一加载就刷屏。
+                if (request.hasGesture()) {
+                    AppToast.warn(this, getString(R.string.in_app_browser_unsupported_link))
+                }
+                true
+            }
         }
     }
 
@@ -230,7 +262,9 @@ class InAppBrowserActivity : BaseActivity() {
             ivStatusIcon.visibility = View.VISIBLE
             ivStatusIcon.setImageResource(R.drawable.ic_mtrl_link)
             tvStatus.text = message
-            tvStatusAction.visibility = View.VISIBLE
+            // 有目标地址才给「重试」；链接本身无效时藏起来，避免点了没反应
+            tvStatusAction.visibility =
+                if (lastUrl.isNullOrBlank()) View.GONE else View.VISIBLE
             tvStatusAction.setText(R.string.in_app_browser_retry)
             tvStatusAction.setOnClickListener {
                 lastUrl?.let(::loadUrl)
@@ -244,6 +278,15 @@ class InAppBrowserActivity : BaseActivity() {
         webView.visibility = View.VISIBLE
     }
 
+    /** 文件选择结果 → WebView 需要的 Uri 数组（支持多选） */
+    private fun resolveFileChooserResult(resultCode: Int, data: Intent?): Array<Uri>? {
+        if (resultCode != Activity.RESULT_OK || data == null) return null
+        data.clipData?.let { clip ->
+            return Array(clip.itemCount) { index -> clip.getItemAt(index).uri }
+        }
+        return data.data?.let { arrayOf(it) }
+    }
+
     // ==================== WebViewClient / WebChromeClient ====================
 
     private inner class BrowserClient : WebViewClient() {
@@ -251,7 +294,7 @@ class InAppBrowserActivity : BaseActivity() {
         override fun shouldOverrideUrlLoading(
             view: WebView,
             request: WebResourceRequest
-        ): Boolean = interceptUrl(request.url?.toString())
+        ): Boolean = interceptUrl(request)
 
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
             lastUrl = url ?: lastUrl
@@ -283,20 +326,43 @@ class InAppBrowserActivity : BaseActivity() {
             handler: SslErrorHandler,
             error: SslError?
         ) {
-            // 不忽略证书错误：宁可展示错误页，也不让用户在不安全的页面上输入信息
+            // 不忽略证书错误：宁可展示错误页，也不让用户在不安全的页面上输入信息。
+            // 只有主文档证书错误才整页报错；子资源（图片/统计脚本）出错仅取消该请求，
+            // 否则一个第三方图片证书异常就会让整页变成错误态。
             handler.cancel()
-            showError(getString(R.string.in_app_browser_ssl_error))
+            if (error?.url == view.url) {
+                showError(getString(R.string.in_app_browser_ssl_error))
+            }
         }
     }
 
     private inner class BrowserChromeClient : WebChromeClient() {
 
         override fun onProgressChanged(view: WebView, newProgress: Int) {
+            if (isError) return
             if (newProgress >= 100) {
                 binding.progress.visibility = View.GONE
             } else {
                 binding.progress.visibility = View.VISIBLE
                 binding.progress.progress = newProgress
+            }
+        }
+
+        override fun onShowFileChooser(
+            webView: WebView,
+            filePathCallback: ValueCallback<Array<Uri>>,
+            fileChooserParams: FileChooserParams
+        ): Boolean {
+            // 上一次未完成的回调先置空，避免 WebView 一直等待导致页面输入框卡死
+            fileChooserCallback?.onReceiveValue(null)
+            fileChooserCallback = filePathCallback
+            return try {
+                fileChooserLauncher.launch(fileChooserParams.createIntent())
+                true
+            } catch (e: Exception) {
+                fileChooserCallback = null
+                filePathCallback.onReceiveValue(null)
+                false
             }
         }
 
