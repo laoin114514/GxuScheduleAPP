@@ -33,13 +33,16 @@ object JwxtImportService {
     ): Pair<List<Course>, Long?> {
         val allEntries = response.allCourses ?: emptyList()
         // 与教务网页一致：顶层 xskbsfxstkzt == "1" 才显示调课状态，此时再按调课记录
-        // 精确匹配到具体课表行/周次；关闭或没有记录时一律不标。
-        val adjustWeeksByEntry = if (response.isAdjustmentStatusVisible) {
-            matchAdjustWeeks(allEntries, adjustments)
+        // 精确匹配到具体课表行/周次，并把该次调课的原因一并落到行上（周课表详情展示用）。
+        val adjustmentByEntry = if (response.isAdjustmentStatusVisible) {
+            matchAdjustments(allEntries, adjustments)
         } else {
             emptyMap()
         }
-        val courses = allEntries.mapNotNull { convertEntry(it, adjustWeeksByEntry[it] ?: 0L) }
+        val courses = allEntries.mapNotNull { entry ->
+            val matched = adjustmentByEntry[entry]
+            convertEntry(entry, matched?.weeks ?: 0L, matched?.reason.orEmpty())
+        }
         val semesterStart = calculateSemesterStart(courses)
         return Pair(courses, semesterStart)
     }
@@ -51,7 +54,9 @@ object JwxtImportService {
      */
     fun convertClassScheduleResponse(response: ClassScheduleResponse): Pair<List<Course>, Long?> {
         val allEntries = response.allCourses ?: emptyList()
-        val courses = allEntries.mapNotNull { convertEntry(it, adjustWeeks = 0L) }
+        val courses = allEntries.mapNotNull {
+            convertEntry(it, adjustWeeks = 0L, adjustReason = "")
+        }
         val semesterStart = calculateSemesterStart(courses)
         return Pair(courses, semesterStart)
     }
@@ -64,11 +69,16 @@ object JwxtImportService {
      *   按「无固定时间」入库（星期/节次置 0），只在总课表列出；
      * - 周次与身份都不足以还原课程的条目仍然丢弃。
      *
-     * @param adjustWeeks 本行被调课的周次位图（由 [matchAdjustWeeks] 精确匹配得到），
+     * @param adjustWeeks 本行被调课的周次位图（由 [matchAdjustments] 精确匹配得到），
      *        0 表示该行没有调课。没有拿到调课记录时恒为 0 —— 不使用「教学班级」级标志
      *        jxbsftkbj 整行打标（v1 的做法会把一次调课扩散到整学期所有行，已废弃）。
+     * @param adjustReason 该次调课的原因文案（教务调课记录 tkyy/说明），仅 [adjustWeeks] 非 0 时有值。
      */
-    private fun convertEntry(e: CourseEntry, adjustWeeks: Long = 0L): Course? {
+    private fun convertEntry(
+        e: CourseEntry,
+        adjustWeeks: Long = 0L,
+        adjustReason: String = "",
+    ): Course? {
         val name = e.courseName ?: return null
         val bitmap = parseBitmap(e)
         if (bitmap == 0L) return null
@@ -100,6 +110,8 @@ object JwxtImportService {
             // 调课精确到周次：is_adjusted 只是 adjustWeeksBitmap 的派生展示位
             isAdjusted = safeAdjustWeeks != 0L,
             adjustWeeksBitmap = safeAdjustWeeks,
+            // 原因只在被调课的行上保留；实践课不参与调课，恒为空
+            adjustReason = if (safeAdjustWeeks != 0L) clean(adjustReason) else "",
             courseCode = clean(e.courseCode),
             courseNature = clean(e.courseNature),
             teachingClass = clean(e.className),
@@ -120,7 +132,15 @@ object JwxtImportService {
     }
 
     /**
-     * 把调课记录精确匹配到具体课表行，返回「课表条目 → 被调课周次位图」。
+     * 一条调课记录命中的课表行信息。
+     *
+     * @param weeks 被调课的周次位图（bit0=第1周）
+     * @param reason 展示给用户的调课原因（多条记录命中同一行时用「；」合并去重）
+     */
+    private data class MatchedAdjustment(val weeks: Long, val reason: String)
+
+    /**
+     * 把调课记录精确匹配到具体课表行，返回「课表条目 → 命中周次 + 调课原因」。
      *
      * 匹配规则（已用真实教务数据核对过）：
      * 1. 只匹配同一教学班（课表行 classId == 记录 jxb_id）的行；
@@ -128,14 +148,14 @@ object JwxtImportService {
      * 3. 候选行条件：现星期 == 行星期、现节次 == 行节次、且现周次位图与行周次位图有交集；
      * 4. 去歧义：记录带现教师/现教室时，优先取「教师包含现教师且教室等于现教室」的行；
      *    没有这样的行时取周次交集位数最大的行，并列全取；
-     * 5. 命中行累加交集位图（多条记录命中同一行时取并集）。
+     * 5. 命中行累加交集位图（多条记录命中同一行时取并集），并把记录里的调课原因合并到行上。
      *
      * 匹配不到任何行的记录直接丢弃 —— 宁可少标，也不把调课标记扩散到整门课/整学期。
      */
-    private fun matchAdjustWeeks(
+    private fun matchAdjustments(
         entries: List<CourseEntry>,
         adjustments: Map<String, List<ScheduleAdjustment>>,
-    ): Map<CourseEntry, Long> {
+    ): Map<CourseEntry, MatchedAdjustment> {
         if (adjustments.isEmpty()) return emptyMap()
 
         // 只给有固定上课时间的理论课行匹配；实践课没有星期/节次，天生不参与
@@ -145,7 +165,7 @@ object JwxtImportService {
             .groupBy { it.classId!! }
         if (byClass.isEmpty()) return emptyMap()
 
-        val result = java.util.IdentityHashMap<CourseEntry, Long>()
+        val result = java.util.IdentityHashMap<CourseEntry, MatchedAdjustment>()
         for ((classId, classEntries) in byClass) {
             val records = adjustments[classId] ?: continue
             val weekBitmaps = java.util.IdentityHashMap<CourseEntry, Long>()
@@ -183,12 +203,49 @@ object JwxtImportService {
                     }
                 }
 
+                val reason = adjustmentReasonText(record)
                 for ((entry, overlap) in chosen) {
-                    result[entry] = (result[entry] ?: 0L) or overlap
+                    val previous = result[entry]
+                    result[entry] = MatchedAdjustment(
+                        weeks = (previous?.weeks ?: 0L) or overlap,
+                        reason = mergeReasons(previous?.reason.orEmpty(), reason),
+                    )
                 }
             }
         }
         return result
+    }
+
+    /**
+     * 从调课记录里提取适合直接展示的「调课原因」。
+     *
+     * 教务字段：`tkyy` 是具体调动原因（如「因老师参加竞赛工作与课程冲突」）；
+     * `tksm` 是调课说明（补课场景常写「第6周…的课已停，补这次课」）；`yylb` 是原因类别。
+     * 优先级：具体原因 > 说明 > 原始原因/类别/类型名（补课记录 tkyy 往往就是「补课」，
+     * 有说明时说明信息量更大）。全空时返回空串，详情页据此隐藏该行。
+     */
+    private fun adjustmentReasonText(record: ScheduleAdjustment): String {
+        val type = record.adjustmentTypeName?.trim().orEmpty()
+        val reason = record.reason?.trim().orEmpty()
+        val remark = record.remark?.trim().orEmpty()
+        val category = record.reasonCategory?.trim().orEmpty()
+        return when {
+            reason.isNotEmpty() && reason != type -> reason
+            remark.isNotEmpty() -> remark
+            reason.isNotEmpty() -> reason
+            category.isNotEmpty() -> category
+            // 完全是「补课」这类无具体原因的记录：至少把类型作为原因文案展示，
+            // 避免命中的行有调课标记却在详情里看不到任何说明。
+            else -> type
+        }
+    }
+
+    /** 多条记录命中同一行时合并原因文案：去空、去重后以「；」连接。 */
+    private fun mergeReasons(existing: String, add: String): String {
+        if (add.isBlank()) return existing
+        if (existing.isBlank()) return add
+        val parts = existing.split("；")
+        return if (parts.any { it == add }) existing else "$existing；$add"
     }
 
     /**

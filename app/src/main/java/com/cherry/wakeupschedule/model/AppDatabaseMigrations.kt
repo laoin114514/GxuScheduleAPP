@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 object AppDatabaseMigrations {
 
     /** 当前 schema 版本。与 `@Database(version = ...)` 同源。 */
-    const val LATEST_VERSION = 16
+    const val LATEST_VERSION = 17
 
     /**
      * 手写迁移覆盖到的最早版本。
@@ -248,6 +248,15 @@ object AppDatabaseMigrations {
         }
     }
 
+    private val MIGRATION_16_17 = object : Migration(16, 17) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // v3：周课表详情展示「调课原因」。原因来自调课记录（tkyy/tksm），按命中行的周次一起
+            // 落库；旧数据默认空串，等下次刷新课表时按调课记录重新计算（空值详情页自动隐藏该行）。
+            // 非空字段必须带 NOT NULL 且给非空默认值，与 Room 依 Course 生成的结构一致。
+            db.execSQL("ALTER TABLE courses ADD COLUMN adjust_reason TEXT NOT NULL DEFAULT ''")
+        }
+    }
+
     /**
      * 全部迁移，按起始版本升序。顺序即执行顺序，[AppDatabaseMigrationsTest] 会强制校验。
      *
@@ -269,6 +278,7 @@ object AppDatabaseMigrations {
         MIGRATION_13_14,
         MIGRATION_14_15,
         MIGRATION_15_16,
+        MIGRATION_16_17,
     )
 
     /** 表里是否已有某列（15→16 幂等迁移用；PRAGMA table_info 在 Android SQLite 上稳定可用）。 */

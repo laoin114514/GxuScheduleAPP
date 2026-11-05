@@ -172,6 +172,65 @@
                             android:alpha="0.35" />
                     </LinearLayout>
 
+                    <!-- 调课原因：仅周课表详情、且当前打开的这周确实被调课时显示（显隐在 SchedulePageDetailDialog 里控制） -->
+                    <LinearLayout
+                        android:id="@+id/group_detail_adjust_reason"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="8dp">
+
+                            <LinearLayout
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:gravity="center"
+                                android:background="@drawable/bg_icon_chip">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:src="@drawable/ic_mtrl_info"
+                                    android:tint="?attr/colorOnSecondaryContainer"
+                                    android:contentDescription="@null" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:minWidth="56dp"
+                                android:text="@string/course_adjust_reason"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                            <TextView
+                                android:id="@+id/tv_detail_adjust_reason"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="10dp"
+                                android:gravity="start"
+                                android:lineSpacingExtra="2dp"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="0.5dp"
+                            android:layout_marginStart="80dp"
+                            android:background="?attr/colorOutlineVariant"
+                            android:alpha="0.35" />
+                    </LinearLayout>
+
                     <!-- QQ群（点击跳转加群） -->
                     <LinearLayout
                         android:id="@+id/row_detail_qq"

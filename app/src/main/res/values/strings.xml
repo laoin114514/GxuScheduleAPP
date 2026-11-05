@@ -117,6 +117,8 @@
     <string name="course_adjusted_tag">调课</string>
     <!-- 详情弹层「课程信息」卡里的调课周次行标签 -->
     <string name="course_adjust_weeks">调课周次</string>
+    <!-- 周课表课程详情里的调课原因行标签（仅被调课的那一节显示） -->
+    <string name="course_adjust_reason">调课原因</string>
 
     <!-- ===== 成绩 / 考试 / 绩点 ===== -->
     <string name="grade_summary_gpa">本学期平均学分绩点</string>
