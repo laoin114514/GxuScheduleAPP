@@ -108,7 +108,9 @@ class TimeTableManager private constructor(context: Context) {
         val json = prefs.getString(KEY_TIME_SLOTS, null)
         return if (json != null) {
             try {
-                val type = object : TypeToken<List<TimeSlot>>() {}.type
+                // 用 getParameterized 而不是匿名 TypeToken 子类：R8 会合并匿名子类并丢泛型签名，
+                // 导致 TypeToken 构造时抛 "Missing type parameter."（release 包闪退）
+                val type = TypeToken.getParameterized(List::class.java, TimeSlot::class.java).type
                 val slots = gson.fromJson<List<TimeSlot>>(json, type)
                 // 检查时间槽数据是否有效
                 if (slots.isNotEmpty()) {
