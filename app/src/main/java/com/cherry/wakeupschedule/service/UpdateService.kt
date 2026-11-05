@@ -69,11 +69,15 @@ class UpdateService(private val context: Context) {
     companion object {
         private const val TAG = "UpdateService"
 
-        /** 后端地址，部署后改成自己的域名（不带结尾斜杠） */
+        /** 后端地址，部署后改成自己的域名（不带结尾斜杠）。正式版与测试版共用同一服务 */
         private const val UPDATE_BASE_URL = "https://easo.laoin.work/schedule"
 
-        /** 与后端 / workflow 上传时一致的 appKey */
-        private const val APP_KEY = "schedule"
+        /**
+         * 更新渠道 appKey：正式版 `schedule`、测试版 `schedule-beta`。
+         * 由 build type 注入（见 app/build.gradle 的 buildConfigField），
+         * 因此正式用户永远查不到测试渠道，测试用户也不会被正式版的更新节奏打扰。
+         */
+        private val APP_KEY = BuildConfig.UPDATE_APP_KEY
 
         /** 流式下载缓冲大小 */
         private const val DOWNLOAD_BUFFER_SIZE = 16 * 1024
@@ -189,8 +193,12 @@ class UpdateService(private val context: Context) {
             return
         }
         if (settingsManager.isCheckedForUpdateToday()) {
-            Log.d(TAG, "今日已检查过更新，跳过")
-            return
+            // 测试版通道例外：每个进程启动都检查，测试者才能在你上传后立刻收到新包；
+            // 正式版保持每日一次，避免频繁打扰。
+            if (BuildConfig.APP_CHANNEL != "beta") {
+                Log.d(TAG, "今日已检查过更新，跳过")
+                return
+            }
         }
         CoroutineScope(Dispatchers.Main).launch {
             try {

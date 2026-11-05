@@ -94,6 +94,8 @@
     <string name="about_website">官网</string>
     <string name="about_github">本项目 GitHub 仓库</string>
     <string name="about_licenses">查看开源许可证</string>
+    <!-- 测试版渠道在「关于」页版本号后的标注（正式版不显示） -->
+    <string name="about_beta_badge">测试版</string>
     <string name="common_bind_first">请先绑定教务账号</string>
     <string name="common_na">—</string>
     <string name="profile_unbound_toast">已解绑教务账号</string>

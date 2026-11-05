@@ -61,6 +61,19 @@
 Release 签名读取 `wakeup-schedule-key.jks`，密码来自 `gradle.properties` 的
 `RELEASE_STORE_PASSWORD` / `RELEASE_KEY_PASSWORD`。
 
+### 测试版（Beta）
+
+测试版是独立的 `beta` build type：独立签名、独立包名（`com.cherry.wakeupschedule.beta`）、
+独立显示名（西大课栈 Beta）与独立更新渠道（`schedule-beta`），可与正式版同机共存。
+
+```bash
+git tag -a v0.5.12beta1 -m "标题" -m "更新说明"
+python3 scripts/beta_release.py        # 构建 + 校验 + 直传更新服务测试渠道
+```
+
+首次使用先执行 `python3 scripts/beta_release.py --init-signing` 生成测试签名与本地配置。
+完整说明见 [docs/测试版构建与发布.md](docs/测试版构建与发布.md)。
+
 ---
 
 ## 下载

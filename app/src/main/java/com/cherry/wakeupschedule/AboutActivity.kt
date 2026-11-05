@@ -36,7 +36,12 @@ class AboutActivity : BaseActivity() {
         val vDividerUpdateAdapter = findViewById<View>(R.id.v_divider_update_adapter)
 
         setupPageHeader(toolbar, "关于")
-        tvVersion.text = "版本: ${BuildConfig.VERSION_NAME}"
+        // 测试版在版本号后标注渠道，避免测试者把 beta 当成正式版反馈问题
+        tvVersion.text = if (BuildConfig.APP_CHANNEL == "beta") {
+            "版本: ${BuildConfig.VERSION_NAME} · ${getString(R.string.about_beta_badge)}"
+        } else {
+            "版本: ${BuildConfig.VERSION_NAME}"
+        }
 
         llCheckUpdate.setOnClickListener { updateService.checkForUpdate(showNoUpdateToast = true) }
 

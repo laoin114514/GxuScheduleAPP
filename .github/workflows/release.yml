@@ -4,6 +4,10 @@ name: Build and Release APK
 #   git tag -a v0.5.4 -m "标题" -m "更新说明（可多行）"
 #   git push origin v0.5.4
 # 也可以先在 GitHub Release 页面写描述：工作流会优先读取它（见 Resolve release notes）。
+#
+# 测试版（beta）不走这里：tag 形如 v0.5.12beta1 由本地 scripts/beta_release.py 构建并
+# 上传到 sheet 之外的 schedule-beta 渠道；本工作流通过 job 级 if 跳过 beta tag。
+# 即便有人误推 beta tag，也不会产出正式包（下方还有一层兜底校验）。
 on:
   push:
     tags:
@@ -12,6 +16,8 @@ on:
 jobs:
   build:
     name: Build Release APK
+    # beta tag 只用于本地测试版发布，绝不允许触发正式发版（大小写都挡掉）
+    if: ${{ !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'Beta') && !contains(github.ref_name, 'BETA') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,6 +25,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # 兜底：万一上面的 job if 被误删，这里也要让 beta tag 明确失败而不是静默发正式版
+      - name: Reject beta tag
+        run: |
+          set -e
+          case "${GITHUB_REF_NAME}" in
+            *beta*|*Beta*|*BETA*)
+              echo "::error::${GITHUB_REF_NAME} 是测试版 tag。正式发版工作流不得处理 beta tag；请用 scripts/beta_release.py 本地发布。"
+              exit 1
+              ;;
+          esac
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -51,23 +68,22 @@ jobs:
           echo "VERSION=${TAG}" >> $GITHUB_OUTPUT
           echo "VERSION_CODE=${VERSION_CODE}" >> $GITHUB_OUTPUT
 
-      - name: Sync version to build.gradle
-        run: |
-          sed -i "s/versionCode = .*/versionCode = ${{ steps.version.outputs.VERSION_CODE }}/" app/build.gradle
-          sed -i "s/versionName = \".*\"/versionName = \"${{ steps.version.outputs.VERSION }}\"/" app/build.gradle
-
       - name: Decode Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: echo "$KEYSTORE_BASE64" | base64 -d > wakeup-schedule-key.jks
 
+      # 版本号通过 -P 传给 Gradle（与本地测试版脚本同一套机制），
+      # 不再 sed 改写 build.gradle，避免「构建产物与仓库文件不一致」的隐式副作用。
       - name: Build Release APK
         env:
           ORG_GRADLE_PROJECT_RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           ORG_GRADLE_PROJECT_RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease \
+            -PappVersionCode=${{ steps.version.outputs.VERSION_CODE }} \
+            -PappVersionName=${{ steps.version.outputs.VERSION }}
 
       - name: Resolve release notes
         id: release_notes

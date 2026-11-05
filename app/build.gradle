@@ -6,7 +6,18 @@ plugins {
     id 'com.google.devtools.ksp' version '1.9.24-1.0.20'
 }
 
-
+// ---------------------------------------------------------------------------
+// 版本号与渠道参数（必须在 android{} 之前求值）
+//
+// 默认：日常开发用下面的兜底值（1 / "0.0.0"）。
+// 正式发版：release.yml 传 -PappVersionCode=<base> -PappVersionName=<version>，
+//           base = MAJOR*10000 + MINOR*100 + PATCH，universal 版本号 = base*10。
+// 本地测试版：scripts/beta_release.py 传同样两个参数，外加 -PbetaIndex=N，
+//           build type beta 的 universal 版本号 = base*10 + N（见下方 applicationVariants）。
+// ---------------------------------------------------------------------------
+def appVersionCodeProp = findProperty("appVersionCode")
+def appVersionNameProp = findProperty("appVersionName")
+def betaIndexProp = findProperty("betaIndex")
 
 android {
     namespace = 'com.cherry.wakeupschedule'
@@ -16,10 +27,15 @@ android {
         applicationId = "com.cherry.wakeupschedule"
         minSdk = 26
         targetSdk = 35
-        versionCode = 0001
-        versionName = "0.0.0"
+        versionCode = (appVersionCodeProp ?: 1).toString().toInteger()
+        versionName = appVersionNameProp?.toString() ?: "0.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 更新渠道标识：正式版与测试版共用同一个更新服务端，只是 appKey 不同。
+        // 渠道隔离靠独立 appKey 实现，正式版用户永远查不到测试渠道（见 UpdateService）。
+        buildConfigField "String", "UPDATE_APP_KEY", "\"schedule\""
+        buildConfigField "String", "APP_CHANNEL", "\"stable\""
     }
 
     splits {
@@ -32,20 +48,35 @@ android {
     }
 
     applicationVariants.all { variant ->
+        def isBeta = variant.buildType.name == "beta"
+
         variant.outputs.each { output ->
             def versionCodes = ['armeabi-v7a': 1, 'arm64-v8a': 2, 'x86_64': 3, 'universal': 0]
             def abi = output.getFilter(com.android.build.OutputFile.ABI)
             def baseVersionCode = android.defaultConfig.versionCode
-            
-            if (abi == null) {
+            def channelLabel = isBeta ? "beta" : variant.buildType.name
+
+            if (isBeta) {
+                // 测试版：4 个 ABI 产物统一使用 base*10 + betaIndex。
+                // 不要按 ABI 再加偏移 —— 更新服务端只发布 universal，
+                // 而测试者侧装任何 ABI 包时 BuildConfig.VERSION_CODE 都必须等于渠道最新值，
+                // 否则 App 内更新会误判“已是最新”。
+                // 参数缺失时这里用占位值，由下方 taskGraph 校验负责报错
+                // （applicationVariants 会为所有变体回调，不能在这里直接抛异常）。
+                def betaIndex = project.hasProperty("betaIndex")
+                        ? betaIndexProp.toString().toInteger() : 1
+                output.versionCodeOverride = baseVersionCode * 10 + betaIndex
+            } else if (abi == null) {
                 // Universal APK
                 output.versionCodeOverride = baseVersionCode * 10 + 0
-                output.outputFileName = "GxuScheduleAPP-${variant.buildType.name}-${defaultConfig.versionName}-universal.apk"
             } else {
                 // Specific ABI APK
                 output.versionCodeOverride = baseVersionCode * 10 + versionCodes.get(abi)
-                output.outputFileName = "GxuScheduleAPP-${variant.buildType.name}-${defaultConfig.versionName}-${abi}.apk"
             }
+
+            def abiLabel = abi == null ? "universal" : abi
+            output.outputFileName =
+                    "GxuScheduleAPP-${channelLabel}-${defaultConfig.versionName}-${abiLabel}.apk"
         }
     }
 
@@ -56,6 +87,15 @@ android {
             keyAlias = "wakeup_schedule"
             keyPassword = project.findProperty("RELEASE_KEY_PASSWORD") ?: ""
         }
+        // 本地测试版专用签名（独立证书 + 独立包名，可与正式版同机共存）。
+        // 证书一旦丢失，测试者将无法覆盖安装新的 beta（签名不一致只能卸载重装），
+        // 生成后务必离线备份；生成入口：python3 scripts/beta_release.py --init-signing
+        beta {
+            storeFile = file(project.findProperty("BETA_STORE_FILE") ?: "../wakeup-schedule-beta-key.jks")
+            storePassword = project.findProperty("BETA_STORE_PASSWORD") ?: ""
+            keyAlias = project.findProperty("BETA_KEY_ALIAS") ?: "beta"
+            keyPassword = project.findProperty("BETA_KEY_PASSWORD") ?: ""
+        }
     }
 
     buildTypes {
@@ -65,6 +105,18 @@ android {
             shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig = signingConfigs.release
+        }
+        // 本地测试版 build type：
+        // - initWith release：与正式版同等的 R8/资源压缩，可提前暴露只在 release 下出现的问题；
+        // - 独立签名 + 独立包名 + 独立 app 名 + 独立更新渠道（appKey=schedule-beta）；
+        // - 构建入口：scripts/beta_release.py；产物目录：app/build/outputs/apk/beta/。
+        beta {
+            initWith release
+            signingConfig = signingConfigs.beta
+            applicationIdSuffix = ".beta"
+            resValue "string", "app_name", "西大课栈 Beta"
+            buildConfigField "String", "UPDATE_APP_KEY", "\"schedule-beta\""
+            buildConfigField "String", "APP_CHANNEL", "\"beta\""
         }
     }
 
@@ -102,6 +154,33 @@ android {
     
     lint {
         baseline = file("lint-baseline.xml")
+    }
+}
+
+// beta 构建参数校验放在「任务图就绪」时，而不是 applicationVariants 回调里：
+// 后者会为所有变体（debug/release/beta）各回调一次，直接抛异常会让 assembleDebug
+// 与 CI 发布也被连带失败；这里只在真的要构建 beta 任务时才检查。
+gradle.taskGraph.whenReady { graph ->
+    def betaTask = graph.allTasks.find {
+        it.project == project && it.name.toLowerCase().contains("beta")
+    }
+    if (betaTask == null) {
+        return
+    }
+    def required = ["appVersionCode", "appVersionName", "betaIndex"]
+    def missing = required.findAll { !project.hasProperty(it) }
+    if (!missing.isEmpty()) {
+        throw new GradleException(
+                "beta 变体必须指定版本参数（缺少：${missing.join(', ')}），例如：\n" +
+                "  ./gradlew :app:assembleBeta -PappVersionCode=512 " +
+                "-PappVersionName=0.5.12-beta.1 -PbetaIndex=1\n" +
+                "正常发测试版请用 scripts/beta_release.py，它会自动带上这些参数。")
+    }
+    def betaIndex = project.property("betaIndex").toString().toInteger()
+    if (betaIndex < 1 || betaIndex > 9) {
+        throw new GradleException(
+                "betaIndex 必须在 1..9 之间（当前 ${betaIndex}）；" +
+                "同一版本超过 9 个测试版请提升 patch 版本")
     }
 }
 

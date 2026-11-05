@@ -90,8 +90,15 @@ GxuScheduleWebsite/
 develop
 website
 
+# 本地测试版发布配置（含签名密码 / 上传 key，严禁提交）
+.beta-release.env
+
 # 本地构建用 Gradle 缓存（容器内 /root 与宿主 gradle 目录只读，需拷到工作区才能构建）
 .gradle-home/
 # 本地模拟器验证用的 AVD 副本
 .android-avd/
 .android-home/
+
+# Python 缓存（scripts/）
+__pycache__/
+*.pyc
