@@ -178,13 +178,17 @@
         android:contentDescription="回到本周"
         android:visibility="gone" />
 
-    <!-- 课表加载遮罩：全页覆盖；背景直接用底部导航栏同款色（浅色 #DDE4ED / 深色 #0D1117），
-         与导航栏连成一片无缝表面，消除硬边界；阻断页面点击 -->
+    <!-- 课表加载遮罩：全页覆盖；背景在 ScheduleFragment.onViewCreated 里用
+         PageBackground.bottomColor 设置为 ColorDrawable（浅色/深色自动取对应值），
+         与导航栏连成一片无缝表面，消除硬边界；阻断页面点击。
+         注意：不要在这里写 android:background="@color/<状态色列表>" —— API <= 29 的
+         ResourcesImpl 用字面前缀 "res/color/" 判断颜色资源，夜间变体
+         "res/color-night-v8/..." 会被当成普通 Drawable XML 解析并抛
+         Resources$NotFoundException（Android 10 深色模式启动闪退）。 -->
     <FrameLayout
         android:id="@+id/overlay_loading"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/bottom_nav_bg"
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone">

@@ -14,11 +14,15 @@
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_graph" />
 
+    <!-- 背景色由 MainActivity 在 setContentView 后用 PageBackground.bottomColor 设置（ColorDrawable）。
+         注意：不要在这里写 android:background="@color/<状态色列表>" —— API <= 29 的
+         ResourcesImpl 用字面前缀 "res/color/" 判断颜色资源，夜间变体路径是
+         "res/color-night-v8/..."，会被当作普通 Drawable XML 解析，<item android:color>
+         不合法 → Resources$NotFoundException（实测 Android 10 深色模式启动必崩）。 -->
     <com.cherry.wakeupschedule.ui.widget.PillBottomNavView
         android:id="@+id/bottom_nav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bottom_nav_bg"
         android:elevation="6dp" />
 
 </LinearLayout>
