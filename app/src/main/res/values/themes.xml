@@ -101,36 +101,36 @@
         <item name="android:colorBackground">#FBFDF9</item>
     </style>
 
-    <!-- 鎏金（香槟金 · VIP 黑金卡气质：暖象牙底 + 深鎏金主色 + 香槟金箔容器 + 酒红点缀） -->
+    <!-- 鎏金（香槟金 · VIP 黑金卡气质：暖象牙底 + 亮老金主色 + 足量金箔容器 + 酒红点缀） -->
     <style name="ThemeOverlay.WakeupSchedule.Palette3" parent="">
-        <item name="colorPrimary">#755600</item>
+        <item name="colorPrimary">#936A00</item>
         <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorPrimaryContainer">#F7DFA0</item>
-        <item name="colorOnPrimaryContainer">#261A00</item>
-        <item name="colorSecondary">#6F5D3E</item>
+        <item name="colorPrimaryContainer">#FFD35C</item>
+        <item name="colorOnPrimaryContainer">#2A1C00</item>
+        <item name="colorSecondary">#7A5C32</item>
         <item name="colorOnSecondary">#FFFFFF</item>
-        <item name="colorSecondaryContainer">#EFE0C8</item>
-        <item name="colorOnSecondaryContainer">#261A08</item>
-        <item name="colorTertiary">#8C3A46</item>
+        <item name="colorSecondaryContainer">#F3DCA6</item>
+        <item name="colorOnSecondaryContainer">#281B06</item>
+        <item name="colorTertiary">#8C3345</item>
         <item name="colorOnTertiary">#FFFFFF</item>
-        <item name="colorTertiaryContainer">#FFD9DB</item>
-        <item name="colorOnTertiaryContainer">#3A0710</item>
+        <item name="colorTertiaryContainer">#FFD9DA</item>
+        <item name="colorOnTertiaryContainer">#3B0710</item>
         <item name="colorError">#BA1A1A</item>
         <item name="colorOnError">#FFFFFF</item>
-        <item name="colorSurface">#FFFBF2</item>
-        <item name="colorOnSurface">#1F1A10</item>
-        <item name="colorSurfaceVariant">#EFE1C5</item>
-        <item name="colorOnSurfaceVariant">#514535</item>
-        <item name="colorSurfaceContainer">#FBF2DF</item>
-        <item name="colorSurfaceContainerHigh">#F5EAD2</item>
+        <item name="colorSurface">#FFFCF4</item>
+        <item name="colorOnSurface">#211A10</item>
+        <item name="colorSurfaceVariant">#F0E2C6</item>
+        <item name="colorOnSurfaceVariant">#52452E</item>
+        <item name="colorSurfaceContainer">#FCF3E0</item>
+        <item name="colorSurfaceContainerHigh">#F7EBD3</item>
         <!-- 下列三档由 M3ColorPalette.surfaceContainerLowest/Low/Highest 按 surface/outlineVariant 派生，
              必须与代码逐位一致，否则布局里拿到的卡片底色和代码算出来的会分叉 -->
-        <item name="colorSurfaceContainerLowest">#FFFDFB</item>
-        <item name="colorSurfaceContainerLow">#FCF7ED</item>
-        <item name="colorSurfaceContainerHighest">#F8F2E5</item>
-        <item name="colorOutline">#857558</item>
-        <item name="colorOutlineVariant">#D6C6A6</item>
-        <item name="android:colorBackground">#FFFBF2</item>
+        <item name="colorSurfaceContainerLowest">#FFFEFB</item>
+        <item name="colorSurfaceContainerLow">#FCF8EF</item>
+        <item name="colorSurfaceContainerHighest">#F8F3E7</item>
+        <item name="colorOutline">#8A7652</item>
+        <item name="colorOutlineVariant">#D9C7A4</item>
+        <item name="android:colorBackground">#FFFCF4</item>
     </style>
 
     <!-- 樱粉（晨光花瓣白底 + 深花蕊粉主色 + 樱枝灰粉容器 + 新叶绿点缀） -->

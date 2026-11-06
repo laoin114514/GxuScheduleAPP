@@ -15,6 +15,10 @@ import androidx.core.graphics.ColorUtils
  * - 浅色：top = 26% primary + surface，bottom = 14% primary + surface（略带主色的浅底，卡片仍浮在上面）
  * - 深色：top = 10% primary + surface，bottom = surface 压暗 20%
  *
+ * 个别配色允许在 [M3ColorPalette.pageTop]/[M3ColorPalette.pageBottom] 里显式覆盖这两个端点
+ * （鎏金就是：默认比例会把浅色底压成"土棕"、深色底又不够金，所以直接指定香槟丝绸/金色夜底）；
+ * 没有覆盖时仍按上面的比例自动派生。
+ *
  * 海洋蓝下与旧色几乎一致（#C1D5EF→#DEE7F6 vs #C4D4E4→#DDE4ED），
  * 换成青绿 / 鎏金 / 樱粉时页面底会跟着变色，不再是"蓝灰底 + 主题色标题"的割裂感。
  */
@@ -23,6 +27,7 @@ object PageBackground {
     /** 渐变顶端色（也用作底部导航栏、加载遮罩的底色，保证接缝一致） */
     fun topColor(context: Context): Int {
         val palette = ThemeManager.currentPalette(context)
+        palette.pageTop?.let { return it }
         return if (palette.isDark) {
             ColorUtils.blendARGB(palette.surface, palette.primary, 0.10f)
         } else {
@@ -33,6 +38,7 @@ object PageBackground {
     /** 渐变底端色 */
     fun bottomColor(context: Context): Int {
         val palette = ThemeManager.currentPalette(context)
+        palette.pageBottom?.let { return it }
         return if (palette.isDark) {
             ColorUtils.blendARGB(palette.surface, 0xFF000000.toInt(), 0.20f)
         } else {
