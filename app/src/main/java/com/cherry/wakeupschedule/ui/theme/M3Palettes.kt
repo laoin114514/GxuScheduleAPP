@@ -99,32 +99,36 @@ data class M3ColorPalette(
                 outline = "#6F7976".toColorInt(), outlineVariant = "#BEC9C5".toColorInt()
             ),
             M3ColorPalette(
-                name = "暖棕", nameResId = 0,
-                primary = "#8D5000".toColorInt(), onPrimary = "#FFFFFF".toColorInt(),
-                primaryContainer = "#FFDCC1".toColorInt(), onPrimaryContainer = "#2D1600".toColorInt(),
-                secondary = "#725A42".toColorInt(), onSecondary = "#FFFFFF".toColorInt(),
-                secondaryContainer = "#FFDCC1".toColorInt(), onSecondaryContainer = "#281805".toColorInt(),
-                tertiary = "#56633C".toColorInt(), onTertiary = "#FFFFFF".toColorInt(),
-                tertiaryContainer = "#D9E9B7".toColorInt(), onTertiaryContainer = "#141F02".toColorInt(),
-                surface = "#FFFBFF".toColorInt(), onSurface = "#1F1B16".toColorInt(),
-                surfaceVariant = "#F2DFD1".toColorInt(), onSurfaceVariant = "#51443A".toColorInt(),
-                surfaceContainer = "#FDF3EC".toColorInt(), surfaceContainerHigh = "#F7EDE6".toColorInt(),
+                // 香槟金 + 深金 + 酒红点缀：浅色底取"香槟缎面"的暖象牙，
+                // 主色是能承载正文对比度的深鎏金（#755600），高光容器是香槟金箔色
+                name = "鎏金", nameResId = 0,
+                primary = "#755600".toColorInt(), onPrimary = "#FFFFFF".toColorInt(),
+                primaryContainer = "#F7DFA0".toColorInt(), onPrimaryContainer = "#261A00".toColorInt(),
+                secondary = "#6F5D3E".toColorInt(), onSecondary = "#FFFFFF".toColorInt(),
+                secondaryContainer = "#EFE0C8".toColorInt(), onSecondaryContainer = "#261A08".toColorInt(),
+                tertiary = "#8C3A46".toColorInt(), onTertiary = "#FFFFFF".toColorInt(),
+                tertiaryContainer = "#FFD9DB".toColorInt(), onTertiaryContainer = "#3A0710".toColorInt(),
+                surface = "#FFFBF2".toColorInt(), onSurface = "#1F1A10".toColorInt(),
+                surfaceVariant = "#EFE1C5".toColorInt(), onSurfaceVariant = "#514535".toColorInt(),
+                surfaceContainer = "#FBF2DF".toColorInt(), surfaceContainerHigh = "#F5EAD2".toColorInt(),
                 error = "#BA1A1A".toColorInt(), onError = "#FFFFFF".toColorInt(),
-                outline = "#847468".toColorInt(), outlineVariant = "#D7C3B5".toColorInt()
+                outline = "#857558".toColorInt(), outlineVariant = "#D6C6A6".toColorInt()
             ),
             M3ColorPalette(
-                name = "玫红", nameResId = 0,
-                primary = "#B0005C".toColorInt(), onPrimary = "#FFFFFF".toColorInt(),
-                primaryContainer = "#FFD9E4".toColorInt(), onPrimaryContainer = "#40001D".toColorInt(),
-                secondary = "#74565F".toColorInt(), onSecondary = "#FFFFFF".toColorInt(),
-                secondaryContainer = "#FFD9E3".toColorInt(), onSecondaryContainer = "#2B151D".toColorInt(),
-                tertiary = "#7D5633".toColorInt(), onTertiary = "#FFFFFF".toColorInt(),
-                tertiaryContainer = "#FFDCC5".toColorInt(), onTertiaryContainer = "#2E1500".toColorInt(),
-                surface = "#FFFBFF".toColorInt(), onSurface = "#201A1B".toColorInt(),
-                surfaceVariant = "#F2DDE2".toColorInt(), onSurfaceVariant = "#514348".toColorInt(),
-                surfaceContainer = "#FFF0F3".toColorInt(), surfaceContainerHigh = "#FCEAEE".toColorInt(),
+                // 花瓣粉 + 樱枝灰粉 + 新叶绿：浅色底是晨光下的花瓣白，主色取自樱花的深花蕊色，
+                // tertiary 用叶芽绿补齐春天意象（很少出现，只在个别 M3 组件里露出）
+                name = "樱粉", nameResId = 0,
+                primary = "#9A3A57".toColorInt(), onPrimary = "#FFFFFF".toColorInt(),
+                primaryContainer = "#FFD9E2".toColorInt(), onPrimaryContainer = "#3E0020".toColorInt(),
+                secondary = "#74565D".toColorInt(), onSecondary = "#FFFFFF".toColorInt(),
+                secondaryContainer = "#F6DFE2".toColorInt(), onSecondaryContainer = "#2B151A".toColorInt(),
+                tertiary = "#5C6B3F".toColorInt(), onTertiary = "#FFFFFF".toColorInt(),
+                tertiaryContainer = "#DFE8C2".toColorInt(), onTertiaryContainer = "#1A2108".toColorInt(),
+                surface = "#FFF7F8".toColorInt(), onSurface = "#201A1B".toColorInt(),
+                surfaceVariant = "#F2DDE0".toColorInt(), onSurfaceVariant = "#524345".toColorInt(),
+                surfaceContainer = "#FFEFF1".toColorInt(), surfaceContainerHigh = "#FBE8EA".toColorInt(),
                 error = "#BA1A1A".toColorInt(), onError = "#FFFFFF".toColorInt(),
-                outline = "#847378".toColorInt(), outlineVariant = "#D7C1C7".toColorInt()
+                outline = "#837377".toColorInt(), outlineVariant = "#D7C1C5".toColorInt()
             )
         )
 
@@ -172,32 +176,36 @@ data class M3ColorPalette(
                 outline = "#889390".toColorInt(), outlineVariant = "#3F4946".toColorInt()
             ),
             M3ColorPalette(
-                name = "暖棕", nameResId = 0, isDark = true,
-                primary = "#FFB870".toColorInt(), onPrimary = "#4B2800".toColorInt(),
-                primaryContainer = "#6B3C00".toColorInt(), onPrimaryContainer = "#FFDCC1".toColorInt(),
-                secondary = "#E1C1A7".toColorInt(), onSecondary = "#402D19".toColorInt(),
-                secondaryContainer = "#59432E".toColorInt(), onSecondaryContainer = "#FFDCC1".toColorInt(),
-                tertiary = "#BDCD9D".toColorInt(), onTertiary = "#293412".toColorInt(),
-                tertiaryContainer = "#3F4B26".toColorInt(), onTertiaryContainer = "#D9E9B7".toColorInt(),
-                surface = "#1F1B16".toColorInt(), onSurface = "#EBE0D9".toColorInt(),
-                surfaceVariant = "#51443A".toColorInt(), onSurfaceVariant = "#D7C3B5".toColorInt(),
-                surfaceContainer = "#26221D".toColorInt(), surfaceContainerHigh = "#312D27".toColorInt(),
+                // 黑金 VIP：近黑暖咖底 + 亮鎏金主色，卡片是更低一档的黑，金色只出现在
+                // 标题/开关/选中态上——像一张黑金卡，而不是把整屏刷成金色
+                name = "鎏金", nameResId = 0, isDark = true,
+                primary = "#EFC75E".toColorInt(), onPrimary = "#3A2A00".toColorInt(),
+                primaryContainer = "#5A4400".toColorInt(), onPrimaryContainer = "#FBE3A6".toColorInt(),
+                secondary = "#D9C08D".toColorInt(), onSecondary = "#3B2F14".toColorInt(),
+                secondaryContainer = "#53442B".toColorInt(), onSecondaryContainer = "#F3E1BE".toColorInt(),
+                tertiary = "#F2B0B4".toColorInt(), onTertiary = "#571D24".toColorInt(),
+                tertiaryContainer = "#733039".toColorInt(), onTertiaryContainer = "#FFDADD".toColorInt(),
+                surface = "#17130C".toColorInt(), onSurface = "#EDE3D1".toColorInt(),
+                surfaceVariant = "#4E4433".toColorInt(), onSurfaceVariant = "#D3C4AC".toColorInt(),
+                surfaceContainer = "#201B13".toColorInt(), surfaceContainerHigh = "#2A2419".toColorInt(),
                 error = "#FFB4AB".toColorInt(), onError = "#690005".toColorInt(),
-                outline = "#A08D7E".toColorInt(), outlineVariant = "#51443A".toColorInt()
+                outline = "#9E8F73".toColorInt(), outlineVariant = "#4E4433".toColorInt()
             ),
             M3ColorPalette(
-                name = "玫红", nameResId = 0, isDark = true,
-                primary = "#FFB0CB".toColorInt(), onPrimary = "#650033".toColorInt(),
-                primaryContainer = "#8E0049".toColorInt(), onPrimaryContainer = "#FFD9E4".toColorInt(),
-                secondary = "#E3BDC7".toColorInt(), onSecondary = "#432A33".toColorInt(),
-                secondaryContainer = "#5B4049".toColorInt(), onSecondaryContainer = "#FFD9E3".toColorInt(),
-                tertiary = "#F5C096".toColorInt(), onTertiary = "#452900".toColorInt(),
-                tertiaryContainer = "#613F1D".toColorInt(), onTertiaryContainer = "#FFDCC5".toColorInt(),
-                surface = "#201A1B".toColorInt(), onSurface = "#ECE0E1".toColorInt(),
-                surfaceVariant = "#514348".toColorInt(), onSurfaceVariant = "#D7C1C7".toColorInt(),
-                surfaceContainer = "#272122".toColorInt(), surfaceContainerHigh = "#322B2D".toColorInt(),
+                // 夜樱：深李子黑的夜底 + 月光花瓣粉主色，容器色压到酒红一侧，
+                // 保证深色下粉色不发灰、也不刺眼
+                name = "樱粉", nameResId = 0, isDark = true,
+                primary = "#FFB1C8".toColorInt(), onPrimary = "#5E1133".toColorInt(),
+                primaryContainer = "#7C2C49".toColorInt(), onPrimaryContainer = "#FFD9E2".toColorInt(),
+                secondary = "#E3BDC4".toColorInt(), onSecondary = "#422A30".toColorInt(),
+                secondaryContainer = "#5A4046".toColorInt(), onSecondaryContainer = "#FFD9DF".toColorInt(),
+                tertiary = "#C2CFA0".toColorInt(), onTertiary = "#2D3517".toColorInt(),
+                tertiaryContainer = "#434D2A".toColorInt(), onTertiaryContainer = "#DEE9C2".toColorInt(),
+                surface = "#1A1215".toColorInt(), onSurface = "#EEE0E3".toColorInt(),
+                surfaceVariant = "#514246".toColorInt(), onSurfaceVariant = "#D6C1C6".toColorInt(),
+                surfaceContainer = "#231A1D".toColorInt(), surfaceContainerHigh = "#2D2427".toColorInt(),
                 error = "#FFB4AB".toColorInt(), onError = "#690005".toColorInt(),
-                outline = "#A08C91".toColorInt(), outlineVariant = "#514348".toColorInt()
+                outline = "#9F8C90".toColorInt(), outlineVariant = "#514246".toColorInt()
             )
         )
     }

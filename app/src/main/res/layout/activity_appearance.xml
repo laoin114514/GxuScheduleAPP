@@ -48,7 +48,7 @@
                     layout="@layout/item_appearance_preview_card" />
             </LinearLayout>
 
-            <!-- 配色方案：5 套调色板（紫/蓝/青绿/暖棕/玫红）的入口。
+            <!-- 配色方案：5 套调色板（紫/蓝/青绿/鎏金/樱粉）的入口。
                  之前 ThemeManager 里有 5 套 overlay、10 份配色数据，却没有任何 UI 能选，
                  等于永远只能用默认的海洋蓝。 -->
             <LinearLayout

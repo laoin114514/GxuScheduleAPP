@@ -101,64 +101,67 @@
         <item name="android:colorBackground">#FBFDF9</item>
     </style>
 
-    <!-- 暖棕 -->
+    <!-- 鎏金（香槟金 · VIP 黑金卡气质：暖象牙底 + 深鎏金主色 + 香槟金箔容器 + 酒红点缀） -->
     <style name="ThemeOverlay.WakeupSchedule.Palette3" parent="">
-        <item name="colorPrimary">#8D5000</item>
+        <item name="colorPrimary">#755600</item>
         <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorPrimaryContainer">#FFDCC1</item>
-        <item name="colorOnPrimaryContainer">#2D1600</item>
-        <item name="colorSecondary">#725A42</item>
+        <item name="colorPrimaryContainer">#F7DFA0</item>
+        <item name="colorOnPrimaryContainer">#261A00</item>
+        <item name="colorSecondary">#6F5D3E</item>
         <item name="colorOnSecondary">#FFFFFF</item>
-        <item name="colorSecondaryContainer">#FFDCC1</item>
-        <item name="colorOnSecondaryContainer">#281805</item>
-        <item name="colorTertiary">#56633C</item>
+        <item name="colorSecondaryContainer">#EFE0C8</item>
+        <item name="colorOnSecondaryContainer">#261A08</item>
+        <item name="colorTertiary">#8C3A46</item>
         <item name="colorOnTertiary">#FFFFFF</item>
-        <item name="colorTertiaryContainer">#D9E9B7</item>
-        <item name="colorOnTertiaryContainer">#141F02</item>
+        <item name="colorTertiaryContainer">#FFD9DB</item>
+        <item name="colorOnTertiaryContainer">#3A0710</item>
         <item name="colorError">#BA1A1A</item>
         <item name="colorOnError">#FFFFFF</item>
-        <item name="colorSurface">#FFFBFF</item>
-        <item name="colorOnSurface">#1F1B16</item>
-        <item name="colorSurfaceVariant">#F2DFD1</item>
-        <item name="colorOnSurfaceVariant">#51443A</item>
-        <item name="colorSurfaceContainer">#FDF3EC</item>
-        <item name="colorSurfaceContainerHigh">#F7EDE6</item>
-        <item name="colorSurfaceContainerLowest">#FEFEFD</item>
-        <item name="colorSurfaceContainerLow">#F7FAF6</item>
-        <item name="colorSurfaceContainerHighest">#F1F5F1</item>
-        <item name="colorOutline">#847468</item>
-        <item name="colorOutlineVariant">#D7C3B5</item>
-        <item name="android:colorBackground">#FFFBFF</item>
+        <item name="colorSurface">#FFFBF2</item>
+        <item name="colorOnSurface">#1F1A10</item>
+        <item name="colorSurfaceVariant">#EFE1C5</item>
+        <item name="colorOnSurfaceVariant">#514535</item>
+        <item name="colorSurfaceContainer">#FBF2DF</item>
+        <item name="colorSurfaceContainerHigh">#F5EAD2</item>
+        <!-- 下列三档由 M3ColorPalette.surfaceContainerLowest/Low/Highest 按 surface/outlineVariant 派生，
+             必须与代码逐位一致，否则布局里拿到的卡片底色和代码算出来的会分叉 -->
+        <item name="colorSurfaceContainerLowest">#FFFDFB</item>
+        <item name="colorSurfaceContainerLow">#FCF7ED</item>
+        <item name="colorSurfaceContainerHighest">#F8F2E5</item>
+        <item name="colorOutline">#857558</item>
+        <item name="colorOutlineVariant">#D6C6A6</item>
+        <item name="android:colorBackground">#FFFBF2</item>
     </style>
 
-    <!-- 玫红 -->
+    <!-- 樱粉（晨光花瓣白底 + 深花蕊粉主色 + 樱枝灰粉容器 + 新叶绿点缀） -->
     <style name="ThemeOverlay.WakeupSchedule.Palette4" parent="">
-        <item name="colorPrimary">#B0005C</item>
+        <item name="colorPrimary">#9A3A57</item>
         <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorPrimaryContainer">#FFD9E4</item>
-        <item name="colorOnPrimaryContainer">#40001D</item>
-        <item name="colorSecondary">#74565F</item>
+        <item name="colorPrimaryContainer">#FFD9E2</item>
+        <item name="colorOnPrimaryContainer">#3E0020</item>
+        <item name="colorSecondary">#74565D</item>
         <item name="colorOnSecondary">#FFFFFF</item>
-        <item name="colorSecondaryContainer">#FFD9E3</item>
-        <item name="colorOnSecondaryContainer">#2B151D</item>
-        <item name="colorTertiary">#7D5633</item>
+        <item name="colorSecondaryContainer">#F6DFE2</item>
+        <item name="colorOnSecondaryContainer">#2B151A</item>
+        <item name="colorTertiary">#5C6B3F</item>
         <item name="colorOnTertiary">#FFFFFF</item>
-        <item name="colorTertiaryContainer">#FFDCC5</item>
-        <item name="colorOnTertiaryContainer">#2E1500</item>
+        <item name="colorTertiaryContainer">#DFE8C2</item>
+        <item name="colorOnTertiaryContainer">#1A2108</item>
         <item name="colorError">#BA1A1A</item>
         <item name="colorOnError">#FFFFFF</item>
-        <item name="colorSurface">#FFFBFF</item>
+        <item name="colorSurface">#FFF7F8</item>
         <item name="colorOnSurface">#201A1B</item>
-        <item name="colorSurfaceVariant">#F2DDE2</item>
-        <item name="colorOnSurfaceVariant">#514348</item>
-        <item name="colorSurfaceContainer">#FFF0F3</item>
-        <item name="colorSurfaceContainerHigh">#FCEAEE</item>
-        <item name="colorSurfaceContainerLowest">#FFFEFF</item>
-        <item name="colorSurfaceContainerLow">#FDF8FB</item>
-        <item name="colorSurfaceContainerHighest">#F9F2F3</item>
-        <item name="colorOutline">#847378</item>
-        <item name="colorOutlineVariant">#D7C1C7</item>
-        <item name="android:colorBackground">#FFFBFF</item>
+        <item name="colorSurfaceVariant">#F2DDE0</item>
+        <item name="colorOnSurfaceVariant">#524345</item>
+        <item name="colorSurfaceContainer">#FFEFF1</item>
+        <item name="colorSurfaceContainerHigh">#FBE8EA</item>
+        <!-- 同鎏金：与代码派生值保持一致 -->
+        <item name="colorSurfaceContainerLowest">#FFFCFD</item>
+        <item name="colorSurfaceContainerLow">#FCF3F4</item>
+        <item name="colorSurfaceContainerHighest">#F8EEEF</item>
+        <item name="colorOutline">#837377</item>
+        <item name="colorOutlineVariant">#D7C1C5</item>
+        <item name="android:colorBackground">#FFF7F8</item>
     </style>
 
 </resources>

@@ -16,7 +16,7 @@ import androidx.core.graphics.ColorUtils
  * - 深色：top = 10% primary + surface，bottom = surface 压暗 20%
  *
  * 海洋蓝下与旧色几乎一致（#C1D5EF→#DEE7F6 vs #C4D4E4→#DDE4ED），
- * 换成青绿 / 暖棕 / 玫红时页面底会跟着变色，不再是"蓝灰底 + 主题色标题"的割裂感。
+ * 换成青绿 / 鎏金 / 樱粉时页面底会跟着变色，不再是"蓝灰底 + 主题色标题"的割裂感。
  */
 object PageBackground {
 

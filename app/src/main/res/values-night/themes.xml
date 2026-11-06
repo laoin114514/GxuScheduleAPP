@@ -91,64 +91,66 @@
         <item name="android:colorBackground">#191C1B</item>
     </style>
 
-    <!-- 暖棕 -->
+    <!-- 鎏金（黑金 VIP：近黑暖咖底 + 亮鎏金主色 + 金箔容器 + 酒红点缀） -->
     <style name="ThemeOverlay.WakeupSchedule.Palette3" parent="">
-        <item name="colorPrimary">#FFB870</item>
-        <item name="colorOnPrimary">#4B2800</item>
-        <item name="colorPrimaryContainer">#6B3C00</item>
-        <item name="colorOnPrimaryContainer">#FFDCC1</item>
-        <item name="colorSecondary">#E1C1A7</item>
-        <item name="colorOnSecondary">#402D19</item>
-        <item name="colorSecondaryContainer">#59432E</item>
-        <item name="colorOnSecondaryContainer">#FFDCC1</item>
-        <item name="colorTertiary">#BDCD9D</item>
-        <item name="colorOnTertiary">#293412</item>
-        <item name="colorTertiaryContainer">#3F4B26</item>
-        <item name="colorOnTertiaryContainer">#D9E9B7</item>
+        <item name="colorPrimary">#EFC75E</item>
+        <item name="colorOnPrimary">#3A2A00</item>
+        <item name="colorPrimaryContainer">#5A4400</item>
+        <item name="colorOnPrimaryContainer">#FBE3A6</item>
+        <item name="colorSecondary">#D9C08D</item>
+        <item name="colorOnSecondary">#3B2F14</item>
+        <item name="colorSecondaryContainer">#53442B</item>
+        <item name="colorOnSecondaryContainer">#F3E1BE</item>
+        <item name="colorTertiary">#F2B0B4</item>
+        <item name="colorOnTertiary">#571D24</item>
+        <item name="colorTertiaryContainer">#733039</item>
+        <item name="colorOnTertiaryContainer">#FFDADD</item>
         <item name="colorError">#FFB4AB</item>
         <item name="colorOnError">#690005</item>
-        <item name="colorSurface">#1F1B16</item>
-        <item name="colorOnSurface">#EBE0D9</item>
-        <item name="colorSurfaceVariant">#51443A</item>
-        <item name="colorOnSurfaceVariant">#D7C3B5</item>
-        <item name="colorSurfaceContainer">#26221D</item>
-        <item name="colorSurfaceContainerHigh">#312D27</item>
-        <item name="colorSurfaceContainerLowest">#0F1010</item>
-        <item name="colorSurfaceContainerLow">#222524</item>
-        <item name="colorSurfaceContainerHighest">#353736</item>
-        <item name="colorOutline">#A08D7E</item>
-        <item name="colorOutlineVariant">#51443A</item>
-        <item name="android:colorBackground">#1F1B16</item>
+        <item name="colorSurface">#17130C</item>
+        <item name="colorOnSurface">#EDE3D1</item>
+        <item name="colorSurfaceVariant">#4E4433</item>
+        <item name="colorOnSurfaceVariant">#D3C4AC</item>
+        <item name="colorSurfaceContainer">#201B13</item>
+        <item name="colorSurfaceContainerHigh">#2A2419</item>
+        <!-- 由 M3ColorPalette 派生，与代码逐位一致 -->
+        <item name="colorSurfaceContainerLowest">#0D0B06</item>
+        <item name="colorSurfaceContainerLow">#201C15</item>
+        <item name="colorSurfaceContainerHighest">#322F29</item>
+        <item name="colorOutline">#9E8F73</item>
+        <item name="colorOutlineVariant">#4E4433</item>
+        <item name="android:colorBackground">#17130C</item>
     </style>
 
-    <!-- 玫红 -->
+    <!-- 樱粉（夜樱：深李子黑底 + 月光花瓣粉主色 + 酒红容器 + 夜叶绿点缀） -->
     <style name="ThemeOverlay.WakeupSchedule.Palette4" parent="">
-        <item name="colorPrimary">#FFB0CB</item>
-        <item name="colorOnPrimary">#650033</item>
-        <item name="colorPrimaryContainer">#8E0049</item>
-        <item name="colorOnPrimaryContainer">#FFD9E4</item>
-        <item name="colorSecondary">#E3BDC7</item>
-        <item name="colorOnSecondary">#432A33</item>
-        <item name="colorSecondaryContainer">#5B4049</item>
-        <item name="colorOnSecondaryContainer">#FFD9E3</item>
-        <item name="colorTertiary">#F5C096</item>
-        <item name="colorOnTertiary">#452900</item>
-        <item name="colorTertiaryContainer">#613F1D</item>
-        <item name="colorOnTertiaryContainer">#FFDCC5</item>
+        <item name="colorPrimary">#FFB1C8</item>
+        <item name="colorOnPrimary">#5E1133</item>
+        <item name="colorPrimaryContainer">#7C2C49</item>
+        <item name="colorOnPrimaryContainer">#FFD9E2</item>
+        <item name="colorSecondary">#E3BDC4</item>
+        <item name="colorOnSecondary">#422A30</item>
+        <item name="colorSecondaryContainer">#5A4046</item>
+        <item name="colorOnSecondaryContainer">#FFD9DF</item>
+        <item name="colorTertiary">#C2CFA0</item>
+        <item name="colorOnTertiary">#2D3517</item>
+        <item name="colorTertiaryContainer">#434D2A</item>
+        <item name="colorOnTertiaryContainer">#DEE9C2</item>
         <item name="colorError">#FFB4AB</item>
         <item name="colorOnError">#690005</item>
-        <item name="colorSurface">#201A1B</item>
-        <item name="colorOnSurface">#ECE0E1</item>
-        <item name="colorSurfaceVariant">#514348</item>
-        <item name="colorOnSurfaceVariant">#D7C1C7</item>
-        <item name="colorSurfaceContainer">#272122</item>
-        <item name="colorSurfaceContainerHigh">#322B2D</item>
-        <item name="colorSurfaceContainerLowest">#12100D</item>
-        <item name="colorSurfaceContainerLow">#28241F</item>
-        <item name="colorSurfaceContainerHighest">#3A3632</item>
-        <item name="colorOutline">#A08C91</item>
-        <item name="colorOutlineVariant">#514348</item>
-        <item name="android:colorBackground">#201A1B</item>
+        <item name="colorSurface">#1A1215</item>
+        <item name="colorOnSurface">#EEE0E3</item>
+        <item name="colorSurfaceVariant">#514246</item>
+        <item name="colorOnSurfaceVariant">#D6C1C6</item>
+        <item name="colorSurfaceContainer">#231A1D</item>
+        <item name="colorSurfaceContainerHigh">#2D2427</item>
+        <!-- 由 M3ColorPalette 派生，与代码逐位一致 -->
+        <item name="colorSurfaceContainerLowest">#0F0A0C</item>
+        <item name="colorSurfaceContainerLow">#231B1E</item>
+        <item name="colorSurfaceContainerHighest">#352E31</item>
+        <item name="colorOutline">#9F8C90</item>
+        <item name="colorOutlineVariant">#514246</item>
+        <item name="android:colorBackground">#1A1215</item>
     </style>
 
 </resources>

@@ -334,7 +334,7 @@ AA 需 4.5（正文）/3.0（大字）。**9/9 全部不达标。**
 ### 4.3 专题三：主题系统闭环 —— 让 5 套调色板真正"存在"
 
 **现状**：`ThemeOverlay.Palette0..4` 已就绪，`ThemeManager.setPaletteIndex()` 无 UI 调用 → 永远是海洋蓝；
-页面渐变写死 `#C4D4E4→#DDE4ED`，切到青绿/暖棕时页面仍是冷蓝灰。
+页面渐变写死 `#C4D4E4→#DDE4ED`，切到青绿/鎏金时页面仍是冷蓝灰。
 
 **方案**
 
@@ -342,7 +342,7 @@ AA 需 4.5（正文）/3.0（大字）。**9/9 全部不达标。**
    ```
    浅色/深色 两张预览卡（保留，但换成"当前配色"渲染）
    自动切换（跟随系统 / 定时）  ← 保留，行整行可点
-   配色方案  ● 紫  ● 蓝  ● 青绿  ● 暖棕  ● 玫红   ← 新增，5 个色点，选中打勾
+   配色方案  ● 紫  ● 蓝  ● 青绿  ● 鎏金  ● 樱粉   ← 新增，5 个色点，选中打勾
    ```
    点选色点 → `ThemeManager.setPaletteIndex` + `recreate()`（预览卡实时用新配色重绘，`AppearanceActivity` 已有 `applyFixedCardTheme/buildPreview` 现成能力）。
 2. **渐变派生**：删掉 `bg_page_gradient.xml` / `bg_schedule_gradient.xml` 两份写死资源，改为基类里用 `GradientDrawable` 按 palette 生成：

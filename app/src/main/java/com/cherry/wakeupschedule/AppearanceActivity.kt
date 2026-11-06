@@ -72,9 +72,9 @@ class AppearanceActivity : BaseActivity() {
     // ==================== 配色方案 ====================
 
     /**
-     * 5 套配色（经典紫 / 海洋蓝 / 青绿 / 暖棕 / 玫红）的选择行。
+     * 5 套配色（经典紫 / 海洋蓝 / 青绿 / 鎏金 / 樱粉）的选择行。
      *
-     * 选中态用「主色圆点 + 主题色描边环 + 名称加粗」三重表达；
+     * 选中态用「主色渐变圆点 + 主题色描边环 + 名称加粗」三重表达；
      * 点击后写盘并 recreate —— 配色是主题 overlay，只能在 setContentView 之前生效。
      */
     private fun buildPalettePicker() {
@@ -106,7 +106,9 @@ class AppearanceActivity : BaseActivity() {
                 setPadding(0, (4 * density).toInt(), 0, (4 * density).toInt())
             }
 
-            // 色点：内部实色圆点 + 外侧选中环
+            // 色点：主色→高光容器色的斜向渐变圆点（像一枚小色卡），外侧是选中环。
+            // 单色圆点看不出"高光"，渐变能同时带出主色与容器色的关系——
+            // 例如鎏金的深金→香槟金箔、樱粉的深花蕊粉→花瓣白。
             val ring = FrameLayout(this).apply {
                 layoutParams = LinearLayout.LayoutParams(dot + (10 * density).toInt(), dot + (10 * density).toInt())
                 background = GradientDrawable().apply {
@@ -119,7 +121,8 @@ class AppearanceActivity : BaseActivity() {
                 layoutParams = FrameLayout.LayoutParams(dot, dot, Gravity.CENTER)
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
-                    setColor(palette.primary)
+                    orientation = GradientDrawable.Orientation.TL_BR
+                    colors = intArrayOf(palette.primary, palette.primaryContainer)
                 }
             })
             item.addView(ring)
