@@ -94,12 +94,6 @@ class ScheduleFragment : Fragment() {
     private var appliedBorderColor = 0
     private var appliedBorderFollowCourse = false
 
-    /** 当前已应用到课表的「底部留白」开关，onResume 对比设置变化后刷新 */
-    private var appliedBottomBlank = false
-
-    /** 当前已应用到课表的「高亮当日」开关，onResume 对比设置变化后刷新 */
-    private var appliedHighlightToday = false
-
     /** 当前是否处于总课表视图（周课表 ⇄ 总课表，由底部导航角标切换） */
     private var isOverview = false
 
@@ -228,10 +222,6 @@ class ScheduleFragment : Fragment() {
         syncContentVisibilityIfChanged()
         // 同上，格子边框颜色/跟随开关也在外观页
         syncCellBorderIfChanged()
-        // 同上，课表底部留白开关在「课表整体」区
-        syncBottomBlankIfChanged()
-        // 同上，高亮当日开关也在「课表整体」区
-        syncHighlightTodayIfChanged()
         // 「我的 → 课表外观」入口会跳到本 tab 并要求弹出外观面板（见 ProfileFragment）
         if (ScheduleAppearanceSheet.consumePendingAutoOpen()) {
             view?.post { ScheduleAppearanceSheet.show(this) }
@@ -250,8 +240,6 @@ class ScheduleFragment : Fragment() {
         syncCellHeightIfChanged()
         syncContentVisibilityIfChanged()
         syncCellBorderIfChanged()
-        syncBottomBlankIfChanged()
-        syncHighlightTodayIfChanged()
     }
 
     /**
@@ -293,24 +281,6 @@ class ScheduleFragment : Fragment() {
         appliedBorderFollowCourse = follow
         adapter.setBorderColor(color)
         adapter.setBorderFollowCourse(follow)
-    }
-
-    /** 同步「课表整体 → 底部留白」开关（页面滚动范围在 bind 时重建） */
-    private fun syncBottomBlankIfChanged() {
-        if (!::adapter.isInitialized) return
-        val enabled = settingsManager.isBottomBlank()
-        if (enabled == appliedBottomBlank) return
-        appliedBottomBlank = enabled
-        adapter.setBottomBlank(enabled)
-    }
-
-    /** 同步「课表整体 → 高亮当日」开关（日期栏与当日列淡底在 bind 时重画） */
-    private fun syncHighlightTodayIfChanged() {
-        if (!::adapter.isInitialized) return
-        val enabled = settingsManager.isHighlightToday()
-        if (enabled == appliedHighlightToday) return
-        appliedHighlightToday = enabled
-        adapter.setHighlightToday(enabled)
     }
 
     /**
@@ -413,14 +383,10 @@ class ScheduleFragment : Fragment() {
         appliedShowTeacher = settingsManager.isShowTeacher()
         appliedBorderColor = settingsManager.getCellBorderColor()
         appliedBorderFollowCourse = settingsManager.isBorderFollowCourse()
-        appliedBottomBlank = settingsManager.isBottomBlank()
-        appliedHighlightToday = settingsManager.isHighlightToday()
         adapter = WeekPagerAdapter(totalWeeks, appliedCellHeightDp)
         adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
         adapter.setBorderColor(appliedBorderColor)
         adapter.setBorderFollowCourse(appliedBorderFollowCourse)
-        adapter.setBottomBlank(appliedBottomBlank)
-        adapter.setHighlightToday(appliedHighlightToday)
         // 仅预加载相邻1页（3页总量），减少tab切换时的初始构建压力
         viewPager.offscreenPageLimit = 1
 
@@ -1025,14 +991,10 @@ class ScheduleFragment : Fragment() {
                                     appliedShowTeacher = settingsManager.isShowTeacher()
                                     appliedBorderColor = settingsManager.getCellBorderColor()
                                     appliedBorderFollowCourse = settingsManager.isBorderFollowCourse()
-                                    appliedBottomBlank = settingsManager.isBottomBlank()
-                                    appliedHighlightToday = settingsManager.isHighlightToday()
                                     adapter = WeekPagerAdapter(settingsManager.getTotalWeeks(), appliedCellHeightDp)
                                     adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
                                     adapter.setBorderColor(appliedBorderColor)
                                     adapter.setBorderFollowCourse(appliedBorderFollowCourse)
-                                    adapter.setBottomBlank(appliedBottomBlank)
-                                    adapter.setHighlightToday(appliedHighlightToday)
                                     // 刚导入完才有学期开始日期，日期栏要按新日期渲染
                                     syncWeekContextToAdapter()
                                     viewPager.adapter = adapter

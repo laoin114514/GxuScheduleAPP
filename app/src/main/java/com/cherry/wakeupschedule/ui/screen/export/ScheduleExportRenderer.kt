@@ -49,7 +49,6 @@ object ScheduleExportRenderer {
             setContentVisibility(settings.isShowClassroom(), settings.isShowTeacher())
             setBorderColor(settings.getCellBorderColor())
             setBorderFollowCourse(settings.isBorderFollowCourse())
-            setHighlightToday(settings.isHighlightToday())
             updateData(CourseDataManager.getInstance(context).getAllCourses())
             setWeekContext(settings.getSemesterStartDate(), safeCurrentWeek)
         }

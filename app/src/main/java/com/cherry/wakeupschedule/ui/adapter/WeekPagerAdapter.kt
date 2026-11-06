@@ -62,13 +62,15 @@ class WeekPagerAdapter(
     var borderFollowCourse: Boolean = false
         private set
 
-    /** 课表底部是否留白：开启后滚动内容末尾追加约 15% 屏高的空白 */
-    var bottomBlankEnabled: Boolean = false
-        private set
+    /**
+     * 课表底部留白：**写死常开**，不再提供开关（滚动内容末尾追加约 15% 屏高的空白）。
+     *
+     * 需求：默认就有，用户不需要/不应该关掉它；导出图不需要这段空白，[createExportPage] 里单独传 false。
+     */
+    private val bottomBlankEnabled: Boolean = true
 
-    /** 「高亮当日」：开启后在日期蓝框之外，为当日整列追加淡色底（课表整体 → 高亮当日） */
-    var highlightToday: Boolean = false
-        private set
+    /** 「高亮当日」：**写死常开**，不再提供开关（日期蓝框之外，为当日整列追加主色淡底） */
+    private val highlightToday: Boolean = true
 
     private var allCourses: List<Course> = emptyList()
 
@@ -159,20 +161,6 @@ class WeekPagerAdapter(
     fun setBorderFollowCourse(follow: Boolean) {
         if (follow == borderFollowCourse) return
         borderFollowCourse = follow
-        notifyDataSetChanged()
-    }
-
-    /** 更新「课表底部留白」；值未变时直接返回 */
-    fun setBottomBlank(enabled: Boolean) {
-        if (enabled == bottomBlankEnabled) return
-        bottomBlankEnabled = enabled
-        notifyDataSetChanged()
-    }
-
-    /** 更新「高亮当日」；值未变时直接返回 */
-    fun setHighlightToday(enabled: Boolean) {
-        if (enabled == highlightToday) return
-        highlightToday = enabled
         notifyDataSetChanged()
     }
 
@@ -445,7 +433,7 @@ class WeekPagerAdapter(
             val contentWidth = ctx.resources.displayMetrics.widthPixels - timeAxisWidth
             if (contentWidth <= 0) return
 
-            // ── 「课表整体 → 底部留白」：网格之下追加 BOTTOM_BLANK_RATIO(15%) 屏高的空白，
+            // ── 底部留白（写死常开）：网格之下追加 BOTTOM_BLANK_RATIO(15%) 屏高的空白，
             //    让底部课程能上滑到屏幕中部查看；空白不带时间轴与行线，与页面背景无缝 ──
             if (bottomBlankEnabled) {
                 bottomSpacer.visibility = View.VISIBLE
@@ -464,7 +452,7 @@ class WeekPagerAdapter(
             courseContainer.removeAllViews()
             val gapPx = (2 * density).toInt()
             val cellWidth = contentWidth / 7f
-            // 「课表整体 → 高亮当日」：当日列淡底垫在卡片之下（clear 后第 0 位，先于卡片循环）
+            // 「高亮当日」（写死常开）：当日列淡底垫在卡片之下（clear 后第 0 位，先于卡片循环）
             bindTodayColumn(highlightToday, cellWidth)
             val textColor = Color.WHITE
             val colors = courseColors
@@ -735,7 +723,7 @@ class WeekPagerAdapter(
         /** 边框默认色：50% 半透明白（十六进制超出 Int 范围需 toInt），与历史版本写死的描边一致 */
         val DEFAULT_BORDER_COLOR = 0x80FFFFFF.toInt()
 
-        /** 底部留白高度占屏高的比例（课表整体 → 底部留白） */
+        /** 底部留白高度占屏高的比例（写死常开） */
         private const val BOTTOM_BLANK_RATIO = 0.15f
 
         /** 本周调课卡片课程文字的 top padding（dp）：为右上角「调课」角标让位；本周未调课仍为 2dp */
@@ -836,7 +824,7 @@ class WeekPagerAdapter(
                 addView(contentArea)
             }
 
-            // 「课表整体 → 底部留白」：网格之下追加一段空白（开关在 bind 里生效），
+            // 底部留白（写死常开）：网格之下追加一段空白（bind 里始终生效），
             // 让底部的课程能上滑到屏幕中部查看
             val bottomSpacer = View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(
