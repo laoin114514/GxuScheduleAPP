@@ -74,6 +74,12 @@ class WidgetCenterActivity : BaseActivity() {
     private var isForeground = false
 
     /**
+     * 用户点了「去开启权限」、正在系统权限页里的那次添加。
+     * 回到本页且权限已开启时自动续上，省掉「开完权限还要再点一次」。
+     */
+    private var awaitingShortcutPermission: WidgetPage? = null
+
+    /**
      * 一次「一键添加」请求的核验上下文。
      *
      * [baseline] 是发起请求时桌面上该组件的个数；[leftForeground] 记录请求后本页是否被顶到后台
@@ -138,6 +144,11 @@ class WidgetCenterActivity : BaseActivity() {
         reconcileAddedCounts(counts)
         // 从系统确认框 / 桌面回来：再核验一次刚才的请求有没有真的落地
         if (pendingPin != null) schedulePinCheck(PIN_RESUME_SETTLE_MS)
+        // 刚从「桌面快捷方式」权限页回来且已经允许：直接续上那次添加
+        awaitingShortcutPermission?.let { awaiting ->
+            awaitingShortcutPermission = null
+            if (WidgetPinSupport.shortcutPermissionDenied(this) == false) pinWidget(awaiting)
+        }
     }
 
     override fun onPause() {
@@ -279,6 +290,12 @@ class WidgetCenterActivity : BaseActivity() {
             showManualGuide(page, PinFailure.UNSUPPORTED)
             return
         }
+        // 小米/红米：先查「桌面快捷方式」开关。关着时桌面必然静默拒绝，
+        // 与其让用户等一轮核验再弹引导，不如直接把系统权限页递到手上。
+        if (WidgetPinSupport.shortcutPermissionDenied(this) == true) {
+            showManualGuide(page, PinFailure.PERMISSION)
+            return
+        }
 
         val requested = try {
             manager.requestPinAppWidget(component, pinExtras(page), pinSuccessPendingIntent(page))
@@ -396,8 +413,8 @@ class WidgetCenterActivity : BaseActivity() {
         }
     }
 
-    /** 一键添加没能落地的三种情形，决定引导弹窗的标题与首句 */
-    private enum class PinFailure { UNSUPPORTED, REJECTED, NO_RESPONSE }
+    /** 一键添加没能落地的几种情形，决定引导弹窗的标题与首句 */
+    private enum class PinFailure { UNSUPPORTED, REJECTED, NO_RESPONSE, PERMISSION }
 
     private fun showManualGuide(page: WidgetPage, failure: PinFailure) {
         if (isFinishing || isDestroyed) return
@@ -405,11 +422,16 @@ class WidgetCenterActivity : BaseActivity() {
             PinFailure.UNSUPPORTED -> "当前桌面不支持一键添加"
             PinFailure.REJECTED -> "桌面拒绝了本次添加请求"
             PinFailure.NO_RESPONSE -> "桌面没有响应，请手动添加"
+            PinFailure.PERMISSION -> "需要「桌面快捷方式」权限"
         }
         val intro = when (failure) {
             PinFailure.NO_RESPONSE ->
                 "已经向桌面发起了添加，但既没有弹出确认框，也没有检测到新增的小组件。" +
                         "部分手机的桌面不支持应用内一键添加，请按下面的方式手动添加："
+
+            PinFailure.PERMISSION ->
+                "一键添加小组件需要系统的「桌面快捷方式」权限，当前未开启。" +
+                        "开启后回到本页会自动继续添加；也可以先按下面的方式手动添加："
 
             else -> "请按下面的方式手动添加："
         }
@@ -422,11 +444,20 @@ class WidgetCenterActivity : BaseActivity() {
         val builder = StyledDialog.Builder(this)
             .title(title)
             .message(message)
-        // 小米/红米：桌面拒绝的根因是「桌面快捷方式」权限，直接给入口少走弯路
-        if (failure == PinFailure.NO_RESPONSE && WidgetPinSupport.pinRejectedSilently()) {
-            builder.negativeButton("去开启权限") { openShortcutPermissionSettings() }
+        // 小米/红米：桌面拒绝的根因是「桌面快捷方式」权限，直接给系统权限页入口；
+        // 用户开启后回来（onResume）会自动续上这次添加，不用再点一遍
+        if (WidgetPinSupport.pinRejectedSilently() &&
+            (failure == PinFailure.PERMISSION || failure == PinFailure.NO_RESPONSE)
+        ) {
+            builder.positiveButton("去开启权限") {
+                awaitingShortcutPermission = page
+                openShortcutPermissionSettings()
+            }
+            builder.negativeButton("知道了")
+        } else {
+            builder.positiveButton("知道了")
         }
-        builder.positiveButton("知道了").show()
+        builder.show()
     }
 
     /** 小米/红米的「桌面快捷方式」权限页；打不开时回落到应用详情页 */

@@ -1,9 +1,11 @@
 package com.cherry.wakeupschedule.widget
 
+import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Process
 import android.provider.Settings
 
 /**
@@ -43,6 +45,44 @@ object WidgetPinSupport {
     fun pinRejectedSilently(): Boolean = isBrand("xiaomi", "redmi", "poco")
 
     /**
+     * 查询 MIUI 的「桌面快捷方式」开关是否处于关闭状态。
+     *
+     * 它不是 Android 运行时权限（没有 requestPermissions 弹窗），而是 MIUI 自定义的
+     * AppOp 10017；普通应用只能读、不能改，所以能做到的「申请权限」就是：
+     * 先查出来 → 直接带用户去系统权限页 → 回来后自动继续。查不到时返回 null，
+     * 调用方按老流程（发请求后再核验）继续，绝不因为探测失败而拦下添加。
+     *
+     * `AppOpsManager.checkOpNoThrow(int, int, String)` 是 @hide 方法（hiddenapi 标记为
+     * UNSUPPORTED，不拦截），因此走反射；任何异常都视为「无法判断」。
+     *
+     * @return true=已关闭，false=已允许，null=非小米 / 反射不可用 / 模式未知
+     */
+    fun shortcutPermissionDenied(context: Context): Boolean? {
+        if (!pinRejectedSilently()) return null
+        return runCatching {
+            val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val method = AppOpsManager::class.java.getMethod(
+                "checkOpNoThrow",
+                Int::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType,
+                String::class.java,
+            )
+            val mode = method.invoke(
+                appOps,
+                MIUI_OP_INSTALL_SHORTCUT,
+                Process.myUid(),
+                context.packageName,
+            ) as Int
+            when (mode) {
+                AppOpsManager.MODE_ALLOWED -> false
+                AppOpsManager.MODE_IGNORED, AppOpsManager.MODE_ERRORED -> true
+                // MODE_DEFAULT / MODE_FOREGROUND 等交给调用方按正常流程处理
+                else -> null
+            }
+        }.getOrNull()
+    }
+
+    /**
      * 打开系统里本应用的「桌面快捷方式」权限页。
      * MIUI/HyperOS 优先直达「其他权限」编辑器，打不开时回落到应用详情页。
      */
@@ -69,8 +109,7 @@ object WidgetPinSupport {
     fun manualHint(): String? = when {
         pinRejectedSilently() ->
             "小米 / 红米：一键添加需要系统的「桌面快捷方式」权限。开启方法：设置 → 应用管理 → " +
-                    "西大课栈 → 权限管理 → 其他权限 → 桌面快捷方式 → 始终允许，" +
-                    "然后回到这里再点一次「添加到桌面」。"
+                    "西大课栈 → 权限管理 → 其他权限 → 桌面快捷方式 → 始终允许。"
 
         isBrand("vivo", "iqoo") ->
             "vivo / iQOO：系统桌面不响应应用发起的一键添加，只能按上面的步骤在桌面组件库里手动拖出。"
@@ -80,6 +119,9 @@ object WidgetPinSupport {
 
         else -> null
     }
+
+    /** MIUI 自定义的「桌面快捷方式」AppOp；SDK >= 24 恒为 10017（见桌面 Dex 的 MiuiResource$AppOps） */
+    private const val MIUI_OP_INSTALL_SHORTCUT = 10017
 
     private fun isBrand(vararg names: String): Boolean {
         val brand = "${Build.MANUFACTURER} ${Build.BRAND}".lowercase()
