@@ -48,6 +48,13 @@ import kotlin.math.roundToInt
  *
  * 现在统一以**桌面上该组件的个数有没有变多**作为唯一判据：
  * 发起请求 → 记下基线 → 定时 / 回前台时核验 → 变多则刷状态并出卡，没变多则按机型给出可操作的手动添加引导。
+ *
+ * ### 小米的「假取消」
+ * 小米桌面失败时会短暂拉起 `AddItemActivity` 再立刻退出（日志
+ * `add widget failed, <pkg> has no permission`），本页因此收到一次 onPause。
+ * 若按「离开过前台 = 用户取消」处理，就只会给一句「没有检测到新添加的小组件」，
+ * 而用户既没看到确认框、也不知道要去开「桌面快捷方式」权限。
+ * 所以小米/红米/POCO 上「没加成功」一律按桌面拒绝处理，直接给带权限入口的引导。
  */
 class WidgetCenterActivity : BaseActivity() {
 
@@ -355,6 +362,9 @@ class WidgetCenterActivity : BaseActivity() {
             attempts = pending.attempts,
             leftForeground = pending.leftForeground,
             foregroundWithFocus = isForeground && hasWindowFocus(),
+            // 小米桌面失败时只短暂拉起 AddItemActivity 再退出，本页的 onPause 不能
+            // 当成「用户取消」；改判为桌面拒绝，才能给出开「桌面快捷方式」的引导
+            desktopRejectsSilently = WidgetPinSupport.pinRejectedSilently(),
         )
 
         when (outcome) {
@@ -405,13 +415,23 @@ class WidgetCenterActivity : BaseActivity() {
         }
         val steps = "长按桌面空白处 → 小组件（窗口小工具）→ 找到「西大课栈」→ " +
                 "长按「${page.displayName}」拖到桌面。"
-        val message = listOfNotNull(intro, steps, WidgetPinSupport.manualHint())
+        // 机型提示放在手动步骤之前：小米/红米要先去开「桌面快捷方式」，
+        // 开了之后一键添加就能用，手动拖组件只是备选
+        val message = listOfNotNull(intro, WidgetPinSupport.manualHint(), steps)
             .joinToString("\n\n")
-        StyledDialog.Builder(this)
+        val builder = StyledDialog.Builder(this)
             .title(title)
             .message(message)
-            .positiveButton("知道了")
-            .show()
+        // 小米/红米：桌面拒绝的根因是「桌面快捷方式」权限，直接给入口少走弯路
+        if (failure == PinFailure.NO_RESPONSE && WidgetPinSupport.pinRejectedSilently()) {
+            builder.negativeButton("去开启权限") { openShortcutPermissionSettings() }
+        }
+        builder.positiveButton("知道了").show()
+    }
+
+    /** 小米/红米的「桌面快捷方式」权限页；打不开时回落到应用详情页 */
+    private fun openShortcutPermissionSettings() {
+        runCatching { startActivity(WidgetPinSupport.shortcutPermissionIntent(this)) }
     }
 
     companion object {
