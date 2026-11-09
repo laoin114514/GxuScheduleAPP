@@ -17,6 +17,7 @@ import com.cherry.wakeupschedule.widget.ScheduleWideWidgetProvider
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
+import com.cherry.wakeupschedule.widget.NextCourseCompactWidgetProvider
 import com.cherry.wakeupschedule.widget.NextCourseWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
@@ -156,6 +157,7 @@ class App : Application() {
                 ScheduleWideWidgetProvider.triggerUpdate(context)
                 MinimalWidgetProvider.triggerUpdate(context)
                 NextCourseWidgetProvider.triggerUpdate(context)
+                NextCourseCompactWidgetProvider.triggerUpdate(context)
             }
         }
         registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK), RECEIVER_NOT_EXPORTED)

@@ -14,6 +14,7 @@ import com.cherry.wakeupschedule.databinding.PageWidgetCenterWeekBinding
 import com.cherry.wakeupschedule.databinding.WidgetCenterAddFooterBinding
 import com.cherry.wakeupschedule.ui.widget.VerticalScrollView
 import com.cherry.wakeupschedule.widget.MinimalWidgetProvider
+import com.cherry.wakeupschedule.widget.NextCourseCompactWidgetProvider
 import com.cherry.wakeupschedule.widget.NextCourseWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWideWidgetProvider
 import com.cherry.wakeupschedule.widget.ScheduleWidgetProvider
@@ -76,7 +77,13 @@ class WidgetCenterPagerAdapter(
         WidgetPage(
             "下一门课提醒", "下一门课",
             NextCourseWidgetProvider::class.java, R.layout.widget_next_course_preview,
-            sizeLabel = "4×2"
+            sizeLabel = "4×2",
+            smallVariant = WidgetPage(
+                "下一门课提醒", "下一门课",
+                NextCourseCompactWidgetProvider::class.java,
+                R.layout.widget_next_course_compact_preview,
+                sizeLabel = "2×2"
+            )
         ),
     )
 
@@ -127,7 +134,17 @@ class WidgetCenterPagerAdapter(
                 .let { PageHolder(it, listOf(it.footerAdd to widgetPages[PAGE_WEEK])) }
 
             PAGE_NEXT -> PageWidgetCenterNextBinding.inflate(inflater, parent, false)
-                .let { PageHolder(it, listOf(it.footerAdd to widgetPages[PAGE_NEXT])) }
+                .let { binding ->
+                    PageHolder(
+                        binding,
+                        listOf(
+                            binding.footerAdd to widgetPages[PAGE_NEXT],
+                            binding.footerAddSmall to requireNotNull(
+                                widgetPages[PAGE_NEXT].smallVariant
+                            ) { "下一门课提醒页缺少 2×2 次变体定义" }
+                        )
+                    )
+                }
 
             // 页序即 viewType，与 widgetPages 一一对应；走到这里说明加了页却漏了布局
             else -> throw IllegalArgumentException("未知的小组件页序：$viewType")
@@ -137,7 +154,7 @@ class WidgetCenterPagerAdapter(
     override fun onBindViewHolder(holder: PageHolder, position: Int) {
         holder.pageIndex = position
 
-        // 今日课程页有两个变体出口（4×2 主推 + 2×2 紧凑版），其余页只有一个
+        // 今日课程 / 下一门课提醒两页各有 4×2 + 2×2 两个变体出口，其余页只有一个
         holder.footers.forEach { (footer, targetPage) ->
             val count = addedCounts[targetPage.providerClass] ?: 0
             val pending = targetPage.providerClass == pendingProvider

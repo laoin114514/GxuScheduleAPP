@@ -25,14 +25,15 @@ class ScheduleWidgetUpdateService {
     companion object {
         private const val TAG = "ScheduleWidgetUpdate"
 
-        /** 全部 6 款桌面小组件的 provider 类（顺序与 [triggerUpdate] 的刷新顺序一致） */
+        /** 全部 7 款桌面小组件的 provider 类（顺序与 [triggerUpdate] 的刷新顺序一致） */
         private val WIDGET_PROVIDER_CLASSES = arrayOf(
             ScheduleWidgetProvider::class.java,
             ScheduleWideWidgetProvider::class.java,
             MinimalWidgetProvider::class.java,
             UpcomingDaysWidgetProvider::class.java,
             WeekViewWidgetProvider::class.java,
-            NextCourseWidgetProvider::class.java
+            NextCourseWidgetProvider::class.java,
+            NextCourseCompactWidgetProvider::class.java
         )
 
         private const val WIDGET_UPDATE_REQUEST_CODE = 10001
@@ -51,7 +52,8 @@ class ScheduleWidgetUpdateService {
             ScheduleWideWidgetProvider::class.java,
             MinimalWidgetProvider::class.java,
             UpcomingDaysWidgetProvider::class.java,
-            NextCourseWidgetProvider::class.java
+            NextCourseWidgetProvider::class.java,
+            NextCourseCompactWidgetProvider::class.java
         )
 
         /** 30 分钟兜底链的 PendingIntent（进程内复用，避免每次重排都跨进程申请） */
@@ -122,6 +124,13 @@ class ScheduleWidgetUpdateService {
             // 下一门课提醒小组件
             refreshIfPresent(context, appWidgetManager, NextCourseWidgetProvider::class.java) { appWidgetIds ->
                 NextCourseWidgetProvider().onUpdate(context, appWidgetManager, appWidgetIds)
+            }
+
+            // 下一门课提醒 2×2 小组件
+            refreshIfPresent(
+                context, appWidgetManager, NextCourseCompactWidgetProvider::class.java
+            ) { appWidgetIds ->
+                NextCourseCompactWidgetProvider().onUpdate(context, appWidgetManager, appWidgetIds)
             }
 
             scheduleNextUpdate(context)
@@ -338,6 +347,7 @@ class WidgetBootReceiver : BroadcastReceiver() {
                 MinimalWidgetProvider().schedulePeriodicUpdate(it)
                 UpcomingDaysWidgetProvider().schedulePeriodicUpdate(it)
                 NextCourseWidgetProvider().schedulePeriodicUpdate(it)
+                NextCourseCompactWidgetProvider().schedulePeriodicUpdate(it)
                 WidgetMidnightReceiver.scheduleMidnightUpdate(it)
             }
         }
@@ -386,17 +396,21 @@ class NextCoursePeriodicReceiver : BroadcastReceiver() {
 }
 
 /**
- * 下一门课提醒小组件状态切换接收器（上课/下课/明天开课的精确时刻触发）
+ * 下一门课提醒小组件状态切换接收器（上课/下课/明天开课的精确时刻触发）。
+ * 4×2 与 2×2 变体共用本接收器，各自用独立 requestCode 挂闹钟；醒来时把两个变体一起刷新。
  */
 class NextCourseTransitionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         context?.let {
-            if (!WidgetPresence.isPresent(it, NextCourseWidgetProvider::class.java)) return
-            NextCourseWidgetProvider().onUpdate(
-                it,
-                AppWidgetManager.getInstance(it),
-                WidgetPresence.widgetIds(it, NextCourseWidgetProvider::class.java)
-            )
+            val appWidgetManager = AppWidgetManager.getInstance(it)
+            val wideIds = WidgetPresence.widgetIds(it, NextCourseWidgetProvider::class.java)
+            if (wideIds.isNotEmpty()) {
+                NextCourseWidgetProvider().onUpdate(it, appWidgetManager, wideIds)
+            }
+            val compactIds = WidgetPresence.widgetIds(it, NextCourseCompactWidgetProvider::class.java)
+            if (compactIds.isNotEmpty()) {
+                NextCourseCompactWidgetProvider().onUpdate(it, appWidgetManager, compactIds)
+            }
         }
     }
 }
@@ -478,6 +492,10 @@ class WidgetPeriodicUpdateReceiver : BroadcastReceiver() {
             val nextCourseIds = WidgetPresence.widgetIds(it, NextCourseWidgetProvider::class.java)
             if (nextCourseIds.isNotEmpty()) {
                 NextCourseWidgetProvider().onUpdate(it, appWidgetManager, nextCourseIds)
+            }
+            val nextCompactIds = WidgetPresence.widgetIds(it, NextCourseCompactWidgetProvider::class.java)
+            if (nextCompactIds.isNotEmpty()) {
+                NextCourseCompactWidgetProvider().onUpdate(it, appWidgetManager, nextCompactIds)
             }
             ScheduleWidgetUpdateService.scheduleNextUpdate(it)
         }

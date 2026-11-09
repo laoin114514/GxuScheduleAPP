@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 下一门课提醒 2×2（2026-11）：内布局对齐 WakeUp 课表 2×2 ——
+     不铺整行底色，课程行 = 通高圆角色棒 + 文字块。
+     主课与次课同构三行（课名 / 教室 + 徽标 / 起止时间），次课只是字号略小；
+     徽标不抢课名与时间宽度。
+     注意：RemoteViews 白名单不允许裸 <View>，色条用 FrameLayout 承载。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_widget_card"
+    android:padding="8dp">
+
+    <!-- 标题行：2×2 宽度放不下「第N周」，只保留固定标题 + 当天周几（accent 高亮） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tv_compact_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="下一门课提醒"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_title"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tv_compact_day"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="周三"
+            android:textSize="@dimen/text_caption"
+            android:textStyle="bold"
+            android:textColor="@color/widget_accent"
+            android:maxLines="1" />
+    </LinearLayout>
+
+    <!-- 主课行：三行信息，内容高度；内层 wrap_content 让色棒只包文字高度 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/bar_primary"
+                android:layout_width="4dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_bar_neutral" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_primary_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="深度学习"
+                    android:textSize="@dimen/text_title"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_text_title"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <!-- 徽标挂在教室行右端：时间行留给起止时间，避免窄屏下下课时间被裁掉 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tv_primary_detail"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="颐德楼H303"
+                        android:textSize="@dimen/text_body_small"
+                        android:textColor="@color/widget_text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tv_primary_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="进行中"
+                        android:textSize="@dimen/text_label"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_accent"
+                        android:maxLines="1" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_primary_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="08:30 - 11:05"
+                    android:textSize="@dimen/text_body"
+                    android:textColor="@color/widget_text_weak"
+                    android:fontFeatureSettings="tnum"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 次课行：与主课同构三行（课名 / 教室 + 徽标 / 起止时间），只是字号略小 -->
+    <LinearLayout
+        android:id="@+id/row_secondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/bar_secondary"
+                android:layout_width="4dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/widget_bar_neutral" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_secondary_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="回归分析"
+                    android:textSize="@dimen/text_body"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_text_title"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tv_secondary_detail"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="经世楼E304"
+                        android:textSize="@dimen/text_body_small"
+                        android:textColor="@color/widget_text_secondary"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tv_secondary_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="25 分钟后"
+                        android:textSize="@dimen/text_label"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_accent"
+                        android:maxLines="1" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_secondary_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="13:00 - 15:35"
+                    android:textSize="@dimen/text_body_small"
+                    android:textColor="@color/widget_text_weak"
+                    android:fontFeatureSettings="tnum"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 剩余高度留白：WakeUp 2×2 的内容贴顶排列，多余留白收在底部 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

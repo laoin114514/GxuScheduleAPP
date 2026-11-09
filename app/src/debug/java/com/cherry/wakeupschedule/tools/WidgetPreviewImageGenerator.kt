@@ -75,7 +75,7 @@ class WidgetPreviewImageGenerator : Activity() {
     }
 
     /**
-     * 顺带校验元数据：让系统自己解析一遍我们 6 个 provider 的 appwidget-provider，
+     * 顺带校验元数据：让系统自己解析一遍我们 7 个 provider 的 appwidget-provider，
      * 确认 `previewImage` / `previewLayout` 都拿到了有效资源 id（0 就是没配）。
      * 这是"桌面图标当预览图"那个 bug 的回归检查点。
      */
@@ -163,6 +163,8 @@ class WidgetPreviewImageGenerator : Activity() {
             Spec("widget_preview_week", R.layout.widget_week_view_preview, 335, 344),
             // 下一门课 4×2 —— 小组件中心 满宽 × 172dp
             Spec("widget_preview_next", R.layout.widget_next_course_preview, 335, 172),
+            // 下一门课 2×2 —— 小组件中心 172dp × 172dp
+            Spec("widget_preview_next_compact", R.layout.widget_next_course_compact_preview, 172, 172),
         )
     }
 }
