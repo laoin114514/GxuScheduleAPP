@@ -6,6 +6,7 @@ import com.gxu.jwxt.model.ExamSession;
 import com.gxu.jwxt.model.PageQuery;
 import com.gxu.jwxt.model.PagedResult;
 import com.gxu.jwxt.model.Term;
+import com.gxu.jwxt.util.AndroidCompat;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class ExamModule {
 
     private PagedResult<ExamScheduleEntry> query(String path, String year, Term term, PageQuery page) throws IOException {
         session.ensureLogin();
-        String body = session.post(path, page.toMap(Map.of("xnm", year, "xqm", term.code())), REFERER);
+        String body = session.post(path, page.toMap(AndroidCompat.mapOf("xnm", year, "xqm", term.code())), REFERER);
         return JsonSupport.page(body, ExamScheduleEntry.class);
     }
 }

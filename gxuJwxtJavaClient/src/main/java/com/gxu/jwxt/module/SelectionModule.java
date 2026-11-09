@@ -8,6 +8,7 @@ import com.gxu.jwxt.model.CreditConfirmationSummary;
 import com.gxu.jwxt.model.PageQuery;
 import com.gxu.jwxt.model.PagedResult;
 import com.gxu.jwxt.model.Term;
+import com.gxu.jwxt.util.AndroidCompat;
 import java.io.IOException;
 import java.util.Map;
 import org.jsoup.Jsoup;
@@ -44,7 +45,7 @@ public class SelectionModule {
     public PagedResult<CourseConfirmation> confirmations(String year, Term term, PageQuery page) throws IOException {
         session.ensureLogin();
         String body = session.post("/jwglxt/kbcx/xskbqr_cxXskbqrIndex.html?doType=query&gnmkdm=" + CONFIRM_GNMKDM,
-            page.toMap(Map.of("xnm", year, "xqm", term.code())), CONFIRM_REFERER);
+            page.toMap(AndroidCompat.mapOf("xnm", year, "xqm", term.code())), CONFIRM_REFERER);
         return JsonSupport.page(body, CourseConfirmation.class);
     }
 
@@ -53,7 +54,7 @@ public class SelectionModule {
         session.ensureLogin();
         PageQuery page = new PageQuery();
         String body = session.post("/jwglxt/kbcx/xskbqr_cxXsxkxx.html?gnmkdm=" + CONFIRM_GNMKDM,
-            page.toMap(Map.of("xnm", year, "xqm", term.code())), CONFIRM_REFERER);
+            page.toMap(AndroidCompat.mapOf("xnm", year, "xqm", term.code())), CONFIRM_REFERER);
         return Integer.parseInt(body.trim());
     }
 
@@ -61,7 +62,7 @@ public class SelectionModule {
     public CreditConfirmationSummary creditSummary(String year, Term term) throws IOException {
         session.ensureLogin();
         String body = session.post("/jwglxt/kbcx/xskbqr_cxXsxkxfxx.html?gnmkdm=" + CONFIRM_GNMKDM,
-            Map.of("xnm", year, "xqm", term.code()), CONFIRM_REFERER);
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code()), CONFIRM_REFERER);
         return JsonSupport.GSON.fromJson(body, CreditConfirmationSummary.class);
     }
 
@@ -69,7 +70,7 @@ public class SelectionModule {
     public boolean isConfirmed(String year, Term term) throws IOException {
         session.ensureLogin();
         String body = session.post("/jwglxt/kbcx/xskbqr_cxSfyqr.html?gnmkdm=" + CONFIRM_GNMKDM,
-            Map.of("xnm", year, "xqm", term.code()), CONFIRM_REFERER);
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code()), CONFIRM_REFERER);
         return "1".equals(JsonSupport.GSON.fromJson(body, String.class));
     }
 
@@ -82,7 +83,7 @@ public class SelectionModule {
     public PagedResult<CourseRosterEntry> roster(String year, Term term, String courseId, String teachingClassId,
                                                   PageQuery page) throws IOException {
         session.ensureLogin();
-        Map<String, String> data = page.toMap(Map.of(
+        Map<String, String> data = page.toMap(AndroidCompat.mapOf(
             "xnm", year, "xqm", term.code(),
             "kch_id", courseId != null ? courseId : "",
             "jxb_id", teachingClassId != null ? teachingClassId : ""

@@ -15,10 +15,9 @@ import com.gxu.jwxt.model.Term;
 import com.gxu.jwxt.model.TimePeriod;
 import com.gxu.jwxt.model.TimeSegment;
 import com.gxu.jwxt.model.WeekInfo;
+import com.gxu.jwxt.util.AndroidCompat;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +49,7 @@ public class ScheduleModule {
     public ScheduleResponse personal(String year, String term) throws IOException {
         session.ensureLogin();
         PageQuery q = new PageQuery();
-        Map<String, String> data = q.toMap(Map.of("xnm", year, "xqm", term));
+        Map<String, String> data = q.toMap(AndroidCompat.mapOf("xnm", year, "xqm", term));
         String body = session.post(
             "/jwglxt/kbcx/xskbcx_cxXsgrkb.html?gnmkdm=" + GNMKDM,
             data,
@@ -71,7 +70,7 @@ public class ScheduleModule {
     public TeacherScheduleResponse teacher(String year, String term, String teacherId) throws IOException {
         session.ensureLogin();
         PageQuery q = new PageQuery();
-        Map<String, String> data = q.toMap(Map.of(
+        Map<String, String> data = q.toMap(AndroidCompat.mapOf(
             "xnm", year,
             "xqm", term,
             "jgh_id", teacherId != null ? teacherId : ""
@@ -90,7 +89,7 @@ public class ScheduleModule {
         PageQuery q = new PageQuery();
         String body = session.post(
             "/jwglxt/kbcx/xskbcx_cxXsywKb.html?gnmkdm=" + GNMKDM,
-            q.toMap(Map.of("xnm", year, "xqm", term.code())),
+            q.toMap(AndroidCompat.mapOf("xnm", year, "xqm", term.code())),
             "/jwglxt/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=" + GNMKDM
         );
         return gson.fromJson(body, ScheduleResponse.class);
@@ -109,47 +108,47 @@ public class ScheduleModule {
      * @param classId 教学班 ID（课表条目的 {@code jxb_id}），会做 URL 编码；空值返回空列表
      */
     public List<ScheduleAdjustment> adjustmentRecords(String classId) throws IOException {
-        if (classId == null || classId.trim().isEmpty()) return List.of();
+        if (classId == null || classId.trim().isEmpty()) return AndroidCompat.listOf();
         session.ensureLogin();
         String path = "/jwglxt/kbdy/xskbdy_cxJxbtkjlView.html?gnmkdm=" + GNMKDM
-                + "&jxb_id=" + URLEncoder.encode(classId.trim(), StandardCharsets.UTF_8);
+                + "&jxb_id=" + AndroidCompat.urlEncode(classId.trim());
         try {
             String body = session.get(path, SCHEDULE_REFERER);
             return ScheduleAdjustmentParser.parse(body);
         } catch (SessionExpiredException e) {
             // 登录页：静默降级为无调课记录（再次登录由上层统一处理）
-            return List.of();
+            return AndroidCompat.listOf();
         } catch (IOException e) {
             // 非 200 / 网络异常：同样降级，不打断整次课表导入
-            return List.of();
+            return AndroidCompat.listOf();
         }
     }
 
     /** 每日节次及其起止时间。 */
     public List<TimePeriod> timePeriods(String year, Term term, String campusId) throws IOException {
         return list("/jwglxt/kbcx/xskbcx_cxRjc.html?gnmkdm=" + GNMKDM,
-            Map.of("xnm", year, "xqm", term.code(), "xqh_id", campusId), TimePeriod.class,
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code(), "xqh_id", campusId), TimePeriod.class,
             "/jwglxt/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=" + GNMKDM);
     }
 
     /** 每日作息时段。 */
     public List<TimeSegment> timeSegments(String year, Term term, String campusId) throws IOException {
         return list("/jwglxt/kbcx/xskbcx_cxRsd.html?gnmkdm=" + GNMKDM,
-            Map.of("xnm", year, "xqm", term.code(), "xqh_id", campusId), TimeSegment.class,
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code(), "xqh_id", campusId), TimeSegment.class,
             "/jwglxt/kbcx/xskbcx_cxXskbcxIndex.html?gnmkdm=" + GNMKDM);
     }
 
     /** 上午、下午、晚上等作息时间模型。 */
     public List<TeachingTimeModel> timeModels(String year, Term term, String campusId) throws IOException {
         return list("/jwglxt/kbdy/jskbdy_cxTimeModelList.html?gnmkdm=" + GNMKDM,
-            Map.of("xnm", year, "xqm", term.code(), "xqh_id", campusId), TeachingTimeModel.class,
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code(), "xqh_id", campusId), TeachingTimeModel.class,
             "/jwglxt/kbdy/bjkbdy_cxBjkbdyIndex.html?gnmkdm=" + CLASS_SCHEDULE_GNMKDM);
     }
 
     /** 学时等级列表。 */
     public List<PeriodLevel> periodLevels(String year, Term term, String campusId) throws IOException {
         return list("/jwglxt/kbdy/jskbdy_cxXsdjList2.html?gnmkdm=" + GNMKDM,
-            Map.of("xnm", year, "xqm", term.code(), "xqh_id", campusId), PeriodLevel.class,
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code(), "xqh_id", campusId), PeriodLevel.class,
             "/jwglxt/kbdy/bjkbdy_cxBjkbdyIndex.html?gnmkdm=" + CLASS_SCHEDULE_GNMKDM);
     }
 
@@ -205,14 +204,14 @@ public class ScheduleModule {
     /** 学期教学周。 */
     public List<WeekInfo> weeks(String year, Term term) throws IOException {
         return list("/jwglxt/kbdy/bjkbdy_cxZcxx.html?gnmkdm=" + CLASS_SCHEDULE_GNMKDM,
-            Map.of("xnm", year, "xqm", term.code()), WeekInfo.class,
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code()), WeekInfo.class,
             "/jwglxt/kbdy/bjkbdy_cxBjkbdyIndex.html?gnmkdm=" + CLASS_SCHEDULE_GNMKDM);
     }
 
     /** 班级课表页面显示字段。 */
     public List<ScheduleDisplayField> classDisplayFields(String year, Term term) throws IOException {
         return list("/jwglxt/kbdy/bjkbdy_cxKbzdxsxx.html?gnmkdm=" + CLASS_SCHEDULE_GNMKDM,
-            Map.of("doType", "query", "kbzl", "bj", "xnm", year, "xqm", term.code()),
+            AndroidCompat.mapOf("doType", "query", "kbzl", "bj", "xnm", year, "xqm", term.code()),
             ScheduleDisplayField.class,
             "/jwglxt/kbdy/bjkbdy_cxBjkbdyIndex.html?gnmkdm=" + CLASS_SCHEDULE_GNMKDM);
     }
@@ -222,7 +221,7 @@ public class ScheduleModule {
         session.ensureLogin();
         String body = session.post(
             "/jwglxt/kbdy/bjkbdy_cxXnxqsfkz.html?gnmkdm=" + CLASS_SCHEDULE_GNMKDM,
-            Map.of("xnm", year, "xqm", term.code()),
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code()),
             "/jwglxt/kbdy/bjkbdy_cxBjkbdyIndex.html?gnmkdm=" + CLASS_SCHEDULE_GNMKDM
         );
         return Boolean.parseBoolean(gson.fromJson(body, String.class));
