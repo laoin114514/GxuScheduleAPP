@@ -3,6 +3,7 @@ package com.gxu.jwxt.module;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.gxu.jwxt.model.PagedResult;
+import com.gxu.jwxt.util.AndroidCompat;
 import java.lang.reflect.Type;
 import java.util.List;
 
@@ -20,6 +21,6 @@ final class JsonSupport {
     static <T> List<T> list(String body, Class<T> itemType) {
         Type type = TypeToken.getParameterized(List.class, itemType).getType();
         List<T> result = GSON.fromJson(body, type);
-        return result != null ? result : List.of();
+        return result != null ? result : AndroidCompat.listOf();
     }
 }

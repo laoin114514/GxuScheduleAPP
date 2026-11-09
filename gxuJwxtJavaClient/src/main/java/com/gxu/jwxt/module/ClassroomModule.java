@@ -7,6 +7,7 @@ import com.gxu.jwxt.model.CurrentWeekInfo;
 import com.gxu.jwxt.model.PageQuery;
 import com.gxu.jwxt.model.PagedResult;
 import com.gxu.jwxt.model.Term;
+import com.gxu.jwxt.util.AndroidCompat;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,7 +65,7 @@ public class ClassroomModule {
         session.ensureLogin();
         String body = session.get("/jwglxt/cdjy/cdjy_cxKtjc.html?xnm=" + year + "&xqm="
             + term.code() + "&xqh_id=" + campusId, REFERER);
-        if ("null".equals(body.trim())) return List.of();
+        if ("null".equals(body.trim())) return AndroidCompat.listOf();
         return JsonSupport.GSON.fromJson(body,
             com.google.gson.reflect.TypeToken.getParameterized(List.class, String.class).getType());
     }
@@ -73,7 +74,7 @@ public class ClassroomModule {
     public CurrentWeekInfo currentWeek(String year, Term term, String campusId) throws IOException {
         session.ensureLogin();
         String body = session.post("/jwglxt/cdjy/cdjy_cxQtlb.html?gnmkdm=" + GNMKDM,
-            Map.of("xnm", year, "xqm", term.code(), "xqh_id", campusId, "flag", "0"), REFERER);
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code(), "xqh_id", campusId, "flag", "0"), REFERER);
         return JsonSupport.GSON.fromJson(body, CurrentWeekInfo.class);
     }
 
@@ -81,7 +82,7 @@ public class ClassroomModule {
     public List<String> dates(String year, Term term, String weekdays, String week) throws IOException {
         session.ensureLogin();
         String body = session.post("/jwglxt/cdjy/cdjy_cxDateInforma.html?gnmkdm=" + GNMKDM,
-            Map.of("xnm", year, "xqm", term.code(), "xqj", weekdays, "zcd", week), REFERER);
+            AndroidCompat.mapOf("xnm", year, "xqm", term.code(), "xqj", weekdays, "zcd", week), REFERER);
         return JsonSupport.GSON.fromJson(body,
             com.google.gson.reflect.TypeToken.getParameterized(List.class, String.class).getType());
     }

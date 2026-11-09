@@ -1,5 +1,6 @@
 package com.gxu.jwxt.model;
 
+import com.gxu.jwxt.util.AndroidCompat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +39,7 @@ public class PageQuery {
      * 转换为表单参数 Map
      */
     public Map<String, String> toMap() {
-        return toMap(Map.of());
+        return toMap(AndroidCompat.mapOf());
     }
 
     public Map<String, String> toMap(Map<String, String> extras) {
