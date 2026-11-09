@@ -40,6 +40,9 @@ object WidgetPinPolicy {
      * @param leftForeground 请求之后本页是否被顶到后台（系统确认框出现过的证据）
      * @param foregroundWithFocus 本页是否仍在前台且持有窗口焦点
      *        —— 为 false 说明系统界面还压在本页之上，此时不该抢着下结论
+     * @param desktopRejectsSilently 该机型桌面无论成败都不给用户「取消」的机会
+     *        （小米/红米：失败时只短暂拉起 AddItemActivity 再退出），
+     *        此时 [leftForeground] 不能作为取消证据，应一律按桌面拒绝处理
      */
     fun evaluate(
         baselineCount: Int,
@@ -47,10 +50,11 @@ object WidgetPinPolicy {
         attempts: Int,
         leftForeground: Boolean,
         foregroundWithFocus: Boolean,
+        desktopRejectsSilently: Boolean = false,
     ): Outcome {
         if (currentCount > baselineCount) return Outcome.ADDED
         if (attempts < MIN_ATTEMPTS) return Outcome.RETRY
         if (!foregroundWithFocus && attempts < MAX_ATTEMPTS) return Outcome.RETRY
-        return if (leftForeground) Outcome.CANCELED else Outcome.NO_RESPONSE
+        return if (leftForeground && !desktopRejectsSilently) Outcome.CANCELED else Outcome.NO_RESPONSE
     }
 }
