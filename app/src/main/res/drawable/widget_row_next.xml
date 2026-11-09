@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 今日概览行：下一节（红）。取课表页课程色 ThemeManager.FIXED_COURSE_COLORS[0] #FF1744，
+     填充方式与课表页/周视图小组件一致：浅色模式 50% 透明（alpha=128）压在本组件卡片上。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#80FF1744" />
+    <corners android:radius="12dp" />
+</shape>

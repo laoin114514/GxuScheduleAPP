@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 今日概览行：已上完（中性灰）。夜间用略亮于深色卡片的灰，配合灰字继续退让。 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#66172554" />
+    <solid android:color="#1C232C" />
     <corners android:radius="12dp" />
 </shape>

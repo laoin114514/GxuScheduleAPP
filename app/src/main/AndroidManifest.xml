@@ -157,6 +157,22 @@
                 android:resource="@xml/widget_next_course_info" />
         </receiver>
 
+        <!-- 桌面小部件 - 下一门课提醒 2×2 变体（与 4×2 并存，WakeUp 式内布局） -->
+        <receiver
+            android:name=".widget.NextCourseCompactWidgetProvider"
+            android:exported="true"
+            android:label="下一门课 2×2">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.cherry.wakeupschedule.widget.next.compact.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_next_course_compact_info" />
+        </receiver>
+
         <!-- 下一门课小组件周期性更新接收器 -->
         <receiver
             android:name=".widget.NextCoursePeriodicReceiver"

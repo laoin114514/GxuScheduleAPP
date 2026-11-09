@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
-            android:text="今日全部课程状态（已上完/进行中/下一节/未开始），提供 4×2 双行卡与 2×2 紧凑两种尺寸。"
+            android:text="今日全部课程状态配色：进行中绿 / 下一节红 / 未开始蓝 / 已上完灰。提供 4×2 双行卡与 2×2 紧凑两种尺寸。"
             android:textSize="@dimen/text_caption"
             android:textColor="?attr/colorOnSurfaceVariant" />
 

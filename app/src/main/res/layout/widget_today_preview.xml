@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 今日课程概览的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用 -->
+<!-- 今日课程概览的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用。
+     三行分别演示「已上完（灰）/ 进行中（绿）/ 下一节（红）」，配色与真身同源：
+     彩色行取课表页课程色（蓝/红/绿）+ 白字，已上完整行连文字一起灰掉。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -62,7 +64,7 @@
                     android:layout_weight="1"
                     android:text="08:00 软件工程"
                     android:textSize="@dimen/text_caption"
-                    android:textColor="@color/widget_text_title"
+                    android:textColor="@color/widget_status_finished_text"
                     android:textStyle="bold"
                     android:maxLines="1" />
 
@@ -72,7 +74,8 @@
                     android:layout_marginStart="6dp"
                     android:text="已上完"
                     android:textSize="@dimen/text_micro"
-                    android:textColor="@color/widget_badge_finished" />
+                    android:textColor="@color/widget_status_finished_text"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <TextView
@@ -81,7 +84,7 @@
                 android:layout_marginTop="1dp"
                 android:text="君武 301 · 1-2节"
                 android:textSize="@dimen/text_label"
-                android:textColor="@color/widget_text_secondary"
+                android:textColor="@color/widget_status_finished_text_weak"
                 android:maxLines="1" />
         </LinearLayout>
 
@@ -105,9 +108,9 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="10:10 大学英语"
+                    android:text="10:10 大学物理"
                     android:textSize="@dimen/text_caption"
-                    android:textColor="@color/widget_text_title"
+                    android:textColor="@color/widget_status_text"
                     android:textStyle="bold"
                     android:maxLines="1" />
 
@@ -115,9 +118,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:text="下一节"
+                    android:text="进行中"
                     android:textSize="@dimen/text_micro"
-                    android:textColor="@color/widget_badge_active"
+                    android:textColor="@color/widget_status_text"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -125,9 +128,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
-                android:text="外国语 204 · 3-4节"
+                android:text="物理楼 302 · 3-4节"
                 android:textSize="@dimen/text_label"
-                android:textColor="@color/widget_text_secondary"
+                android:textColor="@color/widget_status_text_weak"
                 android:maxLines="1" />
         </LinearLayout>
 
@@ -136,7 +139,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:orientation="vertical"
-            android:background="@drawable/widget_row_upcoming"
+            android:background="@drawable/widget_row_next"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
             android:paddingTop="6dp"
@@ -151,9 +154,9 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="14:30 算法设计"
+                    android:text="14:30 大学英语"
                     android:textSize="@dimen/text_caption"
-                    android:textColor="@color/widget_text_title"
+                    android:textColor="@color/widget_status_text"
                     android:textStyle="bold"
                     android:maxLines="1" />
 
@@ -161,18 +164,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:text="未开始"
+                    android:text="下一节"
                     android:textSize="@dimen/text_micro"
-                    android:textColor="@color/widget_badge_upcoming" />
+                    android:textColor="@color/widget_status_text"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
-                android:text="计电 105 · 5-6节"
+                android:text="外国语 204 · 5-6节"
                 android:textSize="@dimen/text_label"
-                android:textColor="@color/widget_text_secondary"
+                android:textColor="@color/widget_status_text_weak"
                 android:maxLines="1" />
         </LinearLayout>
 

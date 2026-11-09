@@ -20,10 +20,13 @@
     <!-- 主强调（倒计时数字、当日高亮）：主题 primary -->
     <color name="widget_accent">#1565C0</color>
 
-    <!-- 今日概览状态徽标字色（状态语义色，不随主题） -->
-    <color name="widget_badge_finished">#2563EB</color>
-    <color name="widget_badge_active">#9333EA</color>
-    <color name="widget_badge_upcoming">#94A3B8</color>
+    <!-- 今日概览状态行文字：
+         彩色状态行（未开始/下一节/进行中）= 课表页课程卡同款白字（次要行 70% 白）；
+         「已上完」灰卡连标题带次要行一起灰掉，扫视时主动退到背景里 -->
+    <color name="widget_status_text">#FFFFFFFF</color>
+    <color name="widget_status_text_weak">#B3FFFFFF</color>
+    <color name="widget_status_finished_text">#7B838D</color>
+    <color name="widget_status_finished_text_weak">#98A0A9</color>
 
     <!-- 周矩阵日期格文字色（无课日标签 = outline） -->
     <color name="widget_day_text_today">#FFFFFF</color>

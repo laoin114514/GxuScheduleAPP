@@ -17,7 +17,7 @@ import java.util.Calendar
 /**
  * 今日课程概览 4×2 小组件（2026-10 新增变体，与 2×2 的 ScheduleWidgetProvider 并存）。
  *
- * 样式与 2×2 完全同款（彩底行卡 + 徽标三色 + 文字 token），只做布局扩展：
+ * 样式与 2×2 完全同款（彩底行卡 + 状态四色 + 文字 token），只做布局扩展：
  * 标题行「今日课程 · N 门 | 第N周 · 周X」+ 双行行卡列表
  * （行 = 课名 + 徽标 + 起时间 / 教室·节次 + 止时间），110dp 可见约 2 门、可上下滑动。
  * 数据源复用 WidgetCourseListService 的 today_wide 渠道；刷新链与 2×2 一致

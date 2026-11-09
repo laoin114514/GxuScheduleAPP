@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 今日概览行：已上完（浅蓝） -->
+<!-- 今日概览行：已上完（中性灰）。课表页色板里没有灰色，这里用比卡片略亮的冷灰做「退让卡」：
+     不抢眼，配合 widget_status_finished_* 的灰字，让已上完的课自然沉到背景里。 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#CCEFF6FF" />
+    <solid android:color="#E6E9EE" />
     <corners android:radius="12dp" />
 </shape>

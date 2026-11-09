@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 下一门课提醒的静态假数据预览：小组件选择器（previewLayout）与「小组件中心」页共用。
-     结构与 widget_next_course.xml 保持同构，假数据对齐「有课进行中 + 今日下一门」示意。 -->
+     结构与 widget_next_course.xml 同构三行（课名 / 教室+徽标 / 起止时间）；
+     预览卡片是 335×172dp，比真机 4×2 矮，行距收紧以保证两门课完整显示。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/bg_widget_card"
-    android:paddingStart="12dp"
-    android:paddingEnd="12dp"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
     android:paddingTop="6dp"
     android:paddingBottom="6dp">
 
@@ -22,9 +23,11 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="下一门课提醒"
-            android:textSize="@dimen/text_caption"
+            android:textSize="@dimen/text_body_small"
             android:textStyle="bold"
-            android:textColor="@color/widget_text_title" />
+            android:textColor="@color/widget_text_title"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -32,22 +35,24 @@
             android:layout_marginStart="6dp"
             android:text="第4周 · "
             android:textSize="@dimen/text_caption"
-            android:textColor="@color/widget_text_weak" />
+            android:textColor="@color/widget_text_weak"
+            android:maxLines="1" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="周二"
-            android:textSize="@dimen/text_caption"
+            android:textSize="@dimen/text_body_small"
             android:textStyle="bold"
-            android:textColor="@color/widget_accent" />
+            android:textColor="@color/widget_accent"
+            android:maxLines="1" />
     </LinearLayout>
 
+    <!-- 主课 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="4dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
@@ -68,9 +73,20 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="文献检索"
+                    android:textSize="@dimen/text_title"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_text_title"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
@@ -78,10 +94,9 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="文献检索"
+                        android:text="东图-631"
                         android:textSize="@dimen/text_body_small"
-                        android:textStyle="bold"
-                        android:textColor="@color/widget_text_title"
+                        android:textColor="@color/widget_text_secondary"
                         android:maxLines="1"
                         android:ellipsize="end" />
 
@@ -90,57 +105,30 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
                         android:text="进行中"
-                        android:textSize="@dimen/text_label"
+                        android:textSize="@dimen/text_caption"
                         android:textStyle="bold"
                         android:textColor="@color/widget_accent"
                         android:maxLines="1" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:text="10:00"
-                        android:textSize="@dimen/text_caption"
-                        android:textColor="@color/widget_text_weak"
-                        android:fontFeatureSettings="tnum"
-                        android:maxLines="1" />
                 </LinearLayout>
 
-                <LinearLayout
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="东图-631"
-                        android:textSize="@dimen/text_caption"
-                        android:textColor="@color/widget_text_secondary"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:text="11:40"
-                        android:textSize="@dimen/text_caption"
-                        android:textColor="@color/widget_text_weak"
-                        android:fontFeatureSettings="tnum"
-                        android:maxLines="1" />
-                </LinearLayout>
+                    android:layout_marginTop="0dp"
+                    android:text="10:00 - 11:40"
+                    android:textSize="@dimen/text_body_small"
+                    android:textColor="@color/widget_text_weak"
+                    android:fontFeatureSettings="tnum"
+                    android:maxLines="1" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
+    <!-- 次课 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="2dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
@@ -161,9 +149,20 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="算法设计与分析"
+                    android:textSize="@dimen/text_subtitle"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_text_title"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
@@ -171,10 +170,9 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="算法设计与分析"
+                        android:text="西综合306"
                         android:textSize="@dimen/text_body_small"
-                        android:textStyle="bold"
-                        android:textColor="@color/widget_text_title"
+                        android:textColor="@color/widget_text_secondary"
                         android:maxLines="1"
                         android:ellipsize="end" />
 
@@ -183,48 +181,21 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
                         android:text="25 分钟后"
-                        android:textSize="@dimen/text_label"
+                        android:textSize="@dimen/text_caption"
                         android:textStyle="bold"
                         android:textColor="@color/widget_accent"
                         android:maxLines="1" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:text="14:30"
-                        android:textSize="@dimen/text_caption"
-                        android:textColor="@color/widget_text_weak"
-                        android:fontFeatureSettings="tnum"
-                        android:maxLines="1" />
                 </LinearLayout>
 
-                <LinearLayout
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="西综合306"
-                        android:textSize="@dimen/text_caption"
-                        android:textColor="@color/widget_text_secondary"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:text="16:05"
-                        android:textSize="@dimen/text_caption"
-                        android:textColor="@color/widget_text_weak"
-                        android:fontFeatureSettings="tnum"
-                        android:maxLines="1" />
-                </LinearLayout>
+                    android:layout_marginTop="0dp"
+                    android:text="14:30 - 16:05"
+                    android:textSize="@dimen/text_body_small"
+                    android:textColor="@color/widget_text_weak"
+                    android:fontFeatureSettings="tnum"
+                    android:maxLines="1" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
