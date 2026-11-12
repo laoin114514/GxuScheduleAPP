@@ -71,8 +71,10 @@ git tag -a v0.5.12beta1 -m "标题" -m "更新说明"
 python3 scripts/beta_release.py        # 构建 + 校验 + 直传更新服务测试渠道
 ```
 
-首次使用先执行 `python3 scripts/beta_release.py --init-signing` 生成测试签名与本地配置。
-完整说明见 [docs/测试版构建与发布.md](docs/测试版构建与发布.md)。
+首次使用先执行 `python3 scripts/beta_release.py --init-signing` 生成测试签名与本地配置；
+再用更新服务的管理面 admin API 给 `schedule-beta` 渠道签发一把专属上传 key（明文只返回一次），
+填进 `.beta-release.env` 的 `UPDATE_API_KEY`。每渠道一把 key，脚本不再读取服务端 `.env`；
+具体步骤（含 curl 示例与轮换方式）见 [docs/测试版构建与发布.md](docs/测试版构建与发布.md) §2.2。
 
 ---
 

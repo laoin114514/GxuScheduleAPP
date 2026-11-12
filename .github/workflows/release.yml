@@ -143,11 +143,15 @@ jobs:
         continue-on-error: true
         env:
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
-          UPDATE_SERVER_API_KEY: ${{ secrets.UPDATE_SERVER_API_KEY }}
+          # schedule 渠道专属 upload key（admin API 签发，明文只在签发/轮换时返回一次）。
+          # 新配置请用 SCHEDULE_UPLOAD_KEY；UPDATE_SERVER_API_KEY 是旧全局 UPLOAD_API_KEY 的
+          # 迁移兼容回退——服务端切到 UPLOAD_AUTH_MODE=scoped 后旧 key 会返回 INVALID_API_KEY，
+          # 迁移完成后请删除该旧 secret。
+          UPDATE_SERVER_API_KEY: ${{ secrets.SCHEDULE_UPLOAD_KEY || secrets.UPDATE_SERVER_API_KEY }}
           RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
         run: |
           if [ -z "$UPDATE_SERVER_URL" ] || [ -z "$UPDATE_SERVER_API_KEY" ]; then
-            echo "::warning::未配置 UPDATE_SERVER_URL / UPDATE_SERVER_API_KEY secrets，跳过上传更新服务器"
+            echo "::warning::未配置 UPDATE_SERVER_URL / SCHEDULE_UPLOAD_KEY secrets，跳过上传更新服务器"
             exit 0
           fi
           UNIVERSAL_APK=$(ls app/build/outputs/apk/release/*-universal.apk 2>/dev/null | head -1 || true)
@@ -161,6 +165,9 @@ jobs:
           UNIVERSAL_VERSION_CODE=$(( ${{ steps.version.outputs.VERSION_CODE }} * 10 ))
           # --retry-all-errors: 连 curl (92)/HTTP 408 这类弱网错误也重试（默认不会）
           # --fail-with-body: HTTP 4xx/5xx 时仍打印后端 JSON，方便定位 401/409/413
+          #                   （响应里的 errorCode 是稳定错误码，见 GxuScheduleWebsite/README.md）
+          # appKey 必须与服务端该 key 绑定的渠道一致（schedule）；name 仅为兼容旧发布脚本而保留，
+          # 上传接口不会修改 app 显示名（改名/建 app 走 admin API）。
           curl -sS --fail-with-body \
             --retry 3 --retry-all-errors --retry-delay 3 --retry-max-time 600 \
             -X POST "${UPDATE_SERVER_URL}/api/v1/releases/upload" \

@@ -12,7 +12,7 @@
 典型流程：
     # 一次性：生成 beta 签名与本地配置（生成后务必离线备份 jks）
     python3 scripts/beta_release.py --init-signing
-    #   按提示把 beta 专用上传 key 填进 .beta-release.env
+    #   再用 admin API 签发 schedule-beta 渠道的 upload key，填进 .beta-release.env
 
     # 每次发测试版：
     git tag -a v0.5.12beta1 -m "测试版标题" -m "- 改动一\n- 改动二"
@@ -186,38 +186,26 @@ def resolve_keystore(env: dict[str, str]) -> Path:
 
 
 def resolve_api_key(env: dict[str, str]) -> str:
-    """上传 key：优先显式配置；留空时从本机更新服务端的 .env 读取。
+    """上传 key：必须显式配置为 schedule-beta 渠道的专属 key。
 
-    当前部署方式下更新服务与构建机是同一台机器，正式上传 key 本来就在
-    GxuScheduleWebsite/.env 里；直接读取可避免把密钥复制到第二处。
-    后端迁到远端后，改为填 UPDATE_API_KEY（或服务端下发的 beta 专用 key）即可。
+    新方案下每个 app 有自己的 upload key（gxu_live_<keyId>_<43 字符>），服务端只存
+    SHA-256 并由 key 反查 app；明文只在 admin API 签发/轮换时返回一次，因此这里不再
+    从服务端 .env 读取（解密不了 hash，且旧全局 key 在 scoped 模式下会被拒绝）。
     """
     key = env.get("UPDATE_API_KEY", "").strip()
     if key:
         return key
 
-    server_env = env.get("SERVER_ENV_FILE", "").strip()
-    if not server_env:
-        fail(
-            "缺少上传 key：.beta-release.env 的 UPDATE_API_KEY 为空，且未配置 SERVER_ENV_FILE。\n"
-            "  单机部署（更新服务在本机）推荐：\n"
-            "    SERVER_ENV_FILE=GxuScheduleWebsite/.env\n"
-            "  脚本会读取该文件的 UPLOAD_API_KEY，不用把密钥再复制一份；\n"
-            "  更新服务不在本机时，直接填 UPDATE_API_KEY=<服务端上传 key>。",
-            EXIT_UPLOAD,
-        )
-    path = Path(server_env).expanduser()
-    if not path.is_absolute():
-        path = ROOT / path
-    if not path.exists():
-        fail(f"SERVER_ENV_FILE 指向的文件不存在：{path}", EXIT_UPLOAD)
-    server_cfg = load_env_file(path)
-    key = server_cfg.get("UPLOAD_API_KEY", "").strip()
-    if not key:
-        fail(f"{path} 里没有 UPLOAD_API_KEY", EXIT_UPLOAD)
-    shown = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
-    log(f"上传 key：读取本机更新服务端配置 {shown} 的 UPLOAD_API_KEY")
-    return key
+    fail(
+        "缺少上传 key：.beta-release.env 的 UPDATE_API_KEY 为空。\n"
+        "  测试版必须使用 schedule-beta 渠道的专属 upload key（形如 gxu_live_<keyId>_<43字符>）：\n"
+        "    1) 用 admin 密钥调用管理接口签发（首次需先创建 app，见 docs/测试版构建与发布.md §2.2）：\n"
+        "       curl -sS -X POST \"$UPDATE_BASE_URL/api/v1/admin/apps/schedule-beta/keys\" \\\n"
+        "         -H \"Authorization: Bearer $ADMIN_API_KEY\"\n"
+        "    2) 把响应 data.plaintext 里的明文 key 填进 .beta-release.env 的 UPDATE_API_KEY\n"
+        "  明文只在签发时返回一次，服务端只存 SHA-256；丢了只能轮换重发。",
+        EXIT_UPLOAD,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -326,7 +314,19 @@ def http_json(url: str, *, timeout: int = 20) -> dict:
             body = resp.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", "replace")
-        fail(f"请求失败 HTTP {exc.code}：{url}\n{body[:500]}")
+        payload = last_json_object(body) or {}
+        error_code = str(payload.get("errorCode") or "").strip()
+        message = str(payload.get("message") or "").strip()
+        if error_code == "APP_NOT_FOUND":
+            fail(
+                f"请求失败 HTTP {exc.code}：{url}\n"
+                f"  errorCode=APP_NOT_FOUND：{message or '该 app 不存在或已被停用'}\n"
+                f"  → 更新服务返回 404：渠道可能尚未创建，或 app 被管理员停用。\n"
+                f"    用 admin API 创建 app / 重新启用后重试（见 docs/测试版构建与发布.md §2.2）。",
+                EXIT_USAGE,
+            )
+        detail = f"errorCode={error_code}：{message}" if error_code else body[:500]
+        fail(f"请求失败 HTTP {exc.code}：{url}\n  {detail}")
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         fail(
             f"连接更新服务失败：{url}\n  {exc}\n"
@@ -564,8 +564,8 @@ def upload_release(
 ) -> dict:
     if not api_key:
         fail(
-            "缺少上传 key：请在 .beta-release.env 里填写 UPDATE_API_KEY，"
-            "或配置 SERVER_ENV_FILE=GxuScheduleWebsite/.env 从本机服务端读取",
+            "缺少上传 key：请在 .beta-release.env 里填写 schedule-beta 渠道专属的 UPDATE_API_KEY"
+            "（用 admin API 签发，明文只返回一次）",
             EXIT_UPLOAD,
         )
 
@@ -618,11 +618,11 @@ def upload_release(
             pass
 
 
-def parse_response_json(body: str) -> dict:
-    """解析上传响应。curl 在重试场景下可能输出多段 JSON，取最后一段。"""
+def last_json_object(body: str) -> dict | None:
+    """从 curl 输出里取最后一段 JSON 对象（重试场景下可能输出多段）。"""
     text = (body or "").strip()
     if not text:
-        fail("上传响应为空", EXIT_UPLOAD)
+        return None
     decoder = json.JSONDecoder()
     parsed: list[dict] = []
     idx = 0
@@ -638,20 +638,84 @@ def parse_response_json(body: str) -> dict:
         if isinstance(obj, dict):
             parsed.append(obj)
         idx = end
-    if not parsed:
+    return parsed[-1] if parsed else None
+
+
+def parse_response_json(body: str) -> dict:
+    """解析上传响应。curl 在重试场景下可能输出多段 JSON，取最后一段。"""
+    payload = last_json_object(body)
+    if payload is None:
+        text = (body or "").strip()
         fail(f"上传响应不是 JSON：{text[:1000]}", EXIT_UPLOAD)
-    return parsed[-1]
+    return payload
+
+
+# 服务端稳定错误码（响应体 errorCode 字段）→ 中文可操作提示。
+# 契约见 GxuScheduleWebsite/README.md 的「错误码」表与 docs/per-app-upload-keys.md。
+UPLOAD_ERROR_HINTS: dict[str, str] = {
+    "INVALID_API_KEY": (
+        "上传 key 无效、已被吊销或不是本渠道的 key。\n"
+        "    测试版必须使用 schedule-beta 渠道的专属 key（gxu_live_... 明文只在签发/轮换时返回一次）。\n"
+        "    用 admin API 重新签发/轮换该渠道 key，把新明文填进 .beta-release.env 的 UPDATE_API_KEY。"
+    ),
+    "APP_NOT_FOUND": (
+        "服务端查不到 schedule-beta 这个 app（未创建，或 app 已停用）。\n"
+        "    先用 admin API 创建 app 并签发 key，见 docs/测试版构建与发布.md §2.2。"
+    ),
+    "APP_DISABLED": (
+        "schedule-beta 渠道已被管理员停用，无法上传。\n"
+        "    让管理员在 admin API 里重新启用该 app 后再发版。"
+    ),
+    "APP_KEY_MISMATCH": (
+        "上传 key 绑定的渠道与表单 appKey 不一致。\n"
+        "    脚本固定上传 appKey=schedule-beta，请确认 UPDATE_API_KEY 是 beta 渠道的 key，不要填正式渠道（schedule）的 key。"
+    ),
+    "INVALID_PARAM": (
+        "请求参数不合法（appKey / versionCode / versionName / 文件名等）。\n"
+        "    核对 tag 格式与脚本参数；versionCode 必须在 1..2100000000 且文件名只用 [A-Za-z0-9._-]。"
+    ),
+    "FILE_TOO_LARGE": (
+        "APK 超过服务端单次上传上限（MAX_UPLOAD_MB，默认 512MB）。\n"
+        "    让管理员调大上限，或检查是否误传了别的文件。"
+    ),
+    "VERSION_CONFLICT": (
+        "同 versionCode 已存在且文件内容不同（不是同一 APK 的重复上传）。\n"
+        "    提升 beta 序号（如 ...beta2）后重发；同一 APK 重传是幂等的。"
+    ),
+    "DOWNGRADE_REJECTED": (
+        "版本号倒退：本次 versionCode 低于该渠道最新版。\n"
+        "    测试渠道 versionCode 必须严格递增，请提升版本号 / beta 序号。"
+    ),
+    "UPLOAD_QUOTA_EXCEEDED": (
+        "该 app 当日上传次数已达上限（DEFAULT_DAILY_UPLOAD_LIMIT，默认 20 次）。\n"
+        "    次日再试，或让管理员在 admin API 里调大该 app 的每日配额。"
+    ),
+    "RATE_LIMITED": (
+        "上传过于频繁，被按 key 限流（UPLOAD_RATE_RPS / UPLOAD_RATE_BURST）。\n"
+        "    等待几秒后重跑即可；curl 已带重试，仍失败再手动重试。"
+    ),
+}
 
 
 def upload_error_hint(body: str, curl_exit: int) -> str:
+    payload = last_json_object(body) or {}
+    error_code = str(payload.get("errorCode") or "").strip()
+    message = str(payload.get("message") or "").strip()
+    if error_code:
+        head = f"  → 服务端 errorCode={error_code}" + (f"：{message}" if message else "")
+        hint = UPLOAD_ERROR_HINTS.get(error_code.upper())
+        if hint:
+            return f"{head}\n    {hint}"
+        return f"{head}\n    未收录的错误码；见 GxuScheduleWebsite/README.md 错误码表或服务端日志"
+
+    # 旧版服务端（还没有 errorCode 字段）按响应文案兜底，便于迁移期排查
     low = body.lower()
-    if "invalid api key" in low:
+    if "invalid api key" in low or "invalid api_key" in low:
         return (
-            "  → 上传 key 错误。\n"
-            "    单机部署：脚本默认读取 GxuScheduleWebsite/.env 的 UPLOAD_API_KEY；\n"
-            "    请确认 SERVER_ENV_FILE 指向正确、服务端容器已加载该 key（改 .env 后需重启）。\n"
-            "    后端在远端时：直接配置 UPDATE_API_KEY；若服务端启用了 beta 专用 key，\n"
-            "    则填 UPLOAD_API_KEY_BETA 的值（该 key 只能上传 *-beta 渠道）。"
+            "  → 上传 key 错误（旧版服务端）。\n"
+            "    scoped 模式下必须用 schedule-beta 渠道的专属 key；\n"
+            "    迁移期（UPLOAD_AUTH_MODE=dual）旧全局密钥也可用，但只对白名单渠道生效。\n"
+            "    用 admin API 签发/轮换 key 后，把新明文填进 .beta-release.env。"
         )
     if "beta 上传密钥仅允许" in body or "仅允许上传" in body:
         return "  → beta key 只允许上传 appKey 以 -beta 结尾的渠道，请检查脚本 appKey 配置"
@@ -659,6 +723,10 @@ def upload_error_hint(body: str, curl_exit: int) -> str:
         return "  → 版本号倒退。测试渠道最新版更高，请提升版本号 / beta 序号"
     if "已存在" in body or "duplicate" in low:
         return "  → 同 versionCode 已存在且内容不同。提升 beta 序号（如 ...beta2）后重发"
+    if "份额" in body or "quota" in low or "每日" in body:
+        return "  → 当日上传配额用尽。次日再试，或让管理员调大该 app 的每日上传上限"
+    if "too many" in low or "rate" in low:
+        return "  → 触发限流。等待几秒后重跑"
     if curl_exit == 28:
         return "  → 网络超时，弱网可重试；确认本机能访问更新服务域名"
     if curl_exit == 22:
@@ -795,8 +863,11 @@ def init_signing(args) -> None:
     print(f"  签名文件 : {keystore}")
     print(f"  配置文件 : {env_path}（权限 600，已被 .gitignore 忽略）")
     if not args.api_key:
-        print(f"  上传 key : 已配置从 GxuScheduleWebsite/.env 读取（单机部署）")
-        print(f"             更新服务在远端时，编辑 {env_path.name} 填 UPDATE_API_KEY")
+        print("  上传 key : 未填写。请用 admin API 签发 schedule-beta 渠道的专属 key：")
+        print(f"             curl -sS -X POST \"$UPDATE_BASE_URL/api/v1/admin/apps/schedule-beta/keys\" \\")
+        print(f"               -H \"Authorization: Bearer $ADMIN_API_KEY\"")
+        print(f"             把响应 data.plaintext 的明文填进 {env_path.name} 的 UPDATE_API_KEY")
+        print("             （服务端只存 SHA-256，明文只返回一次；首次使用见 docs/测试版构建与发布.md §2.2）")
     print()
     print("  ⚠ 请立即离线备份签名文件与密码：")
     print("     证书丢失后，测试者无法覆盖安装新 beta（只能卸载重装）。")
@@ -836,7 +907,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-dirty", action="store_true", help="允许工作区有未提交改动（仅调试用）")
     p.add_argument("--init-signing", action="store_true", help="一次性生成 beta 签名与本地配置文件")
     p.add_argument("--keystore", help="--init-signing 时指定签名输出路径")
-    p.add_argument("--api-key", help="--init-signing 时直接写入上传 key")
+    p.add_argument("--api-key", help="--init-signing 时直接写入 beta 渠道上传 key（一般留空，生成后再填）")
     p.add_argument("--password", help="--init-signing 时指定签名密码（默认随机生成）")
     p.add_argument("--force", action="store_true", help="--init-signing 时允许覆盖已有文件")
     return p
@@ -849,18 +920,19 @@ def main(argv: list[str] | None = None) -> int:
     ENV_TEMPLATE = """# 西大课栈 · 本地测试版发布配置
 # 该文件已被 .gitignore 忽略，请勿提交；权限建议 600。
 
-# 更新服务地址（正式/测试共用，只是 appKey 不同）
+# 更新服务地址（正式/测试共用同一个服务，只是 appKey 与 key 不同）
 UPDATE_BASE_URL={base_url}
 
-# 上传 key：
-# - 单机部署（更新服务与构建机是同一台机器）：留空即可，脚本会从下面
-#   SERVER_ENV_FILE 指向的服务端 .env 读取 UPLOAD_API_KEY，避免密钥复制第二份；
-# - 更新服务在远端：填写远端下发的上传 key；若服务端启用了 beta 专用 key，
-#   就填 UPLOAD_API_KEY_BETA（只能上传 *-beta 渠道）。
+# 上传 key（必填，beta 渠道专属）：
+#   新方案下每个 app 有自己的 upload key（gxu_live_<keyId>_<43字符>），服务端只存 SHA-256，
+#   明文只在 admin API 签发/轮换时返回一次。测试版必须用 schedule-beta 渠道的 key；
+#   拿正式渠道（schedule）的 key 会被服务端以 APP_KEY_MISMATCH 拒绝。
+#   获取方式（ADMIN_API_KEY 只放管理员本机，绝不进 CI）：
+#     curl -sS -X POST "$UPDATE_BASE_URL/api/v1/admin/apps/schedule-beta/keys" \\
+#       -H "Authorization: Bearer $ADMIN_API_KEY"
+#   把响应 data.plaintext 里的明文填到下面。首次使用若 app 尚未创建，见
+#   docs/测试版构建与发布.md §2.2。
 UPDATE_API_KEY={api_key}
-
-# 本机更新服务端的配置文件（单机部署用；后端不在本机时删掉这行）
-SERVER_ENV_FILE=GxuScheduleWebsite/.env
 
 # 测试版渠道 appKey（与 app/build.gradle 的 beta build type 一致）
 BETA_APP_KEY=schedule-beta
@@ -890,7 +962,7 @@ BETA_KEY_PASSWORD={key_password}
         if not app_key.endswith("-beta"):
             fail(f"BETA_APP_KEY 必须以 -beta 结尾（当前 {app_key}）")
 
-        # 上传 key：留空时从本机更新服务端 .env 读取（单机部署，避免密钥复制）
+        # 上传 key：必须显式配置为 schedule-beta 渠道的专属 key（admin API 签发，明文只回一次）
         api_key = "" if args.skip_upload else resolve_api_key(cfg)
 
         # 1) tag / 版本
