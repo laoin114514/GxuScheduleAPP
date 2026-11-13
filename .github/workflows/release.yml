@@ -143,11 +143,8 @@ jobs:
         continue-on-error: true
         env:
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
-          # schedule 渠道专属 upload key（admin API 签发，明文只在签发/轮换时返回一次）。
-          # 新配置请用 SCHEDULE_UPLOAD_KEY；UPDATE_SERVER_API_KEY 是旧全局 UPLOAD_API_KEY 的
-          # 迁移兼容回退——服务端切到 UPLOAD_AUTH_MODE=scoped 后旧 key 会返回 INVALID_API_KEY，
-          # 迁移完成后请删除该旧 secret。
-          UPDATE_SERVER_API_KEY: ${{ secrets.SCHEDULE_UPLOAD_KEY || secrets.UPDATE_SERVER_API_KEY }}
+          # schedule 渠道专属 upload key（admin API 签发，明文只在签发/轮换时返回一次）
+          UPDATE_SERVER_API_KEY: ${{ secrets.SCHEDULE_UPLOAD_KEY }}
           RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
         run: |
           if [ -z "$UPDATE_SERVER_URL" ] || [ -z "$UPDATE_SERVER_API_KEY" ]; then

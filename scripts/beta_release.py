@@ -708,17 +708,6 @@ def upload_error_hint(body: str, curl_exit: int) -> str:
             return f"{head}\n    {hint}"
         return f"{head}\n    未收录的错误码；见 GxuScheduleWebsite/README.md 错误码表或服务端日志"
 
-    # 旧版服务端（还没有 errorCode 字段）按响应文案兜底，便于迁移期排查
-    low = body.lower()
-    if "invalid api key" in low or "invalid api_key" in low:
-        return (
-            "  → 上传 key 错误（旧版服务端）。\n"
-            "    scoped 模式下必须用 schedule-beta 渠道的专属 key；\n"
-            "    迁移期（UPLOAD_AUTH_MODE=dual）旧全局密钥也可用，但只对白名单渠道生效。\n"
-            "    用 admin API 签发/轮换 key 后，把新明文填进 .beta-release.env。"
-        )
-    if "beta 上传密钥仅允许" in body or "仅允许上传" in body:
-        return "  → beta key 只允许上传 appKey 以 -beta 结尾的渠道，请检查脚本 appKey 配置"
     if "低于当前最新" in body or "allow_downgrade" in low:
         return "  → 版本号倒退。测试渠道最新版更高，请提升版本号 / beta 序号"
     if "已存在" in body or "duplicate" in low:
