@@ -144,10 +144,10 @@ jobs:
         env:
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           # schedule 渠道专属 upload key（admin API 签发，明文只在签发/轮换时返回一次）
-          UPDATE_SERVER_API_KEY: ${{ secrets.SCHEDULE_UPLOAD_KEY }}
+          SCHEDULE_UPLOAD_KEY: ${{ secrets.SCHEDULE_UPLOAD_KEY }}
           RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
         run: |
-          if [ -z "$UPDATE_SERVER_URL" ] || [ -z "$UPDATE_SERVER_API_KEY" ]; then
+          if [ -z "$UPDATE_SERVER_URL" ] || [ -z "$SCHEDULE_UPLOAD_KEY" ]; then
             echo "::warning::未配置 UPDATE_SERVER_URL / SCHEDULE_UPLOAD_KEY secrets，跳过上传更新服务器"
             exit 0
           fi
@@ -168,7 +168,7 @@ jobs:
           curl -sS --fail-with-body \
             --retry 3 --retry-all-errors --retry-delay 3 --retry-max-time 600 \
             -X POST "${UPDATE_SERVER_URL}/api/v1/releases/upload" \
-            -H "X-API-Key: ${UPDATE_SERVER_API_KEY}" \
+            -H "X-API-Key: ${SCHEDULE_UPLOAD_KEY}" \
             -F "appKey=schedule" \
             -F "versionCode=${UNIVERSAL_VERSION_CODE}" \
             -F "versionName=${{ steps.version.outputs.VERSION }}" \
