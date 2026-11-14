@@ -44,8 +44,9 @@ import com.cherry.wakeupschedule.ui.theme.setupPageHeader
  * - **不可用时兜底**：进入本页面前 [InAppBrowser] 已确认系统有 WebView 实现；
  *   万一仍失败，页面给出错误态 + 重试，用户还可从菜单改用系统浏览器。
  *
- * 交互：顶部返回键 = WebView 后退（无历史时退出页面）；右上角菜单 = 刷新 /
- * 在浏览器中打开。页面内 `target=_blank` 链接会被改成当前页打开（WebView 不弹新窗）。
+ * 交互：左上角 ✕ = 直接退出页面（关闭浏览器，不在网页历史里后退）；系统返回键 =
+ * WebView 后退（无历史时退出页面）；右上角菜单 = 刷新 / 在浏览器中打开。
+ * 页面内 `target=_blank` 链接会被改成当前页打开（WebView 不弹新窗）。
  */
 class InAppBrowserActivity : BaseActivity() {
 
@@ -87,10 +88,12 @@ class InAppBrowserActivity : BaseActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         fixedTitle = intent.getStringExtra(InAppBrowser.EXTRA_TITLE)
+        // 内置浏览器是「关闭」语义而非「返回上一页」：左上角是 ✕（图标见 layout），
+        // 点击直接 finish 退出；网页历史回退交给系统返回键（见 backCallback）。
         setupPageHeader(
             binding.toolbar,
             fixedTitle?.takeIf { it.isNotBlank() } ?: getString(R.string.in_app_browser_title)
-        ) { goBackOrFinish() }
+        ) { finish() }
 
         onBackPressedDispatcher.addCallback(this, backCallback)
         setupWebView()

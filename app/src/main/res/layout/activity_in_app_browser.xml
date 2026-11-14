@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   内置浏览器页面：顶部标题栏 + 细进度条 + WebView。
+  左上角是 ✕（关闭并退出，不在网页历史里后退）；系统返回键仍走 WebView 后退。
   复用 view_empty_state 作为加载失败态（图标 + 提示 + 重试），不新增图片资源。
   页面底色由 BaseActivity 统一铺调色板渐变，这里只负责内容区。
 -->
@@ -17,7 +18,8 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/top_bar_height"
         android:background="@android:color/transparent"
-        app:navigationIcon="@drawable/ic_arrow_back"
+        app:navigationIcon="@drawable/ic_close"
+        app:navigationContentDescription="@string/common_close"
         app:navigationIconTint="?attr/colorOnSurfaceVariant" />
 
     <ProgressBar
