@@ -33,9 +33,6 @@ object SchedulePageDetailDialog {
 
     private var currentDialog: Dialog? = null
 
-    /** 遮罩颜色（原来窗口 dim 0.5 黑）；改为内容层遮罩，才能做 alpha 渐变 */
-    private const val SCRIM_COLOR = 0x80000000.toInt()
-
     /** 弹层入场：自底部弹簧滑入的初始位移（dp）与时长（ms） */
     private const val ENTER_FROM_Y_DP = 48f
     private const val ENTER_DURATION_MS = 300L
@@ -76,6 +73,8 @@ object SchedulePageDetailDialog {
         val inflater = LayoutInflater.from(context)
         val sheetView = inflater.inflate(R.layout.dialog_course_detail, null)
         val density = context.resources.displayMetrics.density
+        // 窗口铺满整屏后，内容要自己避让手势条（否则最后一排「周次」会被压住）
+        com.cherry.wakeupschedule.ui.component.SheetWindow.applyNavigationBarInset(sheetView, context)
 
         val topRadius = 24 * density
         val sheetBg = GradientDrawable().apply {
@@ -161,13 +160,11 @@ object SchedulePageDetailDialog {
         setupQqGroupJump(sheetView, courses.firstOrNull { it.qqGroup.isNotBlank() } ?: primary)
 
         dialog.setContentView(sheetView)
-        // B3：窗口 dim 无法做 alpha 渐变，改为内容层遮罩（颜色与原来 0.5 黑一致），跟随入场/退场一起淡入淡出
-        val scrim = ColorDrawable(SCRIM_COLOR).apply { alpha = 0 }
+        // B3：遮罩用系统 dim 层逐帧渐变（窗口配置见 SheetWindow），内容层不再叠自绘遮罩
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-            background = scrim
         }
         (sheetView.parent as? ViewGroup)?.removeView(sheetView)
         sheetView.layoutParams = LinearLayout.LayoutParams(
@@ -190,10 +187,16 @@ object SchedulePageDetailDialog {
                 .setInterpolator(Motion.accelerate)
                 .withEndAction { dialog.dismiss() }
                 .start()
-            ValueAnimator.ofInt(scrim.alpha, 0).apply {
+            ValueAnimator.ofFloat(
+                com.cherry.wakeupschedule.ui.component.SheetWindow.currentDim(dialog), 0f
+            ).apply {
                 duration = Motion.FAST
                 interpolator = Motion.accelerate
-                addUpdateListener { scrim.alpha = it.animatedValue as Int }
+                addUpdateListener {
+                    com.cherry.wakeupschedule.ui.component.SheetWindow.setDim(
+                        dialog, it.animatedValue as Float
+                    )
+                }
                 start()
             }
         }
@@ -242,30 +245,22 @@ object SchedulePageDetailDialog {
             sheetView.alpha = 0f
             sheetView.translationY = Motion.dp(sheetView, ENTER_FROM_Y_DP)
         }
-        dialog.window?.apply {
-            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
-            setGravity(Gravity.BOTTOM)
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            // 遮罩与滑入全部由内容层自己动画：窗口 dim 无法渐变，系统 window 动画会和内容动画打架
-            setWindowAnimations(0)
-            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        }
+        // 窗口铺满整屏（含状态栏/手势条），自绘遮罩才能盖住系统栏区域
+        com.cherry.wakeupschedule.ui.component.SheetWindow.configure(dialog)
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
         dialog.show()
-        // 兜底：主题里的 Window_backgroundDimEnabled 可能在窗口创建时才写入 flag，
-        // show 后再清一次，避免系统 dim 和自绘遮罩叠加、整屏过暗
-        dialog.window?.apply {
-            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            setDimAmount(0f)
-        }
 
         // B3 入场：bottom sheet 自底部弹簧滑入 + 淡入，遮罩同步淡入，详情卡片行 35ms 错峰上浮
         if (Motion.enabled()) {
-            ValueAnimator.ofInt(0, 0x80).apply {
+            ValueAnimator.ofFloat(0f, com.cherry.wakeupschedule.ui.component.SheetWindow.DIM_AMOUNT).apply {
                 duration = Motion.MEDIUM
                 interpolator = Motion.standard
-                addUpdateListener { scrim.alpha = it.animatedValue as Int }
+                addUpdateListener {
+                    com.cherry.wakeupschedule.ui.component.SheetWindow.setDim(
+                        dialog, it.animatedValue as Float
+                    )
+                }
                 start()
             }
             sheetView.animate()
@@ -282,7 +277,9 @@ object SchedulePageDetailDialog {
                 fromScale = 1f
             )
         } else {
-            scrim.alpha = 0x80
+            com.cherry.wakeupschedule.ui.component.SheetWindow.setDim(
+                dialog, com.cherry.wakeupschedule.ui.component.SheetWindow.DIM_AMOUNT
+            )
             sheetView.translationY = 0f
         }
     }
