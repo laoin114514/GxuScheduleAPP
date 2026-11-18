@@ -8,6 +8,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.ExamScheduleEntity
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 
@@ -41,12 +42,19 @@ class ExamScheduleAdapter : RecyclerView.Adapter<ExamScheduleAdapter.ExamViewHol
     }
 
     override fun onBindViewHolder(holder: ExamViewHolder, position: Int) {
+        // 复用兜底：入场动画被滚动/数据替换打断时，条目可能残留半透明或位移
+        Motion.resetScale(holder.itemView)
+        holder.itemView.alpha = 1f
+        holder.itemView.translationY = 0f
         holder.bind(items[position])
     }
 
     inner class ExamViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val card: MaterialCardView = itemView.findViewById(R.id.card_exam)
+
+        /** 内容层：根视图 alpha 留给列表入场动画，这里的压暗不会被入场动画覆盖 */
+        private val content: View = itemView.findViewById(R.id.v_exam_content)
         private val statusBar: View = itemView.findViewById(R.id.v_status_bar)
         private val courseName: TextView = itemView.findViewById(R.id.tv_course_name)
         private val examName: TextView = itemView.findViewById(R.id.tv_exam_name)
@@ -87,7 +95,8 @@ class ExamScheduleAdapter : RecyclerView.Adapter<ExamScheduleAdapter.ExamViewHol
             } else {
                 outlineVariant
             }
-            itemView.alpha = if (status == ExamStatus.FINISHED) 0.72f else 1f
+            // 已结束整体压暗放在内容层：根视图 alpha 由列表入场动画使用，动画结束不会抹掉压暗
+            content.alpha = if (status == ExamStatus.FINISHED) 0.72f else 1f
         }
     }
 }

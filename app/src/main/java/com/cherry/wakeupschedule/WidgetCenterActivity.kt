@@ -11,9 +11,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.RemoteViews
 import androidx.core.view.WindowCompat
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.cherry.wakeupschedule.databinding.ActivityWidgetCenterBinding
 import com.cherry.wakeupschedule.databinding.DialogWidgetHelpBinding
@@ -23,6 +25,7 @@ import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.component.createAppChip
 import com.cherry.wakeupschedule.ui.component.themeColor
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.cherry.wakeupschedule.widget.WidgetPinPolicy
@@ -61,6 +64,9 @@ class WidgetCenterActivity : BaseActivity() {
     private lateinit var binding: ActivityWidgetCenterBinding
     private lateinit var pagerAdapter: WidgetCenterPagerAdapter
     private val dots = mutableListOf<View>()
+
+    /** 已播放入场的小组件页；转屏/返回不重播（随实例状态保存） */
+    private val entrancePlayedPages = mutableSetOf<Int>()
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -104,6 +110,8 @@ class WidgetCenterActivity : BaseActivity() {
         override fun onPageSelected(position: Int) {
             syncChipRow(position)
             updateDots(position.toFloat())
+            playPageEntranceIfNeeded(position)
+            bindPagePress(position)
         }
 
         override fun onPageScrolled(position: Int, offset: Float, offsetPixels: Int) {
@@ -117,6 +125,7 @@ class WidgetCenterActivity : BaseActivity() {
         binding = ActivityWidgetCenterBinding.inflate(layoutInflater)
         setContentView(binding.root)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        savedInstanceState?.getIntArray(STATE_ENTRANCE_PAGES)?.forEach { entrancePlayedPages += it }
 
         setupPageHeader(binding.toolbar, "小组件")
 
@@ -129,6 +138,11 @@ class WidgetCenterActivity : BaseActivity() {
         setupDots()
         // 落地第 1 页「下课倒计时」
         syncChipRow(0)
+        // 首屏页有时收不到 onPageSelected：补一次卡片入场与按压反馈
+        binding.viewPager.post {
+            playPageEntranceIfNeeded(0)
+            bindPagePress(0)
+        }
 
         // 页面渐变是蓝灰调，圆钮用纯白（浅色）才不糊进背景
         binding.btnWidgetHelp.setCircleBackground(R.drawable.bg_widget_help)
@@ -465,7 +479,94 @@ class WidgetCenterActivity : BaseActivity() {
         runCatching { startActivity(WidgetPinSupport.shortcutPermissionIntent(this)) }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putIntArray(STATE_ENTRANCE_PAGES, entrancePlayedPages.toIntArray())
+    }
+
+    // ── 动效：卡片入场 / 预览卡按压 ──
+
+    /**
+     * 小组件页首次显示时，页内元素（标题/说明/卡片，卡片里是小组件预览）错峰上浮淡入。
+     * 每页只播一次，已播页保存在实例状态里，转屏/从系统设置返回不重播。
+     */
+    private fun playPageEntranceIfNeeded(position: Int) {
+        if (!Motion.enabled()) {
+            entrancePlayedPages += position
+            return
+        }
+        if (!entrancePlayedPages.add(position)) return
+        attemptPageEntrance(position, retries = 1)
+    }
+
+    private fun attemptPageEntrance(position: Int, retries: Int) {
+        binding.viewPager.post {
+            val pageRoot = pageRootOf(position)
+            if (pageRoot == null) {
+                // 页还没布局出来：再等一帧；仍拿不到就允许下次页面选中时重试
+                if (retries > 0) attemptPageEntrance(position, retries - 1)
+                else entrancePlayedPages.remove(position)
+                return@post
+            }
+            val content = (pageRoot as? ViewGroup)?.getChildAt(0) as? ViewGroup
+            if (content == null || content.childCount == 0) {
+                entrancePlayedPages.remove(position)
+                return@post
+            }
+            val items = (0 until content.childCount).mapNotNull { content.getChildAt(it) }
+            Motion.stagger(
+                items,
+                step = Motion.STAGGER_STEP,
+                duration = Motion.ENTRANCE,
+                fromY = 8f
+            )
+        }
+    }
+
+    /**
+     * 预览卡按压反馈：预览本身没有点击行为（也不改交互），
+     * 设为 clickable 只是为了让 View 能收到完整的按下/抬手事件，避免动画卡在按下态。
+     * 一键添加按钮的点击回调在 Adapter 里，Motion.press 只挂 OnTouchListener，不会覆盖点击。
+     */
+    private fun bindPagePress(position: Int, retries: Int = 1) {
+        binding.viewPager.post {
+            val pageRoot = pageRootOf(position)
+            if (pageRoot == null) {
+                // 页还没布局出来：再等一帧
+                if (retries > 0) bindPagePress(position, retries - 1)
+                return@post
+            }
+            arrayOf(R.id.preview_widget, R.id.preview_widget_small).forEach { id ->
+                pageRoot.findViewById<View>(id)?.let { preview ->
+                    preview.isClickable = true
+                    Motion.press(preview, pressedScale = 0.97f)
+                }
+            }
+            val recycler = binding.viewPager.getChildAt(0) as? RecyclerView ?: return@post
+            val holder = recycler.findViewHolderForAdapterPosition(position)
+                as? WidgetCenterPagerAdapter.PageHolder ?: return@post
+            holder.footers.forEach { (footer, _) -> Motion.press(footer.btnWidgetAdd) }
+        }
+    }
+
+    /**
+     * 取 ViewPager2 里指定页的根 View。
+     * ViewPager2 内部就是一个 RecyclerView（唯一子 View），据此按页序找 ViewHolder。
+     */
+    private fun pageRootOf(position: Int): View? {
+        val recycler = binding.viewPager.getChildAt(0) as? RecyclerView ?: return null
+        recycler.findViewHolderForAdapterPosition(position)?.let { return it.itemView }
+        for (index in 0 until recycler.childCount) {
+            val child = recycler.getChildAt(index) ?: continue
+            if (recycler.getChildAdapterPosition(child) == position) return child
+        }
+        return null
+    }
+
     companion object {
+        /** 已播放入场的小组件页（实例状态 key） */
+        private const val STATE_ENTRANCE_PAGES = "widget_center_entrance_pages"
+
         private const val DOT_SIZE_DP = 8
         private const val DOT_MARGIN_DP = 4
         private const val DOT_MIN_ALPHA = 0.3f

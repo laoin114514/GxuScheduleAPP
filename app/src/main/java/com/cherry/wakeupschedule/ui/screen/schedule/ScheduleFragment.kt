@@ -1,12 +1,16 @@
 package com.cherry.wakeupschedule.ui.screen.schedule
 
 import android.content.Intent
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -24,9 +28,11 @@ import android.graphics.drawable.GradientDrawable
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.slider.Slider
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -44,6 +50,7 @@ import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.adapter.WeekPagerAdapter
 import com.cherry.wakeupschedule.ui.component.createAppChip
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.widget.CircleIconButton
@@ -52,6 +59,7 @@ import com.cherry.wakeupschedule.viewmodel.CourseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -65,6 +73,7 @@ class ScheduleFragment : Fragment() {
     private lateinit var tvWeekInfo: TextView
     private lateinit var tvCountdown: TextView
     private lateinit var btnRefresh: View
+    private lateinit var refreshIcon: View
     private lateinit var progressRefresh: CircularProgressIndicator
     private lateinit var overlayLoading: View
     private lateinit var groupLoading: View
@@ -96,6 +105,31 @@ class ScheduleFragment : Fragment() {
 
     /** 当前是否处于总课表视图（周课表 ⇄ 总课表，由底部导航角标切换） */
     private var isOverview = false
+
+    /** 视图模式首次下发（含 tab 切回 / 重建）直接落位，不播交叉淡入（B4 同一屏只动一次） */
+    private var scheduleModeInitialized = false
+
+    /** 总课表列表的错峰入场是否已播（B4；课程数据变化后重置） */
+    private var overviewEntrancePlayed = false
+
+    // ── 顶部日期 / 周次文字的淡出→换字→淡入过渡（B5）────────────────
+
+    /** 文字过渡专用 Handler（与倒计时 Handler 分开，避免互相 removeCallbacks） */
+    private val headerAnimHandler = Handler(Looper.getMainLooper())
+
+    /** 首帧直接落字，不播过渡（页面刚创建时没有"旧文字"可淡出） */
+    private var headerTextInitialized = false
+
+    /** 过渡是否进行中：进行中又换周说明用户在快速翻周/拖滑杆，直接换字保证跟手 */
+    private var headerTransitionActive = false
+    private var headerTransitionGeneration = 0
+
+    /**
+     * 程序化瞬跳标记（滑杆 / 切学期 / 回到本周 chip）：瞬跳期间不播课程格子入场，
+     * 直接落终态保证"拖动跟手、不闪一下"。setCurrentItem(…, false) 会同步派发 onPageSelected，
+     * 之后再用 post 兜底清掉标记（万一某版本异步派发）。
+     */
+    private var instantPageJump = false
 
     /** 总课表全部条目（按课程名归并后，未筛选）；筛选只作用于渲染 */
     private var overviewGroups: List<CourseOverviewGroup> = emptyList()
@@ -157,6 +191,28 @@ class ScheduleFragment : Fragment() {
 
         /** 倒计时缓存里「这门课的结束分钟还没解析」的标记（合法分钟数不会取到负值） */
         private const val END_MINUTES_UNSET = -1
+
+        /** 顶部周次文字过渡：淡出 120ms / 淡入 180ms（B5） */
+        private const val HEADER_FADE_OUT_MS = 120L
+        private const val HEADER_FADE_IN_MS = 180L
+
+        /** B1 周视图翻页景深：页面内容 1.04→1.0、alpha 0.6→1，页内日期栏 0.35x 反向视差 */
+        private const val PAGE_DEPTH_SCALE_DELTA = 0.04f
+        private const val PAGE_DEPTH_ALPHA_DELTA = 0.4f
+        private const val PAGE_DATE_PARALLAX = 0.35f
+
+        /** 底部弹层遮罩（原窗口 dim 0.5 黑），改由内容层自己做 alpha 渐变（B3 / B8） */
+        private const val SCRIM_COLOR = 0x80000000.toInt()
+
+        /** 课表菜单：弹层滑入时长 / 滑出时长（ms） */
+        private const val MENU_ENTER_MS = 260L
+        private const val MENU_EXIT_MS = 180L
+
+        /**
+         * 课程数据快照引用：只在数据「真正变化」时才重播课程格子入场（B2）。
+         * LiveData 在切 tab / 重建视图后会把同一份快照再次下发，引用没变就不重播。
+         */
+        private var lastEntranceCourses: List<Course>? = null
 
         /**
          * 课表菜单最多占屏高的比例。
@@ -313,6 +369,9 @@ class ScheduleFragment : Fragment() {
         tvWeekInfo = view.findViewById(R.id.tv_week_info)
         tvCountdown = view.findViewById(R.id.tv_countdown)
         btnRefresh = view.findViewById(R.id.btn_refresh)
+        // CircleIconButton 构造时第一个加入的子 View 是图标（之后才是刷新中的转圈），
+        // 点击刷新只转图标本身，不转按钮的圆底 / 不打断按钮的按压缩放
+        refreshIcon = (btnRefresh as ViewGroup).getChildAt(0)
         progressRefresh = view.findViewById(R.id.progress_refresh)
         overlayLoading = view.findViewById(R.id.overlay_loading)
         groupLoading = view.findViewById(R.id.group_loading)
@@ -329,7 +388,16 @@ class ScheduleFragment : Fragment() {
         buildOverviewFilterChips()
 
         btnRefresh.setOnClickListener {
-            refreshScheduleFromJwxt(showError = true)
+            if (isLoadingSchedule) return@setOnClickListener
+            // B6：点击刷新时刷新图标转一圈。loading 状态会立刻隐藏整个刷新按钮，
+            // 所以转完这一圈（约 180ms）再真正进入 loading，否则用户根本看不到转圈反馈。
+            btnRefresh.isEnabled = false
+            Motion.spinOnce(refreshIcon, Motion.SHORT)
+            btnRefresh.postDelayed({
+                refreshScheduleFromJwxt(showError = true)
+                // 未绑定教务等「点刷新但不会进入 loading」的情况：把按钮恢复可点
+                if (!isLoadingSchedule) btnRefresh.isEnabled = true
+            }, if (Motion.enabled()) Motion.SHORT else 0L)
         }
 
         // 一键平滑滑回本周（非瞬移）。重复点击是安全的：ViewPager2 的 currentItem
@@ -387,43 +455,184 @@ class ScheduleFragment : Fragment() {
         adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
         adapter.setBorderColor(appliedBorderColor)
         adapter.setBorderFollowCourse(appliedBorderFollowCourse)
+        // 先同步当前页位置：bind 靠它区分「可见页」与「预加载的相邻页」（B2）
+        adapter.setCurrentPosition(displayWk - 1)
         // 仅预加载相邻1页（3页总量），减少tab切换时的初始构建压力
         viewPager.offscreenPageLimit = 1
+        // B1 翻页景深：页面内容随滑动缩放/淡入淡出，页内日期栏做反向视差
+        viewPager.setPageTransformer(weekPageDepthTransformer)
 
         // 延迟到下一帧设置 adapter + 当前页，让tab切换动画先完成
         viewPager.post {
             viewPager.adapter = adapter
-            viewPager.setCurrentItem(displayWk - 1, false)
+            setCurrentPageInstant(displayWk - 1)
         }
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
+                adapter.setCurrentPosition(position)
                 setDisplayWeek(position + 1)
                 updateDateTimeHeader()
+                // B2 切周入场：用户滑动时让新页格子入场；程序化瞬跳直接落终态，保证跟手不闪。
+                if (instantPageJump || viewPager.scrollState == ViewPager2.SCROLL_STATE_IDLE) {
+                    adapter.skipEntranceForCurrent(viewPager, position)
+                    // B1 兜底：程序化跳周不经过 onScrolled，手动把当前页景深复位
+                    resetCurrentPageDepthTransform()
+                } else {
+                    adapter.playEntranceForCurrent(viewPager, position)
+                }
+            }
+
+            override fun onPageScrollStateChanged(state: Int) {
+                if (state != ViewPager2.SCROLL_STATE_IDLE) return
+                // B1 兜底：滑动终点后当前页必须完全恢复 scale=1 / alpha=1（含首尾页）
+                resetCurrentPageDepthTransform()
             }
         })
+    }
+
+    /** 程序化瞬跳周次：瞬跳期间 onPageSelected 不播课程格子入场（滑杆拖动要跟手、不闪） */
+    private fun setCurrentPageInstant(position: Int) {
+        instantPageJump = true
+        viewPager.setCurrentItem(position.coerceAtLeast(0), false)
+        viewPager.post { instantPageJump = false }
+    }
+
+    /**
+     * B1 周视图翻页景深：横向滑动时页面内容（课程格子区）按滑动进度从 1.04 缩到 1.0、
+     * alpha 0.6→1；页内日期栏做 0.35x 反向视差，制造前后两层错位。
+     *
+     * 只写 transform（scale / alpha / translationX），不改 layoutParams；
+     * 落位后由 [resetCurrentPageDepthTransform] 兜底恢复，避免任何页停在缩放/半透明状态。
+     */
+    private val weekPageDepthTransformer = ViewPager2.PageTransformer { page, position ->
+        val content = WeekPagerAdapter.pageContentView(page)
+        val header = WeekPagerAdapter.pageDateHeaderView(page)
+        if (!Motion.enabled()) {
+            content?.let {
+                it.scaleX = 1f
+                it.scaleY = 1f
+                it.alpha = 1f
+            }
+            header?.translationX = 0f
+            return@PageTransformer
+        }
+        val offset = position.coerceIn(-1f, 1f)
+        val depth = abs(offset)
+        content?.let {
+            val scale = 1f + PAGE_DEPTH_SCALE_DELTA * depth
+            it.scaleX = scale
+            it.scaleY = scale
+            it.alpha = 1f - PAGE_DEPTH_ALPHA_DELTA * depth
+        }
+        header?.let {
+            val width = if (page.width > 0) page.width.toFloat() else viewPager.width.toFloat()
+            // 反向视差：页面右移（position>0）时日期栏相对左偏，视觉上落在页面平移后面
+            it.translationX = -offset * width * PAGE_DATE_PARALLAX
+        }
+    }
+
+    /** 把当前页的景深 transform 复位（程序化跳周 / 滑动结束后兜底） */
+    private fun resetCurrentPageDepthTransform() {
+        if (!::viewPager.isInitialized || !::adapter.isInitialized) return
+        val recycler = viewPager.getChildAt(0) as? RecyclerView ?: return
+        val page = recycler.findViewHolderForAdapterPosition(viewPager.currentItem)?.itemView ?: return
+        WeekPagerAdapter.pageContentView(page)?.let {
+            it.scaleX = 1f
+            it.scaleY = 1f
+            it.alpha = 1f
+        }
+        WeekPagerAdapter.pageDateHeaderView(page)?.translationX = 0f
     }
 
     private fun setupObservers() {
         val viewModel = ViewModelProvider(requireActivity())[CourseViewModel::class.java]
         viewModel.courses.observe(viewLifecycleOwner) { _ ->
-            allCourses = CourseDataManager.getInstance(requireContext()).getAllCourses()
-            adapter.updateData(allCourses)
-            // 总课表下数据变化（切学期 / 导入 / 刷新）同样要重建列表
-            if (isOverview) refreshOverview()
+            applyScheduleCourses(CourseDataManager.getInstance(requireContext()).getAllCourses())
+            // 总课表下数据变化（切学期 / 导入 / 刷新）同样要重建列表，并允许重新播放入场
+            if (isOverview) {
+                overviewEntrancePlayed = false
+                refreshOverview()
+                playOverviewEntranceOnce()
+            }
         }
         viewModel.overviewMode.observe(viewLifecycleOwner) { applyScheduleMode(it) }
     }
 
     /**
+     * 课程数据落位（B2）：
+     * - 更新适配器；
+     * - 数据快照引用真正变化时，让当前页重播一次课程格子错峰入场；
+     * - LiveData 在切 tab / 重建视图后会把同一份快照再次下发，引用没变就不重播（同一屏只动一次）。
+     */
+    private fun applyScheduleCourses(courses: List<Course>) {
+        allCourses = courses
+        if (::adapter.isInitialized) adapter.updateData(courses)
+        if (lastEntranceCourses !== courses) {
+            lastEntranceCourses = courses
+            // loading 遮罩期间的入场会被挡住，等成功卡片收起后再播（见 showLoadSuccess）
+            if (!isLoadingSchedule) requestCourseEntranceForDisplayedPage()
+        }
+    }
+
+    /** 让当前页课程格子重播一次入场（加载遮罩收起后调用，避免入场被遮罩挡住） */
+    private fun replayCourseEntranceForCurrentPage() {
+        if (!isAdded || view == null) return
+        if (!::adapter.isInitialized || !::viewPager.isInitialized) return
+        if (viewPager.adapter !== adapter) return
+        adapter.replayEntranceForCurrent(viewPager, viewPager.currentItem.coerceAtLeast(0))
+    }
+
+    /** 请求当前显示页在下一次绑定时播一次课程格子入场（B2，数据首次可见 / 刷新 / 切学期） */
+    private fun requestCourseEntranceForDisplayedPage() {
+        if (!::adapter.isInitialized) return
+        // adapter 还没挂上 ViewPager 时 currentItem 是 0，用 ViewModel 里记住的显示周推算
+        val position = if (viewPager.adapter === adapter) {
+            viewPager.currentItem.coerceAtLeast(0)
+        } else {
+            (getDisplayWeek() - 1).coerceAtLeast(0)
+        }
+        adapter.requestEntrance(position)
+    }
+
+    /** B4 总课表列表出现后错峰入场；同一屏只播一次（数据变化后由调用方重置标记） */
+    private fun playOverviewEntranceOnce() {
+        if (overviewEntrancePlayed || !Motion.enabled()) return
+        overviewEntrancePlayed = true
+        rvCourseOverview.doOnNextLayout { Motion.staggerRecycler(rvCourseOverview, fromY = 6f) }
+    }
+
+    /**
      * 切换「周课表 ⇄ 总课表」：两者共用顶部信息栏，只互斥周网格与总课表列表。
      * 日期栏在周课表的每一页内部（见 item_date_header.xml），随 viewPager 一起隐藏。
+     *
+     * B4：不再 visibility 瞬切，改为交叉淡入（旧的轻微缩小淡出、新的放大淡入）；
+     * 首次下发 / tab 切回重建时直接落位，不重复播（动画只在"首次可见"播一次）。
      */
     private fun applyScheduleMode(overview: Boolean) {
+        val changed = overview != isOverview
         isOverview = overview
-        viewPager.isVisible = !overview
-        layoutOverview.isVisible = overview
-        if (overview) refreshOverview() else updateDateTimeHeader()
+        if (!scheduleModeInitialized || !changed) {
+            scheduleModeInitialized = true
+            viewPager.isVisible = !overview
+            viewPager.alpha = 1f
+            viewPager.scaleX = 1f
+            viewPager.scaleY = 1f
+            layoutOverview.isVisible = overview
+            layoutOverview.alpha = 1f
+            layoutOverview.scaleX = 1f
+            layoutOverview.scaleY = 1f
+            if (overview) refreshOverview() else updateDateTimeHeader()
+            return
+        }
+        if (overview) {
+            refreshOverview()
+            Motion.crossFade(viewPager, layoutOverview, outFromScale = 0.98f, inFromScale = 0.98f)
+            playOverviewEntranceOnce()
+        } else {
+            updateDateTimeHeader()
+            Motion.crossFade(layoutOverview, viewPager, outFromScale = 0.98f, inFromScale = 0.98f)
+        }
     }
 
     /**
@@ -494,17 +703,18 @@ class ScheduleFragment : Fragment() {
 
         if (isOverview) {
             // 总课表：顶栏换成总课表标题 + 条目数（周课表已隐藏，无需刷新日期栏）
-            tvWeekInfo.text = if (semesterLabel != null) "总课表 · $semesterLabel" else "总课表"
-            tvDate.text = if (overviewFilter == CourseTypeFilter.ALL) {
+            val weekInfo = if (semesterLabel != null) "总课表 · $semesterLabel" else "总课表"
+            val date = if (overviewFilter == CourseTypeFilter.ALL) {
                 "本学期共 $overviewGroupCount 门课程"
             } else {
                 "${overviewFilter.label} · 共 $overviewVisibleCount 门"
             }
+            setHeaderTexts(weekInfo, date)
             return
         }
 
         val cal = Calendar.getInstance()
-        tvDate.text = dateFormat.format(cal.time)
+        val dateText = dateFormat.format(cal.time)
         val displayWk = getDisplayWeek()
         val currentWk = getCurrentWeek()
 
@@ -515,7 +725,86 @@ class ScheduleFragment : Fragment() {
             displayWk == currentWk -> "第${displayWk}周 (本周)"
             else -> "第${displayWk}周"
         }
-        tvWeekInfo.text = if (semesterLabel != null) "$weekText · $semesterLabel" else weekText
+        val weekInfo = if (semesterLabel != null) "$weekText · $semesterLabel" else weekText
+        setHeaderTexts(weekInfo, dateText)
+    }
+
+    /**
+     * B5 顶部日期 / 周次文字切换：淡出 → 换字 → 淡入，替代翻周瞬间的硬切。
+     *
+     * 快速连续翻周 / 拖动周次滑杆时（上一轮过渡还没结束），直接换字并淡入，
+     * 保证文字跟手；每次切换都会取消上一轮动画并复位透明度，不会残留半透明状态。
+     */
+    private fun setHeaderTexts(weekInfo: String, date: String) {
+        if (!headerTextInitialized || !Motion.enabled()) {
+            headerTextInitialized = true
+            resetHeaderTextTransition()
+            tvWeekInfo.text = weekInfo
+            tvDate.text = date
+            return
+        }
+        if (tvWeekInfo.text == weekInfo && tvDate.text == date) return
+
+        val rapid = headerTransitionActive
+        headerTransitionGeneration++
+        val generation = headerTransitionGeneration
+        headerTransitionActive = true
+        headerAnimHandler.removeCallbacksAndMessages(null)
+        tvWeekInfo.animate().cancel()
+        tvDate.animate().cancel()
+
+        if (rapid) {
+            // 过渡中又换周：立即换字 + 短淡入（拖动滑杆时日期/周次必须实时跟手）
+            tvWeekInfo.text = weekInfo
+            tvDate.text = date
+            fadeInHeaderTexts(generation)
+            return
+        }
+
+        val fadeOut = { view: View ->
+            view.animate()
+                .alpha(0f)
+                .setDuration(HEADER_FADE_OUT_MS)
+                .setInterpolator(Motion.accelerate)
+                .start()
+        }
+        fadeOut(tvWeekInfo)
+        fadeOut(tvDate)
+        headerAnimHandler.postDelayed({
+            if (generation != headerTransitionGeneration) return@postDelayed
+            tvWeekInfo.text = weekInfo
+            tvDate.text = date
+            fadeInHeaderTexts(generation)
+        }, HEADER_FADE_OUT_MS)
+    }
+
+    private fun fadeInHeaderTexts(generation: Int) {
+        val endAction = {
+            if (generation == headerTransitionGeneration) headerTransitionActive = false
+        }
+        tvWeekInfo.animate()
+            .alpha(1f)
+            .setDuration(HEADER_FADE_IN_MS)
+            .setInterpolator(Motion.standard)
+            .withEndAction(endAction)
+            .start()
+        tvDate.animate()
+            .alpha(1f)
+            .setDuration(HEADER_FADE_IN_MS)
+            .setInterpolator(Motion.standard)
+            .start()
+    }
+
+    /** 取消未完成的文字过渡并把透明度复位（避免视图销毁 / 动画取消后停在半透明） */
+    private fun resetHeaderTextTransition() {
+        if (!::tvWeekInfo.isInitialized || !::tvDate.isInitialized) return
+        headerTransitionGeneration++
+        headerTransitionActive = false
+        headerAnimHandler.removeCallbacksAndMessages(null)
+        tvWeekInfo.animate().cancel()
+        tvDate.animate().cancel()
+        tvWeekInfo.alpha = 1f
+        tvDate.alpha = 1f
     }
 
     /** 返回 -1=未开始, 0=进行中, 1=已结束 */
@@ -578,6 +867,8 @@ class ScheduleFragment : Fragment() {
         groupLoading.isVisible = false
         tvLoadResult.text = "成功导入 $count 门课程"
         groupSuccess.isVisible = true
+        // B6：成功状态弹入（0.86 → 1 + 淡入），给"刷新完成"一个明确的正反馈
+        Motion.enter(groupSuccess, duration = Motion.SHORT, fromY = 0f, fromScale = 0.86f)
 
         // 短暂展示后收起遮罩，恢复交互
         Handler(Looper.getMainLooper()).postDelayed({
@@ -585,6 +876,8 @@ class ScheduleFragment : Fragment() {
             btnRefresh.isEnabled = true
             overlayLoading.isVisible = false
             resetOverlayState()
+            // B2：刷新/导入期间格子入场被成功卡片遮住了，遮罩收起后再播一次，让"数据落位"看得见
+            if (!isOverview) replayCourseEntranceForCurrentPage()
         }, SUCCESS_DISPLAY_MS)
     }
 
@@ -618,8 +911,8 @@ class ScheduleFragment : Fragment() {
                 if (!isAdded || view == null) return@withContext
                 result.onSuccess { count ->
                     courseViewModel.currentWeek = calculateCurrentWeek()
-                    allCourses = CourseDataManager.getInstance(ctx).getAllCourses()
-                    if (::adapter.isInitialized) adapter.updateData(allCourses)
+                    // B2：数据快照变了 → 当前页课程格子重播一次错峰入场
+                    applyScheduleCourses(CourseDataManager.getInstance(ctx).getAllCourses())
                     if (isOverview) refreshOverview() else updateDateTimeHeader()
                     // 成功：遮罩换成"成功导入 N 门课程"卡片，替代全局 toast
                     showLoadSuccess(count)
@@ -657,6 +950,9 @@ class ScheduleFragment : Fragment() {
         val inflater = LayoutInflater.from(ctx)
         val sheetView = inflater.inflate(R.layout.bottom_sheet_schedule_menu, null)
         val density = ctx.resources.displayMetrics.density
+        // B8：菜单自底部滑入 + 遮罩 alpha 渐入的收尾是"下拉 + 遮罩淡出"，由下方统一实现。
+        // 这里先声明（关闭按钮 / 点遮罩 / 返回键 / 点当前学期都要复用），弹窗 show 前完成赋值。
+        var dismissMenuAnimated: (() -> Unit)? = null
 
         // 顶部圆角背景
         val topRadius = 24 * density
@@ -695,7 +991,9 @@ class ScheduleFragment : Fragment() {
 
         // ── 标题副行：当前学期（菜单里唯一显示「现在是哪个学期」的位置） ──
         // 右上角关闭：内容变长后必须有一个一眼可见的退出方式
-        sheetView.findViewById<View>(R.id.btn_menu_close)?.setOnClickListener { dialog.dismiss() }
+        sheetView.findViewById<View>(R.id.btn_menu_close)?.setOnClickListener {
+            dismissMenuAnimated?.invoke() ?: dialog.dismiss()
+        }
 
         // 菜单内联错误条：菜单里的失败信息不再走 AppToast（会被弹层遮罩压住）
         val tvMenuError = sheetView.findViewById<TextView>(R.id.tv_menu_error)
@@ -779,7 +1077,7 @@ class ScheduleFragment : Fragment() {
             val target = calculateCurrentWeek().coerceIn(1, settingsManager.getTotalWeeks())
             setDisplayWeek(target)
             sbWeek.value = target.toFloat()
-            viewPager.setCurrentItem(target - 1, false)
+            setCurrentPageInstant(target - 1)
             updateDateTimeHeader()
             refreshWeekSlider()
         }
@@ -790,17 +1088,34 @@ class ScheduleFragment : Fragment() {
         // 气泡显示「第 N 周」，而不是裸数字
         sbWeek.setLabelFormatter { value -> "第 ${value.roundToInt()} 周" }
 
+        // B7 拖动时跟手：滑块本身按 stepSize=1 走离散档位，只有周次真的变了才更新标题/日期/翻页
         sbWeek.addOnChangeListener { _, value, fromUser ->
+            // 程序化 setValue（refreshWeekSlider / 回到本周）已经同步过界面，这里不重复处理
+            if (!fromUser) return@addOnChangeListener
             val totalWeeks = settingsManager.getTotalWeeks()
             val week = value.roundToInt().coerceIn(1, totalWeeks)
+            if (week == getDisplayWeek()) return@addOnChangeListener
             tvWeekLabel.text = "第 $week 周"
             syncWeekAction(week)
-            if (fromUser) {
-                setDisplayWeek(week)
-                viewPager.setCurrentItem(week - 1, false)
-                updateDateTimeHeader()
-            }
+            setDisplayWeek(week)
+            setCurrentPageInstant(week - 1)
+            updateDateTimeHeader()
         }
+        // B7 松手吸附后：目标周胶囊 / 周标题做一次 spring 回弹 + 轻触感，确认已经落在这一周
+        sbWeek.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) = Unit
+
+            override fun onStopTrackingTouch(slider: Slider) {
+                val week = slider.value.roundToInt().coerceIn(1, settingsManager.getTotalWeeks())
+                slider.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                if (!Motion.enabled()) return
+                Motion.pulse(tvWeekLabel, scale = 1.05f, duration = Motion.SHORT)
+                val targetChip: View? = if (week == calculateCurrentWeek()) chipNowWeek else chipThisWeek
+                if (targetChip?.isVisible == true) {
+                    Motion.pulse(targetChip, scale = 1.04f, duration = Motion.SHORT)
+                }
+            }
+        })
         refreshWeekSlider()
 
         // ── 学期选择（横向滑动） ──
@@ -846,6 +1161,13 @@ class ScheduleFragment : Fragment() {
                         scaleX = 0.85f
                         scaleY = 0.85f
                     }
+                }
+                // B8：学期色块按压缩放反馈（沿用波浪入场；按压会取消入场动画，
+                // 所以按下时兜底把透明度拉满，避免色块停在半透明）
+                val pressFeedback = Motion.press(item, pressedScale = 0.94f)
+                item.setOnTouchListener { v, event ->
+                    if (event.actionMasked == MotionEvent.ACTION_DOWN) v.alpha = 1f
+                    pressFeedback.onTouch(v, event)
                 }
 
                 // 色块容器：已填充课表的学期画迷你风景，未填充保持素色块；
@@ -948,7 +1270,7 @@ class ScheduleFragment : Fragment() {
                     if (isLoadingSchedule) return@setOnClickListener
                     if (isSelected) {
                         // 点击当前学期：作为"确认"快捷关闭
-                        dialog.dismiss()
+                        dismissMenuAnimated?.invoke() ?: dialog.dismiss()
                         return@setOnClickListener
                     }
                     // 切换学期（菜单保持打开，下方课表与菜单内状态同步刷新）
@@ -966,7 +1288,7 @@ class ScheduleFragment : Fragment() {
                     // 调到第一周
                     courseViewModel.currentWeek = calculateCurrentWeek()
                     setDisplayWeek(1)
-                    viewPager.setCurrentItem(0, false)
+                    setCurrentPageInstant(0)
                     updateDateTimeHeader()
 
                     // 该学期日期信息为空 → 需要从教务拉取课表，进入 loading
@@ -995,10 +1317,14 @@ class ScheduleFragment : Fragment() {
                                     adapter.setContentVisibility(appliedShowClassroom, appliedShowTeacher)
                                     adapter.setBorderColor(appliedBorderColor)
                                     adapter.setBorderFollowCourse(appliedBorderFollowCourse)
+                                    adapter.setCurrentPosition(0)
                                     // 刚导入完才有学期开始日期，日期栏要按新日期渲染
                                     syncWeekContextToAdapter()
                                     viewPager.adapter = adapter
-                                    adapter.updateData(CourseDataManager.getInstance(ctx).getAllCourses())
+                                    val importedCourses = CourseDataManager.getInstance(ctx).getAllCourses()
+                                    adapter.updateData(importedCourses)
+                                    lastEntranceCourses = importedCourses
+                                    // B2 切学期入场：loading 遮罩期间先不播，等成功卡片收起后再播（见 showLoadSuccess）
                                     refreshWeekSlider()
                                     // 成功：色块转圈消失、新填充学期出现风景；遮罩短暂展示成功卡片
                                     showLoadSuccess(count)
@@ -1010,7 +1336,7 @@ class ScheduleFragment : Fragment() {
                                         CourseDataManager.getInstance(ctx).switchSemester(prevSemesterId)
                                         courseViewModel.currentWeek = calculateCurrentWeek()
                                         setDisplayWeek(prevWeek)
-                                        viewPager.setCurrentItem(prevWeek - 1, false)
+                                        setCurrentPageInstant(prevWeek - 1)
                                         updateDateTimeHeader()
                                         refreshWeekSlider()
                                         refreshMenuSubtitle()
@@ -1051,8 +1377,17 @@ class ScheduleFragment : Fragment() {
         groupAppearance.alpha = 0f
         ScheduleAppearanceControls.bind(sheetView, ctx, this)
 
-        // 弹窗展示后，学期色块按顺序波浪式入场
+        // 弹窗展示后，学期色块按顺序波浪式入场（保留原有波浪；系统关闭动画时直接落终态）
         dialog.setOnShowListener {
+            if (!Motion.enabled()) {
+                semesterItems.forEach {
+                    it.alpha = 1f
+                    it.scaleX = 1f
+                    it.scaleY = 1f
+                }
+                groupAppearance.alpha = 1f
+                return@setOnShowListener
+            }
             llSemesterList.post {
                 semesterItems.forEachIndexed { i, v ->
                     v.animate()
@@ -1074,11 +1409,14 @@ class ScheduleFragment : Fragment() {
 
         // ── 组装容器 ──
         dialog.setContentView(sheetView)
+        // B8：窗口 dim 无法做 alpha 渐变，改为在内容层铺一层可动画的遮罩（颜色与原来 0.5 黑一致）
+        val scrim = ColorDrawable(SCRIM_COLOR).apply { alpha = 0 }
         val container = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
             )
+            background = scrim
         }
         (sheetView.parent as? ViewGroup)?.removeView(sheetView)
 
@@ -1113,6 +1451,41 @@ class ScheduleFragment : Fragment() {
             ViewGroup.LayoutParams.MATCH_PARENT, sheetHeight
         )
 
+        // ── B8 退场：弹层下拉 + 遮罩 alpha 淡出（干脆利落），结束后再 dismiss ──
+        var menuClosing = false
+        fun playMenuExit() {
+            if (menuClosing) return
+            menuClosing = true
+            if (!Motion.enabled()) {
+                dialog.dismiss()
+                return
+            }
+            sheetView.animate().cancel()
+            sheetView.animate()
+                .translationY(sheetHeight.toFloat())
+                .alpha(0f)
+                .setDuration(MENU_EXIT_MS)
+                .setInterpolator(Motion.accelerate)
+                .withEndAction { dialog.dismiss() }
+                .start()
+            ValueAnimator.ofInt(scrim.alpha, 0).apply {
+                duration = MENU_EXIT_MS
+                interpolator = Motion.accelerate
+                addUpdateListener { scrim.alpha = it.animatedValue as Int }
+                start()
+            }
+        }
+        dismissMenuAnimated = { playMenuExit() }
+        // 返回键也走同一套退场动画（系统默认返回是瞬时消失，会和入场动画手感不一致）
+        dialog.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+                playMenuExit()
+                true
+            } else {
+                false
+            }
+        }
+
         rowAppearanceHeader.setOnClickListener {
             val expanded = !appearanceContent.isVisible
             appearanceContent.isVisible = expanded
@@ -1127,24 +1500,48 @@ class ScheduleFragment : Fragment() {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
             )
-            setOnClickListener { dialog.dismiss() }
+            setOnClickListener { playMenuExit() }
         })
         container.addView(sheetView)
         dialog.setContentView(container)
+        // 入场起始态在 show 之前设好，避免第一帧闪在终态
+        sheetView.translationY = sheetHeight.toFloat()
 
         dialog.window?.apply {
             setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
             setGravity(Gravity.BOTTOM)
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setWindowAnimations(R.style.BottomSheetAnimation)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                setDimAmount(0.5f)
-            }
-            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            // 遮罩与滑入/滑出全部由内容层自己动画：窗口 dim 无法渐变，系统 window 动画会和内容动画打架
+            setWindowAnimations(0)
+            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         }
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
         dialog.show()
+        // 兜底：主题里的 Window_backgroundDimEnabled 可能在窗口创建时才写入 flag，
+        // show 后再清一次，避免系统 dim 和自绘遮罩叠加、整屏过暗
+        dialog.window?.apply {
+            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setDimAmount(0f)
+        }
+
+        // B8 入场：遮罩 alpha 渐显 + 底部弹层自下滑入
+        if (Motion.enabled()) {
+            ValueAnimator.ofInt(0, 0x80).apply {
+                duration = Motion.MEDIUM
+                interpolator = Motion.standard
+                addUpdateListener { scrim.alpha = it.animatedValue as Int }
+                start()
+            }
+            sheetView.animate()
+                .translationY(0f)
+                .setDuration(MENU_ENTER_MS)
+                .setInterpolator(Motion.emphasizedDecelerate)
+                .start()
+        } else {
+            scrim.alpha = 0x80
+            sheetView.translationY = 0f
+        }
     }
 
     // ── 距下课/下节课倒计时 ─────────────────────────────
@@ -1313,6 +1710,8 @@ class ScheduleFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         stopCountdown()
+        // 顶部文字过渡的延迟换字回调必须清掉，避免视图销毁后还去改 text / alpha
+        resetHeaderTextTransition()
     }
 
 }

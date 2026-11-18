@@ -13,6 +13,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import com.cherry.wakeupschedule.ui.motion.Motion
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -179,13 +180,47 @@ class SemesterWheelDialog(
                     }
                 }
                 nearest?.let { updateCenterHighlight(lm.getPosition(it)) }
+                // 选中态缩放/透明度跟手更新：滚动与吸附过程中连续过渡
+                updateWheelTransforms()
             }
         })
 
         // 初始定位：中间份数的对应学期（item 顶边对齐 paddingTop 即天然居中）
         lm.scrollToPositionWithOffset(initialPosition, 0)
-        // 求一次精确对中，避免任何像素级偏移
-        rv.post { centerOn(initialPosition) }
+        // 求一次精确对中，避免任何像素级偏移；随后补一次选中态变换（首屏不会再触发 onScrolled）
+        rv.post {
+            centerOn(initialPosition)
+            updateWheelTransforms()
+        }
+    }
+
+    /**
+     * 选中项 scale 1.0 / 未选中 0.86 + alpha 0.7，按行中心到滚轮中心的距离连续插值，
+     * 所以滚动、吸附、手指拖拽过程中都是平滑过渡，而不是停下才跳。
+     */
+    private fun updateWheelTransforms() {
+        if (!Motion.enabled()) {
+            // 系统关闭动画：确保所有行回到终态，不残留缩放/半透明
+            for (i in 0 until lm.childCount) {
+                lm.getChildAt(i)?.apply {
+                    scaleX = 1f
+                    scaleY = 1f
+                    alpha = 1f
+                }
+            }
+            return
+        }
+        val centerY = rv.height / 2f
+        for (i in 0 until lm.childCount) {
+            val child = lm.getChildAt(i) ?: continue
+            val distance = abs((child.top + child.bottom) / 2f - centerY)
+            // 以行高为 1 个单位：中心行满尺寸，离开一行即未选中态并封顶
+            val fraction = (distance / itemHeight).coerceIn(0f, 1f)
+            val scale = 1f - 0.14f * fraction
+            child.scaleX = scale
+            child.scaleY = scale
+            child.alpha = 1f - 0.3f * fraction
+        }
     }
 
     /**
@@ -407,6 +442,18 @@ class SemesterWheelDialog(
                 "${sem.label}  ${sem.academicYear}学年 ${sem.termName}"
             holder.label.setTypeface(null, if (isCenter) Typeface.BOLD else Typeface.NORMAL)
 
+            // 绑定即给到接近的选中态：导入中 notifyDataSetChanged 重绑后不会整列突然变回满尺寸，
+            // 精确的像素级过渡由 onScrolled 里的 updateWheelTransforms 覆盖
+            if (Motion.enabled()) {
+                val fraction = abs(position - centerPosition).coerceAtMost(1).toFloat()
+                holder.itemView.scaleX = 1f - 0.14f * fraction
+                holder.itemView.scaleY = 1f - 0.14f * fraction
+                holder.itemView.alpha = 1f - 0.3f * fraction
+            } else {
+                Motion.resetScale(holder.itemView)
+                holder.itemView.alpha = 1f
+            }
+
             holder.itemView.setOnClickListener {
                 val pos = holder.bindingAdapterPosition
                 if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
@@ -491,4 +538,25 @@ class SemesterWheelDialog(
             TypedValue.COMPLEX_UNIT_DIP, dp,
             ctx.resources.displayMetrics
         ).roundToInt()
+}
+
+/**
+ * 滚轮专用 RecyclerView：把 SnapHelper 触发的吸附滚动统一成 200ms + 标准曲线。
+ *
+ * RecyclerView 默认按滚动距离算时长（300ms 起，行内吸附常到 600ms），滚轮会显得"拖泥带水"；
+ * 方案要求吸附时长落在 180–240ms，这里固定 200ms。布局里用本类替换原生 RecyclerView 即可。
+ */
+class SnapRecyclerView @JvmOverloads constructor(
+    context: Context,
+    attrs: android.util.AttributeSet? = null
+) : RecyclerView(context, attrs) {
+
+    override fun smoothScrollBy(dx: Int, dy: Int) {
+        smoothScrollBy(dx, dy, Motion.standard, SNAP_DURATION_MS)
+    }
+
+    companion object {
+        /** 吸附滚动时长（ms），方案要求 180–240ms */
+        const val SNAP_DURATION_MS = 200
+    }
 }

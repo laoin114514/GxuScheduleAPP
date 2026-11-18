@@ -42,7 +42,8 @@
             android:layout_height="60dp"
             android:layout_gravity="center_vertical" />
 
-        <androidx.recyclerview.widget.RecyclerView
+        <!-- 吸附滚动时长由 SnapRecyclerView 统一为 200ms + 标准曲线 -->
+        <com.cherry.wakeupschedule.ui.component.SnapRecyclerView
             android:id="@+id/rv_semester_wheel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 底部页签切换（fade-through）：新页面延迟 60ms 淡入，给旧页面留出退场时间。
+     位移只用 6% 的轻微上浮，避免"整页平移"抢注意力 -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="240"
+    android:interpolator="@android:interpolator/fast_out_slow_in">
+    <alpha
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0"
+        android:startOffset="60" />
+    <translate
+        android:fromYDelta="3%"
+        android:toYDelta="0%"
+        android:startOffset="60" />
+</set>

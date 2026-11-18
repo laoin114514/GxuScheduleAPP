@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnNextLayout
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -32,6 +33,7 @@ import com.cherry.wakeupschedule.databinding.FragmentToolsBinding
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.screen.export.ScheduleExportDialog
 import com.cherry.wakeupschedule.ui.screen.export.ScheduleExportRenderer
 import com.cherry.wakeupschedule.ui.screen.export.ScheduleImageSaver
@@ -52,6 +54,9 @@ class ToolsFragment : Fragment() {
 
     /** 当前打开的课表导出预览弹窗（View 销毁时关掉，避免窗口泄漏） */
     private var exportDialog: ScheduleExportDialog? = null
+
+    /** 卡片入场是否已播过：同一屏只播一次（转屏/返回/搜索过滤都不重播） */
+    private var entrancePlayed = false
 
     /** Android 9 及以下保存相册要先申请存储权限：暂存待保存的图片与周次 */
     private var pendingSaveBitmap: Bitmap? = null
@@ -96,6 +101,7 @@ class ToolsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         // 页面底渐变按当前调色板派生（换配色时页面底色跟着变，而不是永远是蓝灰）
         PageBackground.apply(view)
+        entrancePlayed = savedInstanceState?.getBoolean(KEY_ENTRANCE_PLAYED) ?: false
 
         binding.recyclerTools.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerTools.adapter = adapter
@@ -124,6 +130,12 @@ class ToolsFragment : Fragment() {
         // 传当前搜索词：否则正在搜索时切出去回来，过滤会被静默清掉。
         val b = _binding ?: return
         refresh(b.etToolsSearch.text.toString())
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 转屏重建后不再重播卡片入场
+        outState.putBoolean(KEY_ENTRANCE_PLAYED, entrancePlayed)
     }
 
     override fun onDestroyView() {
@@ -189,9 +201,58 @@ class ToolsFragment : Fragment() {
             }
         }
         adapter.render(rows)
+        playCardEntranceIfNeeded()
 
         val empty = feat == null && secs.isEmpty()
-        binding.layoutToolsEmpty.visibility = if (empty) View.VISIBLE else View.GONE
+        updateEmptyState(empty)
+    }
+
+    /**
+     * 首次进入工具页：等 RecyclerView 完成布局后播卡片错峰入场。
+     * 之后刷新（搜索过滤、绑定态变化、返回页面）都不重播。
+     */
+    private fun playCardEntranceIfNeeded() {
+        if (entrancePlayed) return
+        entrancePlayed = true
+        if (!Motion.enabled()) return
+        val recycler = binding.recyclerTools
+        // notifyDataSetChanged 后直接 post 可能早于布局，等本次布局完成后再错峰
+        recycler.doOnNextLayout {
+            recycler.post { adapter.playEntrance(recycler) }
+        }
+    }
+
+    /** 搜索无结果空态：由「无」切到「有」时图标回弹 + 文案上浮（不做循环动画） */
+    private fun updateEmptyState(empty: Boolean) {
+        val emptyView = binding.layoutToolsEmpty
+        if (!empty) {
+            emptyView.visibility = View.GONE
+            return
+        }
+        if (emptyView.visibility == View.VISIBLE) return
+        emptyView.visibility = View.VISIBLE
+        if (!Motion.enabled()) return
+        val icon = emptyView.getChildAt(0) ?: return
+        val text = emptyView.getChildAt(1) ?: return
+        icon.animate().cancel()
+        icon.scaleX = 0.8f
+        icon.scaleY = 0.8f
+        icon.animate()
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(Motion.ENTRANCE)
+            .setInterpolator(Motion.spring)
+            .start()
+        text.animate().cancel()
+        text.alpha = 0f
+        text.translationY = Motion.dp(text, 8f)
+        text.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setStartDelay(40L)
+            .setDuration(Motion.ENTRANCE)
+            .setInterpolator(Motion.standard)
+            .start()
     }
 
     // ── 课表导出 ────────────────────────────────────────────────
@@ -305,5 +366,8 @@ class ToolsFragment : Fragment() {
 
     private companion object {
         private const val TAG = "ToolsFragment"
+
+        /** 卡片入场是否已播过的实例状态 key */
+        private const val KEY_ENTRANCE_PLAYED = "tools_entrance_played"
     }
 }

@@ -5,7 +5,6 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -26,6 +25,7 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.ui.component.createAppChip
 import com.cherry.wakeupschedule.ui.component.themeColor
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.screen.grade.GradeStats
 import com.cherry.wakeupschedule.ui.screen.grade.GradeSummary
 import com.cherry.wakeupschedule.ui.screen.grade.SimulatedCourse
@@ -94,6 +94,13 @@ class GpaActivity : BaseActivity() {
     /** 计算进行中：防止重复触发 */
     private var calculating = false
 
+    /** 汇总指标上次展示值：数字滚动的起点（null = 还没展示过） */
+    private var shownGpa: Float? = null
+    private var shownWeighted: Float? = null
+    private var shownCredits: Float? = null
+    private var shownCourses: Float? = null
+    private var shownFailed: Float? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
@@ -129,16 +136,8 @@ class GpaActivity : BaseActivity() {
 
         btnCalc.background = primaryButtonBackground()
         btnCalc.setOnClickListener { calculate() }
-        // 按压缩放反馈（与工具页卡片同一手感），让按钮不至于“点下去没反应”
-        btnCalc.setOnTouchListener { view, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN ->
-                    view.animate().scaleX(0.98f).scaleY(0.98f).setDuration(80).start()
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                    view.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
-            }
-            false
-        }
+        // 按压缩放反馈统一走 Motion.press（与工具页卡片同一手感）
+        Motion.press(btnCalc, pressedScale = 0.98f)
         findViewById<View>(R.id.btn_add_course).setOnClickListener { addSimRow(focus = true) }
         findViewById<View>(R.id.btn_clear_sim).setOnClickListener { resetSimRows() }
 
@@ -282,11 +281,24 @@ class GpaActivity : BaseActivity() {
         // 等宽数字：四个指标并排，切换学期时数字不会左右抖
         listOf(gpaText, weightedText, creditsText, coursesText, failedText)
             .forEach { it.fontFeatureSettings = "'tnum'" }
-        gpaText.text = GradeStats.formatGpa(summary.averageGpa)
-        weightedText.text = GradeStats.formatGpa(summary.weightedAverageScore)
-        creditsText.text = GradeStats.formatCredits(summary.totalCredits)
-        coursesText.text = summary.courseCount.toString()
-        failedText.text = summary.failedCount.toString()
+        // 数字滚动：首次从 0 滚入，之后从上次展示值滚到新值；「—」占位不参与滚动
+        shownGpa = animateMetric(gpaText, summary.averageGpa?.toFloat(), shownGpa) {
+            GradeStats.formatGpa(it.toDouble())
+        }
+        shownWeighted = animateMetric(
+            weightedText, summary.weightedAverageScore?.toFloat(), shownWeighted
+        ) {
+            GradeStats.formatGpa(it.toDouble())
+        }
+        shownCredits = animateMetric(creditsText, summary.totalCredits.toFloat(), shownCredits) {
+            GradeStats.formatCredits(it.toDouble())
+        }
+        shownCourses = animateMetric(coursesText, summary.courseCount.toFloat(), shownCourses) {
+            it.roundToInt().toString()
+        }
+        shownFailed = animateMetric(failedText, summary.failedCount.toFloat(), shownFailed) {
+            it.roundToInt().toString()
+        }
         // 不及格是唯一带负向语义的指标：有挂科时才转红，没有时保持中性
         val errorColor = com.google.android.material.color.MaterialColors.getColor(
             failedText, com.google.android.material.R.attr.colorError
@@ -296,6 +308,40 @@ class GpaActivity : BaseActivity() {
         )
         failedText.setTextColor(if (summary.failedCount > 0) errorColor else neutralColor)
         renderLastCalc()
+    }
+
+    /**
+     * 单个指标的数字滚动。返回本次目标值，作为下次滚动的起点。
+     *
+     * [target] 为 null 时直接落「—」占位；首次展示从 0 滚入、之后从旧值滚到新值，
+     * 格式/小数位/颜色逻辑与原来 setText 完全一致。
+     */
+    private fun animateMetric(
+        textView: TextView,
+        target: Float?,
+        previous: Float?,
+        format: (Float) -> String
+    ): Float? {
+        if (target == null) {
+            // 先取消可能在跑的滚动（Motion 内部按 TextView 去重），再落占位符
+            Motion.countUp(textView, 0f, duration = 0L) { "" }
+            textView.text = "—"
+            return null
+        }
+        if (previous == null) {
+            if (target == 0f || !Motion.enabled()) {
+                textView.text = format(target)
+            } else {
+                Motion.countUp(textView, target, format = format)
+            }
+            return target
+        }
+        if (previous == target || !Motion.enabled()) {
+            textView.text = format(target)
+            return target
+        }
+        Motion.countUp(textView, target, from = previous, format = format)
+        return target
     }
 
     private fun render() {

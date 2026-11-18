@@ -26,6 +26,7 @@ import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.ui.browser.InAppBrowser
 import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -537,7 +538,8 @@ class UpdateService(private val context: Context) {
                     if (!dialog.isShowing) return@post
                     val percent = if (total > 0) (done * 100 / total).toInt() else 0
                     progressBar.max = 100
-                    progressBar.progress = percent
+                    // 平滑推进：系统关动画时直接跳到目标值，避免进度条"抽帧"更卡
+                    progressBar.setProgressCompat(percent, Motion.enabled())
                     tvPercent.text = if (total > 0) "$percent%" else formatSize(done)
                     tvStatus.text = if (total > 0) {
                         "正在下载 v${info.latestVersionName} ...  ${formatSize(done)} / ${formatSize(total)}"

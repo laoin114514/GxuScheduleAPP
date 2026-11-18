@@ -10,6 +10,7 @@ import com.cherry.wakeupschedule.ui.component.PageStatusController
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
+import androidx.core.view.doOnNextLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,6 +22,7 @@ import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.SemesterManager
 import com.cherry.wakeupschedule.ui.component.SemesterExpandPicker
 import com.cherry.wakeupschedule.ui.component.createAppChip
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.component.themeColor
 import com.cherry.wakeupschedule.ui.screen.exam.ExamFilter
 import com.cherry.wakeupschedule.ui.screen.exam.ExamScheduleAdapter
@@ -57,6 +59,12 @@ class ExamScheduleActivity : BaseActivity() {
     /** 当前学期全量考试（不筛选），用于判断该学期是否已有缓存 */
     private var semesterExams: List<ExamScheduleEntity> = emptyList()
 
+    /** 列表入场是否已播过：转屏/返回不重播（随实例状态保存） */
+    private var listEntrancePlayed = false
+
+    /** 列表数据替换的世代号：延迟入场只在世代未变时生效，避免旧结果盖掉新结果 */
+    private var listRevealGeneration = 0
+
     /** 首帧渲染完成前 onResume 不重复渲染（loadSemesters 自己会渲染一次） */
     private var renderedOnce = false
 
@@ -65,6 +73,7 @@ class ExamScheduleActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        listEntrancePlayed = savedInstanceState?.getBoolean(KEY_LIST_ENTRANCE_PLAYED) ?: false
         ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_exam_schedule)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -95,8 +104,8 @@ class ExamScheduleActivity : BaseActivity() {
             onLoadingChanged = { loading ->
                 querying = loading
                 btnQuery.isEnabled = !loading
-                btnQuery.alpha = if (loading) 0.5f else 1f
-            }
+            },
+            loadingPulseView = btnQuery
         )
         filterRow = findViewById(R.id.ll_filters)
 
@@ -230,16 +239,28 @@ class ExamScheduleActivity : BaseActivity() {
 
     // ── 渲染 ──────────────────────────────────────────────
 
-    private suspend fun renderExams() {
+    private suspend fun renderExams(revealAfterFade: Boolean = false) {
+        val filterAtStart = currentFilter
         // 状态与排序共用同一个「现在」，避免列表顺序和徽标互相矛盾
         val now = System.currentTimeMillis()
         semesterExams = examDataManager.loadExams()
 
+        // 加载期间用户又切了筛选：本次结果作废，等新的渲染（避免旧结果盖掉新结果）
+        if (filterAtStart != currentFilter) return
+
         val visible = ExamScheduleStats.sort(
-            ExamScheduleStats.filter(semesterExams, currentFilter, now),
+            ExamScheduleStats.filter(semesterExams, filterAtStart, now),
             now
         )
-        adapter.submit(visible, now)
+        // 状态层（loading/空态）正显示时：结果落位后等它淡出再播列表入场，顺序更自然；
+        // 这种"数据落位"每次查询完成都值得播一次，不属于返回/转屏时的重复入场
+        val statusWasShowing = status.isShowing
+        submitExams(
+            visible = visible,
+            now = now,
+            animateIn = revealAfterFade || !listEntrancePlayed || statusWasShowing,
+            startDelay = if (!revealAfterFade && statusWasShowing) Motion.SHORT else 0L
+        )
         renderedOnce = true
 
         when {
@@ -264,6 +285,75 @@ class ExamScheduleActivity : BaseActivity() {
         }
     }
 
+    /**
+     * 列表数据落位。
+     *
+     * - 首次数据到达 / 筛选切换：等本次 notifyDataSetChanged 完成布局后再对可见项错峰入场
+     *   （只做 alpha + 6dp 上浮，不做缩放；封顶 10 项）；
+     * - 其它刷新（返回页面、跨时刻重渲染）：只换数据，不重播。
+     */
+    private fun submitExams(
+        visible: List<ExamScheduleEntity>,
+        now: Long,
+        animateIn: Boolean,
+        startDelay: Long
+    ) {
+        val generation = ++listRevealGeneration
+        // 先停掉可能还在跑的筛选淡出，避免它的 alpha 动画覆盖下面设置的目标透明度
+        recycler.animate().cancel()
+        adapter.submit(visible, now)
+        if (!animateIn || visible.isEmpty() || !Motion.enabled()) {
+            recycler.alpha = 1f
+            return
+        }
+        listEntrancePlayed = true
+        // 入场前先把列表隐藏：状态层淡出期间不会先露出"已经铺满"的静态列表，
+        // 下一帧再整体淡入并错峰，形成"旧状态退场 → 数据落位"的连续过程
+        recycler.alpha = 0f
+        // notifyDataSetChanged 之后直接 post 可能早于布局（拿到的还是旧子项），
+        // 等 RecyclerView 完成本次布局再错峰，保证动画作用在新列表上
+        recycler.doOnNextLayout {
+            if (generation != listRevealGeneration) return@doOnNextLayout
+            val reveal = Runnable {
+                if (generation != listRevealGeneration || isFinishing || isDestroyed) return@Runnable
+                recycler.alpha = 1f
+                val children = (0 until recycler.childCount).mapNotNull { recycler.getChildAt(it) }
+                if (children.isEmpty()) return@Runnable
+                // 与 Motion.staggerRecycler 同一套错峰规则；区别是这里需要 6dp 上浮，
+                // staggerRecycler 固定 alphaOnly=true 会忽略 fromY（Motion.kt 不归本任务改）
+                Motion.stagger(
+                    children,
+                    step = Motion.STAGGER_STEP,
+                    duration = Motion.ENTRANCE,
+                    fromY = 6f,
+                    fromScale = 1f
+                )
+            }
+            if (startDelay > 0L) recycler.postDelayed(reveal, startDelay) else recycler.post(reveal)
+        }
+    }
+
+    /** 筛选切换：先淡出旧列表再换数据淡入，避免"啪"地替换（不阻塞 chip 状态切换） */
+    private fun reloadWithFade() {
+        if (!Motion.enabled()) {
+            lifecycleScope.launch { renderExams() }
+            return
+        }
+        val generation = ++listRevealGeneration
+        recycler.animate().cancel()
+        recycler.animate()
+            .alpha(0f)
+            .setDuration(Motion.FAST)
+            .setInterpolator(Motion.accelerate)
+            .withEndAction {
+                if (generation != listRevealGeneration || isFinishing || isDestroyed) {
+                    return@withEndAction
+                }
+                lifecycleScope.launch { renderExams(revealAfterFade = true) }
+            }
+            .start()
+    }
+
     // ── 筛选 chip ─────────────────────────────────────────
 
     private fun buildFilterChips() {
@@ -279,13 +369,19 @@ class ExamScheduleActivity : BaseActivity() {
                 ) {
                     currentFilter = filter
                     buildFilterChips()
-                    lifecycleScope.launch { renderExams() }
+                    reloadWithFade()
                 }
             )
         }
     }
 
     // ── 状态 / 工具 ───────────────────────────────────────
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 转屏重建后不再重播列表入场
+        outState.putBoolean(KEY_LIST_ENTRANCE_PLAYED, listEntrancePlayed)
+    }
 
     private fun currentSemester(): SemesterEntity? =
         SemesterManager.getAll().firstOrNull { it.id == examDataManager.selectedSemesterId }
@@ -306,4 +402,9 @@ class ExamScheduleActivity : BaseActivity() {
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).roundToInt()
+
+    private companion object {
+        /** 列表入场是否已播过的实例状态 key */
+        private const val KEY_LIST_ENTRANCE_PLAYED = "exam_list_entrance_played"
+    }
 }

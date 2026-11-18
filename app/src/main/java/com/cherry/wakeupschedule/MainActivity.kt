@@ -77,6 +77,15 @@ class MainActivity : BaseActivity() {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
+                    // 底部页签 fade-through：旧页 90ms 快出、新页 240ms 淡入（带 60ms 起始偏移）。
+                    // popEnter/popExit 覆盖「从工具/我的回课表」这条 pop 路径，
+                    // 否则回首页签会退化成系统默认的瞬切。
+                    anim {
+                        enter = R.anim.fade_through_enter
+                        exit = R.anim.fade_through_exit
+                        popEnter = R.anim.fade_through_enter
+                        popExit = R.anim.fade_through_exit
+                    }
                 })
             }
         }

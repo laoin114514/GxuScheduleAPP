@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -30,8 +31,10 @@ import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.browser.InAppBrowser
 import com.cherry.wakeupschedule.ui.component.SemesterWheelDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.screen.schedule.ScheduleAppearanceSheet
 import com.cherry.wakeupschedule.widget.ScheduleWidgetUpdateService
+import com.google.android.material.card.MaterialCardView
 import com.gxu.jwxt.model.Term
 import kotlinx.coroutines.CoroutineScope
 import java.text.SimpleDateFormat
@@ -45,6 +48,9 @@ class ProfileFragment : Fragment() {
 
     private lateinit var settingsManager: SettingsManager
 
+    /** 分组入场是否已播过：同一屏只播一次（转屏/从二级页返回不重播） */
+    private var entrancePlayed = false
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.fragment_profile, container, false)
@@ -52,10 +58,12 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         PageBackground.apply(view)
+        entrancePlayed = savedInstanceState?.getBoolean(KEY_ENTRANCE_PLAYED) ?: false
         settingsManager = SettingsManager(requireContext())
         setupClickListeners(view)
         updateDisplay()
         updateAccountSection()
+        playGroupEntranceIfNeeded(view)
     }
 
     private fun setupClickListeners(view: View) {
@@ -136,6 +144,52 @@ class ProfileFragment : Fragment() {
                 AppToast.error(requireContext(), getString(R.string.profile_no_browser_app))
             }
         }
+
+        // 行按压统一走 Motion.press（与工具卡/底部导航同一手感）；
+        // 这些行内部没有其它 scale 动画，不会互相抢 transform
+        listOf(
+            R.id.item_bind_jwxt, R.id.item_profile, R.id.btn_edit_account, R.id.btn_unbind,
+            R.id.item_semester, R.id.item_theme_mode, R.id.item_schedule_appearance,
+            R.id.item_font_size, R.id.item_time_table, R.id.item_widget,
+            R.id.item_about, R.id.item_feedback
+        ).forEach { id -> view.findViewById<View>(id)?.let { Motion.press(it) } }
+    }
+
+    /**
+     * 首次进入「我的」页：分组卡片按 60ms 步进依次上浮淡入。
+     * 布局里卡片没有单独 id，按 ScrollView 内容列的子项类型取（AppSectionHeader 不参与）。
+     */
+    private fun playGroupEntranceIfNeeded(root: View) {
+        if (entrancePlayed) return
+        entrancePlayed = true
+        if (!Motion.enabled()) return
+        val cards = sectionCards(root)
+        if (cards.isEmpty()) return
+        Motion.stagger(
+            cards,
+            step = GROUP_STAGGER_STEP,
+            duration = Motion.ENTRANCE,
+            fromY = 10f
+        )
+    }
+
+    private fun sectionCards(root: View): List<View> {
+        val scrollView = (root as? ViewGroup)?.let { parent ->
+            (0 until parent.childCount)
+                .mapNotNull { parent.getChildAt(it) }
+                .filterIsInstance<ScrollView>()
+                .firstOrNull()
+        } ?: return emptyList()
+        val column = scrollView.getChildAt(0) as? ViewGroup ?: return emptyList()
+        return (0 until column.childCount)
+            .mapNotNull { column.getChildAt(it) }
+            .filterIsInstance<MaterialCardView>()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 转屏重建后不再重播分组入场
+        outState.putBoolean(KEY_ENTRANCE_PLAYED, entrancePlayed)
     }
 
     private fun showSemesterDialog() {
@@ -244,5 +298,13 @@ class ProfileFragment : Fragment() {
             launchSingleTop = true
             restoreState = true
         })
+    }
+
+    private companion object {
+        /** 分组入场是否已播过的实例状态 key */
+        private const val KEY_ENTRANCE_PLAYED = "profile_entrance_played"
+
+        /** 分组卡片之间的错峰步进 */
+        private const val GROUP_STAGGER_STEP = 60L
     }
 }

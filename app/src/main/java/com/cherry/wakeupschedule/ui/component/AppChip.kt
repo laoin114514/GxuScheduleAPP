@@ -15,6 +15,7 @@ import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 import kotlin.math.roundToInt
 
@@ -82,7 +83,12 @@ fun Context.createAppChip(
                 }
             }
         }
-        setOnClickListener { onClick() }
+        // 统一动效令牌：按压反馈 + 轻触感；chip 常被整行重建，所以不做依赖 View 生命周期的脉冲动画
+        setOnTouchListener(Motion.press(this, pressedScale = 0.94f))
+        setOnClickListener {
+            performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+            onClick()
+        }
     }
 
     val textColor = when {

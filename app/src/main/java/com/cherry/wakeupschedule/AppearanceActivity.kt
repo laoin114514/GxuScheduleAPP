@@ -8,6 +8,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -19,6 +20,7 @@ import com.cherry.wakeupschedule.databinding.ActivityAppearanceBinding
 import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.ThemeModeManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.M3ColorPalette
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
@@ -42,6 +44,9 @@ class AppearanceActivity : BaseActivity() {
 
     private var currentSheetDialog: Dialog? = null
     private var isUpdatingSwitchState = false
+
+    /** 入场动画是否已播过：换配色/换主题会 recreate，重建时不重复播（同一屏只播一次） */
+    private var entrancePlayed = false
 
     /** 预览课表：周一~周日 每天 0~2 门课，颜色为真实课程卡片配色 */
     private val previewCourses: Array<Array<String?>> = arrayOf(
@@ -67,6 +72,31 @@ class AppearanceActivity : BaseActivity() {
         buildThemePreviewCards()
         buildPalettePicker()
         updateUi()
+        playEntranceOnce(restored = savedInstanceState?.getBoolean(STATE_ENTRANCE_PLAYED) == true)
+    }
+
+    // ==================== 入场动效 ====================
+
+    /**
+     * 内容分区错峰上浮淡入（预览卡 / 配色 / 自动切换卡），同一屏只播一次：
+     * 转屏、换配色 recreate 后直接落到终态，不再闪一下。
+     */
+    private fun playEntranceOnce(restored: Boolean) {
+        if (restored || entrancePlayed) return
+        entrancePlayed = true
+        // 系统关闭动画时不做入场，直接显示终态
+        if (!Motion.enabled()) return
+        val content = binding.llAppearanceContent
+        val sections = (0 until content.childCount)
+            .mapNotNull { content.getChildAt(it) }
+            .filter { it.visibility == View.VISIBLE }
+        // post 一帧再播：避开 Activity 转场窗口动画，入场不会和窗口位移抢同一批帧
+        binding.root.post { Motion.stagger(sections) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_ENTRANCE_PLAYED, entrancePlayed)
     }
 
     // ==================== 配色方案 ====================
@@ -138,6 +168,7 @@ class AppearanceActivity : BaseActivity() {
 
             item.setOnClickListener {
                 if (index == current) return@setOnClickListener
+                pulseSelection(item)
                 ThemeManager.setPaletteIndex(index, this)
                 recreate()
             }
@@ -145,11 +176,18 @@ class AppearanceActivity : BaseActivity() {
         }
     }
 
+    /** 选中确认反馈：轻微脉冲 + 轻触感（配色是主题 overlay，改完会 recreate，脉冲留在点击这一帧） */
+    private fun pulseSelection(view: View) {
+        Motion.pulse(view)
+        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+    }
+
     // ==================== 事件绑定 ====================
 
     private fun setupClickListeners() {
         // 浅色预览卡：手动选择浅色，并关闭自动切换
-        binding.cardLight.root.setOnClickListener {
+        binding.cardLight.root.setOnClickListener { view ->
+            pulseSelection(view)
             settingsManager.setAutoSwitchTheme(false)
             settingsManager.setThemeMode("light")
             ThemeModeManager.apply(this)
@@ -157,7 +195,8 @@ class AppearanceActivity : BaseActivity() {
         }
 
         // 深色预览卡：手动选择深色，并关闭自动切换
-        binding.cardDark.root.setOnClickListener {
+        binding.cardDark.root.setOnClickListener { view ->
+            pulseSelection(view)
             settingsManager.setAutoSwitchTheme(false)
             settingsManager.setThemeMode("dark")
             ThemeModeManager.apply(this)
@@ -518,5 +557,10 @@ class AppearanceActivity : BaseActivity() {
             onPicked(picker.hour, picker.minute)
         }
         picker.show(supportFragmentManager, "time_picker_$title")
+    }
+
+    companion object {
+        /** 入场动画已播标记（savedInstanceState 键）：重建/转屏不重复播 */
+        private const val STATE_ENTRANCE_PLAYED = "appearance_entrance_played"
     }
 }

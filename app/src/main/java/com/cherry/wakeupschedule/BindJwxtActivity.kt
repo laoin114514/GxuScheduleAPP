@@ -3,6 +3,7 @@ package com.cherry.wakeupschedule
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -15,6 +16,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.cherry.wakeupschedule.service.JwxtAccountManager
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtLoginStep
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.gxu.jwxt.exceptions.CaptchaRequiredException
@@ -50,6 +52,9 @@ class BindJwxtActivity : BaseActivity() {
 
     /** 已收到完成回调的步骤下标，用于收尾时判断课表是否导入成功 */
     private val reportedSteps = mutableSetOf<Int>()
+
+    /** 入场动画是否已播过：同一屏只播一次（转屏不重播） */
+    private var entrancePlayed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +96,8 @@ class BindJwxtActivity : BaseActivity() {
             btnLogin.text = "验证并更新"
         }
 
+        playEntranceOnce(restored = savedInstanceState?.getBoolean(STATE_ENTRANCE_PLAYED) == true)
+
         btnLogin.setOnClickListener {
             val password = etPassword.text.toString().trim()
             val username = if (isPasswordUpdateMode) {
@@ -121,6 +128,30 @@ class BindJwxtActivity : BaseActivity() {
 
             doLogin(username, password)
         }
+    }
+
+    // ==================== 入场动效 ====================
+
+    /**
+     * 内容错峰上浮淡入（品牌图标/标题/副标题 + 表单 + 隐私提示），封顶 10 项；
+     * 同一屏只播一次：转屏返回不重复播，避免"每次回来都闪一下"。
+     */
+    private fun playEntranceOnce(restored: Boolean) {
+        if (restored || entrancePlayed) return
+        entrancePlayed = true
+        // 系统关闭动画时不做入场，直接显示终态
+        if (!Motion.enabled()) return
+        val content = findViewById<ViewGroup>(R.id.ll_bind_content)
+        val views = (0 until content.childCount)
+            .mapNotNull { content.getChildAt(it) }
+            .filter { it.visibility == View.VISIBLE }
+        // post 一帧再播：避开 Activity 转场窗口动画，入场不会和窗口位移抢同一批帧
+        window.decorView.post { Motion.stagger(views) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_ENTRANCE_PLAYED, entrancePlayed)
     }
 
     /** 从 include 根往下取一份步骤行的五个子视图，并填上文案 */
@@ -260,5 +291,10 @@ class BindJwxtActivity : BaseActivity() {
         row.spinner.visibility = View.GONE
         row.check.visibility = View.VISIBLE
         row.label.text = row.successText
+    }
+
+    companion object {
+        /** 入场动画已播标记（savedInstanceState 键）：重建/转屏不重复播 */
+        private const val STATE_ENTRANCE_PLAYED = "bind_jwxt_entrance_played"
     }
 }

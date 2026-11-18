@@ -9,6 +9,7 @@ import android.widget.TextView
 import com.cherry.wakeupschedule.ui.feedback.AppToast
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
+import androidx.core.view.doOnNextLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,8 +24,10 @@ import com.cherry.wakeupschedule.ui.component.createChipDivider
 import com.cherry.wakeupschedule.ui.component.themeColor
 import com.cherry.wakeupschedule.ui.screen.grade.GradeAdapter
 import com.cherry.wakeupschedule.ui.screen.grade.GradeDetailDialog
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.screen.grade.GradeFilter
 import com.cherry.wakeupschedule.ui.screen.grade.GradeStats
+import com.cherry.wakeupschedule.ui.screen.grade.GradeSummary
 import com.cherry.wakeupschedule.ui.component.PageStatusController
 import com.cherry.wakeupschedule.ui.component.SemesterExpandPicker
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
@@ -60,8 +63,19 @@ class GradeQueryActivity : BaseActivity() {
     /** 当前学期全量成绩（不筛选），用于汇总 */
     private var semesterGrades: List<GradeEntity> = emptyList()
 
+    /** 汇总数字上次展示值（滚动的起点）；null = 还没展示过 */
+    private var shownGpa: Float? = null
+    private var shownCredits: Float? = null
+
+    /** 列表入场是否已播过：转屏/返回不重播（随实例状态保存） */
+    private var listEntrancePlayed = false
+
+    /** 列表数据替换的世代号：延迟入场只在世代未变时生效，避免旧结果盖掉新结果 */
+    private var listRevealGeneration = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        listEntrancePlayed = savedInstanceState?.getBoolean(KEY_LIST_ENTRANCE_PLAYED) ?: false
         ThemeManager.applyToTheme(this)
         setContentView(R.layout.activity_grade_query)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -92,8 +106,8 @@ class GradeQueryActivity : BaseActivity() {
             listView = recycler,
             onLoadingChanged = { loading ->
                 btnQuery.isEnabled = !loading
-                btnQuery.alpha = if (loading) 0.5f else 1f
-            }
+            },
+            loadingPulseView = btnQuery
         )
 
         adapter = GradeAdapter { showDetail(it) }
@@ -211,21 +225,28 @@ class GradeQueryActivity : BaseActivity() {
 
     // ── 渲染 ──────────────────────────────────────────────
 
-    private suspend fun renderGrades() {
+    private suspend fun renderGrades(revealAfterFade: Boolean = false) {
+        val filterAtStart = currentFilter
+        val descendingAtStart = sortDescending
         semesterGrades = gradeDataManager.loadGrades()
 
-        val summary = GradeStats.summarize(semesterGrades)
-        // 等宽数字：两个指标并排时数字宽度一致，切换学期时不会左右抖
-        gpaText.fontFeatureSettings = "'tnum'"
-        creditsText.fontFeatureSettings = "'tnum'"
-        gpaText.text = GradeStats.formatGpa(summary.averageGpa)
-        creditsText.text = GradeStats.formatCredits(summary.totalCredits)
+        renderSummaryNumbers(GradeStats.summarize(semesterGrades))
+
+        // 加载期间用户又切了筛选/排序：本次结果作废，等新的渲染（避免旧结果盖掉新结果）
+        if (filterAtStart != currentFilter || descendingAtStart != sortDescending) return
 
         val visible = GradeStats.sort(
-            GradeStats.filter(semesterGrades, currentFilter),
-            descending = sortDescending
+            GradeStats.filter(semesterGrades, filterAtStart),
+            descending = descendingAtStart
         )
-        adapter.submit(visible)
+        // 状态层（loading/空态）正显示时：结果落位后等它淡出再播列表入场，顺序更自然；
+        // 这种"数据落位"每次查询完成都值得播一次，不属于返回/转屏时的重复入场
+        val statusWasShowing = status.isShowing
+        submitGrades(
+            visible = visible,
+            animateIn = revealAfterFade || !listEntrancePlayed || statusWasShowing,
+            startDelay = if (!revealAfterFade && statusWasShowing) Motion.SHORT else 0L
+        )
 
         when {
             semesterGrades.isEmpty() -> showStatus(
@@ -249,6 +270,117 @@ class GradeQueryActivity : BaseActivity() {
         }
     }
 
+    /**
+     * 列表数据落位。
+     *
+     * - 首次数据到达 / 筛选切换：等本次 notifyDataSetChanged 完成布局后再对可见项错峰入场
+     *   （只做 alpha + 6dp 上浮，不做缩放；封顶 10 项）；
+     * - 其它刷新（返回页面、跨时刻重渲染）：只换数据，不重播。
+     */
+    private fun submitGrades(visible: List<GradeEntity>, animateIn: Boolean, startDelay: Long) {
+        val generation = ++listRevealGeneration
+        // 先停掉可能还在跑的筛选淡出，避免它的 alpha 动画覆盖下面设置的目标透明度
+        recycler.animate().cancel()
+        adapter.submit(visible)
+        if (!animateIn || visible.isEmpty() || !Motion.enabled()) {
+            recycler.alpha = 1f
+            return
+        }
+        listEntrancePlayed = true
+        // 入场前先把列表隐藏：状态层淡出期间不会先露出"已经铺满"的静态列表，
+        // 下一帧再整体淡入并错峰，形成"旧状态退场 → 数据落位"的连续过程
+        recycler.alpha = 0f
+        // notifyDataSetChanged 之后直接 post 可能早于布局（拿到的还是旧子项），
+        // 等 RecyclerView 完成本次布局再错峰，保证动画作用在新列表上
+        recycler.doOnNextLayout {
+            if (generation != listRevealGeneration) return@doOnNextLayout
+            val reveal = Runnable {
+                if (generation != listRevealGeneration || isFinishing || isDestroyed) return@Runnable
+                recycler.alpha = 1f
+                val children = (0 until recycler.childCount).mapNotNull { recycler.getChildAt(it) }
+                if (children.isEmpty()) return@Runnable
+                // 与 Motion.staggerRecycler 同一套错峰规则；区别是这里需要 6dp 上浮，
+                // staggerRecycler 固定 alphaOnly=true 会忽略 fromY（Motion.kt 不归本任务改）
+                Motion.stagger(
+                    children,
+                    step = Motion.STAGGER_STEP,
+                    duration = Motion.ENTRANCE,
+                    fromY = 6f,
+                    fromScale = 1f
+                )
+            }
+            if (startDelay > 0L) recycler.postDelayed(reveal, startDelay) else recycler.post(reveal)
+        }
+    }
+
+    /** 筛选/排序切换：先淡出旧列表再换数据淡入，避免"啪"地替换（不阻塞 chip 状态切换） */
+    private fun reloadWithFade() {
+        if (!Motion.enabled()) {
+            lifecycleScope.launch { renderGrades() }
+            return
+        }
+        val generation = ++listRevealGeneration
+        recycler.animate().cancel()
+        recycler.animate()
+            .alpha(0f)
+            .setDuration(Motion.FAST)
+            .setInterpolator(Motion.accelerate)
+            .withEndAction {
+                if (generation != listRevealGeneration || isFinishing || isDestroyed) {
+                    return@withEndAction
+                }
+                lifecycleScope.launch { renderGrades(revealAfterFade = true) }
+            }
+            .start()
+    }
+
+    /** 汇总数字滚动：从上一次展示值滚到新值；无数据走「—」占位，不滚「0.00」 */
+    private fun renderSummaryNumbers(summary: GradeSummary) {
+        // 等宽数字：两个指标并排时数字宽度一致，切换学期时不会左右抖
+        gpaText.fontFeatureSettings = "'tnum'"
+        creditsText.fontFeatureSettings = "'tnum'"
+        shownGpa = animateMetric(gpaText, summary.averageGpa?.toFloat(), shownGpa) { value ->
+            GradeStats.formatGpa(value.toDouble())
+        }
+        shownCredits = animateMetric(creditsText, summary.totalCredits.toFloat(), shownCredits) { value ->
+            GradeStats.formatCredits(value.toDouble())
+        }
+    }
+
+    /**
+     * 单个指标的数字滚动。返回本次目标值，作为下次滚动的起点。
+     *
+     * [target] 为 null 时直接落「—」占位；首次展示从 0 滚入，之后从旧值滚到新值，
+     * 不会出现先显示 0.00 再跳过去的多余闪烁。
+     */
+    private fun animateMetric(
+        textView: TextView,
+        target: Float?,
+        previous: Float?,
+        format: (Float) -> String
+    ): Float? {
+        if (target == null) {
+            // 先取消可能在跑的滚动（Motion 内部按 TextView 去重），再落占位符
+            Motion.countUp(textView, 0f, duration = 0L) { "" }
+            textView.text = "—"
+            return null
+        }
+        if (previous == null) {
+            if (target == 0f || !Motion.enabled()) {
+                textView.text = format(target)
+            } else {
+                Motion.countUp(textView, target, format = format)
+            }
+            return target
+        }
+        if (previous == target || !Motion.enabled()) {
+            textView.text = format(target)
+            return target
+        }
+        Motion.countUp(textView, target, from = previous, format = format)
+        return target
+    }
+
     // ── 筛选 chip ─────────────────────────────────────────
 
     private fun buildFilterChips() {
@@ -265,7 +397,7 @@ class GradeQueryActivity : BaseActivity() {
                 ) {
                     currentFilter = filter
                     buildFilterChips()
-                    lifecycleScope.launch { renderGrades() }
+                    reloadWithFade()
                 }
             )
         }
@@ -281,7 +413,7 @@ class GradeQueryActivity : BaseActivity() {
             ) {
                 sortDescending = !sortDescending
                 buildFilterChips()
-                lifecycleScope.launch { renderGrades() }
+                reloadWithFade()
             }
         )
     }
@@ -313,6 +445,12 @@ class GradeQueryActivity : BaseActivity() {
 
     // ── 状态 / 工具 ───────────────────────────────────────
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 转屏重建后不再重播列表入场
+        outState.putBoolean(KEY_LIST_ENTRANCE_PLAYED, listEntrancePlayed)
+    }
+
     private fun currentSemester(): SemesterEntity? =
         SemesterManager.getAll().firstOrNull { it.id == gradeDataManager.selectedSemesterId }
 
@@ -332,4 +470,9 @@ class GradeQueryActivity : BaseActivity() {
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).roundToInt()
+
+    private companion object {
+        /** 列表入场是否已播过的实例状态 key */
+        private const val KEY_LIST_ENTRANCE_PLAYED = "grade_list_entrance_played"
+    }
 }

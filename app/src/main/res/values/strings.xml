@@ -227,4 +227,6 @@
     <!-- 内置浏览器页头用的短标题（完整行文案见 about_github / about_licenses） -->
     <string name="about_github_title">GitHub</string>
     <string name="about_license_title">开源许可证</string>
+    <!-- 闪屏页副标题 -->
+    <string name="splash_tagline">广西大学 · 课程表</string>
 </resources>

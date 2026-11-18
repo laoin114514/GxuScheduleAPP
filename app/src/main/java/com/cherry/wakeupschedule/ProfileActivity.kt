@@ -9,6 +9,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.service.JwxtAccountManager
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.gxu.jwxt.model.StudentProfile
@@ -22,6 +23,9 @@ class ProfileActivity : BaseActivity() {
 
     /** 当前分组的卡片内容容器，addRow 塞进这里 */
     private var sectionContent: LinearLayout? = null
+
+    /** 入场动画是否已播过：同一屏只播一次（转屏不重播） */
+    private var entrancePlayed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +50,37 @@ class ProfileActivity : BaseActivity() {
             tvError.visibility = View.VISIBLE
             scrollProfile.visibility = View.GONE
         }
+        playEntranceOnce(
+            restored = savedInstanceState?.getBoolean(STATE_ENTRANCE_PLAYED) == true,
+            hasProfile = profile != null
+        )
+    }
+
+    // ==================== 入场动效 ====================
+
+    /**
+     * 内容错峰上浮淡入（姓名/学号 + 各分组标题与卡片），封顶 10 项；
+     * 同一屏只播一次：转屏返回不重复播，避免"每次回来都闪一下"。
+     */
+    private fun playEntranceOnce(restored: Boolean, hasProfile: Boolean) {
+        if (restored || entrancePlayed) return
+        entrancePlayed = true
+        // 系统关闭动画时不做入场，直接显示终态
+        if (!Motion.enabled()) return
+        val views: List<View> = if (hasProfile) {
+            (0 until layoutProfile.childCount)
+                .mapNotNull { layoutProfile.getChildAt(it) }
+                .filter { it.visibility == View.VISIBLE }
+        } else {
+            listOf(tvError)
+        }
+        // post 一帧再播：避开 Activity 转场窗口动画，入场不会和窗口位移抢同一批帧
+        window.decorView.post { Motion.stagger(views) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_ENTRANCE_PLAYED, entrancePlayed)
     }
 
     private fun displayProfile(p: StudentProfile) {
@@ -169,5 +204,10 @@ class ProfileActivity : BaseActivity() {
     private fun maskIdCard(id: String): String {
         if (id.length < 8) return id
         return id.substring(0, 4) + "**********" + id.substring(id.length - 4)
+    }
+
+    companion object {
+        /** 入场动画已播标记（savedInstanceState 键）：重建/转屏不重复播 */
+        private const val STATE_ENTRANCE_PLAYED = "profile_entrance_played"
     }
 }

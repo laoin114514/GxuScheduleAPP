@@ -17,10 +17,12 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.screen.schedule.SchedulePageDetailDialog
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.widget.GridBackgroundView
@@ -30,6 +32,7 @@ import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
@@ -74,6 +77,24 @@ class WeekPagerAdapter(
 
     private var allCourses: List<Course> = emptyList()
 
+    // ── 课程格子错峰入场状态（B2）────────────────────────────
+    // 三类页位置（adapter position）：
+    // - played：已经播过入场，翻回该周 / 仅外观重绑时不重播；
+    // - pending：数据刚落位，下一次 bind 时播放入场（数据首次可见）；
+    // - armed：预加载出来的相邻页，课程格子先隐藏，成为当前页时再入场（避免"先显示再闪一下"）。
+
+    /** 已播过入场动画的页位置 */
+    private val entrancePlayedWeeks = HashSet<Int>()
+
+    /** 数据落位后等待下一次 bind 播放入场的页位置 */
+    private val entrancePendingWeeks = HashSet<Int>()
+
+    /** 已预隐藏课程格子、等成为当前页时再入场的页位置 */
+    private val entranceArmedWeeks = HashSet<Int>()
+
+    /** 当前页位置（Fragment 翻页时同步进来，bind 靠它区分"可见页"与"预加载页"） */
+    private var currentPosition = 0
+
     /**
      * 每周预计算的课程分组（过滤「本周有课 + 有固定时间」→ 按重叠分组 → 组内优先级排序）。
      * 只依赖课程数据，bind 不再每次全量 filter + groupBy + sort；updateData 时整体失效。
@@ -94,7 +115,115 @@ class WeekPagerAdapter(
         allCourses = courses
         // 课程数据变了：按周预计算的筛选/分组结果全部失效（外观设置变化不影响它）
         weekGroupsCache.fill(null)
+        // 数据变了：入场状态全部失效，由 ScheduleFragment 重新 request 当前页（见 applyScheduleCourses）
+        entrancePlayedWeeks.clear()
+        entrancePendingWeeks.clear()
+        entranceArmedWeeks.clear()
         notifyDataSetChanged()
+    }
+
+    /** 同步当前页位置（Fragment 在选中页变化 / 首次挂载时调用），bind 靠它决定是否预隐藏格子 */
+    fun setCurrentPosition(position: Int) {
+        currentPosition = position
+    }
+
+    /**
+     * 请求让第 [position] 页在下一次绑定时播一次课程格子错峰入场（B2）。
+     * 数据首次落位 / 刷新 / 切学期后由 ScheduleFragment 调用。
+     */
+    fun requestEntrance(position: Int) {
+        if (position !in 0 until totalWeeks) return
+        if (!Motion.enabled()) return
+        entrancePlayedWeeks.remove(position)
+        entrancePendingWeeks.add(position)
+    }
+
+    /**
+     * 第 [position] 页成为当前页后，把"预隐藏"的课程格子播放入场（用户翻到新的一周时调用）。
+     * 没被预隐藏过的页（翻回已看过的周）不会重播。
+     */
+    fun playEntranceForCurrent(pager: ViewPager2, position: Int) {
+        if (!Motion.enabled()) return
+        if (position in entrancePlayedWeeks) {
+            entranceArmedWeeks.remove(position)
+            return
+        }
+        if (position !in entranceArmedWeeks && position !in entrancePendingWeeks) return
+        // 页面还没绑定（快速跳页）时保留状态，等 bind 时再播
+        val holder = findViewHolder(pager, position) ?: return
+        entranceArmedWeeks.remove(position)
+        entrancePendingWeeks.remove(position)
+        entrancePlayedWeeks.add(position)
+        holder.playCourseEntrance()
+    }
+
+    /**
+     * 程序化跳周（周次滑杆拖动 / 切学期）时让目标页直接落终态：
+     * 这几条路径要求"实时跟手"，播入场会看起来一闪一闪。
+     */
+    fun skipEntranceForCurrent(pager: ViewPager2, position: Int) {
+        if (position in entrancePlayedWeeks) return
+        if (position !in entranceArmedWeeks) return
+        entranceArmedWeeks.remove(position)
+        entrancePlayedWeeks.add(position)
+        findViewHolder(pager, position)?.showCourseCardsFinal()
+    }
+
+    /**
+     * 强制第 [position] 页重播一次格子入场。
+     * 用于刷新成功这类"数据已落位、但入场被 loading 遮罩挡住"的场景，等遮罩收起后再调用。
+     */
+    fun replayEntranceForCurrent(pager: ViewPager2, position: Int) {
+        if (!Motion.enabled()) return
+        if (position !in 0 until totalWeeks) return
+        entranceArmedWeeks.remove(position)
+        entrancePendingWeeks.remove(position)
+        val holder = findViewHolder(pager, position) ?: run {
+            // 页面还没绑定：挂成 pending，等下一次 bind 时播
+            entrancePendingWeeks.add(position)
+            return
+        }
+        entrancePlayedWeeks.add(position)
+        holder.playCourseEntrance()
+    }
+
+    /** 取某页当前绑定的 ViewHolder（ViewPager2 内部的 RecyclerView 直接按 adapter position 查） */
+    private fun findViewHolder(pager: ViewPager2, position: Int): WeekViewHolder? {
+        val recycler = pager.getChildAt(0) as? RecyclerView ?: return null
+        return recycler.findViewHolderForAdapterPosition(position) as? WeekViewHolder
+    }
+
+    /**
+     * bind 之后的入场状态处理（B2）：
+     * - 当前页 + pending/armed → 立即播放入场（数据刚落位，或该页刚绑成可见页）；
+     * - 预加载的相邻页且没播过 → 预隐藏课程格子，等成为当前页再入场；
+     * - 其他情况保持终态（翻回已看过的周、外观设置重绑等）。
+     */
+    private fun applyEntranceState(holder: WeekViewHolder, position: Int) {
+        if (!Motion.enabled()) {
+            entrancePendingWeeks.remove(position)
+            entranceArmedWeeks.remove(position)
+            entrancePlayedWeeks.add(position)
+            holder.showCourseCardsFinal()
+            return
+        }
+        val pending = entrancePendingWeeks.remove(position)
+        val armed = entranceArmedWeeks.remove(position)
+        if (position == currentPosition) {
+            if (pending || armed) {
+                entrancePlayedWeeks.add(position)
+                holder.playCourseEntrance()
+            }
+            return
+        }
+        // 只预隐藏「当前页相邻」的预加载页：跨多周平滑滚动时中途掠过的页不隐藏，
+        // 否则拖动/回本周途中会看到一页页空白格子闪过去
+        if (!pending && abs(position - currentPosition) <= 1 &&
+            position !in entrancePlayedWeeks && holder.hasCourseCards()
+        ) {
+            entranceArmedWeeks.add(position)
+            holder.suppressCourseCards()
+        }
     }
 
     /**
@@ -175,6 +304,7 @@ class WeekPagerAdapter(
         holder.bind(week, weekCourseGroups(week), cellHeightDp, semesterStartDate, currentWeek,
             showClassroom, showTeacher, borderColor, borderFollowCourse, bottomBlankEnabled,
             highlightToday)
+        applyEntranceState(holder, position)
     }
 
     /**
@@ -261,6 +391,9 @@ class WeekPagerAdapter(
         /** 上次构建时间轴所用的格子高度 px；高度变了必须重建，否则行高停在旧值 */
         private var builtCellHeight = 0
         private val courseColors: IntArray get() = ThemeManager.getCourseColors()
+
+        /** 当前这页创建的课程卡片（bind 时重建），用于错峰入场；顺序即创建顺序 */
+        private val courseCards = ArrayList<View>()
 
         /** 当前显示的重叠课程弹窗，防止连点叠加 */
         private var overlapPickerDialog: android.app.Dialog? = null
@@ -391,6 +524,8 @@ class WeekPagerAdapter(
             // 日期栏先渲染：下面「暂无课程」会提前 return，不能漏掉日期栏；
             // 且当日列淡底依赖它算出的 todayColumnIndex
             bindDateHeader(week, semesterStartDate, currentWeek)
+            // 重建卡片前先清空入场候选列表（本页的卡片会全部重建）
+            courseCards.clear()
 
             val ctx = itemView.context
             val timeTable = TimeTableManager.getInstance(ctx)
@@ -491,6 +626,8 @@ class WeekPagerAdapter(
                     }
                     background = cardBg
                     setOnClickListener {
+                        // 点击确认：卡片轻微脉冲（B3 弹层是自底部滑入的 bottom sheet，不做 pivot 缩放）
+                        Motion.pulse(this, scale = 1.04f, duration = Motion.FAST)
                         if (sorted.size > 1) {
                             showOverlapPicker(ctx, sorted, colors, week)
                         } else {
@@ -503,6 +640,9 @@ class WeekPagerAdapter(
                     setOnTouchListener { v, event ->
                         when (event.action) {
                             MotionEvent.ACTION_DOWN -> {
+                                // 入场动画还没播完就被按下：把透明度拉满，
+                                // 否则按压动画会取消入场动画、卡片停在半透明（列表复用安全）
+                                v.alpha = 1f
                                 v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).start()
                             }
                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -574,7 +714,66 @@ class WeekPagerAdapter(
                 }
 
                 courseContainer.addView(card)
+                courseCards.add(card)
             }
+        }
+
+        /** 本页是否有课程格子（空课表页没有，不用参与入场） */
+        fun hasCourseCards(): Boolean = courseCards.isNotEmpty()
+
+        /**
+         * B2：课程格子按「行序」（先节次行、再星期列）12ms 步进错峰入场：
+         * scale 0.94→1 + alpha 0→1；超过 [COURSE_ENTRANCE_MAX_ITEMS] 格的直接落终态，避免最后一格等太久。
+         */
+        fun playCourseEntrance() {
+            if (courseCards.isEmpty()) return
+            if (!Motion.enabled()) {
+                showCourseCardsFinal()
+                return
+            }
+            val ordered = courseCards.sortedWith(
+                compareBy<View>(
+                    { (it.layoutParams as? FrameLayout.LayoutParams)?.topMargin ?: 0 },
+                    { (it.layoutParams as? FrameLayout.LayoutParams)?.leftMargin ?: 0 }
+                )
+            )
+            ordered.forEachIndexed { index, card ->
+                if (index >= COURSE_ENTRANCE_MAX_ITEMS) {
+                    showCourseCardFinal(card)
+                } else {
+                    Motion.enter(
+                        card,
+                        delay = index * COURSE_ENTRANCE_STEP_MS,
+                        duration = Motion.ENTRANCE,
+                        fromY = 0f,
+                        fromScale = COURSE_ENTRANCE_SCALE
+                    )
+                }
+            }
+        }
+
+        /** B2：预加载页先把课程格子藏起来（起始态），等成为当前页时再播放入场 */
+        fun suppressCourseCards() {
+            courseCards.forEach { card ->
+                card.animate().cancel()
+                card.alpha = 0f
+                card.scaleX = COURSE_ENTRANCE_SCALE
+                card.scaleY = COURSE_ENTRANCE_SCALE
+                card.translationY = 0f
+            }
+        }
+
+        /** 直接落终态（系统关闭动画、程序化跳周、复用时兜底） */
+        fun showCourseCardsFinal() {
+            courseCards.forEach { showCourseCardFinal(it) }
+        }
+
+        private fun showCourseCardFinal(card: View) {
+            card.animate().cancel()
+            card.alpha = 1f
+            card.scaleX = 1f
+            card.scaleY = 1f
+            card.translationY = 0f
         }
 
         /**
@@ -719,6 +918,20 @@ class WeekPagerAdapter(
     companion object {
         /** 日期栏上下文（学期开始日期 / 当前周）变化的 payload 标记 */
         private const val PAYLOAD_WEEK_CONTEXT = "week_context"
+
+        /** 课程格子错峰入场：步进 12ms、最多 40 格（超出直接终态）、起始缩放 0.94 */
+        private const val COURSE_ENTRANCE_STEP_MS = 12L
+        private const val COURSE_ENTRANCE_MAX_ITEMS = 40
+        private const val COURSE_ENTRANCE_SCALE = 0.94f
+
+        /**
+         * B1 翻页景深：取页根里的「课程格子区」（日期栏之下的滚动内容区）。
+         * 页根结构见 [buildPageRoot]：child0 = 日期栏，child1 = 内容滚动区。
+         */
+        fun pageContentView(page: View): View? = (page as? ViewGroup)?.getChildAt(1)
+
+        /** B1 翻页景深：取页根里的日期栏（做 0.35x 反向视差） */
+        fun pageDateHeaderView(page: View): View? = (page as? ViewGroup)?.getChildAt(0)
 
         /** 边框默认色：50% 半透明白（十六进制超出 Int 范围需 toInt），与历史版本写死的描边一致 */
         val DEFAULT_BORDER_COLOR = 0x80FFFFFF.toInt()

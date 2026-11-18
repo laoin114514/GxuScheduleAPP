@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 打开新页面：从右侧滑入（250ms，快进慢出） -->
-<translate xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="250"
-    android:fromXDelta="100%"
-    android:toXDelta="0%"
-    android:interpolator="@android:interpolator/fast_out_slow_in" />
+<!-- 打开新页面：从右侧滑入 + 淡入（240ms）。在原有水平位移上叠加透明度，
+     让"新页面盖上来"有层次，而不是一整块硬图平移 -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="240"
+    android:interpolator="@android:interpolator/fast_out_slow_in">
+    <translate
+        android:fromXDelta="100%"
+        android:toXDelta="0%" />
+    <alpha
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0" />
+</set>
