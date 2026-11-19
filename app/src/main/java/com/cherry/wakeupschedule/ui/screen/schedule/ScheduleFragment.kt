@@ -531,17 +531,23 @@ class ScheduleFragment : Fragment() {
         }
     }
 
-    /** 把当前页的景深 transform 复位（程序化跳周 / 滑动结束后兜底） */
+    /**
+     * 把翻页景深 transform 复位（程序化跳周 / 滑动结束后 / 切回周课表时兜底）。
+     *
+     * 复位**所有已附着的页**而不是只复位当前页：页 itemView 会被复用，
+     * 邻居页的缩放/半透明状态可能残留在之后被复用为当前页的那个 View 上（见 WeekPagerAdapter.resetPageDepthTransform）。
+     */
     private fun resetCurrentPageDepthTransform() {
         if (!::viewPager.isInitialized || !::adapter.isInitialized) return
         val recycler = viewPager.getChildAt(0) as? RecyclerView ?: return
-        val page = recycler.findViewHolderForAdapterPosition(viewPager.currentItem)?.itemView ?: return
-        WeekPagerAdapter.pageContentView(page)?.let {
-            it.scaleX = 1f
-            it.scaleY = 1f
-            it.alpha = 1f
+        if (recycler.childCount == 0) {
+            // 页面还没完成布局（程序化瞬跳时常见）：下一帧再兜底一次
+            viewPager.post { resetCurrentPageDepthTransform() }
+            return
         }
-        WeekPagerAdapter.pageDateHeaderView(page)?.translationX = 0f
+        for (i in 0 until recycler.childCount) {
+            WeekPagerAdapter.resetPageDepthTransform(recycler.getChildAt(i))
+        }
     }
 
     private fun setupObservers() {
@@ -631,6 +637,8 @@ class ScheduleFragment : Fragment() {
         } else {
             updateDateTimeHeader()
             Motion.crossFade(layoutOverview, viewPager, outFromScale = 0.98f, inFromScale = 0.98f)
+            // B1 兜底：总课表期间没有滚动事件，若有页面残留翻页景深的半透明/缩放，切回时立刻复位
+            viewPager.post { resetCurrentPageDepthTransform() }
         }
     }
 

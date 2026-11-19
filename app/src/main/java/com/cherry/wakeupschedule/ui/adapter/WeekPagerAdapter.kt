@@ -521,6 +521,8 @@ class WeekPagerAdapter(
             bottomBlankEnabled: Boolean,
             highlightToday: Boolean
         ) {
+            // 复用页时先复位上一轮的翻页景深（缩放/透明度/日期栏视差），避免继承残留状态
+            resetPageDepthTransform(itemView)
             // 日期栏先渲染：下面「暂无课程」会提前 return，不能漏掉日期栏；
             // 且当日列淡底依赖它算出的 todayColumnIndex
             bindDateHeader(week, semesterStartDate, currentWeek)
@@ -932,6 +934,24 @@ class WeekPagerAdapter(
 
         /** B1 翻页景深：取页根里的日期栏（做 0.35x 反向视差） */
         fun pageDateHeaderView(page: View): View? = (page as? ViewGroup)?.getChildAt(0)
+
+        /**
+         * B1 兜底：把某一页的翻页景深 transform 复位到终态。
+         *
+         * 页 itemView 会被 RecyclerView/ViewPager2 复用：如果上一轮作为「相邻页」被缩放到 1.04、
+         * 透明度压到 0.6 后视图被回收，再作为当前页复用时若没有经过 onPageScrolled 的变换，
+         * 就会以半透明/放大状态显示（用户看到的就是「课表变灰」）。
+         * bind 时和滑动结束后都调用它，保证任何一次复用都从终态开始。
+         */
+        fun resetPageDepthTransform(page: View) {
+            pageContentView(page)?.let {
+                it.scaleX = 1f
+                it.scaleY = 1f
+                it.alpha = 1f
+                it.translationX = 0f
+            }
+            pageDateHeaderView(page)?.translationX = 0f
+        }
 
         /** 边框默认色：50% 半透明白（十六进制超出 Int 范围需 toInt），与历史版本写死的描边一致 */
         val DEFAULT_BORDER_COLOR = 0x80FFFFFF.toInt()
