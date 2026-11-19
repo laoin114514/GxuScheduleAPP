@@ -105,7 +105,7 @@ class ExamScheduleActivity : BaseActivity() {
                 querying = loading
                 btnQuery.isEnabled = !loading
             },
-            loadingPulseView = btnQuery
+            loadingDimView = btnQuery
         )
         filterRow = findViewById(R.id.ll_filters)
 

@@ -107,7 +107,7 @@ class GradeQueryActivity : BaseActivity() {
             onLoadingChanged = { loading ->
                 btnQuery.isEnabled = !loading
             },
-            loadingPulseView = btnQuery
+            loadingDimView = btnQuery
         )
 
         adapter = GradeAdapter { showDetail(it) }

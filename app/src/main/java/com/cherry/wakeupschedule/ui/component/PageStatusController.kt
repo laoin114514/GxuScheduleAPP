@@ -25,7 +25,8 @@ import com.google.android.material.color.MaterialColors
  * ### 动效约定
  * - 出场：状态层整体淡入 + 0.96→1，空态/失败态图标 0.8→1 回弹、文案上浮；
  * - 退场：淡出后再隐藏（同样淡出的还有 loading 遮罩），页面据此在淡出后播列表入场；
- * - 加载中：查询按钮透明度呼吸（[loadingPulseView]），收起状态层即停；
+ * - 加载中：查询按钮轻微固定变淡（[loadingDimView]），收起状态层即恢复；
+ *   做成「一次性变淡」而不是来回呼吸：3Hz 的透明度循环肉眼看起来像按钮在闪，反而像故障；
  * - 动画只做 transform，高度 / isClickable / scrim / onLoadingChanged 语义一律不变；
  *   系统关闭动画时直接落终态，不会留下透明或缩小状态。
  */
@@ -38,8 +39,8 @@ class PageStatusController(
     private val listView: RecyclerView,
     /** 加载态变化回调（用于把「查询」按钮置灰 / 恢复） */
     private val onLoadingChanged: (Boolean) -> Unit = {},
-    /** 加载中做透明度呼吸的按钮（如查询按钮）；null 表示不需要 */
-    private val loadingPulseView: View? = null
+    /** 加载中轻微变淡的按钮（如查询按钮）；null 表示不需要 */
+    private val loadingDimView: View? = null
 ) {
 
     /** 盖住列表的 loading 遮罩：与列表卡片同色的圆角块 */
@@ -68,9 +69,9 @@ class PageStatusController(
     /** show/hide 交替的世代号：延迟收尾的动画只在世代未变时生效，避免状态错位 */
     private var transitionGeneration = 0
 
-    /** 加载中按钮的呼吸动画是否在跑 */
-    private var pulseOn = false
-    private var pulseAnimator: ValueAnimator? = null
+    /** 加载中按钮当前是否处于变淡状态 */
+    private var dimOn = false
+    private var dimAnimator: ValueAnimator? = null
 
     /** 状态层当前是否可见（页面据此在状态层淡出后再播列表入场） */
     val isShowing: Boolean get() = container.isVisible
@@ -117,7 +118,7 @@ class PageStatusController(
         container.isClickable = loading
         container.background = if (loading) scrim else null
         onLoadingChanged(loading)
-        setLoadingPulse(loading)
+        setLoadingDim(loading)
 
         if (replay) playEntrance(loading, fromHidden = !wasVisible)
     }
@@ -126,7 +127,7 @@ class PageStatusController(
         transitionGeneration++
         lastStateKey = null
         onLoadingChanged(false)
-        setLoadingPulse(false)
+        setLoadingDim(false)
         container.isClickable = false
         if (!container.isVisible || !Motion.enabled()) {
             // 已经隐藏 / 系统关闭动画：立即落终态，不重播淡出
@@ -231,31 +232,30 @@ class PageStatusController(
     }
 
     /**
-     * 加载中查询按钮透明度呼吸；状态层收起 / 页面销毁后自动停。
+     * 加载中让查询按钮轻微变淡（一次性过渡，不做循环呼吸）；状态层收起即恢复。
+     *
+     * 早期实现是 1↔0.55 的无限反向动画（约 360ms 一个来回），视觉上像按钮在以 3Hz 闪烁，
+     * 被反馈成"点查询按钮会闪"。现在改为：进入加载时淡到固定透明度后保持，加载结束淡回 1，
+     * 加载中的反馈交给状态层（遮罩 + 转圈）
      *
      * 用独立 ValueAnimator 只改 alpha：不能复用 ViewPropertyAnimator，
      * 否则会和 Motion.press 的按压缩放抢同一个 animator，把按钮卡在按下态。
      */
-    private fun setLoadingPulse(active: Boolean) {
-        val view = loadingPulseView ?: return
-        if (active == pulseOn) return
-        pulseOn = active
-        pulseAnimator?.cancel()
-        pulseAnimator = null
-        if (!active) {
-            view.alpha = 1f
-            return
-        }
+    private fun setLoadingDim(active: Boolean) {
+        val view = loadingDimView ?: return
+        if (active == dimOn) return
+        dimOn = active
+        dimAnimator?.cancel()
+        dimAnimator = null
+        val target = if (active) LOADING_DIM_ALPHA else 1f
         if (!Motion.enabled()) {
-            // 系统关动画时退回静态置灰表现
-            view.alpha = PULSE_MIN_ALPHA
+            // 系统关闭动画时直接落终态
+            view.alpha = target
             return
         }
-        pulseAnimator = ValueAnimator.ofFloat(1f, PULSE_MIN_ALPHA).apply {
-            duration = Motion.SHORT
+        dimAnimator = ValueAnimator.ofFloat(view.alpha, target).apply {
+            duration = if (active) Motion.MEDIUM else Motion.SHORT
             interpolator = Motion.standard
-            repeatCount = ValueAnimator.INFINITE
-            repeatMode = ValueAnimator.REVERSE
             addUpdateListener { anim ->
                 // 页面销毁后视图脱离窗口：主动停掉，避免后台空转
                 if (!view.isAttachedToWindow) {
@@ -283,7 +283,7 @@ class PageStatusController(
         /** 空态 / 失败态图标回弹起始缩放 */
         const val ICON_FROM_SCALE = 0.8f
 
-        /** 加载中按钮呼吸的最低透明度 */
-        const val PULSE_MIN_ALPHA = 0.55f
+        /** 加载中查询按钮的固定透明度：保留「不可点」的视觉暗示，又不至于闪 */
+        const val LOADING_DIM_ALPHA = 0.62f
     }
 }
