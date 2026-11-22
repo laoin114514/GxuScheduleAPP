@@ -16,6 +16,7 @@ import com.cherry.wakeupschedule.ui.theme.PageBackground
 import com.cherry.wakeupschedule.databinding.ActivityMainBinding
 import com.cherry.wakeupschedule.service.JwxtAuthManager
 import com.cherry.wakeupschedule.service.JwxtSessionHealthStore
+import com.cherry.wakeupschedule.service.SettingsManager
 import com.cherry.wakeupschedule.service.UpdateService
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.viewmodel.CourseViewModel
@@ -26,6 +27,16 @@ class MainActivity : BaseActivity() {
 
     /** 本地数据库初始化失败、正在显示恢复弹窗：此时没有内容视图，生命周期里要跳过常规逻辑 */
     private var localDataRecoveryMode = false
+
+    /**
+     * 更新提示红点刷新：静默检查 / 手动检查发现新版本后，底部导航「我的」页签与
+     * 「我的 → 关于应用」行同时点亮（同源于 SettingsManager.hasNewUpdateHint）。
+     */
+    private val updateHintListener: () -> Unit = {
+        if (::binding.isInitialized) {
+            binding.bottomNav.setUpdateHint(SettingsManager(this).hasNewUpdateHint())
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,6 +113,10 @@ class MainActivity : BaseActivity() {
 
         // 角标外观随模式回灌（切换动作由上面的「课表」页签点击触发）
         courseViewModel.overviewMode.observe(this) { binding.bottomNav.setScheduleOverview(it) }
+
+        // 底部导航红点先按本地记录回灌（上次检查发现新版本时，冷启动立刻就能看到），
+        // 再启动每日更新检查，检查结果通过 UpdateService.addHintChangedListener 实时刷新
+        binding.bottomNav.setUpdateHint(SettingsManager(this).hasNewUpdateHint())
 
         // 每日更新检查：今日已检查则直接返回，有新版本时静默弹窗提示
         UpdateService(this).checkForUpdateSilently()
@@ -207,6 +222,19 @@ class MainActivity : BaseActivity() {
         Process.killProcess(Process.myPid())
     }
 
+    override fun onStart() {
+        super.onStart()
+        // 恢复弹窗分支没有 setContentView，binding 未初始化，红点相关逻辑全部跳过
+        if (localDataRecoveryMode) return
+        UpdateService.addHintChangedListener(updateHintListener)
+        updateHintListener()
+    }
+
+    override fun onStop() {
+        UpdateService.removeHintChangedListener(updateHintListener)
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
         // 恢复弹窗分支没有 setContentView，binding 未初始化；等用户选完按钮再继续
@@ -221,5 +249,7 @@ class MainActivity : BaseActivity() {
         navHostFragment.navController.currentDestination?.let {
             binding.bottomNav.select(it.id)
         }
+        // 兜底：后台期间（例如去安装新版本）红点状态可能已变化
+        binding.bottomNav.setUpdateHint(SettingsManager(this).hasNewUpdateHint())
     }
 }

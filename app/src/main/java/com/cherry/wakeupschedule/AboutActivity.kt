@@ -22,6 +22,9 @@ class AboutActivity : BaseActivity() {
     /** 入场动画是否已播过：同一屏只播一次（转屏不重播） */
     private var entrancePlayed = false
 
+    /** 更新红点刷新回调：手动/静默检查完成后即时刷新「检查更新」行 */
+    private val updateHintListener: () -> Unit = { refreshUpdateHint() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeManager.applyToTheme(this)
@@ -102,13 +105,13 @@ class AboutActivity : BaseActivity() {
         super.onResume()
         // 从"安装未知应用"设置页返回后的安装续接由 BaseActivity 统一处理
         refreshUpdateHint()
-        // 静默检查完成后红点即时刷新（同一时刻仅本页面在前台注册）
-        UpdateService.hintChangedListener = { refreshUpdateHint() }
+        // 静默检查完成后红点即时刷新（MainActivity 底部导航红点也注册了同一份回调）
+        UpdateService.addHintChangedListener(updateHintListener)
     }
 
     override fun onPause() {
         super.onPause()
-        UpdateService.hintChangedListener = null
+        UpdateService.removeHintChangedListener(updateHintListener)
     }
 
     /** 有未处理的新版本更新时，在"检查更新"行右侧显示红点 */

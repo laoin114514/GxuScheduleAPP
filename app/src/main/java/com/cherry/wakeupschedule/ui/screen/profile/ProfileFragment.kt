@@ -51,6 +51,11 @@ class ProfileFragment : Fragment() {
     /** 分组入场是否已播过：同一屏只播一次（转屏/从二级页返回不重播） */
     private var entrancePlayed = false
 
+    /** 更新红点刷新回调：静默检查 / 手动检查完成后即时刷新「关于应用」行 */
+    private val updateHintListener: () -> Unit = {
+        view?.let { refreshUpdateHint(it) }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.fragment_profile, container, false)
@@ -243,13 +248,13 @@ class ProfileFragment : Fragment() {
         updateAccountSection()
         updateDisplay()
         refreshUpdateHint(requireView())
-        // 静默检查完成后红点即时刷新（同一时刻仅本页面在前台注册）
-        UpdateService.hintChangedListener = { refreshUpdateHint(requireView()) }
+        // 静默检查完成后红点即时刷新（MainActivity 底部导航红点也注册了同一份回调）
+        UpdateService.addHintChangedListener(updateHintListener)
     }
 
     override fun onPause() {
         super.onPause()
-        UpdateService.hintChangedListener = null
+        UpdateService.removeHintChangedListener(updateHintListener)
     }
 
     /** 有未处理的新版本更新时，在"关于应用"行右侧显示红点 */

@@ -62,6 +62,7 @@
     <!-- 无障碍描述：点击「课表」页签会在周课表 / 总课表之间切换 -->
     <string name="nav_schedule_desc_week">课表，当前周课表，再次点击切换到总课表</string>
     <string name="nav_schedule_desc_overview">课表，当前总课表，再次点击切换到周课表</string>
+    <string name="nav_profile_desc_update">我的，有新版本可更新</string>
 
     <!-- ===== 我的 / 关于 ===== -->
     <string name="profile_title">我的</string>

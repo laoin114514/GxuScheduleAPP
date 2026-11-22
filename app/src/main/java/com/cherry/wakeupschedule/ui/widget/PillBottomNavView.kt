@@ -54,6 +54,9 @@ class PillBottomNavView @JvmOverloads constructor(
         /** 「课表」页签右上角的小角标（切换周课表 / 总课表），其余页签为 null */
         val badge: ImageView?
 
+        /** 「我的」页签的未读更新小红点（有新版本时由外部点亮），其余页签为 null */
+        val updateDot: ImageView?
+
         init {
             val density = resources.displayMetrics.density
             fun dp(v: Int) = (v * density).toInt()
@@ -63,9 +66,26 @@ class PillBottomNavView @JvmOverloads constructor(
                 setImageResource(tab.iconRes)
             }
 
+            // 「我的」页签右上角红点：更新提示与「关于应用」行保持同步（见 setUpdateHint）
+            val updateDotView = if (tab.id == R.id.nav_profile) {
+                ImageView(context).apply {
+                    layoutParams = FrameLayout.LayoutParams(dp(9), dp(9), Gravity.TOP or Gravity.END).apply {
+                        topMargin = dp(1)
+                        marginEnd = dp(1)
+                    }
+                    setImageResource(R.drawable.dot_update_hint)
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                    visibility = View.GONE
+                }
+            } else {
+                null
+            }
+            updateDot = updateDotView
+
             holder = FrameLayout(context).apply {
                 layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
                 addView(icon)
+                updateDotView?.let { addView(it) }
             }
 
             label = TextView(context).apply {
@@ -143,6 +163,9 @@ class PillBottomNavView @JvmOverloads constructor(
     /** 指示器是否已按首帧布局落位（首帧直接放上去，不播滑动动画） */
     private var indicatorPlaced = false
 
+    /** 「我的」页签红点当前是否点亮（避免重复播放入场动画） */
+    private var updateHintShown = false
+
     /** 页签被点击时回调（含重复点击当前页签；再次点击「课表」即切换视图模式） */
     var onItemSelected: ((Int) -> Unit)? = null
 
@@ -203,6 +226,43 @@ class PillBottomNavView @JvmOverloads constructor(
         )
         item.cell.contentDescription = context.getString(
             if (overview) R.string.nav_schedule_desc_overview else R.string.nav_schedule_desc_week
+        )
+    }
+
+    /**
+     * 底部导航「我的」页签的未读更新小红点：与「我的 → 关于应用」行右侧的红点同源
+     * （`SettingsManager.hasNewUpdateHint()`），有新版本时在底部导航也能被看到。
+     *
+     * 红点是纯提示、不接收点击；只在状态变化时点亮/熄灭，入场用短促的淡入+放大，
+     * 不做循环闪烁。无障碍描述同步带上「有新版本」。
+     */
+    fun setUpdateHint(show: Boolean) {
+        val item = items.firstOrNull { it.tab.id == R.id.nav_profile } ?: return
+        val dot = item.updateDot ?: return
+        if (show == updateHintShown) return
+        updateHintShown = show
+        if (show) {
+            dot.animate().cancel()
+            dot.visibility = View.VISIBLE
+            if (Motion.enabled()) {
+                dot.alpha = 0f
+                dot.scaleX = 0.6f
+                dot.scaleY = 0.6f
+                dot.animate().alpha(1f).scaleX(1f).scaleY(1f)
+                    .setDuration(Motion.SHORT)
+                    .setInterpolator(Motion.standard)
+                    .start()
+            } else {
+                dot.alpha = 1f
+                dot.scaleX = 1f
+                dot.scaleY = 1f
+            }
+        } else {
+            dot.animate().cancel()
+            dot.visibility = View.GONE
+        }
+        item.cell.contentDescription = context.getString(
+            if (show) R.string.nav_profile_desc_update else R.string.nav_profile
         )
     }
 

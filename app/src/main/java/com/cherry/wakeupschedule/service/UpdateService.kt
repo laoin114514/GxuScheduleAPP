@@ -126,14 +126,26 @@ class UpdateService(private val context: Context) {
 
         /**
          * 更新提示（红点）状态变化回调，主线程回调。
-         * 同一时刻仅允许一个前台页面注册（ProfileFragment / AboutActivity）。
+         * 允许同时注册多个宿主：MainActivity 底部导航红点、ProfileFragment / AboutActivity 行内红点。
          */
-        @Volatile
-        var hintChangedListener: (() -> Unit)? = null
+        private val hintChangedListeners =
+            java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
 
-        /** 通知已注册的页面刷新更新红点 */
+        /** 注册更新红点刷新回调（重复注册同一实例只保留一份） */
+        fun addHintChangedListener(listener: () -> Unit) {
+            hintChangedListeners.addIfAbsent(listener)
+        }
+
+        /** 注销更新红点刷新回调 */
+        fun removeHintChangedListener(listener: () -> Unit) {
+            hintChangedListeners.remove(listener)
+        }
+
+        /** 通知所有注册方刷新更新红点 */
         private fun notifyHintChanged() {
-            Handler(Looper.getMainLooper()).post { hintChangedListener?.invoke() }
+            Handler(Looper.getMainLooper()).post {
+                hintChangedListeners.forEach { listener -> listener() }
+            }
         }
 
         /** 下载用 OkHttp 客户端单例：大文件下载读超时给足余量 */
