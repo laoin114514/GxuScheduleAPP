@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 今日课程概览 4×2 的行布局：彩底行卡（widget_row_*，与 2×2 同款状态底色）内
      双行排布——行1「课名 + 状态徽标 + 起时间」/ 行2「教室·节次 + 止时间」；
-     字号/颜色 token 全部沿用 2×2 行样式（caption/label/micro），无新增颜色。 -->
+     字号/颜色 token 全部沿用 2×2 行样式（caption/label/micro），无新增颜色。
+     四态配色（蓝/红/绿/灰）与文字色同样由 Factory 成对下发，XML 只保留「未开始」默认值。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/course_wide_root"
     android:layout_width="match_parent"
@@ -26,7 +27,7 @@
             android:layout_weight="1"
             android:textSize="@dimen/text_caption"
             android:textStyle="bold"
-            android:textColor="@color/widget_text_title"
+            android:textColor="@color/widget_status_text"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -36,7 +37,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
             android:textSize="@dimen/text_micro"
-            android:textColor="@color/widget_badge_upcoming"
+            android:textColor="@color/widget_status_text"
+            android:textStyle="bold"
             android:maxLines="1" />
 
         <TextView
@@ -45,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:textSize="@dimen/text_label"
-            android:textColor="@color/widget_text_secondary"
+            android:textColor="@color/widget_status_text_weak"
             android:fontFeatureSettings="tnum"
             android:maxLines="1" />
     </LinearLayout>
@@ -62,7 +64,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:textSize="@dimen/text_label"
-            android:textColor="@color/widget_text_secondary"
+            android:textColor="@color/widget_status_text_weak"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -72,7 +74,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:textSize="@dimen/text_label"
-            android:textColor="@color/widget_text_secondary"
+            android:textColor="@color/widget_status_text_weak"
             android:fontFeatureSettings="tnum"
             android:maxLines="1" />
     </LinearLayout>

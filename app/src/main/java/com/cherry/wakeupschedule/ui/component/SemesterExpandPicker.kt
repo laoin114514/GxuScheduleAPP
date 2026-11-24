@@ -16,6 +16,7 @@ import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.SemesterEntity
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 import com.cherry.wakeupschedule.ui.widget.SemesterSceneryView
 import kotlin.math.min
@@ -68,18 +69,44 @@ class SemesterExpandPicker(
     private val optionsScroll = ScrollView(context).apply {
         isVerticalScrollBarEnabled = false
         overScrollMode = View.OVER_SCROLL_NEVER
+        layoutParams = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+        )
         addView(optionsContainer)
     }
+
+    /** 浮层内容根：展开/收起的高度动画作用在它上面，PopupWindow 窗口高度由 [ensurePopup] 逐帧同步 */
+    private val optionsWrapper = FrameLayout(context)
 
     private var popup: PopupWindow? = null
     private var semesters: List<SemesterEntity> = emptyList()
     private var cachedCounts: Map<Long, Int> = emptyMap()
     private var selectedId: Long = 0L
 
+    /** 高度动画进行中（OnLayoutChange 里据此同步 PopupWindow 窗口高度） */
+    private var heightAnimating = false
+
+    /** 高度动画的令牌：连续展开/收起时，被取消的旧动画不能触发收尾逻辑 */
+    private var heightAnimToken = 0
+
+    /** 用户期望的展开态（收起动画途中又被展开时，旧动画的 dismiss 必须作废） */
+    private var expandedTarget = false
+
     val isExpanded: Boolean
         get() = popup?.isShowing == true
 
     init {
+        optionsWrapper.layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        optionsWrapper.addView(optionsScroll)
+        // PopupWindow 不会跟随内容高度自动改窗口高度，动画期间逐帧同步
+        optionsWrapper.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+            val height = bottom - top
+            if (heightAnimating && height != oldBottom - oldTop) {
+                popup?.takeIf { it.isShowing }?.update(field.width, height)
+            }
+        }
         field.setOnClickListener { toggle() }
     }
 
@@ -94,21 +121,83 @@ class SemesterExpandPicker(
     }
 
     fun toggle() {
-        if (isExpanded) collapse() else expand()
+        // 用期望态判断而不是 popup.isShowing：收起动画途中再点一下能立即重新展开
+        if (expandedTarget) collapse() else expand()
     }
 
     fun expand() {
         if (semesters.isEmpty() || field.width <= 0) return
+        expandedTarget = true
         rebuildOptions()
         val popup = ensurePopup()
         popup.width = field.width
-        popup.height = min(measureOptionsHeight(), maxPopupHeight)
-        popup.showAsDropDown(field, 0, dp(4))
+        val targetHeight = min(measureOptionsHeight(), maxPopupHeight)
+        // 未展开时从 0 高度长出；已在收起途中又被展开则从当前高度接着长
+        val fromHeight = if (popup.isShowing) optionsWrapper.height else 0
+        if (!popup.isShowing) {
+            setWrapperHeight(0)
+            popup.height = 0
+            popup.showAsDropDown(field, 0, dp(4))
+        }
+        fadeInRows()
         animateArrow(expanded = true)
+        animateHeight(fromHeight, targetHeight, Motion.MEDIUM) {
+            if (!expandedTarget) return@animateHeight
+            // 高度动画结束必须恢复 WRAP_CONTENT，不能把内容高度永久钉死成像素值
+            setWrapperHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+            // 窗口高度落到最终值（PopupWindow 只能用像素值维护已显示窗口的尺寸）
+            popup.update(field.width, targetHeight)
+        }
     }
 
     fun collapse() {
-        popup?.takeIf { it.isShowing }?.dismiss()
+        if (!expandedTarget) return
+        expandedTarget = false
+        animateArrow(expanded = false)
+        val popup = popup ?: return
+        if (!popup.isShowing) {
+            setWrapperHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+            return
+        }
+        val fromHeight = optionsWrapper.height
+        animateHeight(fromHeight, 0, Motion.SHORT) {
+            if (expandedTarget) return@animateHeight
+            popup.dismiss()
+        }
+    }
+
+    /**
+     * 高度展开/收起：统一走 [Motion.resizeHeight]，动画期间同步 PopupWindow 窗口高度。
+     * 连续点击时用令牌作废旧动画的收尾回调，避免"收起动画还没完就又把浮层关掉"。
+     */
+    private fun animateHeight(
+        from: Int,
+        to: Int,
+        duration: Long,
+        onEnd: (() -> Unit)? = null
+    ) {
+        val token = ++heightAnimToken
+        heightAnimating = true
+        Motion.resizeHeight(optionsWrapper, from, to, duration) {
+            if (token != heightAnimToken) return@resizeHeight
+            heightAnimating = false
+            onEnd?.invoke()
+        }
+    }
+
+    /** 内容行错峰上浮淡入（行数多时 Motion.stagger 内部封顶 10 项） */
+    private fun fadeInRows() {
+        if (!Motion.enabled()) return
+        val rows = (0 until optionsContainer.childCount)
+            .mapNotNull { optionsContainer.getChildAt(it) }
+        Motion.stagger(rows, fromY = 6f)
+    }
+
+    private fun setWrapperHeight(height: Int) {
+        val lp = optionsWrapper.layoutParams ?: return
+        if (lp.height == height) return
+        lp.height = height
+        optionsWrapper.layoutParams = lp
     }
 
     // ── 浮层 ──────────────────────────────────────────────
@@ -116,7 +205,7 @@ class SemesterExpandPicker(
     private fun ensurePopup(): PopupWindow {
         popup?.let { return it }
         return PopupWindow(
-            optionsScroll,
+            optionsWrapper,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             true
@@ -124,7 +213,14 @@ class SemesterExpandPicker(
             setBackgroundDrawable(popupBackground())
             elevation = dp(8).toFloat()
             isOutsideTouchable = true
-            setOnDismissListener { animateArrow(expanded = false) }
+            setOnDismissListener {
+                animateArrow(expanded = false)
+                // 外部点击直接关闭时不会有收起动画：这里把状态复位，下次展开仍从 0 长出
+                expandedTarget = false
+                heightAnimToken++
+                heightAnimating = false
+                setWrapperHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
             popup = this
         }
     }
@@ -141,8 +237,17 @@ class SemesterExpandPicker(
 
     private fun resizePopupIfShowing() {
         val popup = popup ?: return
-        if (!popup.isShowing) return
-        popup.height = min(measureOptionsHeight(), maxPopupHeight)
+        // 展开/收起动画进行中由动画自己维护高度，别在这里插一脚造成抖动
+        if (!popup.isShowing || heightAnimating) return
+        // 数据刷新（如缓存条数变化）时直接落到新高度，不做展开动画
+        val target = min(measureOptionsHeight(), maxPopupHeight)
+        setWrapperHeight(target)
+        popup.update(field.width, target)
+        optionsWrapper.post {
+            if (popup.isShowing && !heightAnimating) {
+                setWrapperHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
+        }
     }
 
     private fun popupBackground(): GradientDrawable = GradientDrawable().apply {
@@ -152,8 +257,18 @@ class SemesterExpandPicker(
         setStroke(dp(1), resolveAttr(com.google.android.material.R.attr.colorOutlineVariant))
     }
 
+    /** 箭头旋转：与展开/收起统一用 FAST 时长 + 标准曲线，方向仍是展开 180° / 收起 0° */
     private fun animateArrow(expanded: Boolean) {
-        arrow.animate().rotation(if (expanded) 180f else 0f).setDuration(160).start()
+        val targetRotation = if (expanded) 180f else 0f
+        if (!Motion.enabled()) {
+            arrow.rotation = targetRotation
+            return
+        }
+        arrow.animate()
+            .rotation(targetRotation)
+            .setDuration(Motion.FAST)
+            .setInterpolator(Motion.standard)
+            .start()
     }
 
     // ── 字段区 ────────────────────────────────────────────

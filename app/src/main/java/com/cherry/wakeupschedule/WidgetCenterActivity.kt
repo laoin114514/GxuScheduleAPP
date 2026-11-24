@@ -11,9 +11,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.RemoteViews
 import androidx.core.view.WindowCompat
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.cherry.wakeupschedule.databinding.ActivityWidgetCenterBinding
 import com.cherry.wakeupschedule.databinding.DialogWidgetHelpBinding
@@ -23,6 +25,7 @@ import com.cherry.wakeupschedule.ui.component.StyledDialog
 import com.cherry.wakeupschedule.ui.component.createAppChip
 import com.cherry.wakeupschedule.ui.component.themeColor
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.cherry.wakeupschedule.widget.WidgetPinPolicy
@@ -48,12 +51,22 @@ import kotlin.math.roundToInt
  *
  * 现在统一以**桌面上该组件的个数有没有变多**作为唯一判据：
  * 发起请求 → 记下基线 → 定时 / 回前台时核验 → 变多则刷状态并出卡，没变多则按机型给出可操作的手动添加引导。
+ *
+ * ### 小米的「假取消」
+ * 小米桌面失败时会短暂拉起 `AddItemActivity` 再立刻退出（日志
+ * `add widget failed, <pkg> has no permission`），本页因此收到一次 onPause。
+ * 若按「离开过前台 = 用户取消」处理，就只会给一句「没有检测到新添加的小组件」，
+ * 而用户既没看到确认框、也不知道要去开「桌面快捷方式」权限。
+ * 所以小米/红米/POCO 上「没加成功」一律按桌面拒绝处理，直接给带权限入口的引导。
  */
 class WidgetCenterActivity : BaseActivity() {
 
     private lateinit var binding: ActivityWidgetCenterBinding
     private lateinit var pagerAdapter: WidgetCenterPagerAdapter
     private val dots = mutableListOf<View>()
+
+    /** 已播放入场的小组件页；转屏/返回不重播（随实例状态保存） */
+    private val entrancePlayedPages = mutableSetOf<Int>()
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -65,6 +78,12 @@ class WidgetCenterActivity : BaseActivity() {
 
     /** 本页是否在前台，用于把「用户还在系统确认框上」和「桌面根本没响应」分开 */
     private var isForeground = false
+
+    /**
+     * 用户点了「去开启权限」、正在系统权限页里的那次添加。
+     * 回到本页且权限已开启时自动续上，省掉「开完权限还要再点一次」。
+     */
+    private var awaitingShortcutPermission: WidgetPage? = null
 
     /**
      * 一次「一键添加」请求的核验上下文。
@@ -91,6 +110,8 @@ class WidgetCenterActivity : BaseActivity() {
         override fun onPageSelected(position: Int) {
             syncChipRow(position)
             updateDots(position.toFloat())
+            playPageEntranceIfNeeded(position)
+            bindPagePress(position)
         }
 
         override fun onPageScrolled(position: Int, offset: Float, offsetPixels: Int) {
@@ -104,6 +125,7 @@ class WidgetCenterActivity : BaseActivity() {
         binding = ActivityWidgetCenterBinding.inflate(layoutInflater)
         setContentView(binding.root)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        savedInstanceState?.getIntArray(STATE_ENTRANCE_PAGES)?.forEach { entrancePlayedPages += it }
 
         setupPageHeader(binding.toolbar, "小组件")
 
@@ -116,6 +138,11 @@ class WidgetCenterActivity : BaseActivity() {
         setupDots()
         // 落地第 1 页「下课倒计时」
         syncChipRow(0)
+        // 首屏页有时收不到 onPageSelected：补一次卡片入场与按压反馈
+        binding.viewPager.post {
+            playPageEntranceIfNeeded(0)
+            bindPagePress(0)
+        }
 
         // 页面渐变是蓝灰调，圆钮用纯白（浅色）才不糊进背景
         binding.btnWidgetHelp.setCircleBackground(R.drawable.bg_widget_help)
@@ -131,6 +158,11 @@ class WidgetCenterActivity : BaseActivity() {
         reconcileAddedCounts(counts)
         // 从系统确认框 / 桌面回来：再核验一次刚才的请求有没有真的落地
         if (pendingPin != null) schedulePinCheck(PIN_RESUME_SETTLE_MS)
+        // 刚从「桌面快捷方式」权限页回来且已经允许：直接续上那次添加
+        awaitingShortcutPermission?.let { awaiting ->
+            awaitingShortcutPermission = null
+            if (WidgetPinSupport.shortcutPermissionDenied(this) == false) pinWidget(awaiting)
+        }
     }
 
     override fun onPause() {
@@ -272,6 +304,12 @@ class WidgetCenterActivity : BaseActivity() {
             showManualGuide(page, PinFailure.UNSUPPORTED)
             return
         }
+        // 小米/红米：先查「桌面快捷方式」开关。关着时桌面必然静默拒绝，
+        // 与其让用户等一轮核验再弹引导，不如直接把系统权限页递到手上。
+        if (WidgetPinSupport.shortcutPermissionDenied(this) == true) {
+            showManualGuide(page, PinFailure.PERMISSION)
+            return
+        }
 
         val requested = try {
             manager.requestPinAppWidget(component, pinExtras(page), pinSuccessPendingIntent(page))
@@ -355,6 +393,9 @@ class WidgetCenterActivity : BaseActivity() {
             attempts = pending.attempts,
             leftForeground = pending.leftForeground,
             foregroundWithFocus = isForeground && hasWindowFocus(),
+            // 小米桌面失败时只短暂拉起 AddItemActivity 再退出，本页的 onPause 不能
+            // 当成「用户取消」；改判为桌面拒绝，才能给出开「桌面快捷方式」的引导
+            desktopRejectsSilently = WidgetPinSupport.pinRejectedSilently(),
         )
 
         when (outcome) {
@@ -386,8 +427,8 @@ class WidgetCenterActivity : BaseActivity() {
         }
     }
 
-    /** 一键添加没能落地的三种情形，决定引导弹窗的标题与首句 */
-    private enum class PinFailure { UNSUPPORTED, REJECTED, NO_RESPONSE }
+    /** 一键添加没能落地的几种情形，决定引导弹窗的标题与首句 */
+    private enum class PinFailure { UNSUPPORTED, REJECTED, NO_RESPONSE, PERMISSION }
 
     private fun showManualGuide(page: WidgetPage, failure: PinFailure) {
         if (isFinishing || isDestroyed) return
@@ -395,26 +436,137 @@ class WidgetCenterActivity : BaseActivity() {
             PinFailure.UNSUPPORTED -> "当前桌面不支持一键添加"
             PinFailure.REJECTED -> "桌面拒绝了本次添加请求"
             PinFailure.NO_RESPONSE -> "桌面没有响应，请手动添加"
+            PinFailure.PERMISSION -> "需要「桌面快捷方式」权限"
         }
         val intro = when (failure) {
             PinFailure.NO_RESPONSE ->
                 "已经向桌面发起了添加，但既没有弹出确认框，也没有检测到新增的小组件。" +
                         "部分手机的桌面不支持应用内一键添加，请按下面的方式手动添加："
 
+            PinFailure.PERMISSION ->
+                "一键添加小组件需要系统的「桌面快捷方式」权限，当前未开启。" +
+                        "开启后回到本页会自动继续添加；也可以先按下面的方式手动添加："
+
             else -> "请按下面的方式手动添加："
         }
         val steps = "长按桌面空白处 → 小组件（窗口小工具）→ 找到「西大课栈」→ " +
                 "长按「${page.displayName}」拖到桌面。"
-        val message = listOfNotNull(intro, steps, WidgetPinSupport.manualHint())
+        // 机型提示放在手动步骤之前：小米/红米要先去开「桌面快捷方式」，
+        // 开了之后一键添加就能用，手动拖组件只是备选
+        val message = listOfNotNull(intro, WidgetPinSupport.manualHint(), steps)
             .joinToString("\n\n")
-        StyledDialog.Builder(this)
+        val builder = StyledDialog.Builder(this)
             .title(title)
             .message(message)
-            .positiveButton("知道了")
-            .show()
+        // 小米/红米：桌面拒绝的根因是「桌面快捷方式」权限，直接给系统权限页入口；
+        // 用户开启后回来（onResume）会自动续上这次添加，不用再点一遍
+        if (WidgetPinSupport.pinRejectedSilently() &&
+            (failure == PinFailure.PERMISSION || failure == PinFailure.NO_RESPONSE)
+        ) {
+            builder.positiveButton("去开启权限") {
+                awaitingShortcutPermission = page
+                openShortcutPermissionSettings()
+            }
+            builder.negativeButton("知道了")
+        } else {
+            builder.positiveButton("知道了")
+        }
+        builder.show()
+    }
+
+    /** 小米/红米的「桌面快捷方式」权限页；打不开时回落到应用详情页 */
+    private fun openShortcutPermissionSettings() {
+        runCatching { startActivity(WidgetPinSupport.shortcutPermissionIntent(this)) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putIntArray(STATE_ENTRANCE_PAGES, entrancePlayedPages.toIntArray())
+    }
+
+    // ── 动效：卡片入场 / 预览卡按压 ──
+
+    /**
+     * 小组件页首次显示时，页内元素（标题/说明/卡片，卡片里是小组件预览）错峰上浮淡入。
+     * 每页只播一次，已播页保存在实例状态里，转屏/从系统设置返回不重播。
+     */
+    private fun playPageEntranceIfNeeded(position: Int) {
+        if (!Motion.enabled()) {
+            entrancePlayedPages += position
+            return
+        }
+        if (!entrancePlayedPages.add(position)) return
+        attemptPageEntrance(position, retries = 1)
+    }
+
+    private fun attemptPageEntrance(position: Int, retries: Int) {
+        binding.viewPager.post {
+            val pageRoot = pageRootOf(position)
+            if (pageRoot == null) {
+                // 页还没布局出来：再等一帧；仍拿不到就允许下次页面选中时重试
+                if (retries > 0) attemptPageEntrance(position, retries - 1)
+                else entrancePlayedPages.remove(position)
+                return@post
+            }
+            val content = (pageRoot as? ViewGroup)?.getChildAt(0) as? ViewGroup
+            if (content == null || content.childCount == 0) {
+                entrancePlayedPages.remove(position)
+                return@post
+            }
+            val items = (0 until content.childCount).mapNotNull { content.getChildAt(it) }
+            Motion.stagger(
+                items,
+                step = Motion.STAGGER_STEP,
+                duration = Motion.ENTRANCE,
+                fromY = 8f
+            )
+        }
+    }
+
+    /**
+     * 预览卡按压反馈：预览本身没有点击行为（也不改交互），
+     * 设为 clickable 只是为了让 View 能收到完整的按下/抬手事件，避免动画卡在按下态。
+     * 一键添加按钮的点击回调在 Adapter 里，Motion.press 只挂 OnTouchListener，不会覆盖点击。
+     */
+    private fun bindPagePress(position: Int, retries: Int = 1) {
+        binding.viewPager.post {
+            val pageRoot = pageRootOf(position)
+            if (pageRoot == null) {
+                // 页还没布局出来：再等一帧
+                if (retries > 0) bindPagePress(position, retries - 1)
+                return@post
+            }
+            arrayOf(R.id.preview_widget, R.id.preview_widget_small).forEach { id ->
+                pageRoot.findViewById<View>(id)?.let { preview ->
+                    preview.isClickable = true
+                    Motion.press(preview, pressedScale = 0.97f)
+                }
+            }
+            val recycler = binding.viewPager.getChildAt(0) as? RecyclerView ?: return@post
+            val holder = recycler.findViewHolderForAdapterPosition(position)
+                as? WidgetCenterPagerAdapter.PageHolder ?: return@post
+            holder.footers.forEach { (footer, _) -> Motion.press(footer.btnWidgetAdd) }
+        }
+    }
+
+    /**
+     * 取 ViewPager2 里指定页的根 View。
+     * ViewPager2 内部就是一个 RecyclerView（唯一子 View），据此按页序找 ViewHolder。
+     */
+    private fun pageRootOf(position: Int): View? {
+        val recycler = binding.viewPager.getChildAt(0) as? RecyclerView ?: return null
+        recycler.findViewHolderForAdapterPosition(position)?.let { return it.itemView }
+        for (index in 0 until recycler.childCount) {
+            val child = recycler.getChildAt(index) ?: continue
+            if (recycler.getChildAdapterPosition(child) == position) return child
+        }
+        return null
     }
 
     companion object {
+        /** 已播放入场的小组件页（实例状态 key） */
+        private const val STATE_ENTRANCE_PAGES = "widget_center_entrance_pages"
+
         private const val DOT_SIZE_DP = 8
         private const val DOT_MARGIN_DP = 4
         private const val DOT_MIN_ALPHA = 0.3f

@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.google.android.material.color.MaterialColors
 
 /**
@@ -93,6 +94,8 @@ class CourseOverviewAdapter : RecyclerView.Adapter<CourseOverviewAdapter.GroupVi
             adjustBadge.visibility = if (group.hasAdjustment) View.VISIBLE else View.GONE
 
             itemView.setOnClickListener {
+                // 点击确认：卡片轻微脉冲，再接自底部滑入的详情弹层
+                Motion.pulse(itemView, scale = 1.02f, duration = Motion.FAST)
                 SchedulePageDetailDialog.show(
                     ctx, group.courses, courseColors, SchedulePageDetailDialog.Source.OVERVIEW
                 )

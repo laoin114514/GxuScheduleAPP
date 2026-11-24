@@ -2,6 +2,7 @@ package com.gxu.jwxt.module;
 
 import com.google.gson.Gson;
 import com.gxu.jwxt.model.ScheduleAdjustment;
+import com.gxu.jwxt.util.AndroidCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,14 +42,14 @@ public final class ScheduleAdjustmentParser {
      * @return 调课记录列表；未找到 modelList 或解析失败时返回空列表（不返回 null）
      */
     public static List<ScheduleAdjustment> parse(String html) {
-        if (html == null || html.trim().isEmpty()) return List.of();
+        if (html == null || html.trim().isEmpty()) return AndroidCompat.listOf();
 
         String json = extractModelListJson(html);
-        if (json == null) return List.of();
+        if (json == null) return AndroidCompat.listOf();
 
         try {
             ScheduleAdjustment[] array = GSON.fromJson(json, ScheduleAdjustment[].class);
-            if (array == null || array.length == 0) return List.of();
+            if (array == null || array.length == 0) return AndroidCompat.listOf();
             List<ScheduleAdjustment> records = new ArrayList<>(array.length);
             for (ScheduleAdjustment record : array) {
                 if (record != null) records.add(record);
@@ -56,7 +57,7 @@ public final class ScheduleAdjustmentParser {
             return records;
         } catch (RuntimeException e) {
             // JsonSyntaxException 等坏数据：按无记录处理
-            return List.of();
+            return AndroidCompat.listOf();
         }
     }
 

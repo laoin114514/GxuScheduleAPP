@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 今日概览行：进行中（绿）。夜间与课表页同画法：课程色 75% 填充（alpha=191）压在本组件深色卡片上。 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#663B0764" />
+    <solid android:color="#BF1DE9B6" />
     <corners android:radius="12dp" />
 </shape>

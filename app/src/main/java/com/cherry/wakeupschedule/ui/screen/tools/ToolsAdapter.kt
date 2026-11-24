@@ -16,6 +16,7 @@ import com.cherry.wakeupschedule.ui.feedback.AppToast
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
 /**
@@ -29,6 +30,71 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
     fun render(rows: List<ToolsRow>) {
         this.rows = rows
         notifyDataSetChanged()
+    }
+
+    /**
+     * 首次进入工具页时的卡片入场：卡片行按 34ms 步进上浮淡入（封顶 10 项），
+     * 卡内图标随后轻微 pop；分组标题行不参与入场。
+     *
+     * 由页面在数据落位、RecyclerView 完成布局后调用；同一屏只播一次，
+     * 滚动复用/返回不会重播（onBind 里会复位 transform 兜底）。
+     */
+    fun playEntrance(recyclerView: RecyclerView) {
+        if (!Motion.enabled()) return
+        recyclerView.post {
+            if (!recyclerView.isAttachedToWindow) return@post
+            var cardIndex = 0
+            for (index in 0 until recyclerView.childCount) {
+                val rowView = recyclerView.getChildAt(index) ?: continue
+                val row = rows.getOrNull(recyclerView.getChildAdapterPosition(rowView)) ?: continue
+                // 只对卡片 item（推荐大卡 / 图标网格卡 / 双列大卡组）做入场，分组标题保持静态
+                if (row is ToolsRow.SectionTitle) continue
+                val delay = cardIndex.coerceAtMost(Motion.STAGGER_MAX_ITEMS) * Motion.STAGGER_STEP
+                cardIndex++
+                Motion.enter(
+                    rowView,
+                    delay = delay,
+                    duration = Motion.ENTRANCE,
+                    fromY = 10f
+                )
+                // 图标随卡片轻微 pop：只动缩放，保留「占位项」原本的低透明度
+                iconViews(rowView).forEachIndexed { iconIndex, icon ->
+                    popIcon(icon, delay + 60L + iconIndex * 18L)
+                }
+            }
+        }
+    }
+
+    /** 递归收集卡片里的图标（图标格 icon / 大卡圆底 icon / 推荐卡箭头） */
+    private fun iconViews(view: View): List<View> {
+        val result = mutableListOf<View>()
+        fun collect(current: View) {
+            if (current is ImageView) {
+                result += current
+                return
+            }
+            if (current is ViewGroup) {
+                for (index in 0 until current.childCount) {
+                    current.getChildAt(index)?.let(::collect)
+                }
+            }
+        }
+        collect(view)
+        return result
+    }
+
+    private fun popIcon(icon: View, delay: Long) {
+        if (!Motion.enabled()) return
+        icon.animate().cancel()
+        icon.scaleX = ICON_POP_FROM_SCALE
+        icon.scaleY = ICON_POP_FROM_SCALE
+        icon.animate()
+            .scaleX(1f)
+            .scaleY(1f)
+            .setStartDelay(delay)
+            .setDuration(Motion.ENTRANCE)
+            .setInterpolator(Motion.spring)
+            .start()
     }
 
     override fun getItemCount(): Int = rows.size
@@ -51,7 +117,10 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: RowViewHolder, position: Int) {
-        val ctx = holder.itemView.context
+        // 列表复用兜底：入场动画被复用打断时，复位 transform，避免行视图带着半截动画出现
+        Motion.resetScale(holder.itemView)
+        holder.itemView.alpha = 1f
+        holder.itemView.translationY = 0f
         when (val row = rows[position]) {
             is ToolsRow.Featured -> bindHero(holder.itemView as FrameLayout, row.item)
             is ToolsRow.SectionTitle -> (holder.itemView as TextView).text = row.title
@@ -187,7 +256,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
         }
         hero.addView(arrow)
 
-        pressScale(hero)
+        bindHeroPress(hero)
         hero.setOnClickListener { handleClick(it, item) }
     }
 
@@ -245,7 +314,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
                 ).apply { topMargin = dp(ctx, 7) })
 
-                pressScale(this)
+                Motion.press(this)
                 setOnClickListener { handleClick(it, item) }
             }
             grid.addView(cell)
@@ -354,7 +423,7 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
                 card.addView(col)
             }
 
-            pressScale(card)
+            Motion.press(card)
             card.setOnClickListener { handleClick(it, item) }
 
             if (item.wide) {
@@ -391,6 +460,24 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
         currentRow?.let { (grid as LinearLayout).addView(it) }
     }
 
+    /**
+     * 推荐大卡的按压反馈。
+     *
+     * 这张卡同时有入场动画与按压缩放，两者都走 ViewPropertyAnimator：
+     * 入场没播完就被按下时，按压缩放会 cancel 掉入场动画，把透明度/位移卡在中间。
+     * 这里在按下瞬间先把入场落到终态，只保留按压缩放。
+     */
+    private fun bindHeroPress(hero: View) {
+        val press = Motion.press(hero)
+        hero.setOnTouchListener { view, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                view.alpha = 1f
+                view.translationY = 0f
+            }
+            press.onTouch(view, event)
+        }
+    }
+
     // ── 工具方法 ────────────────────────────────────────────────
 
     /** 已配置跳转的工具直接执行；未配置的以「敬请期待」占位 */
@@ -400,19 +487,6 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
             action(v.context)
         } else {
             AppToast.info(v.context, v.context.getString(R.string.tools_coming_soon_toast))
-        }
-    }
-
-    /** 按压缩放反馈（与课表卡片一致） */
-    private fun pressScale(v: View) {
-        v.setOnTouchListener { view, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN ->
-                    view.animate().scaleX(0.97f).scaleY(0.97f).setDuration(80).start()
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                    view.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
-            }
-            false
         }
     }
 
@@ -427,6 +501,9 @@ class ToolsAdapter : RecyclerView.Adapter<ToolsAdapter.RowViewHolder>() {
     class RowViewHolder(itemView: View, val viewType: Int) : RecyclerView.ViewHolder(itemView)
 
     companion object {
+        /** 图标入场起始缩放（随卡片轻微 pop） */
+        private const val ICON_POP_FROM_SCALE = 0.8f
+
         private const val TYPE_FEATURED = 0
         private const val TYPE_TITLE = 1
         private const val TYPE_ICON_GRID = 2

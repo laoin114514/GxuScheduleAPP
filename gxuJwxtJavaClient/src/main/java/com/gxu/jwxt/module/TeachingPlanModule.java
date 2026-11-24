@@ -5,6 +5,7 @@ import com.gxu.jwxt.model.PageQuery;
 import com.gxu.jwxt.model.PagedResult;
 import com.gxu.jwxt.model.TeachingPlan;
 import com.gxu.jwxt.model.Term;
+import com.gxu.jwxt.util.AndroidCompat;
 import java.io.IOException;
 import java.util.Map;
 
@@ -26,7 +27,7 @@ public class TeachingPlanModule {
         session.ensureLogin();
         String body = session.post(
             "/jwglxt/jxzxjhgl/jxzxjhck_cxJxzxjhckIndex.html?doType=query&gnmkdm=" + GNMKDM,
-            page.toMap(Map.of("xnm", year, "xqm", term.code())), REFERER);
+            page.toMap(AndroidCompat.mapOf("xnm", year, "xqm", term.code())), REFERER);
         return JsonSupport.page(body, TeachingPlan.class);
     }
 

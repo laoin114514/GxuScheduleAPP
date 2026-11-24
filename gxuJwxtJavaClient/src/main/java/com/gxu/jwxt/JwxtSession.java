@@ -7,6 +7,7 @@ import com.gxu.jwxt.exceptions.KickedOutException;
 import com.gxu.jwxt.exceptions.LoginException;
 import com.gxu.jwxt.exceptions.NotLoggedInException;
 import com.gxu.jwxt.exceptions.SessionExpiredException;
+import com.gxu.jwxt.util.AndroidCompat;
 
 import okhttp3.*;
 
@@ -95,7 +96,7 @@ public class JwxtSession {
 
         this.httpClient = new OkHttpClient.Builder()
                 .cookieJar(cookieJar != null ? cookieJar : buildDefaultCookieJar())
-                .protocols(List.of(Protocol.HTTP_1_1))
+                .protocols(AndroidCompat.listOf(Protocol.HTTP_1_1))
                 .followRedirects(true)
                 .followSslRedirects(true)
                 .build();
@@ -769,7 +770,7 @@ public class JwxtSession {
         String[] selectors = {"#tips", "#errorMsg", ".error", ".alert-danger", ".form-msg"};
         for (String sel : selectors) {
             var el = doc.selectFirst(sel);
-            if (el != null && !el.text().isBlank()) {
+            if (el != null && !AndroidCompat.isBlank(el.text())) {
                 message = el.text().trim();
                 break;
             }

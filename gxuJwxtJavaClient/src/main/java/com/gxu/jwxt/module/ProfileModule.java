@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.gxu.jwxt.JwxtSession;
 import com.gxu.jwxt.model.*;
+import com.gxu.jwxt.util.AndroidCompat;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -51,18 +52,18 @@ public class ProfileModule {
     public StudentProfile profile() throws IOException {
         session.ensureLogin();
 
-        String body = session.post(PROFILE_JSON_PATH, Map.of(), PROFILE_PAGE_PATH);
+        String body = session.post(PROFILE_JSON_PATH, AndroidCompat.mapOf(), PROFILE_PAGE_PATH);
         StudentProfile p = null;
-        if (body != null && !body.isBlank() && !"null".equals(body.trim())) {
+        if (body != null && !AndroidCompat.isBlank(body) && !"null".equals(body.trim())) {
             p = gson.fromJson(body, StudentProfile.class);
         }
 
         // JSON 接口空包 / 字面量 null / 缺少学号 → 回退解析个人信息页面
-        if (p == null || p.getStudentId() == null || p.getStudentId().isBlank()) {
+        if (p == null || p.getStudentId() == null || AndroidCompat.isBlank(p.getStudentId())) {
             p = profileFromPage();
         }
 
-        if (p == null || p.getStudentId() == null || p.getStudentId().isBlank()) {
+        if (p == null || p.getStudentId() == null || AndroidCompat.isBlank(p.getStudentId())) {
             throw new IOException("教务系统未返回学生信息（账号可能不是学生账号，或学籍信息未完善）");
         }
         this.xhId = p.getStudentId();
@@ -93,7 +94,7 @@ public class ProfileModule {
         // 学号兜底：页面头部/隐藏域（部分页面 col_xh 为空）
         if (!o.has("xh")) {
             Element xh = doc.selectFirst("input[name=xh_id][value]");
-            if (xh != null && !xh.attr("value").isBlank()) {
+            if (xh != null && !AndroidCompat.isBlank(xh.attr("value"))) {
                 o.addProperty("xh", xh.attr("value").trim());
             }
         }
@@ -113,7 +114,7 @@ public class ProfileModule {
 
     private static void addHidden(Document doc, JsonObject o, String name) {
         Element el = doc.selectFirst("input[name=" + name + "][value]");
-        if (el != null && !el.attr("value").isBlank()) {
+        if (el != null && !AndroidCompat.isBlank(el.attr("value"))) {
             o.addProperty(name, el.attr("value").trim());
         }
     }
@@ -128,7 +129,7 @@ public class ProfileModule {
         String xh = ensureXhId();
         String body = session.post(
             "/jwglxt/xsxxxggl/xsxxwh_cxBjxxList.html?gnmkdm=" + GNMKDM,
-            Map.of("xh_id", xh),
+            AndroidCompat.mapOf("xh_id", xh),
             "/jwglxt/xsxxxggl/xsgrxxwh_cxXsgrxx.html?gnmkdm=" + GNMKDM
         );
         return JsonSupport.list(body, StudentClass.class);
@@ -139,7 +140,7 @@ public class ProfileModule {
         session.ensureLogin();
         String body = session.post(
             "/jwglxt/xsxxxggl/xsxxwh_cxXqm.html?gnmkdm=" + GNMKDM,
-            Map.of("xh_id", ensureXhId(), "xnm", year),
+            AndroidCompat.mapOf("xh_id", ensureXhId(), "xnm", year),
             "/jwglxt/xsxxxggl/xsgrxxwh_cxXsgrxx.html?gnmkdm=" + GNMKDM
         );
         return JsonSupport.list(body, TermOption.class);
@@ -150,7 +151,7 @@ public class ProfileModule {
         session.ensureLogin();
         String body = session.post(
             "/jwglxt/xsxxxggl/xsxxwh_cxViewKbzg.html?gnmkdm=" + GNMKDM,
-            Map.of("xh_id", ensureXhId()),
+            AndroidCompat.mapOf("xh_id", ensureXhId()),
             "/jwglxt/xsxxxggl/xsgrxxwh_cxXsgrxx.html?gnmkdm=" + GNMKDM
         );
         return "1".equals(gson.fromJson(body, String.class));
@@ -169,7 +170,7 @@ public class ProfileModule {
     public PagedResult<ExamEntry> exams(PageQuery page) throws IOException {
         session.ensureLogin();
         String xh = ensureXhId();
-        Map<String, String> params = page.toMap(Map.of("xh_id", xh));
+        Map<String, String> params = page.toMap(AndroidCompat.mapOf("xh_id", xh));
         String body = session.post(
             "/jwglxt/xsxxxggl/xsxxwh_cxDjksxx.html?gnmkdm=" + GNMKDM,
             params,
@@ -191,7 +192,7 @@ public class ProfileModule {
     public PagedResult<CourseSelectionEntry> courseSelections(PageQuery page) throws IOException {
         session.ensureLogin();
         String xh = ensureXhId();
-        Map<String, String> params = page.toMap(Map.of("xh_id", xh));
+        Map<String, String> params = page.toMap(AndroidCompat.mapOf("xh_id", xh));
         String body = session.post(
             "/jwglxt/xsxxxggl/xsxxwh_cxXsxkxx.html?gnmkdm=" + GNMKDM,
             params,

@@ -27,7 +27,7 @@
 
 ## 1. 现状盘点
 
-### 1.1 页面地图（21 个界面 + 6 款桌面组件）
+### 1.1 页面地图（21 个界面 + 7 款桌面组件）
 
 | 层级 | 页面 | 承载文件 |
 | --- | --- | --- |
@@ -35,7 +35,7 @@
 | 课表 | 周课表、总课表、课程详情、课表菜单、课表外观面板 | `WeekPagerAdapter`(722) / `SchedulePageDetailDialog` / `ScheduleAppearanceSheet` |
 | 工具 | 工具列表、绑定教务、成绩查询、考试安排、绩点计算 | `ToolsAdapter` / `BindJwxtActivity` / `GradeQueryActivity` / `ExamScheduleActivity` / `GpaActivity` |
 | 我的 | 我的、个人信息、主题、课表外观、字体大小、时间表、小组件、关于 | `ProfileFragment` / `ProfileActivity` / `AppearanceActivity` / `FontSizeActivity` / `TimeTableEditActivity` / `WidgetCenterActivity` / `AboutActivity` |
-| 桌面 | 今日课程 2×2/4×2、下一门课、下课倒计时、一周课程、近日课程 | 6 个 `*WidgetProvider` + `widget/*.xml` |
+| 桌面 | 今日课程 2×2/4×2、下一门课 2×2/4×2、下课倒计时、一周课程、近日课程 | 7 个 `*WidgetProvider` + `widget/*.xml` |
 
 ### 1.2 设计令牌现状（已有什么、缺什么）
 

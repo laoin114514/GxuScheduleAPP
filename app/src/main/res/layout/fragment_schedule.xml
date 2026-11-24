@@ -92,76 +92,82 @@
         <!-- 日期栏不在这里：它随页面横向滚动，所以放在每个 ViewPager2 页面内部，
              见 item_date_header.xml / WeekPagerAdapter.buildPageRoot -->
 
-        <!-- ViewPager2 -->
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/view_pager"
+        <!-- 周课表与总课表在同一个位置上互斥显示：用 FrameLayout 重叠而不是各占一个 weight，
+             这样 B4 交叉淡入时两张视图同时可见也不会把可用高度各分一半（上下文区高度始终一致） -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal" />
+            android:layout_weight="1">
 
-        <!-- 总课表：顶部类型筛选 + 当前学期全部课程按课程名归并后的纵向列表（与周课表互斥显示） -->
-        <LinearLayout
-            android:id="@+id/layout_overview"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:visibility="gone">
+            <!-- ViewPager2 -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/view_pager"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal" />
 
-            <!-- 全部 / 理论课 / 实践课：chip 由 ScheduleFragment 用 createAppChip 填充 -->
+            <!-- 总课表：顶部类型筛选 + 当前学期全部课程按课程名归并后的纵向列表（与周课表互斥显示） -->
             <LinearLayout
-                android:id="@+id/ll_overview_filters"
+                android:id="@+id/layout_overview"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="4dp" />
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone">
 
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rv_course_overview"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:paddingBottom="16dp"
-                    android:clipToPadding="false"
-                    android:overScrollMode="never"
-                    android:scrollbars="none" />
-
-                <!-- 空状态：与周课表的「暂无课程」保持同一套视觉 -->
+                <!-- 全部 / 理论课 / 实践课：chip 由 ScheduleFragment 用 createAppChip 填充 -->
                 <LinearLayout
-                    android:id="@+id/ll_overview_empty"
+                    android:id="@+id/ll_overview_filters"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="top|center_horizontal"
-                    android:paddingTop="56dp"
-                    android:visibility="gone">
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="4dp" />
 
-                    <ImageView
-                        android:layout_width="80dp"
-                        android:layout_height="80dp"
-                        android:src="@drawable/ic_mtrl_calendar_month"
-                        android:alpha="0.3"
-                        android:tint="?attr/colorOnSurfaceVariant"
-                        android:contentDescription="@null" />
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1">
 
-                    <TextView
-                        android:id="@+id/tv_overview_empty"
-                        android:layout_width="wrap_content"
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rv_course_overview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:paddingBottom="16dp"
+                        android:clipToPadding="false"
+                        android:overScrollMode="never"
+                        android:scrollbars="none" />
+
+                    <!-- 空状态：与周课表的「暂无课程」保持同一套视觉 -->
+                    <LinearLayout
+                        android:id="@+id/ll_overview_empty"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="@string/schedule_empty_semester"
-                        android:textSize="@dimen/text_subtitle"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-            </FrameLayout>
-        </LinearLayout>
+                        android:orientation="vertical"
+                        android:gravity="top|center_horizontal"
+                        android:paddingTop="56dp"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:src="@drawable/ic_mtrl_calendar_month"
+                            android:alpha="0.3"
+                            android:tint="?attr/colorOnSurfaceVariant"
+                            android:contentDescription="@null" />
+
+                        <TextView
+                            android:id="@+id/tv_overview_empty"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:text="@string/schedule_empty_semester"
+                            android:textSize="@dimen/text_subtitle"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+                </FrameLayout>
+            </LinearLayout>
+        </FrameLayout>
 
     </LinearLayout>
 

@@ -13,6 +13,7 @@ import com.cherry.wakeupschedule.service.TimeTableManager
 import com.cherry.wakeupschedule.ui.component.SelectOption
 import com.cherry.wakeupschedule.ui.component.SelectionDialog
 import com.cherry.wakeupschedule.ui.component.StyledDialog
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -26,6 +27,9 @@ class TimeTableEditActivity : BaseActivity() {
 
     private val timeSlotViews = mutableListOf<TimeSlotView>()
 
+    /** 入场动画是否已播过：同一屏只播一次（转屏/recreate 不重播） */
+    private var entrancePlayed = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyToTheme(this)
         super.onCreate(savedInstanceState)
@@ -38,6 +42,31 @@ class TimeTableEditActivity : BaseActivity() {
         setupPageHeader(binding.toolbar, "编辑时间表")
         setupButtons()
         loadAndDisplayTimeSlots()
+        playEntranceOnce(restored = savedInstanceState?.getBoolean(STATE_ENTRANCE_PLAYED) == true)
+    }
+
+    // ==================== 入场动效 ====================
+
+    /**
+     * 内容分区错峰上浮淡入（节数卡 / 时间表卡 / 底部按钮），同一屏只播一次：
+     * 转屏、recreate 后直接落到终态，不再闪一下。
+     */
+    private fun playEntranceOnce(restored: Boolean) {
+        if (restored || entrancePlayed) return
+        entrancePlayed = true
+        // 系统关闭动画时不做入场，直接显示终态
+        if (!Motion.enabled()) return
+        val content = binding.llTimetableContent
+        val sections = (0 until content.childCount)
+            .mapNotNull { content.getChildAt(it) }
+            .filter { it.visibility == View.VISIBLE }
+        // post 一帧再播：避开 Activity 转场窗口动画，入场不会和窗口位移抢同一批帧
+        binding.root.post { Motion.stagger(sections) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_ENTRANCE_PLAYED, entrancePlayed)
     }
 
     private fun setupButtons() {
@@ -219,6 +248,11 @@ class TimeTableEditActivity : BaseActivity() {
             16 -> "02:10"
             else -> "08:45"
         }
+    }
+
+    companion object {
+        /** 入场动画已播标记（savedInstanceState 键）：重建/转屏不重复播 */
+        private const val STATE_ENTRANCE_PLAYED = "timetable_entrance_played"
     }
 
     private data class TimeSlotView(

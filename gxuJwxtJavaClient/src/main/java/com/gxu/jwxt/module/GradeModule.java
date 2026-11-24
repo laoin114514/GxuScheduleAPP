@@ -8,9 +8,8 @@ import com.gxu.jwxt.model.GradeEntry;
 import com.gxu.jwxt.model.PageQuery;
 import com.gxu.jwxt.model.PagedResult;
 import com.gxu.jwxt.model.Term;
+import com.gxu.jwxt.util.AndroidCompat;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +54,7 @@ public class GradeModule {
         session.ensureLogin();
         PageQuery page = new PageQuery();
         String body = session.post("/jwglxt/cjcx/cjcx_cxXxCount.html?gnmkdm=" + GNMKDM,
-            page.toMap(Map.of("xnm", year, "xqm", term.code())), REFERER);
+            page.toMap(AndroidCompat.mapOf("xnm", year, "xqm", term.code())), REFERER);
         return JsonSupport.GSON.fromJson(body, GradeCount.class);
     }
 
@@ -122,7 +121,7 @@ public class GradeModule {
     private PagedResult<GradeEntry> query(String year, String term, PageQuery page) throws IOException {
         session.ensureLogin();
         String body = session.post("/jwglxt/cjcx/cjcx_cxXsgrcj.html?doType=query&gnmkdm=" + GNMKDM,
-            page.toMap(Map.of("xnm", year, "xqm", term)), REFERER);
+            page.toMap(AndroidCompat.mapOf("xnm", year, "xqm", term)), REFERER);
         return JsonSupport.page(body, GradeEntry.class);
     }
 
@@ -130,9 +129,9 @@ public class GradeModule {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : data.entrySet()) {
             if (sb.length() > 0) sb.append('&');
-            sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8))
+            sb.append(AndroidCompat.urlEncode(entry.getKey()))
                 .append('=')
-                .append(URLEncoder.encode(nullToEmpty(entry.getValue()), StandardCharsets.UTF_8));
+                .append(AndroidCompat.urlEncode(nullToEmpty(entry.getValue())));
         }
         return sb.toString();
     }

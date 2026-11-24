@@ -59,10 +59,13 @@ class WidgetCourseListFactory(
     /** 内存中的课程数据快照 */
     private var items: List<WidgetCourseItem> = emptyList()
 
-    // 徽标颜色只在构造时解析一次：原先每渲染一行都要 getColor 一次（资源查找 + 主题解析）
-    private val badgeFinishedColor: Int = context.getColor(R.color.widget_badge_finished)
-    private val badgeActiveColor: Int = context.getColor(R.color.widget_badge_active)
-    private val badgeUpcomingColor: Int = context.getColor(R.color.widget_badge_upcoming)
+    // 状态行文字色只在构造时解析一次（资源查找 + 深浅色解析）：
+    // 彩色行（未开始/下一节/进行中）白字，与课表页课程卡同画法；
+    // 「已上完」标题与次要行一起灰掉，扫视时主动退到背景
+    private val statusTextColor: Int = context.getColor(R.color.widget_status_text)
+    private val statusTextWeakColor: Int = context.getColor(R.color.widget_status_text_weak)
+    private val finishedTextColor: Int = context.getColor(R.color.widget_status_finished_text)
+    private val finishedTextWeakColor: Int = context.getColor(R.color.widget_status_finished_text_weak)
 
     override fun onCreate() {
         // 在 Service 创建时立即加载数据
@@ -117,49 +120,64 @@ class WidgetCourseListFactory(
         return views
     }
 
-    /** 今日概览状态卡片行：每次全量设置所有字段（含徽标可见性），避免复用脏状态 */
+    /** 今日概览状态卡片行：每次全量设置所有字段（含徽标可见性/状态色），避免复用脏状态 */
     private fun statusItemView(item: WidgetCourseItem): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_course_status_item)
         views.setTextViewText(R.id.course_status_title, item.name)
         views.setTextViewText(R.id.course_status_room, item.roomLine ?: item.location)
+        views.setTextColor(R.id.course_status_title, titleTextColor(item.status))
+        views.setTextColor(R.id.course_status_room, weakTextColor(item.status))
         if (item.statusLabel == null) {
             views.setViewVisibility(R.id.course_status_badge, android.view.View.GONE)
         } else {
             views.setViewVisibility(R.id.course_status_badge, android.view.View.VISIBLE)
             views.setTextViewText(R.id.course_status_badge, item.statusLabel)
-            views.setTextColor(R.id.course_status_badge, badgeColor(item.status))
+            views.setTextColor(R.id.course_status_badge, titleTextColor(item.status))
         }
         views.setInt(R.id.course_status_root, "setBackgroundResource", rowBackgroundRes(item.status))
         return views
     }
 
-    /** 今日概览 4×2 宽版行：与 2×2 同款彩底行卡/徽标，双行排布并增加右列起止时间 */
+    /** 今日概览 4×2 宽版行：与 2×2 同款状态行卡/徽标，双行排布并增加右列起止时间 */
     private fun wideStatusItemView(item: WidgetCourseItem): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_course_status_item_wide)
+        val titleColor = titleTextColor(item.status)
+        val weakColor = weakTextColor(item.status)
         views.setTextViewText(R.id.tv_wide_course_name, item.courseName ?: item.name)
         views.setTextViewText(R.id.tv_wide_room, item.roomLine ?: item.location)
         views.setTextViewText(R.id.tv_wide_start, item.startTimeText ?: "")
         views.setTextViewText(R.id.tv_wide_end, item.endTimeText ?: "")
+        views.setTextColor(R.id.tv_wide_course_name, titleColor)
+        views.setTextColor(R.id.tv_wide_room, weakColor)
+        views.setTextColor(R.id.tv_wide_start, weakColor)
+        views.setTextColor(R.id.tv_wide_end, weakColor)
         if (item.statusLabel == null) {
             views.setViewVisibility(R.id.tv_wide_badge, android.view.View.GONE)
         } else {
             views.setViewVisibility(R.id.tv_wide_badge, android.view.View.VISIBLE)
             views.setTextViewText(R.id.tv_wide_badge, item.statusLabel)
-            views.setTextColor(R.id.tv_wide_badge, badgeColor(item.status))
+            views.setTextColor(R.id.tv_wide_badge, titleColor)
         }
         views.setInt(R.id.course_wide_root, "setBackgroundResource", rowBackgroundRes(item.status))
         return views
     }
 
-    private fun badgeColor(status: WidgetCourseStatus?): Int = when (status) {
-        WidgetCourseStatus.FINISHED -> badgeFinishedColor
-        WidgetCourseStatus.ACTIVE -> badgeActiveColor
-        else -> badgeUpcomingColor
-    }
+    /** 标题/徽标文字色：「已上完」灰，其余白（彩色底） */
+    private fun titleTextColor(status: WidgetCourseStatus?): Int =
+        if (status == WidgetCourseStatus.FINISHED) finishedTextColor else statusTextColor
 
+    /** 教室/节次/时间等次要行文字色：彩色底用 70% 白，「已上完」用更浅的灰 */
+    private fun weakTextColor(status: WidgetCourseStatus?): Int =
+        if (status == WidgetCourseStatus.FINISHED) finishedTextWeakColor else statusTextWeakColor
+
+    /**
+     * 行背景：课程色与课表页同源（[com.cherry.wakeupschedule.ui.theme.ThemeManager.getCourseColors] 的
+     * 蓝/红/绿三色，50% 浅色 / 75% 深色填充，见 widget_row_*），灰色是「已上完」专用的中性退让色。
+     */
     private fun rowBackgroundRes(status: WidgetCourseStatus?): Int = when (status) {
-        WidgetCourseStatus.FINISHED -> R.drawable.widget_row_finished
+        WidgetCourseStatus.NEXT -> R.drawable.widget_row_next
         WidgetCourseStatus.ACTIVE -> R.drawable.widget_row_active
+        WidgetCourseStatus.FINISHED -> R.drawable.widget_row_finished
         else -> R.drawable.widget_row_upcoming
     }
 
@@ -197,7 +215,8 @@ class WidgetCourseListFactory(
 
     /**
      * 今日全部课程 + 状态标注（官网「今日课程概览组件」）：
-     * 已上完（蓝）/ 进行中（紫）/ 下一节（紫，今天下一个未开始的课）/ 未开始（绿）
+     * 已上完（灰）/ 进行中（绿，课表页课程色）/ 下一节（红，课表页课程色）/ 未开始（蓝，课表页课程色）。
+     * 灰卡连文字一起变灰，让已上完的课在扫视时主动退到背景。
      */
     private fun loadTodayCoursesWithStatus(): List<WidgetCourseItem> {
         val calendar = Calendar.getInstance()
@@ -226,7 +245,7 @@ class WidgetCourseListFactory(
             val (statusLabel, status) = when {
                 end <= nowMinutes -> "已上完" to WidgetCourseStatus.FINISHED
                 start <= nowMinutes -> "进行中" to WidgetCourseStatus.ACTIVE
-                course.id == nextCourseId -> "下一节" to WidgetCourseStatus.ACTIVE
+                course.id == nextCourseId -> "下一节" to WidgetCourseStatus.NEXT
                 else -> "未开始" to WidgetCourseStatus.UPCOMING
             }
             val startText = timeSlots.find { it.node == course.startTime }?.startTime
@@ -374,9 +393,10 @@ class WidgetCourseListFactory(
 }
 
 /**
- * 今日概览行的课程状态
+ * 今日概览行的课程状态：进行中 / 下一节 / 未开始 / 已上完。
+ * 四态各自对应一种行底色（绿/红/蓝/灰），其中前三色取自课表页课程色板。
  */
-enum class WidgetCourseStatus { FINISHED, ACTIVE, UPCOMING }
+enum class WidgetCourseStatus { FINISHED, ACTIVE, NEXT, UPCOMING }
 
 /**
  * 小组件列表中显示的课程数据

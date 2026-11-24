@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 返回时旧页面从左侧归位（200ms） -->
-<translate xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="200"
-    android:fromXDelta="-25%"
-    android:toXDelta="0%"
-    android:interpolator="@android:interpolator/fast_out_slow_in" />
+<!-- 返回时被返回的页面从左侧归位 + 淡入（220ms），与新页面退出动画对齐 -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="220"
+    android:interpolator="@android:interpolator/fast_out_slow_in">
+    <translate
+        android:fromXDelta="-18%"
+        android:toXDelta="0%" />
+    <alpha
+        android:fromAlpha="0.72"
+        android:toAlpha="1.0" />
+</set>

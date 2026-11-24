@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 今日课程概览的状态卡片行（官网「今日课程概览组件」样式）：
      「{HH:mm} {课名}」+ 右侧状态徽标，下行「{教室} · {起-止}节」。
-     背景由 Factory 按 状态 setBackgroundResource 切换，RemoteViews 每次全量应用，无复用脏状态。 -->
+     行底色与文字色由 Factory 按状态成对切换（未开始蓝 / 下一节红 / 进行中绿 / 已上完灰），
+     RemoteViews 每次全量应用，无复用脏状态；XML 里只保留「未开始」的默认值。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/course_status_root"
     android:layout_width="match_parent"
@@ -25,7 +26,7 @@
             android:layout_weight="1"
             android:text=""
             android:textSize="@dimen/text_caption"
-            android:textColor="@color/widget_text_title"
+            android:textColor="@color/widget_status_text"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end" />
@@ -37,7 +38,8 @@
             android:layout_marginStart="6dp"
             android:text=""
             android:textSize="@dimen/text_micro"
-            android:textColor="@color/widget_badge_upcoming" />
+            android:textColor="@color/widget_status_text"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <TextView
@@ -47,7 +49,7 @@
         android:layout_marginTop="1dp"
         android:text=""
         android:textSize="@dimen/text_label"
-        android:textColor="@color/widget_text_secondary"
+        android:textColor="@color/widget_status_text_weak"
         android:maxLines="1"
         android:ellipsize="end" />
 

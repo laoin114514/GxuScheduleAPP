@@ -20,12 +20,14 @@ class WidgetPinPolicyTest {
         attempts: Int = 1,
         leftForeground: Boolean = false,
         foregroundWithFocus: Boolean = true,
+        desktopRejectsSilently: Boolean = false,
     ) = WidgetPinPolicy.evaluate(
         baselineCount = baselineCount,
         currentCount = currentCount,
         attempts = attempts,
         leftForeground = leftForeground,
         foregroundWithFocus = foregroundWithFocus,
+        desktopRejectsSilently = desktopRejectsSilently,
     )
 
     @Test
@@ -91,6 +93,21 @@ class WidgetPinPolicyTest {
                 attempts = WidgetPinPolicy.MIN_ATTEMPTS,
                 leftForeground = true,
                 foregroundWithFocus = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `小米桌面静默拒绝时，短暂离开前台不算用户取消`() {
+        // 小米/红米失败时会拉起 AddItemActivity 再立即退出，本页收到 onPause；
+        // 用户没看到任何确认框，必须给「桌面拒绝」的手动引导而不是一句「没检测到」
+        assertEquals(
+            Outcome.NO_RESPONSE,
+            evaluate(
+                attempts = WidgetPinPolicy.MIN_ATTEMPTS,
+                leftForeground = true,
+                foregroundWithFocus = true,
+                desktopRejectsSilently = true,
             ),
         )
     }

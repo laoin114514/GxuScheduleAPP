@@ -9,6 +9,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.GradeEntity
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 
@@ -34,6 +35,10 @@ class GradeAdapter(
     }
 
     override fun onBindViewHolder(holder: GradeViewHolder, position: Int) {
+        // 复用兜底：入场动画被滚动/数据替换打断时，条目可能残留半透明或位移
+        Motion.resetScale(holder.itemView)
+        holder.itemView.alpha = 1f
+        holder.itemView.translationY = 0f
         holder.bind(items[position])
     }
 

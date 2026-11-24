@@ -150,4 +150,10 @@
     <item name="tickRadiusActive">2dp</item>
     <item name="tickRadiusInactive">1.5dp</item>
 </style>
+
+    <!-- 闪屏页主题：windowBackground 用页面渐变兜底，避免冷启动首帧闪白/闪黑。
+         根布局内容挂上后由 BaseActivity 用当前配色的渐变覆盖。 -->
+    <style name="Theme.WakeupSchedule.Splash" parent="Theme.WakeupSchedule">
+        <item name="android:windowBackground">@drawable/bg_splash_gradient</item>
+    </style>
 </resources>

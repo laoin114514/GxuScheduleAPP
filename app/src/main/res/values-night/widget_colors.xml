@@ -11,6 +11,10 @@
 
     <color name="widget_accent">#AAC7FF</color>
 
+    <!-- 今日概览「已上完」灰卡文字（深色下比浅色更收敛，仍保留可读性） -->
+    <color name="widget_status_finished_text">#6F7782</color>
+    <color name="widget_status_finished_text_weak">#565E68</color>
+
     <color name="widget_day_text_has">#93C5FD</color>
     <color name="widget_day_text_empty">#8D9199</color>
 

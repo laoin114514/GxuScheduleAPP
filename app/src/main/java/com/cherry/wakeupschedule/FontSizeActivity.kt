@@ -6,6 +6,8 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -13,6 +15,7 @@ import android.widget.TextView
 import androidx.core.view.WindowCompat
 import com.cherry.wakeupschedule.databinding.ActivityFontSizeBinding
 import com.cherry.wakeupschedule.service.UiScaleManager
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 import com.cherry.wakeupschedule.ui.theme.setupPageHeader
@@ -34,6 +37,12 @@ class FontSizeActivity : BaseActivity() {
     /** 刻度名称，索引与 [UiScaleManager.PRESETS] 对应 */
     private val tickViews = mutableListOf<TextView>()
 
+    /** 上一次播放"选中脉冲"的档位：拖动滑块同档位不重复脉冲 */
+    private var lastPulsedPreset = -1
+
+    /** 入场动画是否已播过：改档位会 recreate，重建时不重复播（同一屏只播一次） */
+    private var entrancePlayed = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyToTheme(this)
         super.onCreate(savedInstanceState)
@@ -44,6 +53,31 @@ class FontSizeActivity : BaseActivity() {
         setupPageHeader(binding.toolbar, "字体大小")
         buildScaleTicks()
         setupScaleSlider()
+        playEntranceOnce(restored = savedInstanceState?.getBoolean(STATE_ENTRANCE_PLAYED) == true)
+    }
+
+    // ==================== 入场动效 ====================
+
+    /**
+     * 内容分区错峰上浮淡入（说明 / 预览卡 / 档位 / 滑块 / 刻度 / 脚注），同一屏只播一次：
+     * 改档位 recreate 后直接落到终态，不再闪一下。
+     */
+    private fun playEntranceOnce(restored: Boolean) {
+        if (restored || entrancePlayed) return
+        entrancePlayed = true
+        // 系统关闭动画时不做入场，直接显示终态
+        if (!Motion.enabled()) return
+        val content = binding.llFontSizeContent
+        val sections = (0 until content.childCount)
+            .mapNotNull { content.getChildAt(it) }
+            .filter { it.visibility == View.VISIBLE }
+        // post 一帧再播：避开 Activity 转场窗口动画，入场不会和窗口位移抢同一批帧
+        binding.root.post { Motion.stagger(sections) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_ENTRANCE_PLAYED, entrancePlayed)
     }
 
     private fun setupScaleSlider() {
@@ -81,16 +115,25 @@ class FontSizeActivity : BaseActivity() {
             }
         })
 
+        // 首屏渲染不脉冲：只有用户切档位才给"选到了"的确认反馈
+        lastPulsedPreset = currentIndex
         showPreset(currentIndex)
     }
 
-    /** 同步档位文字、倍率、顶部预览与刻度高亮 */
+    /** 同步档位文字、倍率、顶部预览与刻度高亮；切档时选中的刻度脉冲 + 轻触感 */
     private fun showPreset(index: Int) {
         val preset = UiScaleManager.PRESETS[index]
         binding.tvScaleValue.text = preset.label
         binding.tvScaleFactor.text = "${preset.scale}×"
         highlightTick(index)
         buildSample(preset.scale)
+        if (index != lastPulsedPreset) {
+            lastPulsedPreset = index
+            tickViews.getOrNull(index)?.let { tick ->
+                Motion.pulse(tick)
+                tick.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            }
+        }
     }
 
     /** 刻度名称：首尾贴边与滑块两端对齐，中间两档居中 */
@@ -191,5 +234,10 @@ class FontSizeActivity : BaseActivity() {
         val typedValue = TypedValue()
         theme.resolveAttribute(attr, typedValue, true)
         return typedValue.data
+    }
+
+    companion object {
+        /** 入场动画已播标记（savedInstanceState 键）：重建/转屏不重复播 */
+        private const val STATE_ENTRANCE_PLAYED = "font_size_entrance_played"
     }
 }

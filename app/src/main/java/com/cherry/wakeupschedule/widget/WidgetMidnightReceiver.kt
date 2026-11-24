@@ -28,6 +28,7 @@ class WidgetMidnightReceiver : BroadcastReceiver() {
         MinimalWidgetProvider.triggerUpdateNow(context)
         WeekViewWidgetProvider.triggerUpdate(context)
         NextCourseWidgetProvider.triggerUpdate(context)
+        NextCourseCompactWidgetProvider.triggerUpdate(context)
         ScheduleWidgetUpdateService.scheduleNextUpdate(context)
         scheduleMidnightUpdate(context)
         scheduleBackupUpdate(context)

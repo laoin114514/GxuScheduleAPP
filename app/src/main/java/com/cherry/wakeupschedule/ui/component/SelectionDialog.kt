@@ -1,5 +1,6 @@
 package com.cherry.wakeupschedule.ui.component
 
+import android.animation.ValueAnimator
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
@@ -9,7 +10,6 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.PathInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -17,6 +17,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.ui.feedback.AppToast
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.cherry.wakeupschedule.ui.theme.ThemeManager
 import com.cherry.wakeupschedule.ui.theme.setTextSizeRes
 
@@ -337,18 +338,69 @@ class SelectionDialog private constructor(
 
     // ── Animations ──────────────────────────────────────
 
+    /** 背景遮罩（window dim）的淡入 animator，关闭时先取消，避免对已移除的窗口设值 */
+    private var dimAnimator: ValueAnimator? = null
+
+    /**
+     * 入场：整窗 0.9→1 缩放 + 淡入（强调减速曲线，收尾更稳），
+     * 内容分区 30ms 步进上浮淡入，背景遮罩同步由浅到深淡入。
+     * 退出保持立即消失（见 [dismiss]：两段式淡出只淡内容不淡遮罩，反而像卡顿）。
+     */
     private fun setupAnimations() {
-        window?.decorView?.apply {
-            scaleX = 0.92f
-            scaleY = 0.92f
-            alpha = 0f
-            animate()
-                .scaleX(1f)
-                .scaleY(1f)
-                .alpha(1f)
-                .setDuration(180)
-                .setInterpolator(PathInterpolator(0.4f, 0f, 0.2f, 1f))
-                .start()
+        val decorView = window?.decorView ?: return
+        // 系统关闭动画：直接落到终态，不能留下半透明/缩放的窗口
+        if (!Motion.enabled()) {
+            decorView.scaleX = 1f
+            decorView.scaleY = 1f
+            decorView.alpha = 1f
+            return
+        }
+        // 缩放 pivot 默认是窗口中心，弹窗从中心轻微放大，方向与用户点按位置一致
+        decorView.scaleX = 0.9f
+        decorView.scaleY = 0.9f
+        decorView.alpha = 0f
+        decorView.animate()
+            .scaleX(1f)
+            .scaleY(1f)
+            .alpha(1f)
+            .setDuration(Motion.LONG)
+            .setInterpolator(Motion.emphasizedDecelerate)
+            .start()
+        // 等窗口 attach 后再播内容与遮罩：onCreate 阶段窗口还没挂上，提前播会白掉一段
+        decorView.post {
+            if (!decorView.isAttachedToWindow) return@post
+            staggerContent()
+            fadeInDim()
+        }
+    }
+
+    /** 内容分区（标题/选项列表/按钮）30ms 步进上浮淡入 */
+    private fun staggerContent() {
+        val content = window?.decorView?.findViewById<ViewGroup>(android.R.id.content) ?: return
+        val root = content.getChildAt(0) as? ViewGroup ?: return
+        val sections = (0 until root.childCount)
+            .mapNotNull { root.getChildAt(it) }
+            // 分割线布局里写死了 alpha=0.6，不能参与动画（enter 会把 alpha 归 1）
+            .filter { it.visibility == View.VISIBLE && it.id != R.id.v_divider }
+        Motion.stagger(sections, step = 30L, duration = Motion.ENTRANCE, fromY = 12f)
+    }
+
+    /** 遮罩淡入：窗口主题里 dimAmount=0.5，这里从 0 渐到原值，避免弹窗与黑遮罩同时硬弹出 */
+    private fun fadeInDim() {
+        val window = window ?: return
+        val decorView = window.decorView
+        val targetDim = window.attributes.dimAmount.takeIf { it > 0f } ?: return
+        window.setDimAmount(0f)
+        dimAnimator = ValueAnimator.ofFloat(0f, targetDim).apply {
+            duration = Motion.LONG
+            interpolator = Motion.emphasizedDecelerate
+            // 窗口在动画中途被移除（如转屏重建）时不能再更新窗口属性，否则会抛未 attach 异常
+            addUpdateListener {
+                if (decorView.isAttachedToWindow) {
+                    window.setDimAmount(it.animatedValue as Float)
+                }
+            }
+            start()
         }
     }
 
@@ -359,6 +411,8 @@ class SelectionDialog private constructor(
      * 内容与遮罩同帧消失更干脆。
      */
     override fun dismiss() {
+        dimAnimator?.cancel()
+        dimAnimator = null
         try {
             super.dismiss()
         } catch (_: IllegalArgumentException) {

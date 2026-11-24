@@ -1,5 +1,6 @@
 package com.cherry.wakeupschedule.ui.screen.schedule
 
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.Dialog
 import android.content.Context
@@ -9,10 +10,12 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.animation.OvershootInterpolator
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -22,12 +25,21 @@ import androidx.core.graphics.ColorUtils
 import com.cherry.wakeupschedule.R
 import com.cherry.wakeupschedule.model.Course
 import com.cherry.wakeupschedule.service.TimeTableManager
+import com.cherry.wakeupschedule.ui.motion.Motion
 import com.google.android.material.color.MaterialColors
 
 /** 课程详情 Bottom Sheet Dialog，从原始 WeekPageFragment 提取 */
 object SchedulePageDetailDialog {
 
     private var currentDialog: Dialog? = null
+
+    /** 弹层入场：自底部弹簧滑入的初始位移（dp）与时长（ms） */
+    private const val ENTER_FROM_Y_DP = 48f
+    private const val ENTER_DURATION_MS = 300L
+
+    /** 详情行错峰入场：35ms 步进，单行 220ms（约 6 行总时长封顶 400ms 左右） */
+    private const val ROW_STAGGER_MS = 35L
+    private const val ROW_ENTER_DURATION_MS = 220L
 
     /**
      * 详情弹层来源，决定版式：
@@ -61,6 +73,8 @@ object SchedulePageDetailDialog {
         val inflater = LayoutInflater.from(context)
         val sheetView = inflater.inflate(R.layout.dialog_course_detail, null)
         val density = context.resources.displayMetrics.density
+        // 窗口铺满整屏后，内容要自己避让手势条（否则最后一排「周次」会被压住）
+        com.cherry.wakeupschedule.ui.component.SheetWindow.applyNavigationBarInset(sheetView, context)
 
         val topRadius = 24 * density
         val sheetBg = GradientDrawable().apply {
@@ -146,6 +160,7 @@ object SchedulePageDetailDialog {
         setupQqGroupJump(sheetView, courses.firstOrNull { it.qqGroup.isNotBlank() } ?: primary)
 
         dialog.setContentView(sheetView)
+        // B3：遮罩用系统 dim 层逐帧渐变（窗口配置见 SheetWindow），内容层不再叠自绘遮罩
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = ViewGroup.LayoutParams(
@@ -154,24 +169,70 @@ object SchedulePageDetailDialog {
         (sheetView.parent as? ViewGroup)?.removeView(sheetView)
         sheetView.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        // B3 退场：下拉 + 淡出，干脆利落（返回键 / 点遮罩都走这里，与入场手感一致）
+        var closing = false
+        fun dismissAnimated() {
+            if (closing) return
+            closing = true
+            if (!Motion.enabled()) {
+                dialog.dismiss()
+                return
+            }
+            sheetView.animate().cancel()
+            sheetView.animate()
+                .translationY(Motion.dp(sheetView, 40f))
+                .alpha(0f)
+                .setDuration(Motion.FAST)
+                .setInterpolator(Motion.accelerate)
+                .withEndAction { dialog.dismiss() }
+                .start()
+            ValueAnimator.ofFloat(
+                com.cherry.wakeupschedule.ui.component.SheetWindow.currentDim(dialog), 0f
+            ).apply {
+                duration = Motion.FAST
+                interpolator = Motion.accelerate
+                addUpdateListener {
+                    com.cherry.wakeupschedule.ui.component.SheetWindow.setDim(
+                        dialog, it.animatedValue as Float
+                    )
+                }
+                start()
+            }
+        }
+        dialog.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+                dismissAnimated()
+                true
+            } else {
+                false
+            }
+        }
+
         container.addView(View(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-            setOnClickListener { dialog.dismiss() }
+            setOnClickListener { dismissAnimated() }
         })
         container.addView(sheetView)
         dialog.setContentView(container)
 
-        // 内容超高时限制高度并允许内部滚动（小屏手机友好）
+        // 内容超高时限制高度并允许内部滚动（小屏手机友好）；顺带收集详情卡片行给入场错峰用
+        var detailRows: List<View> = emptyList()
         try {
             val display = context.resources.displayMetrics
             val scroll = sheetView.findViewById<ScrollView>(R.id.scroll_detail)
-            val inner = scroll.getChildAt(0)
-            inner.measure(
+            val inner = scroll.getChildAt(0) as? LinearLayout
+            if (inner != null) {
+                detailRows = (0 until inner.childCount)
+                    .map { inner.getChildAt(it) }
+                    .filter { it.visibility == View.VISIBLE }
+            }
+            inner?.measure(
                 View.MeasureSpec.makeMeasureSpec(display.widthPixels, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
             )
-            val desired = inner.measuredHeight
+            val desired = inner?.measuredHeight ?: 0
             val maxH = (display.heightPixels * 0.72f).toInt()
             scroll.layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -179,19 +240,48 @@ object SchedulePageDetailDialog {
             )
         } catch (_: Exception) { }
 
-        dialog.window?.apply {
-            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
-            setGravity(Gravity.BOTTOM)
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setWindowAnimations(R.style.BottomSheetAnimation)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                setDimAmount(0.5f)
-            }
-            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        // 入场起始态在 show 之前设好，避免第一帧闪在终态
+        if (Motion.enabled()) {
+            sheetView.alpha = 0f
+            sheetView.translationY = Motion.dp(sheetView, ENTER_FROM_Y_DP)
         }
+        // 窗口铺满整屏（含状态栏/手势条），自绘遮罩才能盖住系统栏区域
+        com.cherry.wakeupschedule.ui.component.SheetWindow.configure(dialog)
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
         dialog.show()
+
+        // B3 入场：bottom sheet 自底部弹簧滑入 + 淡入，遮罩同步淡入，详情卡片行 35ms 错峰上浮
+        if (Motion.enabled()) {
+            ValueAnimator.ofFloat(0f, com.cherry.wakeupschedule.ui.component.SheetWindow.DIM_AMOUNT).apply {
+                duration = Motion.MEDIUM
+                interpolator = Motion.standard
+                addUpdateListener {
+                    com.cherry.wakeupschedule.ui.component.SheetWindow.setDim(
+                        dialog, it.animatedValue as Float
+                    )
+                }
+                start()
+            }
+            sheetView.animate()
+                .translationY(0f)
+                .alpha(1f)
+                .setDuration(ENTER_DURATION_MS)
+                .setInterpolator(OvershootInterpolator(1.06f))
+                .start()
+            Motion.stagger(
+                detailRows,
+                step = ROW_STAGGER_MS,
+                duration = ROW_ENTER_DURATION_MS,
+                fromY = 8f,
+                fromScale = 1f
+            )
+        } else {
+            com.cherry.wakeupschedule.ui.component.SheetWindow.setDim(
+                dialog, com.cherry.wakeupschedule.ui.component.SheetWindow.DIM_AMOUNT
+            )
+            sheetView.translationY = 0f
+        }
     }
 
     /**
